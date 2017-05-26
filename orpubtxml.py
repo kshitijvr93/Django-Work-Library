@@ -267,7 +267,7 @@ def orcid_result_entries_collect(d_search, d_params, nodes_result, d_batch, n_ba
         # of multiple threads to collect the results.
         nodes_source_name = node_root.findall(".//common:source-name", namespaces=d_ns)
         if nodes_source_name and len(nodes_source_name) > 0:
-            node_source_name=nodes_source_name[0].text
+            node_source_name=repr(nodes_source_name[0].tag)
         else:
             node_source_name=""
         print ("Batch item {}: orcid_id={}, name={}"
@@ -286,7 +286,8 @@ def orcid_result_entries_collect(d_search, d_params, nodes_result, d_batch, n_ba
 '''
 Method orpubtxml:
 
-Based on method ealdxml 20170502: Elsevier Api Load Date to XML - Read the Elsevier Search API for UF-Authored
+Based on program ealdxml 20170502: Elsevier Api Load Date to XML -
+Read the Elsevier Search API for UF-Authored
 articles and use the 'self' link URL along with the api_key to get XML Metadata
 for each Elsevier article and save it to a file named pii_{pii}.xml under the
 given output directory.
