@@ -9,7 +9,7 @@ richard bernardy has been using plugins since december 2016
 rb is exploiting the html viewer.. and all thetext fields.. in some records that broke articles to pdfs, i jus tused the downloads iewer, and I usd the html viewer for tohers
 and if we culd add order values to download vierer it would be good
 
-mvs - you just added teh viewer
+mvs - you just added the viewer
 rb - no that was my last viewer.. it seems to be the alst pdf in the struct map
 msv it should have a order, we can do that and make antoher demo viewer that acknowledges the order
 mvs so ht html tags hotehrs ahve erquested and we have another ticket from london to put in a carriage return tab..
@@ -1930,7 +1930,9 @@ so that is how to determine which fields are returned eg like accession number
 (We are looking at the default browse_results sql in a tab of the SSMS tool)
 Here is what you add.. and what i
 
-And so the metdata basic serch table has every md value (from the
+For am4ir: user defined columns  maybe good to keep manuscript post embargo start date?
+
+And so the metdata basic search table has every md value (from the
 md mets resoure files) that you may be looking for..?
 So see all the metadata_bai_search column names that correspond to basic metadata..
 and many are user defined, so you can grab and create your own
