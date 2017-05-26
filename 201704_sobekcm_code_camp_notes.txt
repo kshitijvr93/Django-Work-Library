@@ -3,7 +3,7 @@ t0820 start
 
 Had less coding before.. and now pure code camp...
 
-Mark provided a enw item viewer jpeg plugin that we now use at uf..
+Mark provided a new item viewer jpeg plugin that we now use at uf..
 and now we have a plugin.. and
 richard bernardy has been using plugins since december 2016
 rb is exploiting the html viewer.. and all thetext fields.. in some records that broke articles to pdfs, i jus tused the downloads iewer, and I usd the html viewer for tohers
