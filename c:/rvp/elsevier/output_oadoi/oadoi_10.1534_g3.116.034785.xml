@@ -1,0 +1,29 @@
+<entry>
+  <_best_open_url>http://www.ncbi.nlm.nih.gov/pmc/articles/PMC5100869</_best_open_url>
+  <_closed_base_ids>
+    <item-00000001>ftdoajarticles:oai:doaj.org/article:79c6569e7a8f47afb9eaafebc7d05cf9</item-00000001>
+  </_closed_base_ids>
+  <_closed_urls>
+    <item-00000001>https://doaj.org/article/79c6569e7a8f47afb9eaafebc7d05cf9</item-00000001>
+  </_closed_urls>
+  <_green_base_collections/>
+  <_open_base_ids/>
+  <_open_urls>
+    <item-00000001>http://www.ncbi.nlm.nih.gov/pmc/articles/PMC5100869</item-00000001>
+  </_open_urls>
+  <doi>10.1534/g3.116.034785</doi>
+  <doi_resolver>crossref</doi_resolver>
+  <evidence>oa repository (via pmcid lookup)</evidence>
+  <found_green>True</found_green>
+  <found_hybrid>False</found_hybrid>
+  <free_fulltext_url>http://www.ncbi.nlm.nih.gov/pmc/articles/PMC5100869</free_fulltext_url>
+  <is_boai_license>False</is_boai_license>
+  <is_free_to_read>True</is_free_to_read>
+  <is_subscription_journal>True</is_subscription_journal>
+  <license>None</license>
+  <oa_color>green</oa_color>
+  <oa_color_long>green_only</oa_color_long>
+  <reported_noncompliant_copies/>
+  <url>http://doi.org/10.1534/g3.116.034785</url>
+  <year>2016</year>
+</entry>

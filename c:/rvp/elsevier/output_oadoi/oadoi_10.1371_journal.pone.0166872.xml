@@ -1,0 +1,31 @@
+<entry>
+  <_best_open_url>http://doi.org/10.1371/journal.pone.0166872</_best_open_url>
+  <_closed_base_ids>
+    <item-00000001>ftolddominionuni:oai:digitalcommons.odu.edu:ece_fac_pubs-1071</item-00000001>
+  </_closed_base_ids>
+  <_closed_urls>
+    <item-00000001>http://digitalcommons.odu.edu/ece_fac_pubs/68</item-00000001>
+    <item-00000002>http://digitalcommons.odu.edu/cgi/viewcontent.cgi?article=1071&amp;context=ece_fac_pubs</item-00000002>
+  </_closed_urls>
+  <_green_base_collections/>
+  <_open_base_ids/>
+  <_open_urls>
+    <item-00000001>http://doi.org/10.1371/journal.pone.0166872</item-00000001>
+    <item-00000002>http://www.ncbi.nlm.nih.gov/pmc/articles/PMC5119784</item-00000002>
+  </_open_urls>
+  <doi>10.1371/journal.pone.0166872</doi>
+  <doi_resolver>crossref</doi_resolver>
+  <evidence>oa journal (via journal title in doaj)</evidence>
+  <found_green>True</found_green>
+  <found_hybrid>False</found_hybrid>
+  <free_fulltext_url>http://doi.org/10.1371/journal.pone.0166872</free_fulltext_url>
+  <is_boai_license>True</is_boai_license>
+  <is_free_to_read>True</is_free_to_read>
+  <is_subscription_journal>False</is_subscription_journal>
+  <license>cc-by</license>
+  <oa_color>gold</oa_color>
+  <oa_color_long>gold_doaj</oa_color_long>
+  <reported_noncompliant_copies/>
+  <url>http://doi.org/10.1371/journal.pone.0166872</url>
+  <year>2016</year>
+</entry>
