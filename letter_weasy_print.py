@@ -384,7 +384,6 @@ doc1 = '''<p style="page-break-before:always;">
 '''
 '''
 doc = HTML(doc1)
-# In[7]:
 try:
     import StringIO
     StringIO = StringIO.StringIO
