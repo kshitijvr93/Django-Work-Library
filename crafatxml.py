@@ -49,6 +49,7 @@ from lxml import etree
 # update: lxml shows no troubless so far after months of use
 #import xml.etree.ElementTree as ET
 from pathlib import Path
+import etl
 
 '''
 Program crafatxml (Scopus Api To XML) reads information from Scopus Search API for
@@ -58,80 +59,6 @@ Scopus Full-text API.
 If not found, it logs an error message, otherwise it outputs a file named
 scopus_{scopus_id}.xml in the given output directory for each article.
 '''
-
-def add_subelements0(element, subelements):
-    if isinstance(subelements, dict):
-        d_subelements = OrderedDict(sorted(subelements.items()))
-        for key, value in d_subelements.items():
-            # Check for valid xml tag name:
-            # http://stackoverflow.com/questions/2519845/how-to-check-if-string-is-a-valid-xml-element-name
-            # poor man's check: just prefix with Z if first character is a digit..
-            # the only bad type of tagname found ... so far ...
-            if key[0] >= '0' and key[0] <= '9':
-                key = 'Z' + key
-            try:
-                subelement = etree.SubElement(element, key)
-            except Exception as e:
-                print("Skipping etree.SubElement error='{}' for key='{}'"
-                     .format(e,key))
-                continue
-            add_subelements(subelement, value)
-    elif isinstance(subelements, list):
-        # Make a dict indexed by item index/count for each value2 in the 'value' that is a list
-        for i, value in enumerate(subelements):
-            subelement = etree.SubElement(element, 'item-{}'.format(str(i+1).zfill(8)))
-            add_subelements(subelement, value)
-    else: # Assume it is a string-like value. Just set the element.text and do not recurse.
-        element.text = str(subelements)
-    return True
-# end def add_subelements()
-
-'''Method add_subelements():
-Generic logging utility helper:
-Given an lxml element, add subelements recursively from nested python data structures.
-If item_ids is True, then an id attribute with an item index (zero filled to 8 places)
-is generated for items in lists, otherwise the item id index  ) is appended with a - separator
-to the 'item' tag name to form tag names like 'item-00001234'.
-This may be used to generate xml log files, however, it can take up too much core if used to
-report per-input-file messages, and if so, it may be
-better to disable for 'big' batches of xml files to convert, or break up to create multiple log files.
-'''
-def add_subelements(element, subelements, item_ids=False):
-    if isinstance(subelements, dict):
-        d_subelements = OrderedDict(sorted(subelements.items()))
-        for key, value in d_subelements.items():
-            # Check for valid xml tag name:
-            # http://stackoverflow.com/questions/2519845/how-to-check-if-string-is-a-valid-xml-element-name
-            # poor man's check: just prefix with Z if first character is a digit..
-            # the only bad type of tagname found ... so far ...
-            if key[0] >= '0' and key[0] <= '9':
-                key = 'Z' + key
-            try:
-                subelement = etree.SubElement(element, key)
-            except Exception as e:
-                print("Skipping etree.SubElement error='{}' for key='{}'"
-                     .format(e,key))
-                continue
-            add_subelements(subelement, value, item_ids=item_ids)
-    elif isinstance(subelements, list):
-        # Make a dict indexed by item index/count for each value in the 'value' that is a list
-        for i, value in enumerate(subelements):
-            id_filled = str(i+1).zfill(8)
-            if item_ids:
-                subelement = etree.Element("item")
-                subelement.attrib['id'] = id_filled
-                element.append(subelement)
-            else:
-                #encode the ID as a suffix to to element tag name itself
-                subelement = etree.SubElement(element, 'item-{}'.format(id_filled))
-
-            add_subelements(subelement, value, item_ids=item_ids)
-    else: # Assume it is a string-like value. Just set the element.text and do not recurse.
-        element.text = str(subelements)
-    return True
-# end def add_subelements()
-
-
 '''get_json_result_by_url
 Given a url, return the expected json response.
 
@@ -149,7 +76,7 @@ Sample usage by caller who wants xml instead:
 
         # Save the xml as a string
         node_root = etree.Element("entry")
-        add_subelements(node_root, d_entry)
+        elt.add_subelements(node_root, d_entry)
 
 '''
 def get_json_result_by_url(url):
@@ -250,7 +177,7 @@ def crafatxml(d_params, verbosity=0):
         # Create a node root with name result
         node_response_root = etree.Element("response")
         # Create xml sub-nodes from the json result
-        add_subelements(node_response_root, d_json, item_ids=True)
+        elt.add_subelements(node_response_root, d_json, item_ids=True)
         ''' The root node 'response' from url_worklist_day has had/should have four child nodes:
 
            1: message: with child nodes
@@ -398,7 +325,7 @@ d_params.update({
 
 # Wrap up and write out the run parameters log file.
 e_root = etree.Element("uf_crossref_works_aff_uf_harvest")
-add_subelements(e_root, d_params)
+elt.add_subelements(e_root, d_params)
 out_filename = '{}/run_crafatxml_{}.xml'.format(output_folder_run, secsz_start)
 os.makedirs(output_folder_run, exist_ok=True)
 

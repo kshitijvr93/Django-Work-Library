@@ -24,7 +24,7 @@ import pprint
 from collections import OrderedDict
 from io import StringIO, BytesIO
 import shutil
-
+import etl
 from datetime import datetime
 
 '''
@@ -46,45 +46,6 @@ import os
 import urllib.request
 from lxml import etree
 #Note: Official Python 3.5 docs use different library, ElementTree ET
-#Maybe try it if lxml causes troubles --
-# update: lxml shows no troubless so far after months of use
-#import xml.etree.ElementTree as ET
-from pathlib import Path
-
-def add_subelements(element, subelements, item_ids=False):
-    if isinstance(subelements, dict):
-        d_subelements = OrderedDict(sorted(subelements.items()))
-        for key, value in d_subelements.items():
-            # Check for valid xml tag name:
-            # http://stackoverflow.com/questions/2519845/how-to-check-if-string-is-a-valid-xml-element-name
-            # poor man's check: just prefix with Z if first character is a digit..
-            # the only bad type of tagname found ... so far ...
-            if key[0] >= '0' and key[0] <= '9':
-                key = 'Z' + key
-            try:
-                subelement = etree.SubElement(element, key)
-            except Exception as e:
-                print("Skipping etree.SubElement error='{}' for key='{}'"
-                     .format(e,key))
-                continue
-            add_subelements(subelement, value, item_ids=item_ids)
-    elif isinstance(subelements, list):
-        # Make a dict indexed by item index/count for each value in the 'value' that is a list
-        for i, value in enumerate(subelements):
-            id_filled = str(i+1).zfill(8)
-            if item_ids:
-                subelement = etree.Element("item")
-                subelement.attrib['id'] = id_filled
-                element.append(subelement)
-            else:
-                #encode the ID as a suffix to to element tag name itself
-                subelement = etree.SubElement(element, 'item-{}'.format(id_filled))
-
-            add_subelements(subelement, value, item_ids=item_ids)
-    else: # Assume it is a string-like value. Just set the element.text and do not recurse.
-        element.text = str(subelements)
-    return True
-# end def add_subelements()
 
 ''' d_affiliation_names:
 key
@@ -175,7 +136,7 @@ Sample usage by caller who wants xml instead:
 
         # Save the xml as a string
         node_root = etree.Element("entry")
-        add_subelements(node_root, d_entry)
+        elt.add_subelements(node_root, d_entry)
 
 '''
 def get_json_result_by_url(url):
@@ -250,7 +211,8 @@ def crafdtxml(d_params, verbosity=0):
         output_folder_ymd = '{}/doi/{}/{}/{}'.format(
             output_folder_base,y4md[:4],y4md[5:7],y4md[8:10])
 
-        print("DELETING and RE-Making output_folder_ymd='{}'".format(output_folder_ymd))
+        print("DELETING and RE-Making output_folder_ymd='{}'"
+            .format(output_folder_ymd))
         if os.path.isdir(output_folder_ymd):
             try:
                 shutil.rmtree(output_folder_ymd, ignore_errors=True)
@@ -261,7 +223,8 @@ def crafdtxml(d_params, verbosity=0):
         try:
             os.makedirs(output_folder_ymd)
         except:
-            print("Cannot make folder {}. File might be in use?".format(output_folder_ymd))
+            print("Cannot make folder {}. File might be in use?"
+                .format(output_folder_ymd))
             raise
 
         cursor = '*'
@@ -289,8 +252,10 @@ def crafdtxml(d_params, verbosity=0):
             # Create a node root with name result
             node_response_root = etree.Element("response")
             # Create xml sub-nodes from the json result
-            add_subelements(node_response_root, d_json, item_ids=True)
-            ''' The root node 'response' from url_worklist_day has had/should have four child nodes:
+            elt.add_subelements(node_response_root, d_json, item_ids=True)
+            '''
+            The root node 'response' from url_worklist_day has had/should
+            have four child nodes:
 
                1: message: with child nodes
                   1.1: facets:
@@ -299,27 +264,31 @@ def crafdtxml(d_params, verbosity=0):
                   1.3: items-per-page: (IPP) with value normally 20f
                   1.4: query: with child nodes
                        1.4.1: search-terms: with value for used search terms
-                       1.4.2: search-indix: with index about total results in result set
-                                (retrievable in multiple url-requested responses numbering
-                                IPP per response page)
-                  1.5: next-cursor: (present only if cursor parameter was given) if more results exist,
-                       this is a hashy string to use as the next cursor argument
+                       1.4.2: search-indix: with index about total results in
+                                result set (retrievable in multiple url-requested
+                                responses numbering IPP per response page)
+                  1.5: next-cursor: (present only if cursor parameter was given)
+                       if more results exist, this is a hashy string to use as
+                       the next cursor argument
                   1.6: total-results: with value N, which is the number of
                          individual item-000* nodes above
 
                2: message-type: should be 'work-list' for url_initial_worklist
-               3: message-version: should be 1.0.0 initally -- check it later if needed
+               3: message-version: should be 1.0.0 initally -- check it later
+                  if needed
                4: status: value should be OK
 
-               We will output parse the response to get individual item-000* node contents and
-               output one xml file per item-000* node with root element named <crossref-doi>.
+               We will output parse the response to get individual item-000*
+               node contents and output one xml file per item-000* node with
+               root element named <crossref-doi>.
             '''
             doi = 'Not in CrossRef Results'
 
             node_items = node_response_root.find('.//items')
             node_total_results = node_response_root.find('.//total-results')
             if n_batch == 1 and node_total_results is not None:
-                print("Processing total-results count = {}".format(node_total_results.text))
+                print("Processing total-results count = {}"
+                    .format(node_total_results.text))
             if node_items is None or len(node_items) < 1:
                 print("CrossRef API Response shows no result items remain for this query.")
                 break;
@@ -332,8 +301,10 @@ def crafdtxml(d_params, verbosity=0):
                 entries_collected += 1
                 articles_day += 1
                 d_article_affiliations = {}
-                # RENAME this item's main node tag from item to message to match crossref worklist
-                # single-doi REST topmost node name, to facilitate re-use of mining map (used
+                # RENAME this item's main node tag from item to message to match
+                # crossref worklist
+                # single-doi REST topmost node name, to facilitate re-use of
+                # mining map (used
                 # in xml2rdb program) for cr* family of harvests...
                 node_item.tag = 'message'
                 # Adopt this item's XML subtree under this new output item root node
@@ -345,7 +316,8 @@ def crafdtxml(d_params, verbosity=0):
                     entries_excepted += 1
                     continue
 
-                # print("Got node_doi tag={},text={}".format(node_doi.tag,node_doi.text))
+                # print("Got node_doi tag={},text={}".format(node_doi.tag,
+                # node_doi.text))
                 # If no author has an affiliation for University of Florida,
                 # Skip this article
                 uf_article = False
@@ -406,8 +378,9 @@ def crafdtxml(d_params, verbosity=0):
                 with open(output_filename, 'wb') as outfile:
                     outfile.write(out_str)
 
-                # future? Might be handy to append a line to a legend file that pairs the result count with the
-                # doi value, and get the name from a parameter... or something like that.
+                # future? Might be handy to append a line to a legend file that
+                # pairs the result count with the doi value, and get the name
+                # from a parameter... or something like that.
                 #
                 #
                 entries_collected += 1
@@ -517,7 +490,7 @@ d_params.update({
 
 # Wrap up and write out the run parameters log file.
 e_root = etree.Element("uf_crossref_works_aff_uf_harvest")
-add_subelements(e_root, d_params)
+elt.add_subelements(e_root, d_params)
 out_filename = '{}/run_crafdxml_{}.xml'.format(output_folder_run, secsz_start)
 os.makedirs(output_folder_run, exist_ok=True)
 

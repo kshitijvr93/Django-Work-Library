@@ -135,16 +135,11 @@ mets_format_str = '''<xsl:stylesheet version="1.0" encoding="UTF-8" standalone="
 </xsl:stylesheet>
 '''
 
-#import xml.etree.ElementTree as ET
-#from bs4 import BeautifulSoup
-#from xml.dom.minidom import parseString
-#from defusedxml.ElementTree import fromstring
 from lxml import etree
 import datetime
 import requests
 
 request_uf1='https://zenodo.org/oai2d?verb=ListRecords&set=user-genetics-datasets&metadataPrefix=oai_dc'
-
 
 d_oai_zenodo = {
     'pub_search': {
@@ -204,7 +199,6 @@ def response_of_zenodo(d_search, dataset_name='user-genetics-datasets', verbosit
     url = url_of_zenodo(d_search, verbosity=verbosity)
     return requests.get(url, headers=d_headers)
 
-
 def run(d_run_params, verbosity=0):
     dataset_name = 'user-genetics-datasets'
     d_request = d_run_params['d_request_zenodo']
@@ -217,7 +211,6 @@ def run(d_run_params, verbosity=0):
 
     xml = response.text.encode('utf-8')
     print("Response text len={}".format(len(xml)))
-
 
     node_root = etree.fromstring(response.text.encode('utf-8'))
     #str_pretty = etree.tostring(node_root, pretty_print=True)
@@ -284,7 +277,6 @@ def run(d_run_params, verbosity=0):
         zenodo_id = nodes_identifier[2].text
 
         #relation_doi = node_oaidc.find(".//{*}relation").text
-
         nodes_rights = node_oaidc.findall(".//{*}rights")
         rights_text = 'See:'
         for node_rights in nodes_rights:
@@ -293,7 +285,8 @@ def run(d_run_params, verbosity=0):
         nodes_subject = node_oaidc.findall(".//{*}subject")
         mods_subjects = ''
         for node_subject in nodes_subject:
-            mods_subjects += '<mods:subject><mods:topic>' + node_subject.text + '</mods:topic></mods:subject>\n'
+            mods_subjects += ('<mods:subject><mods:topic>' + node_subject.text
+              + '</mods:topic></mods:subject>\n')
 
         dc_title = node_oaidc.find(".//{*}title").text
         dc_type = node_oaidc.find(".//{*}type").text
@@ -356,6 +349,5 @@ d_run_params = {
         'url': '', #Do not edit - just a placeholder, a method will compute this
     }
 }
-
 
 run(d_run_params)

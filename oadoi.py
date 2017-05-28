@@ -8,6 +8,7 @@ import json
 from lxml import etree
 from lxml.etree import tostring
 from collections import OrderedDict
+import etl
 ###
 
 import  http.client
@@ -81,46 +82,14 @@ doi_string = '''
 l_dois = doi_string.split('\n')
 print(len(l_dois))
 
-'''Method add_subelements():
-Generic logging utility helper:
-Given an lxml element, add subelements recursively from nested python data structures
-This may be used to generate xml log files, however, it can take up too much core if used to
-report per-input-file messages, and if so, it may be
-better to disable for 'big' batches of xml files to convert, or break up to create multiple log files.
-'''
-def add_subelements(element, subelements):
-    if isinstance(subelements, dict):
-        d_subelements = OrderedDict(sorted(subelements.items()))
-        for key, value in d_subelements.items():
-            # Check for valid xml tag name:
-            # http://stackoverflow.com/questions/2519845/how-to-check-if-string-is-a-valid-xml-element-name
-            # poor man's check: just prefix with Z if first character is a digit..
-            # the only bad type of tagname found ... so far ...
-            if key[0] >= '0' and key[0] <= '9':
-                key = 'Z' + key
-            try:
-                subelement = etree.SubElement(element, key)
-            except Exception as e:
-                print("Skipping etree.SubElement error='{}' for key='{}'"
-                     .format(e,key))
-                continue
-            add_subelements(subelement, value)
-    elif isinstance(subelements, list):
-        # Make a dict indexed by item index/count for each value2 in the 'value' that is a list
-        for i, value in enumerate(subelements):
-            subelement = etree.SubElement(element, 'item-{}'.format(str(i+1).zfill(8)))
-            add_subelements(subelement, value)
-    else: # Assume it is a string-like value. Just set the element.text and do not recurse.
-        element.text = str(subelements)
-    return True
-# end def add_subelements()
 
 def get_result_by_url(url):
 
     if url is None or url=="":
         raise Exception("Cannot send a request to an empty url.")
     try:
-        print("*** BULDING GET REQUEST FOR SCIDIR API RESULTS FOR URL='{}' ***".format(url))
+        print("*** BULDING GET REQUEST FOR SCIDIR API RESULTS FOR URL='{}' ***"
+            .format(url))
         get_request = urllib.request.Request(url, data=None, headers={
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) '
             'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
@@ -147,7 +116,7 @@ def output_oadoi_xml(url_base=None, dois=None, output_folder=None):
     for i,doi in enumerate(dois):
         if doi is None or doi == '':
             continue
-        # Some dois from scopus have illegal embedded spaces - just remove them for now
+        # Some dois from scopus have illegal embedded spaces - remove them
         url_request = '{}/{}'.format(url_base,doi).replace(' ','')
         print("Using url_request='{}'".format(url_request))
         d_result = get_result_by_url(url_request)
@@ -158,7 +127,7 @@ def output_oadoi_xml(url_base=None, dois=None, output_folder=None):
 
         # Save the xml as a string
         node_root = etree.Element("entry")
-        add_subelements(node_root, d_entry)
+        etl.add_subelements(node_root, d_entry)
 
         #Now get doi value and normalize it to filename prefix characters
         node_doi = node_root.find('./{*}doi')

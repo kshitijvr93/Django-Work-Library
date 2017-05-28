@@ -6,4 +6,4 @@ def newfunct(noarg):
     pass
     return
 
-de
+#y = product(a, b)

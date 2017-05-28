@@ -157,8 +157,6 @@ def scopus_response_entries_collect(sapi=None,d_scopus_info=None, pubyear=None
 
     # Remove old output folder - we will rewrite the entire year of doi data since
     # the 2016 scopus API only provides a full year date range.
-    #
-    #
     entry_tag = '{http://www.w3.org/2005/Atom}entry' # could use instead of {*} in '{*}entry' below.
     result_link_next = ""
 
@@ -186,7 +184,8 @@ def scopus_response_entries_collect(sapi=None,d_scopus_info=None, pubyear=None
         lai = len(article_ids)
         if lai != 1:
             msg = ("Batch {}, entry number {} has {} occurences of {}, the first is {}"
-                .format(n_batch, i+1, lai, article_id_tag, (article_ids[0].text if lai > 0 else 'None')))
+                .format(n_batch, i+1, lai, article_id_tag,
+                    (article_ids[0].text if lai > 0 else 'None')))
             print(msg)
             continue
 

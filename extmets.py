@@ -714,6 +714,7 @@ def get_sobek_dicts(create_date=None
 
 from lxml import etree
 import os
+import etl
 
 def uf_affiliation_value(name):
     text_lower = name.lower() if name is not None else ''
@@ -1807,29 +1808,6 @@ ORDER BY i.deleted, g.BibID, i.vid
 
 # end def get_pii_reservations()
 
-# To an lxml tree, add subelements recursively from nested python data structures
-def add_subelements(element, subelements):
-    if isinstance(subelements, dict):
-        d_subelements = OrderedDict(sorted(subelements.items()))
-        for key, value in d_subelements.items():
-            # Check for valid xml tag name:
-            # http://stackoverflow.com/questions/2519845/how-to-check-if-string-is-a-valid-xml-element-name
-            # poor man's check: just prefix with Z if first character is a digit..
-            # the only bad type of tagname found ... so far ...
-            if key[0] >= '0' and key[0] <= '9':
-                key = 'Z' + key
-            subelement = etree.SubElement(element, key)
-            add_subelements(subelement, value)
-    elif isinstance(subelements, list):
-        # Make a dict indexed by item index/count for each value2 in the 'value' that is a list
-        for i, value in enumerate(subelements):
-            subelement = etree.SubElement(element, 'item-{}'.format(str(i+1).zfill(8)))
-            add_subelements(subelement, value)
-    else: # Assume it is a string-like value. Just set the element.text and do not recurse.
-        element.text = str(subelements)
-    return True
- # end def add_subelements()
-
 # RUN PARAMS AND RUN
 
 def extmets_run():
@@ -2003,8 +1981,7 @@ def extmets_run():
 
     # Put d_log info into xml tree at e_root
     e_root = etree.Element("uf-extmets-xml-to_mets")
-    #add_subelements_from_dict(e_root, d_log)
-    add_subelements(e_root, d_log)
+    xtl.add_subelements(e_root, d_log)
 
     # Finally, output the d_log's xml tree at e_root.
     log_filename = '{}/log_extmets.xml'.format(output_folder_secsz)

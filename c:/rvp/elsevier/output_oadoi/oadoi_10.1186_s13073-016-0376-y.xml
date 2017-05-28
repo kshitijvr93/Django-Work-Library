@@ -1,0 +1,34 @@
+<entry>
+  <_best_open_url>http://doi.org/10.1186/s13073-016-0376-y</_best_open_url>
+  <_closed_base_ids>
+    <item-00000001>ftkingscollondon:oai:pure.atira.dk:publications/86cf1364-bc33-4d6c-af43-60b3e33b7e1e</item-00000001>
+    <item-00000002>ftbiomed:oai:biomedcentral.com:s13073-016-0376-y</item-00000002>
+  </_closed_base_ids>
+  <_closed_urls>
+    <item-00000001>https://kclpure.kcl.ac.uk/portal/en/publications/erratum-to(86cf1364-bc33-4d6c-af43-60b3e33b7e1e).html</item-00000001>
+    <item-00000002>https://kclpure.kcl.ac.uk/ws/files/62046332/art_3A10.1186_2Fs13073_016_0376_y.pdf</item-00000002>
+    <item-00000003>http://www.scopus.com/inward/record.url?scp=84996483394&amp;partnerID=8YFLogxK</item-00000003>
+    <item-00000004>http://genomemedicine.com/content/8/1/118</item-00000004>
+  </_closed_urls>
+  <_green_base_collections/>
+  <_open_base_ids/>
+  <_open_urls>
+    <item-00000001>http://doi.org/10.1186/s13073-016-0376-y</item-00000001>
+    <item-00000002>http://www.ncbi.nlm.nih.gov/pmc/articles/PMC5100330</item-00000002>
+  </_open_urls>
+  <doi>10.1186/s13073-016-0376-y</doi>
+  <doi_resolver>crossref</doi_resolver>
+  <evidence>oa journal (via journal title in doaj)</evidence>
+  <found_green>True</found_green>
+  <found_hybrid>False</found_hybrid>
+  <free_fulltext_url>http://doi.org/10.1186/s13073-016-0376-y</free_fulltext_url>
+  <is_boai_license>True</is_boai_license>
+  <is_free_to_read>True</is_free_to_read>
+  <is_subscription_journal>False</is_subscription_journal>
+  <license>cc-by</license>
+  <oa_color>gold</oa_color>
+  <oa_color_long>gold_doaj</oa_color_long>
+  <reported_noncompliant_copies/>
+  <url>http://doi.org/10.1186/s13073-016-0376-y</url>
+  <year>2016</year>
+</entry>

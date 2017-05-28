@@ -397,71 +397,7 @@ def eatxml(d_params, verbosity=0):
     return entries_collected, entries_excepted
 #end def eatxml()
 
-# From given dictionary, return a list of lxml tree elements, one per dictionary item.
-# Arguments are: A root lxml element, and a dictionary where each item represents a sub-element.
-# Add a sub-element for each item using the item key as the sub-element name.
-# If the item value is a dictionary, then do a recursive call using the new sub_element as d_root and
-# the item value as the d_elts parameter.
-#
-
-def add_subelements_from_dict_old(element, d_subelements):
-    # Use an OrderedDct that is sorted by key for easier human-reading
-    # First argument must be an lxml element
-    # second argument must be a dictionary with
-    #  (1) keys being legal XML tag names (not checked here),
-    #  but note that they should begin with an alphabetic character, not a digit nor special character.
-    # and (2) values being either
-    # (a) a string or
-    # (b) another dictionary of key values pairs, or
-    # (c) a list of dicts with key-value pairs
-    d_subelements = OrderedDict(sorted(d_subelements.items()) )
-    for key, value in d_subelements.items():
-        #For given element, create a new sub-element from this key
-        # Check for valid xml tag name: http://stackoverflow.com/questions/2519845/how-to-check-if-string-is-a-valid-xml-element-name
-        # poor man's check: just prefix with Z if first character is a digit.. the only bad type of tagname found so far...
-        if key[0] >= '0' and key[0] <= '9':
-            key = 'Z' + key
-        subelement = etree.SubElement(element, key)
-
-        if isinstance(value, dict):
-            # Add  value-dict's subelements to this element
-            add_subelements_from_dict(subelement, value)
-        elif isinstance(value, list):
-            #Use the key value as a parent element and the list index(plus 1) as a count attribute
-            for i,value2 in enumerate(value):
-                subelement2 = etree.SubElement(subelement, 'item')
-                subelement2.attrib['count'] = str(i+1)
-                add_subelements_from_dict(subelement2, value2)
-        else:
-            # Assume the value is a string for this element's text value
-            subelement.text = str(value)
-# end add_subelements_from_dict
-
-# To an lxml tree, add subelements recursively from nested python data structures
-# This is useful to register log message traces and to output into xml format at the end of a run.
-def add_subelements(element, subelements):
-    if isinstance(subelements, dict):
-        d_subelements = OrderedDict(sorted(subelements.items()))
-        for key, value in d_subelements.items():
-            # Check for valid xml tag name:
-            # http://stackoverflow.com/questions/2519845/how-to-check-if-string-is-a-valid-xml-element-name
-            # poor man's check: just prefix with Z if first character is a digit..
-            # the only bad type of tagname encountered using various applications... so far ...
-            if key[0] >= '0' and key[0] <= '9':
-                key = 'Z' + key
-            subelement = etree.SubElement(element, key)
-            add_subelements(subelement, value)
-    elif isinstance(subelements, list):
-        # Make a dict indexed by item index/count for each value2 in the 'value' that is a list
-        for i, value in enumerate(subelements):
-            subelement = etree.SubElement(element, 'item-{}'.format(str(i+1).zfill(8)))
-            add_subelements(subelement, value)
-    else: # Assume it is a string-like value. Just set the element.text and do not recurse.
-        element.text = str(subelements)
-    return True
- # end def add_subelements()
 ####### RUN main EATXML program
-
 # PARAMETERS -- set these manually per run for now... but only cymd_start
 # and cymd_end would normally change.
 #
@@ -543,7 +479,7 @@ d_params.update({
 
 # Write out the run parameters.
 e_root = etree.Element("uf-api-harvest")
-add_subelements_from_dict(e_root, d_params)
+etl.add_subelements_from_dict(e_root, d_params)
 
 out_filename = '{}/run/run_eatxml_{}.xml'.format(out_base_dir, secsz_start)
 with open(out_filename, 'wb') as outfile:
@@ -597,44 +533,7 @@ P3P: CP="IDC DSP LAW ADM DEV TAI PSA PSD IVA IVD CON HIS TEL OUR DEL SAM OTR IND
 d_headers = header2dict(headers_txt)
 #print(d_headers)
 print(d_headers['Allow'])
-# From given dictionary, return a list of lxml tree elements, one per dictionary item.
-# Arguments are: A root lxml element, and a dictionary where each item represents a sub-element.
-# Add a sub-element for each item using the item key as the sub-element name.
-# If the item value is a dictionary, then do a recursive call using the new sub_element as d_root and
-# the item value as the d_elts parameter.
-#
-def add_subelements_from_dict(element, d_subelements):
-    # Use an OrderedDct that is sorted by key for easier human-reading
-    # First argument must be an lxml element
-    # second argument must be a dictionary with
-    #  (1) keys being legal XML tag names (not checked here),
-    #  but note that they should begin with an alphabetic character, not a digit nor special character.
-    # and (2) values being either
-    # (a) a string or
-    # (b) another dictionary of key values pairs, or
-    # (c) a list of dicts with key-value pairs
-    d_subelements = OrderedDict(sorted(d_subelements.items()) )
-    for key, value in d_subelements.items():
-        #For given element, create a new sub-element from this key
-        # Check for valid xml tag name: http://stackoverflow.com/questions/2519845/how-to-check-if-string-is-a-valid-xml-element-name
-        # poor man's check: just prefix with Z if first character is a digit.. the only bad type of tagname found so far...
-        if key[0] >= '0' and key[0] <= '9':
-            key = 'Z' + key
-        subelement = etree.SubElement(element, key)
 
-        if isinstance(value, dict):
-            # Add  value-dict's subelements to this element
-            add_subelements_from_dict(subelement, value)
-        elif isinstance(value, list):
-            #Use the key value as a parent element and the list index(plus 1) as a count attribute
-            for i,value2 in enumerate(value):
-                subelement2 = etree.SubElement(subelement, 'item')
-                subelement2.attrib['count'] = str(i+1)
-                add_subelements_from_dict(subelement2, value2)
-        else:
-            # Assume the value is a string for this element's text value
-            subelement.text = str(value)
-# end add_subelements_from_dict
 
 d_top={}
 d_top['first'] = [
@@ -645,9 +544,8 @@ d_top['first'] = [
 ]
 
 e_root = etree.Element("root-element")
-add_subelements_from_dict(e_root, d_top)
+etl.add_subelements_from_dict(e_root, d_top)
 
 print(etree.tostring(e_root, pretty_print=True))
-
 
 print("done")
