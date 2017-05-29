@@ -19,7 +19,7 @@ import hashlib
 from lxml import etree
 from lxml.etree import tostring
 from pathlib import Path
-import elt
+import etl
 
 #- - - - - - - - - - - START USER PARAMETERS
 '''
@@ -2192,8 +2192,9 @@ def xml_doc_rdb(
 
 '''
 Method xml_paths_rdb():
-Loop through all the input xml files in a slice of the input_path_list, and call xml_doc_rdb
-to create relational database table output rows for each input xml doc.
+Loop through all the input xml files in a slice of the input_path_list,
+and call xml_doc_rdb to create relational database table output rows
+for each input xml doc.
 
 '''
 def xml_paths_rdb(
@@ -2230,7 +2231,7 @@ def xml_paths_rdb(
         bad = 8
     elif not (use_db):
         bad = 9
-    elif not (d_xml_params):
+    elif d_xml_params is None:
         bad = 10
 
     if bad > 0:
@@ -2445,7 +2446,8 @@ These parameters may be re-grouped later into fewer parameters to more plainly s
 the three groups, each which contains sub-parameters for its group.
 '''
 def xml2rdb(folders_base=None, input_path_list=None,
-            doc_root_xpath=None, rel_prefix=None, doc_rel_name=None, use_db=None,
+            doc_root_xpath=None, rel_prefix=None,
+            doc_rel_name=None, use_db=None,
             d_node_params=None, od_rel_datacolumns=None,
             d_params=None, file_count_first=0, file_count_span=1,
             d_xml_params=None):
@@ -2454,15 +2456,29 @@ def xml2rdb(folders_base=None, input_path_list=None,
     utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
     print("{}: STARTING at {}".format(me, utc_secs_z))
 
-    if not (folders_base and input_path_list and (rel_prefix or rel_prefix == '')
+
+    if not ( 1 == 1
+        #and folders_base and input_path_list
+        #and doc_root_xpath and use_db and doc_rel_name
+            #and (rel_prefix or rel_prefix == '')
+            #and d_node_params and od_rel_datacolumns
+            #/and d_params
+            and d_xml_params is not None
+            ):
+            print ("bad args 1")
+    if not (folders_base and input_path_list
+            and (rel_prefix or rel_prefix == '')
             and doc_root_xpath and use_db and doc_rel_name
             and d_node_params and od_rel_datacolumns
-            and d_params and d_xml_params):
+            and d_params
+            and d_xml_params is not None
+            ):
         raise Exception('{}:bad args'.format(me))
 
     d_log = OrderedDict()
 
-    folder_output_base = '{}/output_{}'.format(folders_base, me)
+    folder_output_base = folders_base + me + '/'
+
     d_params['folder-output-base'] = folder_output_base
     os.makedirs(folder_output_base, exist_ok=True)
 
@@ -2522,8 +2538,8 @@ def xml2rdb(folders_base=None, input_path_list=None,
       , file_count_first=file_count_first
       , file_count_span=file_count_span
       #, output_name_suffix=output_name_suffix
-      , verbosity = 0
-      , d_xml_params = d_xml_params
+      , verbosity=0
+      , d_xml_params=d_xml_params
     ))
     d_log['run_parameters'].update({"count_input_file_failures": count_input_file_failures})
     # Put d_log, logfile dict info, into xml tree,  and then OUTPUT logfile info
@@ -2533,7 +2549,7 @@ def xml2rdb(folders_base=None, input_path_list=None,
 
     e_root = etree.Element("uf-xml2rdb")
     # add_subelements_from_dict(e_root, d_log)
-    elt.add_subelements(e_root, d_log)
+    etl.add_subelements(e_root, d_log)
 
     # log file output
     log_filename = '{}/log_xml2rdb.xml'.format(output_folder_secsz)
@@ -2573,19 +2589,13 @@ study = 'orcid'
 study = 'citrus'
 
 # KEEP ONLY ONE LINE NEXT: Study Selection
-study= 'citrus'
+study = 'oadoi'
 
 file_count_first = 0
 file_count_span = 0
 use_db = 'silodb'
 
-env = 'uf'
-if env == 'uf':
-    folders_base = 'c:/rvp/elsevier'
-elif env == 'home':
-    folders_base='/home/rvp/xml2rdb/elsevier_test'
-else:
-    raise Exception("Bad value for env={}".format(env))
+folders_base = etl.home_folder_name() + '/'
 
 d_xml_params = {}
 
@@ -2680,27 +2690,26 @@ elif study == 'scopus':
     doc_root_xpath = './{*}entry'
     od_rel_datacolumns, d_node_params = sql_mining_params_scopus()
 elif study == 'oadoi':
-    folders_base = 'c:/rvp/elsevier'
-    #for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
-    #input_folder = '{}/output_oadoi/2017-01-10T12-54-23Z'.format(folders_base)
+    # for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
     # for 20170308 run using dois from crafd_crawd for UF year 2016
-    input_folder = '{}/output_oadoi/2017-03-08T14-16-15Z'.format(folders_base)
 
+    input_folder =  folders_base + "/outputs/oadoi/"
+    input_folders = [input_folder]
     input_path_glob = '**/oadoi_*.xml'
     input_path_list = list(Path(input_folder).glob(input_path_glob))
 
-    print("Study oadoi, input folder={}, input path glob={}, input files={}"
-          .format(input_folder,input_path_glob,len(input_path_list)))
-    input_path_list = list(Path(input_folder).glob(input_path_glob))
+    print("Study oadoi, input folder={}, input path glob={}, N input files={},"
+          " folders_base = {}"
+          .format(input_folder,input_path_glob,len(input_path_list),folders_base))
+
     # rel_prefix 'oa2016_' is used because the oaidoi precursor process to produce the dois input list
-    # was run on scopus dois for uf authors from year 2016... should probably change prefix to oa_scopus2016_
+    # was run on scopus dois fo/der uf authors from year 2016... should probably change prefix to oa_scopus2016_
     # input_folder = '{}/output_oadoi/2016-01-10T12-54-23Z'.format(folders_base)
     rel_prefix = 'oa_cruf2016_'
     doc_rel_name = 'oadoi'
     doc_root_xpath = './{*}entry'
     od_rel_datacolumns, d_node_params = sql_mining_params_oadoi()
 elif study == 'orcid':
-    folders_base = 'c:/rvp/elsevier'
     #for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
     #input_folder = '{}/output_oadoi/2017-01-10T12-54-23Z'.format(folders_base)
     # for 20170308 run using dois from crafd_crawd for UF year 2016
@@ -2721,7 +2730,6 @@ elif study == 'orcid':
     doc_root_xpath = './{*}record'
     od_rel_datacolumns, d_node_params = sql_mining_params_orcid()
 elif study == 'citrus':
-    folders_base = 'c:/rvp/elsevier'
     #for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
     #input_folder = '{}/output_oadoi/2017-01-10T12-54-23Z'.format(folders_base)
     # for 20170308 run using dois from crafd_crawd for UF year 2016

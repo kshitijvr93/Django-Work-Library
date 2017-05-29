@@ -140,7 +140,7 @@ def output_oadoi_xml(url_base=None, dois=None, output_folder=None):
         #end doi loop
     return
 
-output_folder = etl.get_output_folder_name(relative_output_folder='oadoi')
+output_folder = etl.get_output_folder_name(home_relative_folder='outputs/oadoi')
 url_base =  'http://api.oadoi.org'
 
 dois = doi_string.split('\n')
