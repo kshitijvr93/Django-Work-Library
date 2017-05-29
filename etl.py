@@ -11,6 +11,34 @@ from lxml import etree
 from lxml.etree import tostring
 from pathlib import Path
 
+'''Method get_folder_name_base_output()
+Returns the a default base folder that that can be used for local output.
+for programs to use for local output, varying by the operating system
+'''
+def get_tmp_folder_name(relative_output_folder=''):
+    import platform
+    p_system = platform.system()
+    if p_system == 'Linux':
+        folder = "/tmp/"
+    else :
+        folder = "c:/tmp/"
+    folder = folder + relative_output_folder
+    os.makedirs(folder, exist_ok=True)
+    return folder
+def get_output_folder_name(relative_output_folder=''):
+    import platform
+    p_system = platform.system()
+    if p_system == 'Linux':
+        folder = "/home/robert/outputs/"
+    else :
+        folder = "c:/rvp/elsevier/outputs/"
+    folder = folder + relative_output_folder
+    print("Making folder {}".format(folder))
+    os.makedirs(folder, exist_ok=True)
+    #may add code here to create the directory if not extant
+    return folder
+
+
 ''' Generic utility excape_xml_text:
 Given a str, replace embedded 'special xml characters' with their xml quotable formats.
 Also replace tabs with space for easier conversion of multiple fields later

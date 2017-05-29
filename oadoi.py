@@ -140,8 +140,7 @@ def output_oadoi_xml(url_base=None, dois=None, output_folder=None):
         #end doi loop
     return
 
-output_folder = 'c:/rvp/elsevier/output_oadoi'
-os.makedirs(output_folder, exist_ok=True)
+output_folder = etl.get_output_folder_name(relative_output_folder='oadoi')
 url_base =  'http://api.oadoi.org'
 
 dois = doi_string.split('\n')
