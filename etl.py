@@ -3,6 +3,7 @@ import datetime
 import pytz
 import os
 import sys
+import re
 
 from pathlib import Path
 import hashlib
@@ -17,11 +18,13 @@ def home_folder_name():
     from os.path import expanduser
     return expanduser("~")
 
-def make_home_relative_folder(home_relative_folder=''):
+def make_home_relative_folder(home_relative_folder='',exist_ok=True, verbosity=0):
+    if home_relative_folder.startswith('/'):
+        home_relative_folder.replace('/','')
     folder = home_folder_name() + "/" + home_relative_folder
-    print("Making folder {}".format(folder))
+    if verbosity > 0:
+        print("Making folder {}".format(folder))
     os.makedirs(folder, exist_ok=True)
-    #may add code here to create the directory if not extant
     return folder
 
 ''' Generic utility excape_xml_text:

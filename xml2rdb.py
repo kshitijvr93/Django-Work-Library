@@ -2604,6 +2604,7 @@ if study == 'crafa':
     rel_prefix = 'y2016_'
     # All files under the input folder selected for input_path_list below will be used as input
     input_folder = '{}/output_crafatxml/doi/2016'.format(folders_base)
+    input_folder = etl.home_relative_folder('/output_crafatxml/doi/2016')
     doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns
     #doc_root_xpath = './crossref-api-filter-aff-UF' #this matches root node assignment in crafatxml program
     doc_root_xpath = './crossref-api-filter-aff-UF/message'
