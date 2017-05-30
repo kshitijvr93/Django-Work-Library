@@ -17,15 +17,12 @@ def home_folder_name():
     from os.path import expanduser
     return expanduser("~")
 
-def get_output_folder_name(home_relative_folder=''):
-    import platform
-    p_system = platform.system()
-    folder = home + "/" + home_relative_folder
+def make_home_relative_folder(home_relative_folder=''):
+    folder = home_folder_name() + "/" + home_relative_folder
     print("Making folder {}".format(folder))
     os.makedirs(folder, exist_ok=True)
     #may add code here to create the directory if not extant
     return folder
-
 
 ''' Generic utility excape_xml_text:
 Given a str, replace embedded 'special xml characters' with their xml quotable formats.
@@ -39,6 +36,30 @@ def escape_xml_text(str):
     str = str.replace("\"", "&quot;")
     str = str.replace("\t", " ")
     return str
+'''
+Method html_escape(str)
+
+Replace text xml characters in given 'str' with their 'xml quotable' formats.
+Also replace tabs with space for easier conversion of multiple fields later
+to tab-separated values.
+
+Return the altered str
+'''
+def html_escape(text):
+    html_escape_table = {
+        "&": "&amp;",
+        '"': "&quot;",
+        "'": "&apos;",
+        ">": "&gt;",
+        "<": "&lt;",
+        "\t": " ", # extra:replace tabs to create tab-delimited outputs when needed
+    }
+    #text = str(text.encode('ascii', 'xmlcharrefreplace'))
+    text_out = ""
+    for c in text:
+        text_out += str(html_escape_table.get(c,c) )
+    #text_out = text_out.encode('utf-8', 'xmlcharrefreplace')
+    return text_out
 
 '''Method add_subelements():
 Generic logging utility helper:
@@ -121,3 +142,8 @@ def add_subelements_from_dict(element, d_subelements):
             # Assume the value is a string for this element's text value
             subelement.text = str(value)
 # end add_subelements_from_dict
+
+def has_digit(inputString):
+    return bool(re.search(r'\d', inputString))
+def has_upper(inputString):
+    return any(i.isupper() for i in inputString)

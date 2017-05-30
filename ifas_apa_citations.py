@@ -1,44 +1,22 @@
 # 20170315 - Robert V. Phillips
 # Python3 Code that runs in a Jupyter Cell
 # to produce APA style citations from tab-delimited .txt files in a given input directory
-'''NOTE: This pretties up most titles that added upper case to each word, but REMOVES some uppercase words where they probably still should remain.
-MORAL: do not try to 'correct' some words that this program changed to lower case because it will again put them to lowercase.
-Rather, this is not designed to be iteratively applied - only to be hand-modified for final use after it is run ONCE on input.'''
+
+'''
+NOTE: method make_annual_citations() pretties up most titles that added upper case to each word,
+but REMOVES some uppercase words where they probably still should remain.
+
+MORAL: do not try to 'correct' some words that this program changed to
+lower case because it will again put them to lowercase.
+Rather, this is not designed to be iteratively applied - only to be
+hand-modified for final use after it is run ONCE on input.
+'''
 from pathlib import Path
 import re
+from etl import html_escape, has_digit, has_upper, make_home_relative_folder
 
-def has_digit(inputString):
-    return bool(re.search(r'\d', inputString))
-def has_upper(inputString):
-    return any(i.isupper() for i in inputString)
-
-'''
-Method escape_xml_text(str)
-
-Replace text xml characters in given 'str' with their 'xml quotable' formats.
-Also replace tabs with space for easier conversion of multiple fields later
-to tab-separated values.
-
-Return the altered str
-'''
-html_escape_table = {
-    "&": "&amp;",
-    '"': "&quot;",
-    "'": "&apos;",
-    ">": "&gt;",
-    "<": "&lt;",
-    "\t": " ", # extra:replace tabs to create tab-delimited outputs when needed
-}
-
-def html_escape(text):
-    #text = str(text.encode('ascii', 'xmlcharrefreplace'))
-    text_out = ""
-    for c in text:
-        text_out += str(html_escape_table.get(c,c) )
-    #text_out = text_out.encode('utf-8', 'xmlcharrefreplace')
-    return text_out
-
-def make_apa_citations(input_folder='c:/rvp/tmpdir/citations/2017_ifas_test', output_folder=None):
+def make_apa_citations(input_folder='c:/rvp/tmpdir/citations/2017_ifas_test'
+    , output_folder=None):
 
     if output_folder is None:
         output_folder = input_folder
@@ -52,62 +30,78 @@ def make_apa_citations(input_folder='c:/rvp/tmpdir/citations/2017_ifas_test', ou
         n_input_files += 1
         output_file_name = input_file_name + '.html'
         n_file_citations = 0
+        # NOTE: save EXCEL file as "UNICODE text" file
+        with open (str(input_file_name),encoding="utf-8",mode="r") as input_file:
+            # NOTE: may use VIM or other tools to change input file encoding to required
+            # utf-8 here if not already in utf-8 format
+            # :set fileencoding=utf-8
+            lines = input_file.readlines()
+            for line in lines:
+                #line = xml_escape(line)
+                #print("Got line='{}'.,eline='{}'".format(line,eline))
+                n_file_citations += 1
+                parts = line.split('\t')
+                nparts = len(parts)
+                authors, pubyear, title, journal, volume, issue, pages, doi = ("",) * 8
+                colskip = 0
+                colskip = 1 #per file from Suzanne 2017050x email with 'problem' in column 1,
 
-                    index = colskip
-                    if nparts > index:
-                        authors = (parts[index].replace('"','').replace(',;', ',')
-                            .replace('; ', ', '))
+                index = colskip
+                if nparts > index:
+                    authors = (parts[index].replace('"','').replace(',;', ',')
+                        .replace('; ', ', '))
 
-                    index += 1
-                    if nparts > index: pubyear = parts[index]
+                index += 1
+                if nparts > index:
+                    pubyear = parts[index]
 
-                    index += 1
-                    if nparts > index: ### TITLE ###
+                index += 1
+                if nparts > index: ### TITLE ###
 
-                        # Replace nonbreaking spaces with 'normal' spaces first
-                        title = parts[index].replace('\u00A0',' ')
-                        # Remove multiple spaces everywhere. Split with no arguments adds this service
-                        title = ' '.join(title.split())
+                    # Replace nonbreaking spaces with 'normal' spaces first
+                    title = parts[index].replace('\u00A0',' ')
+                    # Remove multiple spaces everywhere. Split with no arguments adds this service
+                    title = ' '.join(title.split())
+                    # Remove troublesome quotation characters for APA citations
+                    title = title.replace('"','')
 
-                        # Remove troublesome quotation characters for APA citations
-                        title = title.replace('"','')
-
-                        words = title.split(' ')
-                        # Enforce APA title style: First char of word must be capitalized, but lower
-                        # first char for other words in title
-                        title = ''
-                        delim = ''
-                        for word in words:
-                            nchars = len(word)
-                            if nchars < 1:
-                                continue
-                            title += delim
-                            if delim == '':
-                                title +=  word[0].upper()
-                                if nchars > 1:
-                                    title += word[1:]
-                            elif nchars == 1:
-                                title += word[0].lower()
-                            elif (nchars > 2
-                                  and not has_digit(word[1:])
-                                  and not has_upper(word[1:])):
-                                # This is a second or following title word.
-                                # APA style says it should not be upper-case, but probably
-                                # only unless it has other uppercase characters
-                                # or digits (for example "RNA" "O2").
-                                # So here we make first letter lowercase only if
-                                # second (and greater) letter of word has no uppercase
-                                # nor digit characters
-                                title += word[0].lower()
+                    words = title.split(' ')
+                    # Enforce APA title style: First char of word must be capitalized, but lower
+                    # first char for other words in title
+                    title = ''
+                    delim = ''
+                    for word in words:
+                        nchars = len(word)
+                        if nchars < 1:
+                            continue
+                        title += delim
+                        if delim == '':
+                            title +=  word[0].upper()
+                            if nchars > 1:
                                 title += word[1:]
-                            else:
-                                title += word
-                            delim = ' '
-                        # Get rid of trailing . in title
-                        while title.endswith('.'):
-                            title = title[:-1]
-                    # end title
+                        elif nchars == 1:
+                            title += word[0].lower()
+                        elif (nchars > 2
+                              and not has_digit(word[1:])
+                              and not has_upper(word[1:])):
+                            # This is a second or following title word.
+                            # APA style says it should not be upper-case, but probably
+                            # only unless it has other uppercase characters
+                            # or digits (for example "RNA" "O2").
+                            # So here we make first letter lowercase only if
+                            # second (and greater) letter of word has no uppercase
+                            # nor digit characters
+                            title += word[0].lower()
+                            title += word[1:]
+                        else:
+                            title += word
+                        delim = ' '
+                    # end for word in words
 
+                    # Get rid of trailing . in title
+                    while title.endswith('.'):
+                        title = title[:-1]
+                    # end title
                     index += 1
                     if nparts > index: journal = parts[index]
 
@@ -148,12 +142,17 @@ def make_apa_citations(input_folder='c:/rvp/tmpdir/citations/2017_ifas_test', ou
                                 html_escape(p_pages),
                                 p_doi)
                         ,file=output_file)
-                #end processing all input file lines
-            print("Produced APA citation output file {} with {} citations."
-                  .format(output_file_name, n_file_citations))
+                # end nparts > title index value
+            #  for line in lines
+        print("Produced APA citation output file {} with {} citations."
+              .format(output_file_name, n_file_citations))
 
-            print("</table></body></html>\n",file=output_file)
-        #end output
+        print("</table></body></html>\n",file=output_file)
+    #for input file path...
+    return None
+# end make_apa_citations
+
 print("Starting")
-make_apa_citations()
+input_folder = make_home_relative_folder("ifas_citations/inputs")
+make_apa_citations(input_folder=input_folder)
 print("Done!")
