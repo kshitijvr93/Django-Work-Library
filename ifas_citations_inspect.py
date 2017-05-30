@@ -6,9 +6,10 @@ that are received from the 28 IFAS units
 
 TEST INPUT FILE NOTES:
  FILENAME is 2015_master_base.txt, but original name left by MSL staff is
-"2015 Master List_dedup.docx", which I opened wth word and saved as a utf8 file and renamed
-to 2015_master_base.txt - NOTE: the utf8 conversion seems to have errors, should
-revisit later.
+"2015 Master List_dedup.docx", which I opened wth word and saved as a utf8 file
+and renamed to 2015_master_base.txt -
+
+NOTE: the utf8 conversion seems to have errors, should revisit later.
 There are no tabs in this file to delineate authors, etc, so must parse it fully.
 
 At first, just need to skim doi values that seem pretty uniformly to be prefixed
@@ -16,14 +17,30 @@ by "doi: ", so that's a start.
 '''
 
 '''
-ifas_citations_base():
-<summary> Create a dictionary of previous IFAS citation DOI values as a base
-to detect future duplicates</summary>
+Method ifas_citations_base():
+<summary> Read a 'base' file of previous IFAS citations that are not to be allowed
+in this year's batch of input.
+Create and return (1)a dictionary keyed by line id (zfilled to 10 digits)
+(2) and keyd by IFAS citation DOI values.
+The value used to pair to each key of each dictionary is a copy of the
+input citation line.
+Note that not all citation lines have DOI values, and so the length of
+dictionary 1.
 
+Will always be greater or equal to the length of dictionary 2.
+The dictionaries are used to detect duplicate citations attempted to be filed as new
+articles for this year's batch of citations</summary>
+
+NOTE: some issues with both word and writer fail to export the master docx file
+to a completely valid utf-8 file format. For example, of the first citations has
+a greek character that fails to be exported as utf-8, it seems.
+That detail needs to be resolved.
 '''
 
+from pathlib import Path
+from etl import html_escape, has_digit, has_upper, make_home_relative_folder
+
 def ifas_citations_base(input_file_name=None):
-    # read the input file and return a dictionary of dois
     d_base = {}
     d_doi = {}
     n_file_citations = 0
@@ -42,8 +59,8 @@ def ifas_citations_base(input_file_name=None):
                 print("Skipping exception={}".format(repr(e.message)))
                 pass
             if index_doi < 0:
-                print("Skip line index={}, {}. No doi found"
-                      .format(index_line,line.encode('ascii','ignore')))
+                #print("Skip line index={}, {}. No doi found"
+                #      .format(index_line,line.encode('ascii','ignore')))
                 continue
             doi = line[index_doi:]
             d_doi[doi] = line
@@ -58,25 +75,23 @@ Method ifas_citations_inspect()
 <param> input_file: input file with multiple citations </param>
 <outputs>excel files in an output folder with apt violation warnings per
 citation</output>
-
 '''
-from pathlib import Path
-from etl import html_escape, has_digit, has_upper, make_home_relative_folder
-
-
 def ifas_citations_inspect(input_folder='c:/rvp/tmpdir/citations/2017_ifas_test'
-    , output_folder=None):
-
+    , output_folder=None, d_doi_old=None):
+    if input_folder is None or d_doi is None:
+        raise Exception(ValueError, 'input_folder and d_doi are required')
     if output_folder is None:
         output_folder = input_folder
-
+    d_doi_current = {}
     input_folder_path = Path(input_folder)
     input_file_paths = list(input_folder_path.glob('**/*utf8.txt'))
     n_input_files = 0
     n_citations = 0
+    n_dup_old = 0
+    n_dup_cur = 0
     print("Found {} input files".format(len(input_file_paths)))
     for path in input_file_paths:
-        input_file_name = "{}\{}".format(path.parents[0], path.name)
+        input_file_name = "{}/{}".format(path.parents[0], path.name)
         print("Processing file name={}".format(input_file_name))
         n_input_files += 1
         output_file_name = input_file_name + '.html'
@@ -174,6 +189,7 @@ def ifas_citations_inspect(input_folder='c:/rvp/tmpdir/citations/2017_ifas_test'
                             while pages.endswith('.'):
                                 pages = pages[:-1]
 
+                        # FIELD DOI
                         index +=1
                         if nparts > index:
                             doi = parts[index].replace(' ','').replace('\n','')
@@ -181,6 +197,25 @@ def ifas_citations_inspect(input_folder='c:/rvp/tmpdir/citations/2017_ifas_test'
                                 doi = doi[18:]
                             if doi.upper().startswith('DOI:'):
                                 doi = doi[4:]
+                            if len(doi.strip()) > 0:
+                                # Complain if the doi is already in the base or this
+                                # 'current' list of ifas citation files
+                                doi_old = d_doi_old.get(doi, None)
+                                if doi_old is not None:
+                                    n_dup_old += 1
+                                    print("ERROR: Input file {} has duplicate past doi '{}'"
+                                      .format(input_file_name,doi_old))
+
+                                doi_cur_val = d_doi_current.get(doi, None)
+                                if doi_cur_val is not None:
+                                    n_dup_cur += 1
+                                    print("ERROR: Input file {} index={} has duplicate doi '{}'"
+                                          " to one in list of unit input file names '{}'"
+                                      .format(input_file_name,index,doi,doi_cur_val))
+                                else:
+                                    d_doi_current[doi] = input_file_name
+                            # end if len(doi) > 0
+                        #end field DOI
 
                         p_volume = '' if volume == '' else ', {}'.format(volume)
                         p_issue = '' if issue == '' else '({})'.format(issue)
@@ -207,7 +242,7 @@ def ifas_citations_inspect(input_folder='c:/rvp/tmpdir/citations/2017_ifas_test'
             print("</table></body></html>\n",file=output_file)
             # withoutput_file
     # with input_file
-    return None
+    return n_dup_old, n_dup_cur
 # end make_apa_citations
 
 print("Starting")
@@ -217,6 +252,9 @@ master_base_file = input_folder + "/2015_master_base.txt"
 
 d_base, d_doi = ifas_citations_base(input_file_name=master_base_file)
 
-print("Got d_doi='{}'".format(repr(d_doi).encode('utf-8')))
+print("Got d_doi length='{}'".format(len(d_doi)))
 
-print("Done!")
+n_dup_old, n_dup_cur = ifas_citations_inspect(input_folder=input_folder,d_doi_old=d_doi)
+
+print("Skipped {} dois of olders ones, {} of current.Done!"
+  .format(n_dup_old,n_dup_cur))
