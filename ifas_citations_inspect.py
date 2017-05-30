@@ -1,23 +1,75 @@
-# 20170315 - Robert V. Phillips
-# Python3 Code that runs in a Jupyter Cell
-# to produce APA style citations from tab-delimited .txt files in a given input directory
+'''
+20170530 - Robert V. Phillips
+Python3 code
+This file holds methods used to inspect and report problematics IFAS citations
+that are received from the 28 IFAS units
+
+TEST INPUT FILE NOTES:
+ FILENAME is 2015_master_base.txt, but original name left by MSL staff is
+"2015 Master List_dedup.docx", which I opened wth word and saved as a utf8 file and renamed
+to 2015_master_base.txt - NOTE: the utf8 conversion seems to have errors, should
+revisit later.
+There are no tabs in this file to delineate authors, etc, so must parse it fully.
+
+At first, just need to skim doi values that seem pretty uniformly to be prefixed
+by "doi: ", so that's a start.
+'''
 
 '''
-NOTE: method make_annual_citations() pretties up most titles that added upper case to each word,
-but REMOVES some uppercase words where they probably still should remain.
-MORAL: do not try to 'correct' some words that this program changed to
-lower case because it will again put them to lowercase.
-Rather, this is not designed to be iteratively applied - only to be
-hand-modified for final use after it is run ONCE on input.
+ifas_citations_base():
+<summary> Create a dictionary of previous IFAS citation DOI values as a base
+to detect future duplicates</summary>
+
+'''
+
+def ifas_citations_base(input_file_name=None):
+    # read the input file and return a dictionary of dois
+    d_base = {}
+    d_doi = {}
+    n_file_citations = 0
+    with open (str(input_file_name),
+            encoding="utf-8", errors='replace', mode="r") as input_file:
+        input_lines = input_file.readlines()
+        for (index_line, line) in enumerate(input_lines):
+            key = str(index_line).zfill(10)
+            d_base[key] = line
+            #line = xml_escape(line)
+            #print("Got line='{}'.,eline='{}'".format(line,eline))
+            index_doi = -1
+            try:
+                index_doi = line.find("doi:")
+            except Excepton as e:
+                print("Skipping exception={}".format(repr(e.message)))
+                pass
+            if index_doi < 0:
+                print("Skip line index={}, {}. No doi found"
+                      .format(index_line,line.encode('ascii','ignore')))
+                continue
+            doi = line[index_doi:]
+            d_doi[doi] = line
+            n_file_citations += 1
+        # end with open input_file
+    return d_base, d_doi
+# end def ifas_citations_base(input_file_name=None)
+'''
+Method ifas_citations_inspect()
+
+<summary> Read an input file of ifas_citations and inspect them for problems
+<param> input_file: input file with multiple citations </param>
+<outputs>excel files in an output folder with apt violation warnings per
+citation</output>
+
 '''
 from pathlib import Path
 from etl import html_escape, has_digit, has_upper, make_home_relative_folder
 
-def make_apa_citations(input_folder='c:/rvp/tmpdir/citations/2017_ifas_test'
+
+def ifas_citations_inspect(input_folder='c:/rvp/tmpdir/citations/2017_ifas_test'
     , output_folder=None):
 
     if output_folder is None:
         output_folder = input_folder
+
     input_folder_path = Path(input_folder)
     input_file_paths = list(input_folder_path.glob('**/*utf8.txt'))
     n_input_files = 0
@@ -29,7 +81,7 @@ def make_apa_citations(input_folder='c:/rvp/tmpdir/citations/2017_ifas_test'
         n_input_files += 1
         output_file_name = input_file_name + '.html'
         n_file_citations = 0
-        with open(str(output_file_name),encoding="utf-8",mode="w") as output_file:
+        with open(str(output_file_name),encoding="utf-8", mode="w") as output_file:
             print("\nReading input file {}".format(path.name))
             print("<!DOCTYPE html> <html>\n<head><meta charset='UTF-8'></head>\n"
                   "<body>\n<h3>APA Citations for Input File {}</h3>\n"
@@ -159,6 +211,12 @@ def make_apa_citations(input_folder='c:/rvp/tmpdir/citations/2017_ifas_test'
 # end make_apa_citations
 
 print("Starting")
-input_folder = make_home_relative_folder("ifas_citations/inputs")
-make_apa_citations(input_folder=input_folder)
+input_folder = make_home_relative_folder(
+    "ifas_citations/inputs/20170419_test_citations_txt_files")
+master_base_file = input_folder + "/2015_master_base.txt"
+
+d_base, d_doi = ifas_citations_base(input_file_name=master_base_file)
+
+print("Got d_doi='{}'".format(repr(d_doi).encode('utf-8')))
+
 print("Done!")
