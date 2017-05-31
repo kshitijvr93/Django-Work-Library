@@ -210,7 +210,7 @@ def ifas_citations_inspect(input_folder='c:/rvp/tmpdir/citations/2017_ifas_test'
                                 if doi_cur_val is not None:
                                     n_dup_cur += 1
                                     print("ERROR: Input file {} index={} has duplicate doi '{}'"
-                                          " to one in list of unit input file names '{}'"
+                                          " to one in this year's input file name = '{}'"
                                       .format(input_file_name,index,doi,doi_cur_val))
                                 else:
                                     d_doi_current[doi] = input_file_name

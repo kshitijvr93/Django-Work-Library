@@ -1,0 +1,182 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!--  Aroma Brand ( Mixed Material ) -->
+<METS:mets OBJID="AA00033164_00001"
+  xmlns:METS="http://www.loc.gov/METS/"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:mods="http://www.loc.gov/mods/v3"
+  xmlns:sobekcm="http://sobekrepository.org/schemas/sobekcm/"
+  xmlns:lom="http://sobekrepository.org/schemas/sobekcm_lom"
+  xmlns:vra="http://www.loc.gov/standards/vracore/vra.xsd"
+  xsi:schemaLocation="http://www.loc.gov/METS/
+    http://www.loc.gov/standards/mets/mets.xsd
+    http://www.loc.gov/mods/v3
+    http://www.loc.gov/mods/v3/mods-3-4.xsd
+    http://sobekrepository.org/schemas/sobekcm/
+    http://sobekrepository.org/schemas/sobekcm.xsd">
+<METS:metsHdr CREATEDATE="2015-08-09T17:29:50Z" ID="AA00033164_00001" LASTMODDATE="2015-09-11T09:33:07Z" RECORDSTATUS="PARTIAL">
+<METS:agent ROLE="CREATOR" TYPE="ORGANIZATION"> 
+<METS:name>IUF,University of Florida</METS:name>
+</METS:agent>
+<METS:agent OTHERTYPE="SOFTWARE" ROLE="CREATOR" TYPE="OTHER"> 
+<METS:name>Spreadsheet Importer</METS:name>
+</METS:agent>
+<METS:agent ROLE="CREATOR" TYPE="INDIVIDUAL"> 
+<METS:name>thatguy629@ufl.edu</METS:name>
+<METS:note>Online edit by Pamela Handley ( 8/19/2015 )</METS:note>
+<METS:note>Online edit by Patrick Daglaris ( 9/11/2015 )</METS:note>
+</METS:agent>
+</METS:metsHdr>
+<METS:dmdSec ID="DMD1">
+<METS:mdWrap MDTYPE="MODS"  MIMETYPE="text/xml" LABEL="MODS Metadata">
+<METS:xmlData>
+<mods:mods>
+<mods:accessCondition>The University of Florida George A. Smathers Libraries respect the intellectual property rights of others and do not claim any copyright interest in this item. This item may be protected by copyright but is made available here under a claim of fair use (17 U.S.C. §107) for non-profit research and educational purposes. Users of this work have responsibility for determining copyright status prior to reusing, publishing or reproducing this item for purposes other than what is allowed by fair use or other copyright exemptions. Any reuse of this item in excess of fair use or other copyright exemptions requires permission of the copyright holder. The Smathers Libraries would like to learn more about this item and invite individuals or organizations to contact Special and Area Studies Collections (special@uflib.ufl.edu) with any additional information they can provide. Due to the copyright status of the materials, high resolution copies of the materials may only be made available in limited circumstances.</mods:accessCondition>
+<mods:language>
+<mods:languageTerm type="text">English</mods:languageTerm>
+<mods:languageTerm type="code" authority="iso639-2b">eng</mods:languageTerm>
+</mods:language>
+<mods:location>
+<mods:physicalLocation>UF Special Collections</mods:physicalLocation>
+<mods:physicalLocation type="code">UFSPEC</mods:physicalLocation>
+<mods:url access="object in context">http://ufdc.ufl.edu/AA00033164/00001</mods:url>
+</mods:location>
+<mods:name type="personal">
+<mods:namePart>Charles A. Stewart Co.</mods:namePart>
+<mods:role>
+<mods:roleTerm type="text">Packer</mods:roleTerm>
+</mods:role>
+</mods:name>
+<mods:name>
+<mods:namePart>Jerry Chicone, Jr.</mods:namePart>
+<mods:role>
+<mods:roleTerm type="code" authority="marcrelator">dnr</mods:roleTerm>
+<mods:roleTerm type="text">donor</mods:roleTerm>
+</mods:role>
+</mods:name>
+<mods:note>Color Grade: Blue</mods:note>
+<mods:note>Copyrighted</mods:note>
+<mods:originInfo>
+<mods:publisher>International Playing Card and Label Co.</mods:publisher>
+<mods:dateIssued>1935</mods:dateIssued>
+</mods:originInfo>
+<mods:recordInfo>
+<mods:recordIdentifier source="sobekcm">AA00033164_00001</mods:recordIdentifier>
+<mods:recordContentSource>University of Florida</mods:recordContentSource>
+</mods:recordInfo>
+<mods:relatedItem type="original">
+<mods:physicalDescription>
+<mods:extent>Full Crate</mods:extent>
+</mods:physicalDescription>
+</mods:relatedItem>
+<mods:relatedItem type="series">
+<mods:part>
+<mods:detail type="Year">
+<mods:caption>1935</mods:caption>
+<mods:number>1935</mods:number>
+</mods:detail>
+</mods:part>
+</mods:relatedItem>
+<mods:subject>
+<mods:topic>Oranges</mods:topic>
+</mods:subject>
+<mods:subject>
+<mods:topic>Grapefruit</mods:topic>
+</mods:subject>
+<mods:subject>
+<mods:hierarchicalGeographic>
+<mods:state>Florida</mods:state>
+<mods:county>Polk County</mods:county>
+<mods:city>Auburndale</mods:city>
+</mods:hierarchicalGeographic>
+</mods:subject>
+<mods:titleInfo>
+<mods:title>Aroma Brand</mods:title>
+</mods:titleInfo>
+<mods:typeOfResource>mixed material</mods:typeOfResource>
+</mods:mods>
+</METS:xmlData>
+</METS:mdWrap>
+</METS:dmdSec>
+<METS:dmdSec ID="DMD2">
+<METS:mdWrap MDTYPE="OTHER"  OTHERMDTYPE="SOBEKCM" MIMETYPE="text/xml" LABEL="SobekCM Custom Metadata">
+<METS:xmlData>
+<sobekcm:procParam>
+<sobekcm:Aggregation>IUF</sobekcm:Aggregation>
+<sobekcm:Aggregation>IUFSPEC</sobekcm:Aggregation>
+<sobekcm:Aggregation>CITRUSLABEL</sobekcm:Aggregation>
+<sobekcm:MainThumbnail>AA00033164thm.jpg</sobekcm:MainThumbnail>
+<sobekcm:Wordmark>UFSPEC</sobekcm:Wordmark>
+<sobekcm:Tickler>CITRUS LABELS</sobekcm:Tickler>
+</sobekcm:procParam>
+<sobekcm:bibDesc>
+<sobekcm:BibID>AA00033164</sobekcm:BibID>
+<sobekcm:VID>00001</sobekcm:VID>
+<sobekcm:Publisher>
+<sobekcm:Name>International Playing Card and Label Co.</sobekcm:Name>
+<sobekcm:PlaceTerm type="text">Rogersville, Tenn.</sobekcm:PlaceTerm>
+</sobekcm:Publisher>
+<sobekcm:Source>
+<sobekcm:statement code="IUF">University of Florida</sobekcm:statement>
+</sobekcm:Source>
+<sobekcm:SortDate>706378</sobekcm:SortDate>
+</sobekcm:bibDesc>
+</METS:xmlData>
+</METS:mdWrap>
+</METS:dmdSec>
+<METS:dmdSec ID="DMD3">
+<METS:mdWrap MDTYPE="OTHER"  OTHERMDTYPE="VRACore" MIMETYPE="text/xml" LABEL="VRACore Visual Resource Metadata">
+<METS:xmlData>
+<vra:vra>
+<vra:measurements>9 x 9 in</vra:measurements>
+</vra:vra>
+</METS:xmlData>
+</METS:mdWrap>
+</METS:dmdSec>
+<METS:amdSec>
+<METS:techMD ID="TECH1">
+<METS:mdWrap MDTYPE="OTHER"  OTHERMDTYPE="SOBEKCM" MIMETYPE="text/xml" LABEL="SobekCM File Technical Details">
+<METS:xmlData>
+<sobekcm:FileInfo>
+<sobekcm:File fileid="JP21" width="5370" height="5341" />
+<sobekcm:File fileid="JPEG1" width="630" height="627" />
+</sobekcm:FileInfo>
+</METS:xmlData>
+</METS:mdWrap>
+</METS:techMD>
+</METS:amdSec>
+<METS:fileSec>
+<METS:fileGrp USE="archive" >
+<METS:file GROUPID="G1" ID="TIF1" MIMETYPE="image/tiff">
+<METS:FLocat LOCTYPE="OTHER" OTHERLOCTYPE="SYSTEM" xlink:href="AA00033164.tif" />
+</METS:file>
+</METS:fileGrp>
+<METS:fileGrp USE="reference" >
+<METS:file GROUPID="G1" ID="JP21" MIMETYPE="image/jp2">
+<METS:FLocat LOCTYPE="OTHER" OTHERLOCTYPE="SYSTEM" xlink:href="AA00033164.jp2" />
+</METS:file>
+</METS:fileGrp>
+<METS:fileGrp USE="reference" >
+<METS:file GROUPID="G1" ID="JPEG1" MIMETYPE="image/jpeg">
+<METS:FLocat LOCTYPE="OTHER" OTHERLOCTYPE="SYSTEM" xlink:href="AA00033164.jpg" />
+</METS:file>
+</METS:fileGrp>
+<METS:fileGrp USE="reference" >
+<METS:file GROUPID="G1" ID="THUMB1" MIMETYPE="image/jpeg-thumbnails">
+<METS:FLocat LOCTYPE="OTHER" OTHERLOCTYPE="SYSTEM" xlink:href="AA00033164thm.jpg" />
+</METS:file>
+</METS:fileGrp>
+</METS:fileSec>
+<METS:structMap ID="STRUCT1" TYPE="physical">
+<METS:div DMDID="DMD1 DMD2 DMD3" ADMID="TECH1" LABEL="Aroma Brand" ORDER="0" TYPE="main">
+<METS:div ID="PDIV1" ORDER="1" TYPE="Main">
+<METS:div ID="PAGE1" LABEL="Page 1" ORDER="1" TYPE="Page">
+<METS:fptr FILEID="TIF1" />
+<METS:fptr FILEID="JP21" />
+<METS:fptr FILEID="JPEG1" />
+<METS:fptr FILEID="THUMB1" />
+</METS:div>
+</METS:div>
+</METS:div>
+</METS:structMap>
+</METS:mets>

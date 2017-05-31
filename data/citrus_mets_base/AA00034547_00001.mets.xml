@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!--  Blank Artwork ( Mixed Material ) -->
+<METS:mets OBJID="AA00034547_00001"
+  xmlns:METS="http://www.loc.gov/METS/"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:mods="http://www.loc.gov/mods/v3"
+  xmlns:sobekcm="http://sobekrepository.org/schemas/sobekcm/"
+  xmlns:lom="http://sobekrepository.org/schemas/sobekcm_lom"
+  xmlns:vra="http://www.loc.gov/standards/vracore/vra.xsd"
+  xsi:schemaLocation="http://www.loc.gov/METS/
+    http://www.loc.gov/standards/mets/mets.xsd
+    http://www.loc.gov/mods/v3
+    http://www.loc.gov/mods/v3/mods-3-4.xsd
+    http://sobekrepository.org/schemas/sobekcm/
+    http://sobekrepository.org/schemas/sobekcm.xsd">
+<METS:metsHdr CREATEDATE="2015-08-09T17:34:22Z" ID="AA00034547_00001" LASTMODDATE="2016-02-15T14:08:26Z" RECORDSTATUS="PARTIAL">
+<METS:agent ROLE="CREATOR" TYPE="ORGANIZATION"> 
+<METS:name>IUF,University of Florida</METS:name>
+</METS:agent>
+<METS:agent OTHERTYPE="SOFTWARE" ROLE="CREATOR" TYPE="OTHER"> 
+<METS:name>Spreadsheet Importer</METS:name>
+</METS:agent>
+<METS:agent ROLE="CREATOR" TYPE="INDIVIDUAL"> 
+<METS:name>jgcusick@ufl.edu</METS:name>
+<METS:note>Online edit by Pamela Handley ( 8/27/2015 )</METS:note>
+<METS:note>Online edit by James Cusick ( 2/15/2016 )</METS:note>
+</METS:agent>
+</METS:metsHdr>
+<METS:dmdSec ID="DMD1">
+<METS:mdWrap MDTYPE="MODS"  MIMETYPE="text/xml" LABEL="MODS Metadata">
+<METS:xmlData>
+<mods:mods>
+<mods:accessCondition>The University of Florida George A. Smathers Libraries respect the intellectual property rights of others and do not claim any copyright interest in this item. This item may be protected by copyright but is made available here under a claim of fair use (17 U.S.C. §107) for non-profit research and educational purposes. Users of this work have responsibility for determining copyright status prior to reusing, publishing or reproducing this item for purposes other than what is allowed by fair use or other copyright exemptions. Any reuse of this item in excess of fair use or other copyright exemptions requires permission of the copyright holder. The Smathers Libraries would like to learn more about this item and invite individuals or organizations to contact Special and Area Studies Collections (special@uflib.ufl.edu) with any additional information they can provide. Due to the copyright status of the materials, high resolution copies of the materials may only be made available in limited circumstances.</mods:accessCondition>
+<mods:language>
+<mods:languageTerm type="text">English</mods:languageTerm>
+<mods:languageTerm type="code" authority="iso639-2b">eng</mods:languageTerm>
+</mods:language>
+<mods:location>
+<mods:physicalLocation>UF Special Collections</mods:physicalLocation>
+<mods:physicalLocation type="code">UFSPEC</mods:physicalLocation>
+<mods:url access="object in context">http://ufdc.ufl.edu/AA00034547/00001</mods:url>
+</mods:location>
+<mods:name type="personal">
+<mods:namePart>(Blank)</mods:namePart>
+</mods:name>
+<mods:name>
+<mods:namePart>Jerry Chicone, Jr.</mods:namePart>
+<mods:role>
+<mods:roleTerm type="code" authority="marcrelator">dnr</mods:roleTerm>
+<mods:roleTerm type="text">donor</mods:roleTerm>
+</mods:role>
+</mods:name>
+<mods:note>Color Grade: Green</mods:note>
+<mods:note>Rare Imprint, Stock Label 8010</mods:note>
+<mods:originInfo>
+<mods:publisher>Louis Roesch Co., Litho.</mods:publisher>
+</mods:originInfo>
+<mods:recordInfo>
+<mods:recordIdentifier source="sobekcm">AA00034547_00001</mods:recordIdentifier>
+<mods:recordContentSource>University of Florida</mods:recordContentSource>
+</mods:recordInfo>
+<mods:relatedItem type="original">
+<mods:physicalDescription>
+<mods:extent>Template</mods:extent>
+</mods:physicalDescription>
+</mods:relatedItem>
+<mods:subject>
+<mods:topic>Oranges</mods:topic>
+</mods:subject>
+<mods:subject>
+<mods:topic>Grapefruit</mods:topic>
+</mods:subject>
+<mods:subject ID="SUBJ662">
+<mods:hierarchicalGeographic>
+<mods:state>Florida</mods:state>
+</mods:hierarchicalGeographic>
+</mods:subject>
+<mods:titleInfo>
+<mods:title>Blank Artwork</mods:title>
+</mods:titleInfo>
+<mods:typeOfResource>mixed material</mods:typeOfResource>
+</mods:mods>
+</METS:xmlData>
+</METS:mdWrap>
+</METS:dmdSec>
+<METS:dmdSec ID="DMD2">
+<METS:mdWrap MDTYPE="OTHER"  OTHERMDTYPE="SOBEKCM" MIMETYPE="text/xml" LABEL="SobekCM Custom Metadata">
+<METS:xmlData>
+<sobekcm:procParam>
+<sobekcm:Aggregation>IUF</sobekcm:Aggregation>
+<sobekcm:Aggregation>CITRUSLABEL</sobekcm:Aggregation>
+<sobekcm:Wordmark>UFSPEC</sobekcm:Wordmark>
+<sobekcm:Tickler>CITRUS LABELS</sobekcm:Tickler>
+<sobekcm:VisibilityRestrictions>-1</sobekcm:VisibilityRestrictions>
+</sobekcm:procParam>
+<sobekcm:bibDesc>
+<sobekcm:BibID>AA00034547</sobekcm:BibID>
+<sobekcm:VID>00001</sobekcm:VID>
+<sobekcm:Publisher>
+<sobekcm:Name>Louis Roesch Co., Litho.</sobekcm:Name>
+<sobekcm:PlaceTerm type="text">San Francisco (Calif.)</sobekcm:PlaceTerm>
+</sobekcm:Publisher>
+<sobekcm:Source>
+<sobekcm:statement code="IUF">University of Florida</sobekcm:statement>
+</sobekcm:Source>
+</sobekcm:bibDesc>
+</METS:xmlData>
+</METS:mdWrap>
+</METS:dmdSec>
+<METS:dmdSec ID="DMD3">
+<METS:mdWrap MDTYPE="OTHER"  OTHERMDTYPE="VRACore" MIMETYPE="text/xml" LABEL="VRACore Visual Resource Metadata">
+<METS:xmlData>
+<vra:vra>
+<vra:material></vra:material>
+<vra:measurements>9 x 3.5 in</vra:measurements>
+</vra:vra>
+</METS:xmlData>
+</METS:mdWrap>
+</METS:dmdSec>
+<METS:structMap ID="STRUCT1" > <METS:div /> </METS:structMap>
+</METS:mets>

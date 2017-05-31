@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!--  List of images appearing in the Jerry Chicone Jr. Florida Citrus Label Collection ( Mixed Material ) -->
+<METS:mets OBJID="AA00037684_00001"
+  xmlns:METS="http://www.loc.gov/METS/"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:mods="http://www.loc.gov/mods/v3"
+  xmlns:sobekcm="http://sobekrepository.org/schemas/sobekcm/"
+  xmlns:lom="http://sobekrepository.org/schemas/sobekcm_lom"
+  xsi:schemaLocation="http://www.loc.gov/METS/
+    http://www.loc.gov/standards/mets/mets.xsd
+    http://www.loc.gov/mods/v3
+    http://www.loc.gov/mods/v3/mods-3-4.xsd
+    http://sobekrepository.org/schemas/sobekcm/
+    http://sobekrepository.org/schemas/sobekcm.xsd">
+<METS:metsHdr CREATEDATE="2015-10-30T15:14:23Z" ID="AA00037684_00001" LASTMODDATE="2015-10-30T15:18:54Z" RECORDSTATUS="PARTIAL">
+<METS:agent ROLE="CREATOR" TYPE="ORGANIZATION"> 
+<METS:name>UF,University of Florida</METS:name>
+<METS:note>Created using CompleteTemplate 'INTERNAL' and project 'NONE'.</METS:note>
+</METS:agent>
+<METS:agent OTHERTYPE="SOFTWARE" ROLE="CREATOR" TYPE="OTHER"> 
+<METS:name>SobekCM Metadata Template</METS:name>
+</METS:agent>
+<METS:agent ROLE="CREATOR" TYPE="INDIVIDUAL"> 
+<METS:name>lauraperry@ufl.edu</METS:name>
+<METS:note>Online edit by Laura Perry ( 10/30/2015 )</METS:note>
+</METS:agent>
+</METS:metsHdr>
+<METS:dmdSec ID="DMD1">
+<METS:mdWrap MDTYPE="MODS"  MIMETYPE="text/xml" LABEL="MODS Metadata">
+<METS:xmlData>
+<mods:mods>
+<mods:accessCondition type="restrictions on use" displayLabel="Rights">The University of Florida George A. Smathers Libraries respect the intellectual property rights of others and do not claim any copyright interest in this item. This item may be protected by copyright but is made available here under a claim of fair use (17 U.S.C. §107) for non-profit research and educational purposes. Users of this work have responsibility for determining copyright status prior to reusing, publishing or reproducing this item for purposes other than what is allowed by fair use or other copyright exemptions. Any reuse of this item in excess of fair use or other copyright exemptions requires permission of the copyright holder. The Smathers Libraries would like to learn more about this item and invite individuals or organizations to contact Special and Area Studies Collections (special@uflib.ufl.edu) with any additional information they can provide. Due to the copyright status of the materials, high resolution copies of the materials may only be made available in limited circumstances.</mods:accessCondition>
+<mods:language>
+<mods:languageTerm type="text">English</mods:languageTerm>
+<mods:languageTerm type="code" authority="iso639-2b">eng</mods:languageTerm>
+</mods:language>
+<mods:location>
+<mods:physicalLocation>UF Special Collections</mods:physicalLocation>
+<mods:physicalLocation type="code">UFSPEC</mods:physicalLocation>
+<mods:url access="object in context">http://ufdc.ufl.edu/AA00037684/00001</mods:url>
+</mods:location>
+<mods:recordInfo>
+<mods:recordIdentifier source="sobekcm">AA00037684_00001</mods:recordIdentifier>
+<mods:recordContentSource>University of Florida</mods:recordContentSource>
+</mods:recordInfo>
+<mods:titleInfo>
+<mods:title>List of images appearing in the Jerry Chicone Jr. Florida Citrus Label Collection</mods:title>
+</mods:titleInfo>
+<mods:typeOfResource>mixed material</mods:typeOfResource>
+</mods:mods>
+</METS:xmlData>
+</METS:mdWrap>
+</METS:dmdSec>
+<METS:dmdSec ID="DMD2">
+<METS:mdWrap MDTYPE="OTHER"  OTHERMDTYPE="SOBEKCM" MIMETYPE="text/xml" LABEL="SobekCM Custom Metadata">
+<METS:xmlData>
+<sobekcm:procParam>
+<sobekcm:Aggregation>IUF</sobekcm:Aggregation>
+<sobekcm:Aggregation>IUFSPEC</sobekcm:Aggregation>
+<sobekcm:Aggregation>CITRUSLABEL</sobekcm:Aggregation>
+<sobekcm:MainThumbnail>ChiconeImagesListthm.jpg</sobekcm:MainThumbnail>
+<sobekcm:Wordmark>CHICONE</sobekcm:Wordmark>
+<sobekcm:Wordmark>UFPKY</sobekcm:Wordmark>
+</sobekcm:procParam>
+<sobekcm:bibDesc>
+<sobekcm:BibID>AA00037684</sobekcm:BibID>
+<sobekcm:VID>00001</sobekcm:VID>
+<sobekcm:Source>
+<sobekcm:statement code="UF">University of Florida</sobekcm:statement>
+</sobekcm:Source>
+</sobekcm:bibDesc>
+</METS:xmlData>
+</METS:mdWrap>
+</METS:dmdSec>
+<METS:amdSec>
+<METS:techMD ID="TECH1">
+<METS:mdWrap MDTYPE="OTHER"  OTHERMDTYPE="SOBEKCM" MIMETYPE="text/xml" LABEL="SobekCM File Technical Details">
+<METS:xmlData>
+<sobekcm:FileInfo>
+</sobekcm:FileInfo>
+</METS:xmlData>
+</METS:mdWrap>
+</METS:techMD>
+</METS:amdSec>
+<METS:fileSec>
+<METS:fileGrp USE="reference" >
+<METS:file GROUPID="G1" ID="PDF1" MIMETYPE="application/pdf">
+<METS:FLocat LOCTYPE="OTHER" OTHERLOCTYPE="SYSTEM" xlink:href="ChiconeImagesList.pdf" />
+</METS:file>
+</METS:fileGrp>
+</METS:fileSec>
+<METS:structMap ID="STRUCT2" TYPE="other">
+<METS:div DMDID="DMD1 DMD2" ADMID="TECH1" LABEL="List of images appearing in the Jerry Chicone Jr. Florida Citrus Label Collection" ORDER="0" TYPE="main">
+<METS:div ID="ODIV1" ORDER="1" TYPE="Main">
+<METS:div ID="FILES1" LABEL="ChiconeImagesList" ORDER="1" TYPE="Page">
+<METS:fptr FILEID="PDF1" />
+</METS:div>
+</METS:div>
+</METS:div>
+</METS:structMap>
+</METS:mets>
