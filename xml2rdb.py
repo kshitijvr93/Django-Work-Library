@@ -2478,6 +2478,10 @@ def xml2rdb(folders_base=None, input_path_list=None,
     d_log = OrderedDict()
 
     folder_output_base = folders_base + me + '/'
+    folder_output_base = etl.data_folder(
+        linux = "/home/robert/data/",
+        windows = "U:/data/",
+        data_relative_folder='outputs/xml2rdb')
 
     d_params['folder-output-base'] = folder_output_base
     os.makedirs(folder_output_base, exist_ok=True)
@@ -2589,7 +2593,7 @@ study = 'orcid'
 study = 'citrus'
 
 # KEEP ONLY ONE LINE NEXT: Study Selection
-study = 'oadoi'
+study = 'citrus'
 
 file_count_first = 0
 file_count_span = 0
@@ -2735,6 +2739,8 @@ elif study == 'citrus':
     #input_folder = '{}/output_oadoi/2017-01-10T12-54-23Z'.format(folders_base)
     # for 20170308 run using dois from crafd_crawd for UF year 2016
     input_folder = '{}/output_citrus_mets'.format(folders_base)
+    input_folder = etl.data_folder(linux='/home/robert/', windows='u:/',
+        data_relative_folder='data/citrus_mets_base')
     input_folders = [ input_folder]
     input_path_glob = '**/*mets.xml'
     input_path_list = list(Path(input_folder).glob(input_path_glob))

@@ -2,6 +2,7 @@
 import datetime
 import pytz
 import os
+import platform
 import sys
 import re
 
@@ -12,8 +13,15 @@ from lxml import etree
 from lxml.etree import tostring
 from pathlib import Path
 
-'''Method get_output_folder_name()
-'''
+def data_folder(linux='/tmp/data/', windows='c:/data/', 
+    data_relative_folder=None, exist_ok=True, verbosity=0):
+    if platform.system().lower() == 'linux':
+        folder = linux + data_relative_folder
+    else:
+        folder = windows + data_relative_folder
+    os.makedirs(folder, exist_ok=exist_ok)
+    return folder
+
 def home_folder_name():
     from os.path import expanduser
     return expanduser("~")
@@ -24,7 +32,7 @@ def make_home_relative_folder(home_relative_folder='',exist_ok=True, verbosity=0
     folder = home_folder_name() + "/" + home_relative_folder
     if verbosity > 0:
         print("Making folder {}".format(folder))
-    os.makedirs(folder, exist_ok=True)
+    os.makedirs(folder, exist_ok=exist_ok)
     return folder
 
 ''' Generic utility excape_xml_text:
