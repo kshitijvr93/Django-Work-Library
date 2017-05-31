@@ -30,13 +30,13 @@ class Citrus():
     def __init__(self, paths=None, input_folders=None, input_path_glob=None, output_deeply_rooted=None):
         self.paths = FilePaths(input_folders, input_path_glob).paths
         self.output_deeply_rooted = output_deeply_rooted
-
+        description = ('This item has been aggregated as part of the Association of Southeastern'
+              ' Research Libraries (ASERL)\'s "Deeply Rooted: The Agricultural & Rural History of the '
+              'American South" project.')
         self.d_single_source = {
                 'relation': ('constant', 'Deeply Rooted' ),
                 'title': ('xml', 'mods:title' ),
-                'description': ('constant', ('This item has been aggregated as part of the Association of Southeastern'
-                      ' Research Libraries (ASERL)\'s "Deeply Rooted: The Agricultural & Rural History of the '
-                      'American South" project.') ),
+                'description': ('constant', description ),
                 'source': ('xml', 'mods:recordContentSource' ),
                 # 'publisher': ('constant', 'Deeply Rooted' ),
                 'coverage_temporal': ('xml', 'sobekcm:Temporal/period' ),
@@ -86,12 +86,12 @@ class Citrus():
                     # Output some data for this citrus item
                     print("Input file={}".format(input_file_name))
                     # First produce single-valued output column values
-                    for key, tup2 in self.d_single_source:
+                    for key, tup2 in self.d_single_source.items():
                         if tup2[0] == 'constant':
                             value = tup2[1]
-                        else: # get xml node value
+                        else:
                             node = input_node_root.find(tup2[1], d_namespaces)
-                            value = node.text
+                            value = node.text if node is not None else ""
                         d_output['key'] = value
 
                     print("\noutput line={}".format(repr(d_output)), file=output_file)
