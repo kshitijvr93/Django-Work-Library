@@ -5,7 +5,9 @@ import etl
 from pathlib import Path
 from lxml import etree
 from lxml.etree import tostring
-# print("Hello From Atom Python!")
+from collections import OrderedDict
+import xlrd, xlwt
+from xlrd import open_workbook
 
 class FilePaths():
 
@@ -27,7 +29,7 @@ class FilePaths():
 
 class Citrus():
 
-    def __init__(self, paths=None, input_folders=None, input_path_glob=None, output_deeply_rooted=None):
+    def __init__(self, paths=None, edits_file=None, input_folders=None, input_path_glob=None, output_deeply_rooted=None):
         self.paths = FilePaths(input_folders, input_path_glob).paths
         self.output_deeply_rooted = output_deeply_rooted
         description = ('This item has been aggregated as part of the Association of Southeastern'
@@ -36,26 +38,41 @@ class Citrus():
         #The keys of this dictionary double as the header column names to be output to an eventual csv or excel file
         # The values's first tuple indicates constant, or xml (single element) or list (repeated elements)
         # Code cases will rely on the key name to do special processing as well.
-        self.d_deeply_source = {
-                'relation': ('constant', 'Deeply Rooted' ),
-                'title': ('xml', './/mods:title' ),
+        self.d_deeply_source = OrderedDict([
+                ('relation', ('constant', 'Deeply Rooted' )),
+                ('title', ('xml', './/mods:title' )),
                 #special conditions for transforming subject data here require subject id and sub-elt topic
-                'subjects': ('list', './/mods:subject'),
-                'description': ('constant', description ),
-                'source': ('xml', './/mods:recordContentSource' ),
-                'publisher': ('xml', './/sobekcm:Publisher' ), #special case/code to extract from this node
-                'coverage_temporal': ('xml', './/sobekcm:Temporal/sobekcm:period' ),
-                'format': ('constant', 'image/jpeg, image/jp2, image/tiff, image/jpeg-thumbnails' ),
-                'identifier': ('xml', './/mods:url' ),
-                'rights': ('xml', './/mods:accessCondition' ),
-                'creator': ('list', './/METS:agent' ), # use the  name of creator individual
-                'language': ('xml', './/mods:languageTerm' ),
-                'type': ('xml', './/mods:genre' ),
-                'contributor': ('xml', './/mods:hierarchicalGeographic' ),
-                'date': ('xml', './/mods:dateIssued' ),
-        }
+                ('subjects', ('list', './/mods:subject')),
+                ('description', ('constant', description )),
+                ('source', ('xml', './/mods:recordContentSource' )),
+                ('publisher', ('xml', './/sobekcm:Publisher' )), #special case/code to extract from this node
+                ('coverage_temporal', ('xml', './/sobekcm:Temporal/sobekcm:period' )),
+                ('format', ('constant', 'image/jpeg, image/jp2, image/tiff, image/jpeg-thumbnails' )),
+                ('identifier', ('xml', './/mods:url' )),
+                ('rights', ('xml', './/mods:accessCondition' )),
+                ('creator', ('list', './/METS:agent' )), # use the  name of creator individual
+                ('language', ('xml', './/mods:languageTerm' )),
+                ('type', ('xml', './/mods:genre' )),
+                ('spatial', ('xml', './/mods:hierarchicalGeographic' )),
+                ('contributor', ('constant', 'University of Florida Libraries' )),
+                ('date', ('xml', './/mods:dateIssued' )),
+        ])
         #fieldnames = [ key for key in d_]
-        return
+
+        # EXCEL SPREADSHEET OF EDITS
+        book = open_workbook(edits_file, 'r')
+        self.sheet = book.sheet_by_index(0)
+
+        # read dict of column name:index info into key-value pairings
+        self.d_colname_colidx = OrderedDict(
+            {self.sheet.cell(0,col_index).value : col_index for col_index in range(self.sheet.ncols)})
+        # User OrderedDict to Maintain bib order of original input spreadsheet
+        # Use bibid (in column index 1) as key because no dups are allowed
+        self.d_bibid_rowidx = OrderedDict(
+            {self.sheet.cell(row, 1).value.upper() : row for row in range(self.sheet.nrows)})
+
+        print("Got {}={} citrus spreadsheet bibs".format(len(self.d_bibid_rowidx), self.sheet.nrows))
+
     #end def init
     '''
     Method deeply_rooted()
@@ -100,10 +117,21 @@ class Citrus():
                         if value_type == 'constant':
                             result = value
                         elif value_type == 'xml':
-                            print("Seeking node at xpath='{}'".format(value))
+                            #print("Seeking node at xpath='{}'".format(value))
                             node = input_node_root.find(value, d_namespaces)
-                            # insert here special cases for mining deeply rooted data from this particular node
-                            result = node.text if node is not None else ""
+                            if node is not None:
+                                if key == 'publisher':
+                                    node_name = node.find('sobekcm:Name',d_namespaces)
+                                    if node_name is None:
+                                        result = ''
+                                    else:
+                                        text_name = '' if node_name is None else node_name.text
+                                        node_place = node.find('sobekcm:PlaceTerm', d_namespaces)
+                                        text_place = '' if node_place is None else node_place.text
+                                        result = '{}, {}'.format(text_name, text_place)
+                                else:
+                                    result = node.text if node is not None else ""
+                            # if node is not None
                         elif value_type == 'list':
                             nodes = input_node_root.findall(value, d_namespaces)
                             sep = ''
@@ -111,20 +139,45 @@ class Citrus():
                                 if (key == 'creator' and node.attrib['ROLE'] == 'CREATOR'
                                    and node.attrib['TYPE'] == 'INDIVIDUAL'):
                                     # This is a node in a list of creator nodes and we only need this one.
-                                    node2 = node.find('./METS:name', d_namespaces)
-                                    result = '' if node2 is None else node2.text
-                                    break;
+                                    node_creator_name = node.find('./METS:name', d_namespaces)
+                                    result = '' if node_creator_name is None else node_creator_name.text
+                                    break
                                 elif (key == 'subjects'):
-                                    node2 = node.find('./mods:topic', d_namespaces)
-                                    result = '' if node2 is None else node2.text
+                                    nodes_topic = node.findall('./mods:topic', d_namespaces)
+                                    for node_topic in nodes_topic:
+                                         if node_topic is not None:
+                                             result += sep + node_topic.text
+                                             sep = ';'
+                                    # for node_topic
                         else:
                             raise Exception("Bad value_type='{}'".format(value_type))
 
                         # print("Setting d_output key={}, value={}".format(key,repr(result)))
-                        print("key={}, tup2={}, result='{}'".format(key,repr(tup2),result))
+                        print("key={}, result='{}', tup2={}".format(key,result,repr(tup2)))
                         d_output[key] = result
                     # end loop to harvest single-xml-node values from the input file
                     #
+                    # VALIDATE/REPORT MISSING INVALID DATA FROM THIS FILE
+
+                    identifier = d_output.get('identifier', '')
+                    if identifier == '':
+                        print("Input file {}. Has no identifier. Skipping it.".format(input_file))
+                        continue
+                    id_parts = identifier.split('/')
+                    xml_bib = '_'.join(id_parts[-2:])
+                    # xml_bib is in format bib_vid. Skip it if not in the spreadsheet.
+                    ss_row_index = self.d_bibid_rowidx.get(xml_bib.upper(), None)
+                    if ss_row_index is None:
+                        print("ERROR: Input file {}, bib {}, is not in edits spreadsheet. Skipping it."
+                            .format(input_file, xml_bib))
+                        continue
+                    # Set ss row value to -1 to show it was visited
+                    self.d_bibid_rowidx[xml_bib.upper()] = -1
+
+                    # We can follow custom spreadsheet processing rules (uf lib basecamp3 Deeply Rooted group circa 2017)
+                    # Required spreadsheet column names have been agreed upon previously.
+
+
                     print("\noutput line={}".format(repr(d_output)))
 
                 # end with open input file
@@ -141,7 +194,9 @@ input_folders = [input_folder]
 output_folder = etl.data_folder(linux=linux, windows=windows, data_relative_folder='data/outputs/deeply_rooted')
 output_file = output_folder + '/' + 'deeply_rooted.txt'
 
-citrus = Citrus(input_folders=input_folders, input_path_glob="AA*00_00001.mets.xml", output_deeply_rooted=output_file)
+edits_file = input_folder + '/citrus_20170519a.xlsx' # Angie's edited spreadsheet of citrus data
+citrus = Citrus(edits_file=edits_file,input_folders=input_folders, input_path_glob="AA*00_00001.mets.xml",
+    output_deeply_rooted=output_file)
 
 citrus.deeply_rooted()
 print ("Done! See output_file={}".format(output_file))
