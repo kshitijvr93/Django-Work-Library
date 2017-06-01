@@ -101,6 +101,8 @@ class Citrus():
     '''
     def deeply_rooted(self):
         with open(self.output_deeply_rooted, mode="w", encoding='utf-8') as output_file:
+            #See output specs at http://lib.msstate.edu/deeplyrooted#specs
+            #Some are ambiguous and Angie and Julie may decide to alter them a bit going forward
             for path in self.paths:
                 input_file_name = "{}/{}".format(path.parents[0], path.name)
                 print("Processing input file={}".format(input_file_name))
@@ -190,7 +192,7 @@ class Citrus():
                         print("ERROR: Input file {}, bib {}, is not in edits spreadsheet. Skipping it."
                             .format(input_file, xml_bib))
                         continue
-                    #Could add check here that the identifier within the mets file matches the bibid inferrec
+                    # Could add check here that the identifier within the mets file matches the bibid inferred
                     # by the filename,but such anomalies have not been seen in our data...
 
                     # Set ss row value to -1 to show it was visited
@@ -202,10 +204,8 @@ class Citrus():
                     #  If spreadshseet column original_date_issued is not null, use it rather than date_issued column
                     # But for deeply rooted output, take the date_issued value that Angie has inputted in edtf format
                     ss = self.sheet
-                    dc = self.d_colname_colidx
-                    colidx = dc['date_issued']
-                    print("Using row index '{}', col index '{}'".format(repr(ss.row), repr(colidx)))
-                    edtf_date = str(ss.cell(ss_row, dc['date_issued']).value) # minority of cells have integers
+                    dci = self.d_colname_colidx
+                    edtf_date = str(ss.cell(ss_row, dci['date_issued']).value) # minority of cells have integers
 
                     # TEMPORAL COLUMNS
                     # Rule: Prefer the spreadsheet's date over the original mets input_file's date_issued
@@ -217,14 +217,27 @@ class Citrus():
                         str_date = edtf_date[0:3] + '0'
                     else:
                         str_date = edtf_date[0:4]
+
                     start_year = int(str_date)
                     end_year = int(str_date) + 10
                     period = self.period_by_year(start_year)
-
-
+                    coverage_temporal = '{}-{}'.format(start_year,end_year) #per Angie 20170522 log - for deeply
+                    d_output['coverage_temporal'] = coverage_temporal
                     print("str_date='{}', start={}, end={}, period={}".format(str_date,start_year,end_year,period))
-                    d_output['date'] = edtf_date
+                    d_output['date'] = str_date
 
+                    #SPATIAL COLUMNS (country,state,county,city) # see
+                    country_idx = dci['country']
+                    coverage_spatial = ''
+                    sep = ''
+                    for cidx in range(country_idx, country_idx+4):
+                        value = str(ss.cell(ss_row, cidx).value)
+                        if value is None or value == '' or value == 'NULL':
+                            continue
+                        coverage_spatial  += sep +  value
+                        sep = ','
+                        d_output['coverage_spatial'] = coverage_spatial
+                    print("Got coverage_spatial='{}'".format(coverage_spatial))
                     print("\noutput line={}".format(repr(d_output)))
 
                 # end with open input file
