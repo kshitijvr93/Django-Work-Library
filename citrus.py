@@ -66,12 +66,24 @@ class Citrus():
         # read dict of column name:index info into key-value pairings
         self.d_colname_colidx = OrderedDict(
             {self.sheet.cell(0,col_index).value : col_index for col_index in range(self.sheet.ncols)})
+        print("Got edit spreadsheet column names,indexes = {}".format(repr(self.d_colname_colidx)))
         # User OrderedDict to Maintain bib order of original input spreadsheet
         # Use bibid (in column index 1) as key because no dups are allowed
         self.d_bibid_rowidx = OrderedDict(
             {self.sheet.cell(row, 1).value.upper() : row for row in range(self.sheet.nrows)})
 
         print("Got {}={} citrus spreadsheet bibs".format(len(self.d_bibid_rowidx), self.sheet.nrows))
+
+        # Pre-agreed period time-era names keyed by with start year
+        self.d_year_era = OrderedDict([
+            (1920, "Florida Land Boom"),
+            (1929, "Great Depression"),
+            (1939, "World War II"),
+            (1946, "First Cold War"),
+            (1954, "Civil Rights"),
+            (1969, "Vietnam War"),
+            (1976, "Post 1975"),
+        ])
 
     #end def init
     '''
@@ -157,7 +169,7 @@ class Citrus():
                         d_output[key] = result
                     # end loop to harvest single-xml-node values from the input file
                     #
-                    # VALIDATE/REPORT MISSING INVALID DATA FROM THIS FILE
+                    # VALIDATE/REPORT MISSING INVALID DATA FROM THIS INPUT FILE
 
                     identifier = d_output.get('identifier', '')
                     if identifier == '':
@@ -166,8 +178,8 @@ class Citrus():
                     id_parts = identifier.split('/')
                     xml_bib = '_'.join(id_parts[-2:])
                     # xml_bib is in format bib_vid. Skip it if not in the spreadsheet.
-                    ss_row_index = self.d_bibid_rowidx.get(xml_bib.upper(), None)
-                    if ss_row_index is None:
+                    ss_row = self.d_bibid_rowidx.get(xml_bib.upper(), None)
+                    if ss_row is None:
                         print("ERROR: Input file {}, bib {}, is not in edits spreadsheet. Skipping it."
                             .format(input_file, xml_bib))
                         continue
@@ -176,7 +188,16 @@ class Citrus():
 
                     # We can follow custom spreadsheet processing rules (uf lib basecamp3 Deeply Rooted group circa 2017)
                     # Required spreadsheet column names have been agreed upon previously.
-
+                    # RULE 1 For UFDC UPDATES
+                    #  If spreadshseet column original_date_issued is not null, use it rather than date_issued column
+                    # But for deeply rooted output, take the date_issued value that Angie has inputted in edtf format
+                    ss = self.sheet
+                    dc = self.d_colname_colidx
+                    colidx = dc['date_issued']
+                    print("Using row index '{}', col index '{}'".format(repr(ss.row), repr(colidx)))
+                    edtf_date = ss.cell(ss_row, dc['date_issued']).value
+                    # Supersede the original mets input_file's date_issued for Deeply Rooted
+                    d_output['date'] = edtf_date
 
                     print("\noutput line={}".format(repr(d_output)))
 
