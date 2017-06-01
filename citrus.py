@@ -31,26 +31,32 @@ class Citrus():
         self.paths = FilePaths(input_folders, input_path_glob).paths
         self.output_deeply_rooted = output_deeply_rooted
         description = ('This item has been aggregated as part of the Association of Southeastern'
-              ' Research Libraries (ASERL)\'s "Deeply Rooted: The Agricultural & Rural History of the '
-              'American South" project.')
-        self.d_single_source = {
+              + ''' Research Libraries (ASERL)'s "Deeply Rooted: The Agricultural & Rural History of the '''
+              + 'American South" project.')
+        #The keys of this dictionary double as the header column names to be output to an eventual csv or excel file
+        # The values's first tuple indicates constant, or xml (single element) or list (repeated elements)
+        # Code cases will rely on the key name to do special processing as well.
+        self.d_deeply_source = {
                 'relation': ('constant', 'Deeply Rooted' ),
-                'title': ('xml', 'mods:title' ),
+                'title': ('xml', './/mods:title' ),
+                #special conditions for transforming subject data here require subject id and sub-elt topic
+                'subjects': ('list', './/mods:subject'),
                 'description': ('constant', description ),
-                'source': ('xml', 'mods:recordContentSource' ),
-                # 'publisher': ('constant', 'Deeply Rooted' ),
-                'coverage_temporal': ('xml', 'sobekcm:Temporal/period' ),
-                #'format': ('constant', 'Deeply Rooted' ),
-                'identifier': ('xml', 'mods:url' ),
-                'rights': ('xml', 'mods:accessCondition' ),
-                #'creator': ('constant', 'Deeply Rooted' ),
-                'language': ('xml', 'mods:languageTerm' ),
-                'type': ('xml', 'mods:genre' ),
-                'contributor': ('xml', 'mods:hierarchicalGeographic' ),
-                'date': ('xml', 'mods:dateIssued' ),
+                'source': ('xml', './/mods:recordContentSource' ),
+                'publisher': ('xml', './/sobekcm:Publisher' ), #special case/code to extract from this node
+                'coverage_temporal': ('xml', './/sobekcm:Temporal/sobekcm:period' ),
+                'format': ('constant', 'image/jpeg, image/jp2, image/tiff, image/jpeg-thumbnails' ),
+                'identifier': ('xml', './/mods:url' ),
+                'rights': ('xml', './/mods:accessCondition' ),
+                'creator': ('list', './/METS:agent' ), # use the  name of creator individual
+                'language': ('xml', './/mods:languageTerm' ),
+                'type': ('xml', './/mods:genre' ),
+                'contributor': ('xml', './/mods:hierarchicalGeographic' ),
+                'date': ('xml', './/mods:dateIssued' ),
         }
-
-
+        #fieldnames = [ key for key in d_]
+        return
+    #end def init
     '''
     Method deeply_rooted()
     from set of paths parse citrus files and for each output a tab-separated line of output column values suitable for
@@ -85,22 +91,49 @@ class Citrus():
                     d_namespaces = {key:value for key,value in d_nsmap.items() if key is not None}
                     # Output some data for this citrus item
                     print("Input file={}".format(input_file_name))
+
                     # First produce single-valued output column values
-                    for key, tup2 in self.d_single_source.items():
-                        if tup2[0] == 'constant':
-                            value = tup2[1]
+                    for key, tup2 in self.d_deeply_source.items():
+                        value_type = tup2[0]
+                        value = tup2[1]
+                        result = ''
+                        if value_type == 'constant':
+                            result = value
+                        elif value_type == 'xml':
+                            print("Seeking node at xpath='{}'".format(value))
+                            node = input_node_root.find(value, d_namespaces)
+                            # insert here special cases for mining deeply rooted data from this particular node
+                            result = node.text if node is not None else ""
+                        elif value_type == 'list':
+                            nodes = input_node_root.findall(value, d_namespaces)
+                            sep = ''
+                            for node in nodes:
+                                if (key == 'creator' and node.attrib['ROLE'] == 'CREATOR'
+                                   and node.attrib['TYPE'] == 'INDIVIDUAL'):
+                                    # This is a node in a list of creator nodes and we only need this one.
+                                    node2 = node.find('./METS:name', d_namespaces)
+                                    result = '' if node2 is None else node2.text
+                                    break;
+                                elif (key == 'subjects'):
+                                    node2 = node.find('./mods:topic', d_namespaces)
+                                    result = '' if node2 is None else node2.text
                         else:
-                            node = input_node_root.find(tup2[1], d_namespaces)
-                            value = node.text if node is not None else ""
-                        d_output['key'] = value
+                            raise Exception("Bad value_type='{}'".format(value_type))
 
-                    print("\noutput line={}".format(repr(d_output)), file=output_file)
+                        # print("Setting d_output key={}, value={}".format(key,repr(result)))
+                        print("key={}, tup2={}, result='{}'".format(key,repr(tup2),result))
+                        d_output[key] = result
+                    # end loop to harvest single-xml-node values from the input file
+                    #
+                    print("\noutput line={}".format(repr(d_output)))
 
+                # end with open input file
+            # end with open output file
         return
     # end def run()
 
 # SET UP FOR RUN to generate deeply_rooted data
-linux='/tmp'
+linux='/home/robert/'
 windows='U:/'
 input_folder = etl.data_folder(linux=linux, windows=windows, data_relative_folder='data/citrus_mets_base')
 
