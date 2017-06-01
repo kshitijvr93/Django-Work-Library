@@ -70,12 +70,12 @@ class Citrus():
         # User OrderedDict to Maintain bib order of original input spreadsheet
         # Use bibid (in column index 1) as key because no dups are allowed
         self.d_bibid_rowidx = OrderedDict(
-            {self.sheet.cell(row, 1).value.upper() : row for row in range(self.sheet.nrows)})
+            { self.sheet.cell(row, 1).value.upper() : row for row in range(self.sheet.nrows)})
 
         print("Got {}={} citrus spreadsheet bibs".format(len(self.d_bibid_rowidx), self.sheet.nrows))
 
         # Pre-agreed period time-era names keyed by with start year
-        self.d_year_era = OrderedDict([
+        self.d_year_period = OrderedDict([
             (1920, "Florida Land Boom"),
             (1929, "Great Depression"),
             (1939, "World War II"),
@@ -86,6 +86,14 @@ class Citrus():
         ])
 
     #end def init
+    def period_by_year(self, year=None):
+        year = int(year)
+        period = "Prehistoric"
+        for band_year, band_period in self.d_year_period.items():
+            if int(band_year) > year:
+                break
+            period = band_period
+        return period
     '''
     Method deeply_rooted()
     from set of paths parse citrus files and for each output a tab-separated line of output column values suitable for
@@ -167,10 +175,9 @@ class Citrus():
                         # print("Setting d_output key={}, value={}".format(key,repr(result)))
                         print("key={}, result='{}', tup2={}".format(key,result,repr(tup2)))
                         d_output[key] = result
-                    # end loop to harvest single-xml-node values from the input file
-                    #
-                    # VALIDATE/REPORT MISSING INVALID DATA FROM THIS INPUT FILE
+                    # end for deeply rooted key column names, extracted some data from METS input file
 
+                    # VALIDATE/REPORT MISSING INVALID DATA FROM THIS INPUT FILE
                     identifier = d_output.get('identifier', '')
                     if identifier == '':
                         print("Input file {}. Has no identifier. Skipping it.".format(input_file))
@@ -183,6 +190,9 @@ class Citrus():
                         print("ERROR: Input file {}, bib {}, is not in edits spreadsheet. Skipping it."
                             .format(input_file, xml_bib))
                         continue
+                    #Could add check here that the identifier within the mets file matches the bibid inferrec
+                    # by the filename,but such anomalies have not been seen in our data...
+
                     # Set ss row value to -1 to show it was visited
                     self.d_bibid_rowidx[xml_bib.upper()] = -1
 
@@ -195,13 +205,30 @@ class Citrus():
                     dc = self.d_colname_colidx
                     colidx = dc['date_issued']
                     print("Using row index '{}', col index '{}'".format(repr(ss.row), repr(colidx)))
-                    edtf_date = ss.cell(ss_row, dc['date_issued']).value
-                    # Supersede the original mets input_file's date_issued for Deeply Rooted
+                    edtf_date = str(ss.cell(ss_row, dc['date_issued']).value) # minority of cells have integers
+
+                    # TEMPORAL COLUMNS
+                    # Rule: Prefer the spreadsheet's date over the original mets input_file's date_issued
+                    # for Deeply Rooted
+                    # Rule: Dates ending u: change u to 0 for date issued, use it also for start_date, and add
+                    # 10 years and use that for end date:
+                    print("Got edtf_date='{}'".format(edtf_date))
+                    if edtf_date[3] == 'u':
+                        str_date = edtf_date[0:3] + '0'
+                    else:
+                        str_date = edtf_date[0:4]
+                    start_year = int(str_date)
+                    end_year = int(str_date) + 10
+                    period = self.period_by_year(start_year)
+
+
+                    print("str_date='{}', start={}, end={}, period={}".format(str_date,start_year,end_year,period))
                     d_output['date'] = edtf_date
 
                     print("\noutput line={}".format(repr(d_output)))
 
                 # end with open input file
+                # Report on bibids in the spreadsheet that were not found among the in put mets files
             # end with open output file
         return
     # end def run()
