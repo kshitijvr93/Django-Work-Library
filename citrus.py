@@ -88,8 +88,9 @@ class Citrus():
             (1969, "Vietnam War"),
             (1976, "Post 1975"),
         ])
-
+        self.book_deeply_init()
     #end def init
+
     def period_by_year(self, year=None):
         year = int(year)
         period = "Prehistoric"
@@ -99,8 +100,19 @@ class Citrus():
             period = band_period
         return period
 
-    def excel_output(self):
-        pass
+    def deeply_book_init(book_deeplself):
+        self.deeply_book = xlwt.Workbook()
+        self.deeply_sheet = self.deeply_book.add_sheet()
+        # Header row
+        for col_index,col_name in enumerate(self.l_deeply_output_columns):
+            self.deeply_sheet.write(0, col_index, col_name)
+        self.deeply_row_index = 1
+
+    def deeply_book_writerow(self, d_output=None):
+        column_values = [ d_output[column] for column in self.l_deeply_output_columns]
+        for column_index, column_value in enumerate(column_values):
+            self.deeply_sheet.write(self.row_index, column_index, column_value)
+        self.deeply_row_index += 1
 
     '''
     Method deeply_rooted()
@@ -294,9 +306,15 @@ class Citrus():
                     print("\nOUTPUT LINE DICT:" )
                     for key,value in d_output.items():
                         print("key='{}', value='{}'".format(repr(key),repr(value)))
+                    #Write excel output row for this input file
+                    self.book_deeply_write_row(d_output = d_output)
+
 
                 # end with open input file
+
                 # Report on bibids in the spreadsheet that were not found among the in put mets files
+
+                # Write the excel output file
             # end with open output file
         return
     # end def run()
