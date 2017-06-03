@@ -131,14 +131,15 @@ class Citrus():
             #See output specs at http://lib.msstate.edu/deeplyrooted#specs
             #Some are ambiguous and Angie and Julie may decide to alter them a bit going forward
             print("Reading {} Input Bibs from the edited spreadsheet".format(len(self.input_file_paths)))
-            for i,input_file_path in enumerate(self.input_file_paths):
+            no_mods_url = 0 #counter for an observed error/warning condition
+            for input_file_index,input_file_path in enumerate(self.input_file_paths):
                 input_file_name = "{}/{}".format(input_file_path.parents[0], input_file_path.name)
-                if max_input_files is not None and i >= max_input_files:
+                if max_input_files is not None and input_file_index >= max_input_files:
                     break
                 #print("Processing input file={}".format(input_file_name))
                 with open (str(input_file_name), "r") as input_file:
-                    if  i % 250 == 0:
-                        print("Processing input file index {}".format(i))
+                    if  input_file_index % 250 == 0:
+                        print("Processing input file index {}".format(input_file_index))
                     input_xml_str = input_file.read().replace('\n','')
                     # Initialize ordered output dictionary
                     d_output = OrderedDict([(column,'') for column in self.l_deeply_output_columns])
@@ -261,6 +262,7 @@ class Citrus():
                     identifier = d_output.get('identifier', '')
                     if identifier == '':
                         print("Input file {} has no mods:url identifier. trying mods:recordIdentifier it.".format(input_file_name))
+                        no_mods_url += 1
                         # Workaround for now... but may want to update METS.XML later to set mods:url to this.
                         node_identifier = input_node_root.findall('.//mods:recordIdentifier',d_namespaces)[0]
                         record_identifier = '' if node_identifier is None else node_identifier.text.replace('_','/')
@@ -337,7 +339,9 @@ class Citrus():
                     self.outbook_writerow(d_output = d_output)
                 # end with open input file
             # end input_file_path in paths
-
+            #
+            print("WARNING: Among {} input *.mets.xml input files, {} lacked a mods:url tag"
+                .format(len(self.input_file_paths),no_mods_url))
             # Report on bibids in the spreadsheet that were not found among the in put mets files
             print ("WARNING: The following bibids in the edits spreadsheet were not found among the inputted mets.xml files:")
             for bibid, rowidx in self.d_bibid_rowidx.items():
