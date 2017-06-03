@@ -29,9 +29,11 @@ class FilePaths():
 
 class Citrus():
 
-    def __init__(self, paths=None, edits_file=None, input_folders=None, input_path_glob=None, output_deeply_rooted=None):
-        self.paths = FilePaths(input_folders, input_path_glob).paths
-        self.output_deeply_rooted = output_deeply_rooted
+    def __init__(self, paths=None, edits_file=None, input_folders=None, input_path_glob=None
+        ,deeply_rooted_output_file_name=None):
+
+        self.input_file_paths = FilePaths(input_folders, input_path_glob).paths
+        self.deeply_rooted_output_file_name =  deeply_rooted_output_file_name
         description = ('This item has been aggregated as part of the Association of Southeastern'
               + ''' Research Libraries (ASERL)'s "Deeply Rooted: The Agricultural & Rural History of the '''
               + 'American South" project.')
@@ -63,20 +65,23 @@ class Citrus():
             , 'format', 'identifier', 'rights', 'creator', 'language', 'type', 'coverage_spatial'
             , 'contributor', 'date' ]
         self.d_deeply_output = {} #will be overwritten/reused for each input bib
-        # EXCEL SPREADSHEET OF EDITS
-        book = open_workbook(edits_file, 'r')
-        self.sheet = book.sheet_by_index(0)
+
+        # EXCEL WORKBOOK with SPREADSHEET OF EDITS
+        book_edits = open_workbook(edits_file, 'r')
+        self.book_edits = book_edits
+        self.sheet_edits = book_edits.sheet_by_index(0)
 
         # read dict of column name:index info into key-value pairings
         self.d_colname_colidx = OrderedDict(
-            {self.sheet.cell(0,col_index).value : col_index for col_index in range(self.sheet.ncols)})
+            {self.sheet_edits.cell(0,col_index).value : col_index for col_index in range(self.sheet_edits.ncols)})
         print("Got edit spreadsheet column names,indexes = {}".format(repr(self.d_colname_colidx)))
-        # User OrderedDict to Maintain bib order of original input spreadsheet
+
+        # User OrderedDict to Maintain bib order of original edits spreadsheet
         # Use bibid (in column index 1) as key because no dups are allowed
         self.d_bibid_rowidx = OrderedDict(
-            { self.sheet.cell(row, 1).value.upper() : row for row in range(self.sheet.nrows)})
+            { self.sheet_edits.cell(row, 1).value.upper() : row for row in range(self.sheet_edits.nrows)})
 
-        print("Got {}={} citrus spreadsheet bibs".format(len(self.d_bibid_rowidx), self.sheet.nrows))
+        print("Got {}={} citrus spreadsheet bibs".format(len(self.d_bibid_rowidx), self.sheet_edits.nrows))
 
         # Pre-agreed period time-era names keyed by with start year
         self.d_year_period = OrderedDict([
@@ -88,7 +93,7 @@ class Citrus():
             (1969, "Vietnam War"),
             (1976, "Post 1975"),
         ])
-        self.book_deeply_init()
+        self.outbook_init()
     #end def init
 
     def period_by_year(self, year=None):
@@ -100,19 +105,19 @@ class Citrus():
             period = band_period
         return period
 
-    def deeply_book_init(book_deeplself):
+    def outbook_init(self):
         self.deeply_book = xlwt.Workbook()
-        self.deeply_sheet = self.deeply_book.add_sheet()
+        self.deeply_sheet = self.deeply_book.add_sheet("deeply_rooted")
         # Header row
         for col_index,col_name in enumerate(self.l_deeply_output_columns):
             self.deeply_sheet.write(0, col_index, col_name)
-        self.deeply_row_index = 1
+        self.outbook_row_index = 1
 
-    def deeply_book_writerow(self, d_output=None):
+    def outbook_writerow(self, d_output=None):
         column_values = [ d_output[column] for column in self.l_deeply_output_columns]
         for column_index, column_value in enumerate(column_values):
-            self.deeply_sheet.write(self.row_index, column_index, column_value)
-        self.deeply_row_index += 1
+            self.deeply_sheet.write(self.outbook_row_index, column_index, column_value)
+        self.outbook_row_index += 1
 
     '''
     Method deeply_rooted()
@@ -120,14 +125,20 @@ class Citrus():
     For each bibid in both sources, output an excel row for that bibid with the required-specified
     data accepted by the "Deeply Rooted" project at Mississippi U. circa 2017 c/o Julie Shedd
     '''
-    def deeply_rooted(self):
-        with open(self.output_deeply_rooted, mode="w", encoding='utf-8') as output_file:
+    def deeply_rooted(self,max_input_files=None):
+        #with open(self.output_deeply_rooted, mode="w", encoding='utf-8') as output_file:
+        if (1 == 1):
             #See output specs at http://lib.msstate.edu/deeplyrooted#specs
             #Some are ambiguous and Angie and Julie may decide to alter them a bit going forward
-            for path in self.paths:
-                input_file_name = "{}/{}".format(path.parents[0], path.name)
-                print("Processing input file={}".format(input_file_name))
+            print("Reading {} Input Bibs from the edited spreadsheet".format(len(self.input_file_paths)))
+            for i,input_file_path in enumerate(self.input_file_paths):
+                input_file_name = "{}/{}".format(input_file_path.parents[0], input_file_path.name)
+                if max_input_files is not None and i >= max_input_files:
+                    break
+                #print("Processing input file={}".format(input_file_name))
                 with open (str(input_file_name), "r") as input_file:
+                    if  i % 250 == 0:
+                        print("Processing input file index {}".format(i))
                     input_xml_str = input_file.read().replace('\n','')
                     # Initialize ordered output dictionary
                     d_output = OrderedDict([(column,'') for column in self.l_deeply_output_columns])
@@ -143,15 +154,15 @@ class Citrus():
                     try:
                         input_node_root = tree_input_doc.getroot()
                     except Exception as e:
-                        msg = ("Exception='{}' doing getroot() on tree_input_doc={}. Return."
-                                .format(repr(e), repr(tree_input_doc)))
+                        msg = ("Exception='{}' doing getroot() on tree_input_doc={}, input_file={}. Return."
+                                .format(repr(e), repr(tree_input_doc),input_file_name))
                         print(msg)
                         raise
                     # Do not put the default namespace (as it has no tag prefix) into the d_namespaces dict.
                     d_nsmap = dict(input_node_root.nsmap)
                     d_namespaces = {key:value for key,value in d_nsmap.items() if key is not None}
                     # Output some data for this citrus item
-                    print("Input file={}".format(input_file_name))
+                    #print("Input file={}".format(input_file_name))
 
                     # First produce single-valued output column values
                     for key, tup2 in self.d_deeply_source.items():
@@ -160,8 +171,8 @@ class Citrus():
                         xpath = value
                         constant = value
 
-                        if key=='related':
-                            #Special deepl rooted requirement, always output this as first relation,
+                        if key == 'relation':
+                            #Special deeply rooted requirement, always output this as first relation,
                             #but append it with those found in input with type 'original' (see below).
                             result = "Deeply Rooted"
                         else:
@@ -242,16 +253,26 @@ class Citrus():
                     d_output['type'] = result
                     #print("Setting type='{}'".format(result))
 
+                    #If no data given for relation, just set 'Deeply Rooted'
+                    if d_output.get('relation',None) is None:
+                        d_output['relation'] = 'Deeply Rooted'
+
                     # VALIDATE/REPORT MISSING INVALID DATA FROM THIS INPUT FILE
                     identifier = d_output.get('identifier', '')
                     if identifier == '':
-                        print("Input file {}. Has no identifier. Skipping it.".format(input_file))
-                        continue
+                        print("Input file {} has no mods:url identifier. trying mods:recordIdentifier it.".format(input_file_name))
+                        # Workaround for now... but may want to update METS.XML later to set mods:url to this.
+                        node_identifier = input_node_root.findall('.//mods:recordIdentifier',d_namespaces)[0]
+                        record_identifier = '' if node_identifier is None else node_identifier.text.replace('_','/')
+                        if record_identifier == '':
+                            print("Input file {} has no identifier. Skipping it.".format(input_file_name))
+                            continue
+                        d_output[identifier] = 'http://ufdc.ufl.edu/{}'.format(record_identifier)
                     id_parts = identifier.split('/')
                     xml_bib = '_'.join(id_parts[-2:])
-                    # xml_bib is in format bib_vid. Skip it if not in the spreadsheet.
-                    ss_row = self.d_bibid_rowidx.get(xml_bib.upper(), None)
-                    if ss_row is None:
+                    # xml_bib is in format bib_vid. Skip it if not in the edits spreadsheet.
+                    ess_row = self.d_bibid_rowidx.get(xml_bib.upper(), None)
+                    if ess_row is None:
                         print("ERROR: Input file {}, bib {}, is not in edits spreadsheet. Skipping it."
                             .format(input_file, xml_bib))
                         continue
@@ -265,9 +286,9 @@ class Citrus():
                     # RULE 1 For UFDC UPDATES
                     #  If spreadshseet column original_date_issued is not null, use it rather than date_issued column
                     # But for deeply rooted output, take the date_issued value that Angie has inputted in edtf format
-                    ss = self.sheet
+                    ess = self.sheet_edits
                     dci = self.d_colname_colidx
-                    edtf_date = str(ss.cell(ss_row, dci['date_issued']).value) # minority of cells have integers
+                    edtf_date = str(ess.cell(ess_row, dci['date_issued']).value) # minority of cells have integers
 
                     # TEMPORAL COLUMNS
                     # Rule: Prefer the spreadsheet's date over the original mets input_file's date_issued
@@ -280,8 +301,8 @@ class Citrus():
                     else:
                         str_date = edtf_date[0:4]
 
-                    start_year = int(str_date)
-                    end_year = int(str_date) + 10
+                    start_year = 0 if str_date == 'NULL' else int(str_date)
+                    end_year = 0 if str_date == 'NULL' else int(str_date) + 10
                     period = self.period_by_year(start_year)
                     # for deeply rooted, put the period for coverage temporal, or could put 10-year range
                     coverage_temporal = '{}-{}'.format(start_year,end_year) #per Angie 20170522 log - for deeply
@@ -295,7 +316,7 @@ class Citrus():
                     coverage_spatial = ''
                     sep = ''
                     for cidx in range(country_idx, country_idx+4):
-                        value = str(ss.cell(ss_row, cidx).value)
+                        value = str(ess.cell(ess_row, cidx).value)
                         if value is None or value == '' or value == 'NULL':
                             continue
                         coverage_spatial  += sep +  value
@@ -303,21 +324,26 @@ class Citrus():
                         d_output['coverage_spatial'] = coverage_spatial
                     #print("Got coverage_spatial='{}'".format(coverage_spatial))
 
-                    print("\nOUTPUT LINE DICT:" )
-                    for key,value in d_output.items():
-                        print("key='{}', value='{}'".format(repr(key),repr(value)))
+                    if (1==2): # early draft debug output
+                        print("\nOUTPUT LINE DICT:" )
+                        for key,value in d_output.items():
+                            print("key='{}', value='{}'".format(repr(key),repr(value)))
+
                     #Write excel output row for this input file
-                    self.book_deeply_write_row(d_output = d_output)
-
-
+                    self.outbook_writerow(d_output = d_output)
                 # end with open input file
+            # end input_file_path in paths
 
-                # Report on bibids in the spreadsheet that were not found among the in put mets files
-
-                # Write the excel output file
-            # end with open output file
+            # Report on bibids in the spreadsheet that were not found among the in put mets files
+            print ("WARNING: The following bibids in the edits spreadsheet were not found among the inputted mets.xml files:")
+            for bibid, rowidx in self.d_bibid_rowidx.items():
+                if 1==2 and rowidx != -1: #disable until read all input files
+                    print('No mets.xml input file found for bibid:',  bibid)
+            # Write the excel output book file
+            self.deeply_book.save(self.deeply_rooted_output_file_name)
+        # end with open output file
         return
-    # end def run()
+    # end deeply_rooted()
 
 # SET UP FOR RUN to generate deeply_rooted data
 linux='/home/robert/'
@@ -326,11 +352,12 @@ input_folder = etl.data_folder(linux=linux, windows=windows, data_relative_folde
 
 input_folders = [input_folder]
 output_folder = etl.data_folder(linux=linux, windows=windows, data_relative_folder='data/outputs/deeply_rooted')
-output_file = output_folder + '/' + 'deeply_rooted.txt'
+output_file_name = output_folder + '/' + 'deeply_rooted.xlsx'
 
 edits_file = input_folder + '/citrus_20170519a.xlsx' # Angie's edited spreadsheet of citrus data
-citrus = Citrus(edits_file=edits_file,input_folders=input_folders, input_path_glob="AA*00_00001.mets.xml",
-    output_deeply_rooted=output_file)
 
-citrus.deeply_rooted()
-print ("Done! See output_file={}".format(output_file))
+citrus = Citrus(edits_file=edits_file,input_folders=input_folders, input_path_glob="AA*0_00001.mets.xml",
+    deeply_rooted_output_file_name=output_file_name)
+
+citrus.deeply_rooted(max_input_files=30)
+print ("Done! See output_file={}".format(output_file_name))
