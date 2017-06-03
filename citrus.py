@@ -113,11 +113,16 @@ class Citrus():
             self.deeply_sheet.write(0, col_index, col_name)
         self.outbook_row_index = 1
 
-    def outbook_writerow(self, d_output=None):
+    def outbook_writerow(self, d_output=None, d_column_style=None):
         column_values = [ d_output[column] for column in self.l_deeply_output_columns]
         for column_index, (column_key, column_value) in enumerate(d_output.items()):
             #print ("outbooks_writerow: index={}, key='{}', value='{}'".format(column_index, column_key, column_value) )
-            self.deeply_sheet.write(self.outbook_row_index, column_index, column_value.strip())
+            style = None if d_column_style is None else d_column_style.get(column_key, None)
+            if style is None:
+                self.deeply_sheet.write(self.outbook_row_index, column_index, column_value.strip())
+            else:
+                print("Writing a style for column '{}'".format(column_key))
+                self.deeply_sheet.write(self.outbook_row_index, column_index, column_value.strip(), style)
         self.outbook_row_index += 1
 
     '''
@@ -137,6 +142,7 @@ class Citrus():
                 input_file_name = "{}/{}".format(input_file_path.parents[0], input_file_path.name)
                 if max_input_files is not None and input_file_index >= max_input_files:
                     break
+                d_column_style = {}
                 #print("Processing input file={}".format(input_file_name))
                 with open (str(input_file_name), "r") as input_file:
                     if  input_file_index % 250 == 0:
@@ -270,6 +276,10 @@ class Citrus():
                     identifier = d_output.get('identifier', '')
                     if identifier == '':
                         print("Input file {} has no mods:url identifier. trying mods:recordIdentifier it.".format(input_file_name))
+                        # Make this cell pink
+                        easyxf_style = ('pattern: pattern solid, fore_colour light_blue;'
+                              'font: colour white, bold True;')
+                        d_column_style['identifier'] = xlwt.Style.easyxf(strg_to_parse=easyxf_style)
                         no_mods_url += 1
                         # Workaround for now... but may want to update METS.XML later to set mods:url to this.
                         node_identifier = input_node_root.findall('.//mods:recordIdentifier',d_namespaces)[0]
@@ -344,7 +354,7 @@ class Citrus():
                             print("key='{}', value='{}'".format(repr(key),repr(value)))
 
                     #Write excel output row for this input file
-                    self.outbook_writerow(d_output = d_output)
+                    self.outbook_writerow(d_output = d_output, d_column_style=d_column_style)
 
                 # end with open input file
             # end input_file_path in paths
