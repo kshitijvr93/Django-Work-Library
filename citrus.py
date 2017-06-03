@@ -267,7 +267,11 @@ class Citrus():
                         if record_identifier == '':
                             print("Input file {} has no identifier. Skipping it.".format(input_file_name))
                             continue
-                        d_output[identifier] = 'http://ufdc.ufl.edu/{}'.format(record_identifier)
+                        identifier = 'http://ufdc.ufl.edu/{}'.format(record_identifier)
+                        print("Using makeshift identifier = {}".format(identifier))
+                        d_output['identifier'] = identifier
+
+                    # parse the identifier
                     id_parts = identifier.split('/')
                     xml_bib = '_'.join(id_parts[-2:])
                     # xml_bib is in format bib_vid. Skip it if not in the edits spreadsheet.
@@ -337,7 +341,7 @@ class Citrus():
             # Report on bibids in the spreadsheet that were not found among the in put mets files
             print ("WARNING: The following bibids in the edits spreadsheet were not found among the inputted mets.xml files:")
             for bibid, rowidx in self.d_bibid_rowidx.items():
-                if 1==2 and rowidx != -1: #disable until read all input files
+                if 1==1 and rowidx != -1: #disable unless we read all input files
                     print('No mets.xml input file found for bibid:',  bibid)
             # Write the excel output book file
             self.deeply_book.save(self.deeply_rooted_output_file_name)
@@ -356,8 +360,8 @@ output_file_name = output_folder + '/' + 'deeply_rooted.xlsx'
 
 edits_file = input_folder + '/citrus_20170519a.xlsx' # Angie's edited spreadsheet of citrus data
 
-citrus = Citrus(edits_file=edits_file,input_folders=input_folders, input_path_glob="AA*0_00001.mets.xml",
+citrus = Citrus(edits_file=edits_file,input_folders=input_folders, input_path_glob="AA*_00001.mets.xml",
     deeply_rooted_output_file_name=output_file_name)
 
-citrus.deeply_rooted(max_input_files=30)
+citrus.deeply_rooted(max_input_files=None)
 print ("Done! See output_file={}".format(output_file_name))
