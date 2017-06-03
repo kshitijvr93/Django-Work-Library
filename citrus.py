@@ -115,8 +115,9 @@ class Citrus():
 
     def outbook_writerow(self, d_output=None):
         column_values = [ d_output[column] for column in self.l_deeply_output_columns]
-        for column_index, column_value in enumerate(column_values):
-            self.deeply_sheet.write(self.outbook_row_index, column_index, column_value)
+        for column_index, (column_key, column_value) in enumerate(d_output.items()):
+            #print ("outbooks_writerow: index={}, key='{}', value='{}'".format(column_index, column_key, column_value) )
+            self.deeply_sheet.write(self.outbook_row_index, column_index, column_value.strip())
         self.outbook_row_index += 1
 
     '''
@@ -235,10 +236,12 @@ class Citrus():
                                     # for node_topic
 
                                 elif (key == 'relation'):
-                                    attr_type = node.attrib.get('type',None)
+                                    attr_type = node.attrib.get('type', None)
                                     if attr_type is None or attr_type != 'original':
                                         continue
-                                    result += sep + node.text
+                                    # Note: if this value is not stripped (sometimes it has trailing return character)
+                                    # excel silently/puzzlingly rejects the entire value for a spreadsheet cell
+                                    result += sep + node.text.strip()
                                     sep = ';'
                             #end node in nodes
                         else:
@@ -254,9 +257,14 @@ class Citrus():
                     d_output['type'] = result
                     #print("Setting type='{}'".format(result))
 
-                    #If no data given for relation, just set 'Deeply Rooted'
-                    if d_output.get('relation',None) is None:
-                        d_output['relation'] = 'Deeply Rooted'
+                    #If no data given for relation, just set "Deeply Rooted"'
+                    relation = d_output.get('relation','')
+                    if relation  == '':
+                        print("For input index {}, setting relation to Deeply Rooted".format(input_file_index))
+                        d_output['relation'] = "Deeply Rooted"
+                    else:
+                        #print("Relation check ok at '{}'".format(relation))
+                        pass
 
                     # VALIDATE/REPORT MISSING INVALID DATA FROM THIS INPUT FILE
                     identifier = d_output.get('identifier', '')
@@ -337,6 +345,7 @@ class Citrus():
 
                     #Write excel output row for this input file
                     self.outbook_writerow(d_output = d_output)
+
                 # end with open input file
             # end input_file_path in paths
             #
