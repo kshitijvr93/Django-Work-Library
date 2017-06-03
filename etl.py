@@ -13,7 +13,7 @@ from lxml import etree
 from lxml.etree import tostring
 from pathlib import Path
 
-def data_folder(linux='/tmp/data/', windows='c:/data/', 
+def data_folder(linux='/tmp/data/', windows='c:/data/',
     data_relative_folder=None, exist_ok=True, verbosity=0):
     if platform.system().lower() == 'linux':
         folder = linux + data_relative_folder
@@ -71,6 +71,24 @@ def html_escape(text):
         text_out += str(html_escape_table.get(c,c) )
     #text_out = text_out.encode('utf-8', 'xmlcharrefreplace')
     return text_out
+
+class FilePaths():
+    def __init__(self, input_folders=None, input_path_glob=None ):
+        if (input_folders is None or input_path_glob is None):
+            raise Exception(ValueError, )
+        if (input_folders is not None and input_path_glob is not None):
+            # compose input_path_list over multiple input_folders
+            input_path_list = []
+            for input_folder in input_folders:
+                print("FiePaths(): Gathering files in input_folder='{}' that match {}\n"
+                .format(input_folder, input_path_glob))
+                input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
+            self.paths = input_path_list
+            print('FilePaths: found {} file paths matching {}'.format(len(self.paths), input_path_glob))
+        self.file_index = 0
+        return
+#end class FilePaths
+
 
 '''Method add_subelements():
 Generic logging utility helper:

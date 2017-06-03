@@ -8,24 +8,7 @@ from lxml.etree import tostring
 from collections import OrderedDict
 import xlrd, xlwt
 from xlrd import open_workbook
-
-class FilePaths():
-
-    def __init__(self, input_folders=None, input_path_glob=None ):
-        if (input_folders is None or input_path_glob is None):
-            raise Exception(ValueError, )
-        if (input_folders is not None and input_path_glob is not None):
-            # compose input_path_list over multiple input_folders
-            input_path_list = []
-            for input_folder in input_folders:
-                print("FiePaths(): Gathering files in input_folder='{}' that match {}\n"
-                .format(input_folder, input_path_glob))
-                input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
-            self.paths = input_path_list
-            print('FilePaths: found {} file paths matching {}'.format(len(self.paths), input_path_glob))
-        self.file_index = 0
-        return
-#end class Files
+from etl import FilePaths
 
 class Citrus():
 
@@ -247,8 +230,8 @@ class Citrus():
                                         continue
                                     # Note: if this value is not stripped (sometimes it has trailing return character)
                                     # excel silently/puzzlingly rejects the entire value for a spreadsheet cell
-                                    result += sep + node.text.strip()
-                                    sep = ';'
+                                    sep = ';' # Deeply rooted prefix is set above, so first sep is ';'
+                                    result += sep + etree.tostring(node,encoding='unicode',method='text').strip()
                             #end node in nodes
                         else:
                             raise Exception("Bad value_type='{}'".format(value_type))
