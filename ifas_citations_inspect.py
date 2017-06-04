@@ -39,222 +39,178 @@ That detail needs to be resolved.
 
 from pathlib import Path
 from etl import html_escape, has_digit, has_upper, make_home_relative_folder
-
-def ifas_citations_base(input_file_name=None):
-    d_base = {}
-    d_doi = {}
-    n_file_citations = 0
-    with open (str(input_file_name),
-            encoding="utf-8", errors='replace', mode="r") as input_file:
-        input_lines = input_file.readlines()
-        for (index_line, line) in enumerate(input_lines):
-            key = str(index_line).zfill(10)
-            d_base[key] = line
-            #line = xml_escape(line)
-            #print("Got line='{}'.,eline='{}'".format(line,eline))
-            index_doi = -1
-            try:
-                index_doi = line.find("doi:")
-            except Excepton as e:
-                print("Skipping exception={}".format(repr(e.message)))
-                pass
-            if index_doi < 0:
-                #print("Skip line index={}, {}. No doi found"
-                #      .format(index_line,line.encode('ascii','ignore')))
-                continue
-            doi = line[index_doi:]
-            d_doi[doi] = line
-            n_file_citations += 1
-        # end with open input_file
-    return d_base, d_doi
-# end def ifas_citations_base(input_file_name=None)
 '''
-Method ifas_citations_inspect()
+<summary>This object registers the annual IFAS citations input folders and files,
+and has main method inspect() which inspects a year's worth of IFAS
+'round1' citation data from the UF IFAS units.
+It produces an output excel file for each unit that inputted data, with
+various cell colorations and indications of warning and error conditions .
 
-<summary> Read an input file of ifas_citations and inspect them for problems
-<param> input_file: input file with multiple citations </param>
-<outputs>excel files in an output folder with apt violation warnings per
-citation</output>
+These files are for UF MSL staff and IFAS staff to review and consider in
+making further manual refinements to each the unit-citations file to
+register this year's scholarly publications in peer-reviwed journals,
+authored by their employees.
+
+Those files will comprise round2 orf input.
+</summary>
+
+<param> year_input_folder_name - main folder with a year of structured input files, with filenames and subfolder
+structure as expcted i routing __init__ and object methods, </param>
 '''
-def ifas_citations_inspect(input_folder='c:/rvp/tmpdir/citations/2017_ifas_test'
-    , output_folder=None, d_doi_old=None):
-    if input_folder is None or d_doi is None:
-        raise Exception(ValueError, 'input_folder and d_doi are required')
-    if output_folder is None:
-        output_folder = input_folder
-    d_doi_current = {}
-    input_folder_path = Path(input_folder)
-    input_file_paths = list(input_folder_path.glob('**/*utf8.txt'))
-    n_input_files = 0
-    n_citations = 0
-    n_dup_old = 0
-    n_dup_cur = 0
-    print("Found {} input files".format(len(input_file_paths)))
-    for path in input_file_paths:
-        input_file_name = "{}/{}".format(path.parents[0], path.name)
-        print("Processing file name={}".format(input_file_name))
-        n_input_files += 1
-        output_file_name = input_file_name + '.html'
+class CitationsInspector():
+    '''
+    Set up input parameters and file references for use by the inspect method.
+    Also read the base citations that have a doi mentioned and create a dictionary
+    d_base_doi entry keyed by the doi with value being the entire line's text.
+    Also keep every line i the d_base dictionary, keyed by index line number zfilled to 10 positions.
+    '''
+    def __init__(self, year_input_folder_name=None, unit_has_tab_sep=False):
+        self.year_input_folder_name = year_input_folder_name
+        self.units_folder = '{}/units'.format(self.year_input_folder_name)
+        self.units_file_glob = 'IFAS*txt'
+        print("Units_folder-'{}', glob='{}'".format(self.units_folder, self.units_file_glob))
+
+        self.unit_paths = list(Path(self.units_folder).glob(self.units_file_glob))
+        self.base_folder = '{}/base_info'.format(self.year_input_folder_name)
+        print("Base folder-'{}'".format(self.base_folder))
+        self.base_pubs_file_name = '{}/IFAS-2015-pubs_by_topic-1.txt'.format(self.base_folder)
+        self.base_skip_lines = 4 # Number of lines in last years citations file to skip from the start
+        self.unit_has_tab_sep = unit_has_tab_sep; #If true, unit citations files are tab-separated
+
+        self.d_base_index = {}
+        self.d_base_doi = {}
+        self.d_current_doi = {}
         n_file_citations = 0
-        with open(str(output_file_name),encoding="utf-8", mode="w") as output_file:
-            print("\nReading input file {}".format(path.name))
-            print("<!DOCTYPE html> <html>\n<head><meta charset='UTF-8'></head>\n"
-                  "<body>\n<h3>APA Citations for Input File {}</h3>\n"
-                  "<table border=2>\n"
-                  .format(input_file_name), file=output_file)
-            # NOTE: save EXCEL file as "UNICODE text" file
-            with open (str(input_file_name),encoding="utf-8",mode="r") as input_file:
-                # NOTE: may use VIM or other tools to change input file encoding to required
-                # utf-8 here if not already in utf-8 format
-                # :set fileencoding=utf-8
-                input_lines = input_file.readlines()
-                for line in input_lines:
-                    #line = xml_escape(line)
-                    #print("Got line='{}'.,eline='{}'".format(line,eline))
-                    n_file_citations += 1
-                    parts = line.split('\t')
-                    nparts = len(parts)
-                    authors, pubyear, title, journal, volume, issue, pages, doi = ("",) * 8
-                    colskip = 0
-                    colskip = 1 #per file from Suzanne 2017050x email with 'problem' in column 1,
 
-                    index = colskip
-                    if nparts > index:
-                        authors = (parts[index].replace('"','').replace(',;', ',')
-                            .replace('; ', ', '))
+        # input and save last year's citation info to use to check for duplicates in this year's units
+        with open (str(self.base_pubs_file_name),
+                encoding="utf-8", errors='replace', mode="r") as input_file:
+            input_lines = input_file.readlines()
+            for (index_line, line) in enumerate(input_lines):
+                # Skip the normal number of header lines of this file and any topic section line
+                if index_line < self.base_skip_lines or len(line) < 50:
+                    #print("Skipping base citations file context line='{}'".format(line))
+                    continue
+                zfilled_index = str(index_line).zfill(10)
+                self.d_base_index[zfilled_index] = line
+                #line = xml_escape(line)
+                #print("Got line='{}'.,eline='{}'".format(line,eline))
+                index_doi = -1
+                try:
+                    index_doi = line.find("doi:")
+                except Excepton as e:
+                    print("Skipping exception={}".format(repr(e.message)))
+                    pass
+                if index_doi < 0:
+                    #print("Skip line index={}, {}. No doi found"
+                    #      .format(index_line,line.encode('ascii','ignore')))
+                    continue
+                doi = line[index_doi:]
+                self.d_base_doi[doi] = line
+                n_file_citations += 1
+            # end with open input_file
+        #self.d_base = d_base
+        return None
 
-                    index += 1
-                    if nparts > index:
-                        pubyear = parts[index]
+    # end __init__
+        '''
+    Method inspect()
 
-                    index += 1
-                    if nparts > index: ### TITLE ###
+    <summary> Read the unit paths input files of ifas citations and inspect them for problems</summary>
+    <param> input_file: input file with multiple citations </param>
+    <outputs>excel files in an output folder with apt violation warnings per
+    citation</output>
+    '''
+    def inspect(self, output_folder=None):
+        if output_folder is None:
+            output_folder = self.year_input_folder_name
+        self.inspect_output_folder = output_folder
+        me = 'inspect'
 
-                        # Replace nonbreaking spaces with 'normal' spaces first
-                        title = parts[index].replace('\u00A0',' ')
-                        # Remove multiple spaces everywhere. Split with no arguments adds this service
-                        title = ' '.join(title.split())
-                        # Remove troublesome quotation characters for APA citations
-                        title = title.replace('"','')
-                        title_words = title.split(' ')
-                        # Enforce APA title style: First char of word must be capitalized, but lower
-                        # first char for other words in title
-                        title = ''
-                        delim = ''
+        # Keep track of current year's doi values
+        n_input_files = 0
+        n_citations = 0
+        n_dup_old = 0
+        n_dup_cur = 0
 
-                        for word in title_words:
-                            nchars = len(word)
-                            if nchars < 1:
-                                continue
-                            title += delim
-                            if delim == '':
-                                title +=  word[0].upper()
-                                if nchars > 1:
-                                    title += word[1:]
-                            elif nchars == 1:
-                                title += word[0].lower()
-                            elif (nchars > 2
-                                  and not has_digit(word[1:])
-                                  and not has_upper(word[1:])):
-                                # This is a second or following title word.
-                                # APA style says it should not be upper-case, but probably
-                                # only unless it has other uppercase characters
-                                # or digits (for example "RNA" "O2").
-                                # So here we make first letter lowercase only if
-                                # second (and greater) letter of word has no uppercase
-                                # nor digit characters
-                                title += word[0].lower()
-                                title += word[1:]
-                            else:
-                                title += word
-                            delim = ' '
-                        # end for word in title_words
+        print("{}: Found {} input files".format(me,len(self.unit_paths)))
+        for path in self.unit_paths:
+            input_file_name = "{}/{}".format(path.parents[0], path.name)
+            print("Processing file name={}".format(input_file_name))
+            n_input_files += 1
+            #
+            output_file_name = input_file_name + '.html'
 
-                        # Get rid of trailing . in title
-                        while title.endswith('.'):
-                            title = title[:-1]
-                        # end title
-                        index += 1
-                        if nparts > index: journal = parts[index]
+            n_file_citations = 0
+            with open(str(output_file_name), encoding="utf-8", mode="w") as output_file:
+                print("\nReading input file {}".format(path.name))
+                print("<!DOCTYPE html> <html>\n<head><meta charset='UTF-8'></head>\n"
+                      "<body>\n<h3>APA Citations for Input File {}</h3>\n"
+                      "<table border=2>\n"
+                      .format(input_file_name), file=output_file)
+                # NOTE: save EXCEL file as "UNICODE text" file
+                with open (str(input_file_name), encoding="utf-8", mode="r") as input_file:
+                    input_lines = input_file.readlines()
+                    n_unit_dois = 0
 
-                        index += 1
-                        if nparts > index: volume = parts[index]
+                    for index_line, line in enumerate(input_lines):
+                        n_file_citations += 1
+                        index_doi = -1
+                        try:
+                            index_doi = line.find("doi:")
+                        except Exception as e:
+                            print("Skipping exception={}".format(repr(e.message)))
+                            pass
+                        if index_doi < 0:
+                            print("Skip line index={}, {}. No doi found"
+                                  .format(index_line,line.encode('ascii','ignore')))
+                            continue
+                        doi = line[index_doi:]
 
-                        index +=1
-                        if nparts > index: issue = parts[index]
+                        n_unit_dois += 1
+                        # Complain if the doi is already in the base or this
+                        # 'current' list of ifas citation files
+                        doi_base_dup = self.d_base_doi.get(doi, None)
+                        if doi_base_dup is not None:
+                            n_dup_old += 1
+                            print("ERROR: Input file {} has duplicate past doi '{}'"
+                              .format(input_file_name,doi_base_dup))
 
-                        index += 1
-                        if nparts > index:
-                            pages = parts[index]
-                            while pages.endswith('.'):
-                                pages = pages[:-1]
+                        doi_cur_dup = self.d_current_doi.get(doi, None)
+                        if doi_cur_dup is not None:
+                            n_dup_cur += 1
+                            print("ERROR: Input file {} index={} has duplicate current year doi '{}'"
+                                  " to one in this year's input file name = '{}'"
+                              .format(input_file_name,index_line,doi,doi_cur_dup))
+                        else:
+                            self.d_current_doi[doi] = input_file_name
 
-                        # FIELD DOI
-                        index +=1
-                        if nparts > index:
-                            doi = parts[index].replace(' ','').replace('\n','')
-                            if doi.startswith('http://dx.doi.org/'):
-                                doi = doi[18:]
-                            if doi.upper().startswith('DOI:'):
-                                doi = doi[4:]
-                            if len(doi.strip()) > 0:
-                                # Complain if the doi is already in the base or this
-                                # 'current' list of ifas citation files
-                                doi_old = d_doi_old.get(doi, None)
-                                if doi_old is not None:
-                                    n_dup_old += 1
-                                    print("ERROR: Input file {} has duplicate past doi '{}'"
-                                      .format(input_file_name,doi_old))
+                    # for line in input_lines
+                print("Inspected input file={} with {} lines and {} dois."
+                  .format(input_file_name, len(input_lines), n_unit_dois))
 
-                                doi_cur_val = d_doi_current.get(doi, None)
-                                if doi_cur_val is not None:
-                                    n_dup_cur += 1
-                                    print("ERROR: Input file {} index={} has duplicate doi '{}'"
-                                          " to one in this year's input file name = '{}'"
-                                      .format(input_file_name,index,doi,doi_cur_val))
-                                else:
-                                    d_doi_current[doi] = input_file_name
-                            # end if len(doi) > 0
-                        #end field DOI
-
-                        p_volume = '' if volume == '' else ', {}'.format(volume)
-                        p_issue = '' if issue == '' else '({})'.format(issue)
-                        p_pages = '' if pages == '' else ', {}'.format(pages)
-                        p_doi = '' if doi == '' else (
-                            ' <a href="http:/dx.doi.org/{}"> {}</a>'.format(doi,doi))
-
-                        print("<tr><td>{} ({}). {}. "
-                              "<span style='font-style: italic;'>{}{}</span>{}{}.{}\n</td></tr>\n"
-                            .format(html_escape(authors),
-                                    html_escape(pubyear),
-                                    html_escape(title),
-                                    html_escape(journal),
-                                    html_escape(p_volume),
-                                    html_escape(p_issue),
-                                    html_escape(p_pages),
-                                    p_doi)
-                            ,file=output_file)
-                    # end nparts > title index value
-                # for line in input_lines
-
-            print("Produced APA citation output file {} with {} citations."
-                  .format(output_file_name, n_file_citations))
-            print("</table></body></html>\n",file=output_file)
-            # withoutput_file
-    # with input_file
-    return n_dup_old, n_dup_cur
-# end make_apa_citations
+                print("</table></body></html>\n",file=output_file)
+                # with open input_file
+            # with open output_file
+        # end for path in self.unit paths
+        self.n_dup_old = n_dup_old
+        self.n_dup_cur = n_dup_cur
+        return n_dup_old, n_dup_cur
+    # end make_apa_citations
+# end class CitationsInspector
 
 print("Starting")
-input_folder = make_home_relative_folder(
-    "ifas_citations/inputs/20170419_test_citations_txt_files")
-master_base_file = input_folder + "/2015_master_base.txt"
+year_input_folder_name = make_home_relative_folder(
+    "data/ifas_citations/2016/inputs_round1")
 
-d_base, d_doi = ifas_citations_base(input_file_name=master_base_file)
+inspector = CitationsInspector(year_input_folder_name=year_input_folder_name)
 
-print("Got d_doi length='{}'".format(len(d_doi)))
+inspector.inspect()
 
-n_dup_old, n_dup_cur = ifas_citations_inspect(input_folder=input_folder,d_doi_old=d_doi)
+print("Got d_base_doi length='{}'".format(len(inspector.d_base_doi)))
+
+n_dup_old = inspector.n_dup_old
+n_dup_cur = inspector.n_dup_cur
 
 print("Skipped {} dois of olders ones, {} of current.Done!"
   .format(n_dup_old,n_dup_cur))
