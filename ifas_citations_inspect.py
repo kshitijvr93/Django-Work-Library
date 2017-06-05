@@ -155,6 +155,7 @@ class CitationsInspector():
 
                     for index_line, line in enumerate(input_lines):
                         n_file_citations += 1
+
                         index_doi = -1
                         try:
                             index_doi = line.find("doi:")
@@ -162,36 +163,109 @@ class CitationsInspector():
                             print("Skipping exception={}".format(repr(e.message)))
                             pass
                         if index_doi < 0:
-                            print("Skip line index={}, {}. No doi found"
-                                  .format(index_line,line.encode('ascii','ignore')))
-                            continue
-                        doi = line[index_doi:]
-
-                        n_unit_dois += 1
-                        # Complain if the doi is already in the base or this
-                        # 'current' list of ifas citation files
-                        doi_base_dup = self.d_base_doi.get(doi, None)
-                        if doi_base_dup is not None:
-                            n_dup_old += 1
-                            print("ERROR: Input file {} has duplicate past doi '{}'"
-                              .format(input_file_name,doi_base_dup))
-
-                        doi_cur_dup = self.d_current_doi.get(doi, None)
-                        if doi_cur_dup is not None:
-                            n_dup_cur += 1
-                            print("ERROR: Input file {} index={} has duplicate current year doi '{}'"
-                                  " to one in this year's input file name = '{}'"
-                              .format(input_file_name,index_line,doi,doi_cur_dup))
+                            print("WARNING: Input file={}, index_line={}, {}."
+                              .format(input_file_name, index_line, line.encode('ascii','ignore')))
+                            doi = ''
                         else:
-                            self.d_current_doi[doi] = input_file_name
+                            doi = line[index_doi:]
+                            line = line[:index_doi] #keep the non-doi part of the line
+                            n_unit_dois += 1
+                            # Complain if the doi is already in the base or this
+                            # 'current' list of ifas citation files
+                            doi_base_dup = self.d_base_doi.get(doi, None)
+                            if doi_base_dup is not None:
+                                n_dup_old += 1
+                                print("ERROR: Input file {}, index={}, has duplicate past doi '{}'"
+                                  .format(input_file_name, index_line, doi_base_dup))
+
+                            doi_cur_dup = self.d_current_doi.get(doi, None)
+                            if doi_cur_dup is not None:
+                                n_dup_cur += 1
+                                print("ERROR: Input file {} index={} has duplicate current year doi '{}'"
+                                      " to one in this year's input file name = '{}'"
+                                  .format(input_file_name,index_line,doi,doi_cur_dup))
+                            else:
+                                self.d_current_doi[doi] = input_file_name
+                        # end else clause - doi given in input line
+
+                        # Parse the rest of the line that appears before the doi.
+                        #  Split the line based on the ')' that should first appear following the year that follows
+                        #  the author list
+                        index_next = 0
+                        print("\nInput file={}, index_line={}".format(input_file_name,index_line))
+                        # Get the authors
+                        index_open_paren = line.find('(')
+                        if index_open_paren == -1:
+                            authors = line
+                            index_open_paren = index_next
+                        else:
+                            authors = line[:index_open_paren]
+                            index_next = index_open_paren
+                        print("Got authors='{}'".format(authors))
+
+                        # Get the year
+                        index_found = line[index_open_paren+1:].find(')')
+                        if index_found == -1:
+                            index_closed_paren = index_next
+                            pub_year = line
+                        else:
+                            index_closed_paren = index_found + index_open_paren + 1
+                            pub_year = line[index_open_paren + 1:index_closed_paren]
+                            index_next = index_closed_paren
+                        print("Got pub_year='{}'".format(pub_year))
+
+                        #JOURNAL
+                        index_found = line[index_closed_paren + 1:].find(',')
+                        if index_found == -1:
+                            journal = line
+                            index_comma = index_next
+                        else:
+                            index_comma = index_found + index_closed_paren + 1
+                            journal = line[index_closed_paren+1:index_comma]
+                            index_found = journal.find('.')
+                            if index_found >= 0:
+                                journal = journal[index_found +1:]
+                            journal = journal.strip()
+                            index_next = index_comma
+                        print("Got journal = '{}'".format(journal))
+
+                        #VOLUME
+                        index_found = line[index_comma +1 :].find('(')
+                        if index_open_paren == -1:
+                            volume=''
+                            index_open_paren = index_next
+                        else:
+                            index_open_paren = index_found + index_comma + 1
+                            volume = line[index_comma:index_open_paren].strip()
+                            index_found = volume.find(',')
+                            if index_found >= 0:
+                                volume = volume[index_found + 1:]
+                            volume = volume.strip()
+                            index_next = index_open_paren
+                        print("Got volume = '{}'".format(volume))
+
+                        #ISSUE
+                        index_found = line[index_open_paren + 1:].find(')')
+                        if index_found == -1:
+                            issue = ''
+                            index_closed_paren = index_next
+                        else:
+                            index_closed_paren = index_open_paren + 1 + index_found
+                            issue = line[index_open_paren+1:index_closed_paren]
+                            index_next = index_closed_paren
+                        print("Got issue = '{}'".format(issue))
+
+
+
+
 
                     # for line in input_lines
                 print("Inspected input file={} with {} lines and {} dois."
                   .format(input_file_name, len(input_lines), n_unit_dois))
 
-                print("</table></body></html>\n",file=output_file)
-                # with open input_file
-            # with open output_file
+
+                # end with open input_file
+            # end with open output_file
         # end for path in self.unit paths
         self.n_dup_old = n_dup_old
         self.n_dup_cur = n_dup_cur
