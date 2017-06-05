@@ -39,6 +39,48 @@ That detail needs to be resolved.
 
 from pathlib import Path
 from etl import html_escape, has_digit, has_upper, make_home_relative_folder
+import xlrd, xlwt
+from xlrd import open_workbook
+
+'''
+class OutBookSheet is a simple excel workbook of type xls with one sheet.
+
+'''
+class OutBookSheet(Object):
+
+    def __init__(self, name=None, output_columns=None):
+        # To save data, caller must use the self.book.save(filename) method
+        # Note: and user MUST use the .xls suffix in that filename. Though
+        # suffix xslx will work OK with LibreOffice, it causes Excel 2013 to choke.
+        self.book = xlwt.Workbook()
+        self.sheet = self.book.add_sheet(name)
+        self.output_columns = output_columns
+        # Caller may use this to set a style per column before calling writerow
+        self.d_column_style = {}
+        # Header row
+        for col_index,col_name in enumerate(self.output_columns):
+            # Write first output row 0 with column names
+            self.sheet.write(0, col_index, col_name)
+            self.d_column_style[col_name] = None
+
+        # Set 'cursor' of current outbook row to assist repreated writerow calls
+        self.outbook_row_index = 1
+
+    def writerow(self, d_output=None, d_column_style=None, verbosity=0):
+        column_values = [ d_output[column] for column in self.output_columns]
+        for column_index, (column_key, column_value) in enumerate(d_output.items()):
+            #print ("outbooks_writerow: index={}, key='{}', value='{}'".format(column_index, column_key, column_value) )
+            style = d_column_style.get(column_key, None)
+            if style is None:
+                self.sheet.write(self.outbook_row_index, column_index, column_value.strip())
+            else:
+                if (verbosity > 0):
+                    print("Writing a style for column '{}'".format(column_key))
+                self.deeply_sheet.write(self.outbook_row_index, column_index, column_value.strip(), style)
+        self.outbook_row_index += 1
+
+# end class OutBookSheet
+
 '''
 <summary>This object registers the annual IFAS citations input folders and files,
 and has main method inspect() which inspects a year's worth of IFAS
@@ -76,12 +118,15 @@ class CitationsInspector():
         self.base_pubs_file_name = '{}/IFAS-2015-pubs_by_topic-1.txt'.format(self.base_folder)
         self.base_skip_lines = 4 # Number of lines in last years citations file to skip from the start
         self.unit_has_tab_sep = unit_has_tab_sep; #If true, unit citations files are tab-separated
-
+        self.outbook = OutBook()
         self.d_base_index = {}
         self.d_base_doi = {}
         self.d_current_doi = {}
         n_file_citations = 0
-
+        self.output_columns = [
+        'doi', 'authors', 'title', 'journal','volume','issue','page_range'
+        ]
+        self.book_sheet = OutBookSheet(self.output_columns)
         # input and save last year's citation info to use to check for duplicates in this year's units
         with open (str(self.base_pubs_file_name),
                 encoding="utf-8", errors='replace', mode="r") as input_file:
@@ -132,7 +177,8 @@ class CitationsInspector():
         n_citations = 0
         n_dup_old = 0
         n_dup_cur = 0
-
+        d_column_output = {}
+        d_column_style = {}
         print("{}: Found {} input files".format(me,len(self.unit_paths)))
         for path in self.unit_paths:
             input_file_name = "{}/{}".format(path.parents[0], path.name)
@@ -140,9 +186,14 @@ class CitationsInspector():
             n_input_files += 1
             #
             output_file_name = input_file_name + '.html'
-
+            outbook_name = '{}'.format(path.name.replace(' ','_'))
+            self.outbooksheet = OutBookSheet(name=outbook_name, self.output_columns)
             n_file_citations = 0
+            dot_index = path.name.find('.')
+            input_unit_base_name = path.name[:dot_index]
+            # We produce one output file, an excel workbook, for every unit intput file
             with open(str(output_file_name), encoding="utf-8", errors='replace',mode="w") as output_file:
+                outbook = OutBookSheet(name=input_unit_base_name,output_columns=self.output_columns)
                 print("\nReading input file {}".format(path.name))
                 print("<!DOCTYPE html> <html>\n<head><meta charset='UTF-8'></head>\n"
                       "<body>\n<h3>APA Citations for Input File {}</h3>\n"
@@ -152,8 +203,8 @@ class CitationsInspector():
                 with open (str(input_file_name), encoding="utf-8-sig", errors='ignore', mode="r") as input_file:
                     input_lines = input_file.readlines()
                     n_unit_dois = 0
-
                     for index, line in enumerate(input_lines):
+                        d_output = {}
                         index_line = index + 1
                         n_file_citations += 1
                         line = line.replace('\n','')
@@ -161,12 +212,13 @@ class CitationsInspector():
                         try:
                             index_doi = line.find("doi:")
                         except Exception as e:
-                            print("Skipping exception={}".format(repr(e.message)))
+                            print("Ignoring exception={}".format(repr(e.message)))
                             pass
                         if index_doi < 0:
                             print("WARNING: NO DOI given in input file={}, index_line={}, {}."
                               .format(input_file_name, index_line, line.encode('ascii','ignore')))
                             doi = ''
+                            doi = "{}:linecount={}".format(input_file_name, index_line)
                         else:
                             doi = line[index_doi:]
                             line = line[:index_doi] #keep the non-doi part of the line
@@ -179,14 +231,19 @@ class CitationsInspector():
                                 print("ERROR: Input file {}, index={}, has duplicate past doi '{}'"
                                   .format(input_file_name, index_line, doi_base_dup))
 
-                            doi_cur_dup = self.d_current_doi.get(doi, None)
-                            if doi_cur_dup is not None:
-                                n_dup_cur += 1
-                                print("ERROR: Input file {} index={} has duplicate current year doi '{}'"
-                                      " to one in this year's input file name = '{}'"
-                                  .format(input_file_name,index_line,doi,doi_cur_dup))
-                            else:
-                                self.d_current_doi[doi] = input_file_name
+                        d_output['doi'] = doi
+                        doi_cur_dup = self.d_current_doi.get(doi, None)
+                        if doi_cur_dup is not None:
+                            n_dup_cur += 1
+                            print("ERROR: Input file {} index={} has duplicate current year doi '{}'"
+                                  " to one in this year's input file name = '{}'"
+                              .format(input_file_name,index_line,doi,doi_cur_dup))
+
+                            outbook.d_column_style['doi'] = easyxf_style = ('pattern: pattern solid, fore_colour light_blue;'
+                                  'font: colour white, bold True;')
+                        else:
+                            outbook.d_column_style['doi'] = None
+                            self.d_current_doi[doi] = input_file_name
                         # end else clause - doi given in input line
 
                         # Parse the rest of the line that appears before the doi.
@@ -207,6 +264,8 @@ class CitationsInspector():
                             authors = line[index_base : index_end].strip()
                             index_base = index_end + 1 # plus one to skip the '(' sentinel character )
                         print("Got authors='{}'".format(authors).encode('utf-8'))
+                        d_output['authors'] = authors
+                        d_column_style['authors'] = None
 
                         # Get the pub_year
                         if index_found < 1:
