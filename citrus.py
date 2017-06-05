@@ -17,7 +17,7 @@ class Citrus():
 
         self.input_file_paths = FilePaths(input_folders, input_path_glob).paths
         self.deeply_rooted_output_file_name =  deeply_rooted_output_file_name
-        description = ('This item has been aggregated as part of the Association of Southeastern'
+        self.description = ('This item has been aggregated as part of the Association of Southeastern'
               + ''' Research Libraries (ASERL)'s "Deeply Rooted: The Agricultural & Rural History of the '''
               + 'American South" project.')
         #The keys of this dictionary double as the header column names to be output to an eventual csv or excel file
@@ -28,14 +28,14 @@ class Citrus():
                 ('title', ('xml', './/mods:title' )),
                 #special conditions for transforming subject data here require subject id and sub-elt topic
                 ('subject', ('list', './/mods:subject')),
-                ('description', ('constant', description )),
+                ('description', ('xml','.//mods:abstract')),
                 ('source', ('xml', './/mods:recordContentSource' )),
                 ('publisher', ('xml', './/sobekcm:Publisher' )), #special case/code to extract from this node
                 ('coverage_temporal', ('xml', './/sobekcm:Temporal/sobekcm:period' )),
                 ('format', ('constant', 'image/jpeg, image/jp2, image/tiff, image/jpeg-thumbnails' )),
                 ('identifier', ('xml', './/mods:url' )),
                 ('rights', ('xml', './/mods:accessCondition' )),
-                ('creator', ('list', './/METS:agent' )), # use the  name of creator individual
+                ('creator', ('list', './/mods:name' )), # use the  name of creator individual
                 ('language', ('xml', './/mods:languageTerm' )),
                 ('type', ('xml', './/mods:genre' )),
                 ('coverage_spatial', ('xml', './/mods:hierarchicalGeographic' )),
@@ -166,6 +166,9 @@ class Citrus():
                             #Special deeply rooted requirement, always output this as first relation,
                             #but append it with those found in input with type 'original' (see below).
                             result = "Deeply Rooted"
+                        elif key == 'description':
+                            #Special deeply rooted requirement. Always include following as a component in description.
+                            result = self.description
                         else:
                             result = ''
 
@@ -187,6 +190,9 @@ class Citrus():
                                         node_place = node.find('sobekcm:PlaceTerm', d_namespaces)
                                         text_place = '' if node_place is None else node_place.text
                                         result = '{}, {}'.format(text_name, text_place)
+                                elif key == 'description':
+                                    text = '' if node.text is None else node.text
+                                    result += ';' + text # use ; sep because description always start with constant
                                 else:
                                     result = node.text if node is not None else ""
                             # if node is not None
@@ -194,12 +200,23 @@ class Citrus():
                             nodes = input_node_root.findall(xpath, d_namespaces)
                             sep = ''
                             for node in nodes:
-                                if (key == 'creator' and node.attrib['ROLE'] == 'CREATOR'
-                                   and node.attrib['TYPE'] == 'INDIVIDUAL'):
-                                    # This is a node in a list of creator nodes and we only need this one.
-                                    node_creator_name = node.find('./METS:name', d_namespaces)
-                                    result = '' if node_creator_name is None else node_creator_name.text
-                                    break
+
+                                # Nodes with potential Deeply-Rooted defined "Creator" values
+                                if (key == 'creator'):
+                                    node_role_name_part = node.findall('./mods:namePart', d_namespaces)[0]
+                                    potential_creator_name = '' if node_role_name_part is None else node_role_name_part.text
+                                    is_donor = False
+                                    nodes_role_term = node.findall('.//mods:roleTerm', d_namespaces)
+                                    for node_role_term in nodes_role_term:
+                                        if (node_role_term.attrib.get('type','') == 'text'
+                                            and node_role_term.text == 'donor'):
+                                            is_donor = True
+                                            break
+                                    # node_role_term in nodes_role_term
+                                    if is_donor == False and potential_creator_name != '':
+                                        result += sep + potential_creator_name
+                                        sep = ';'
+
                                 elif (key == 'subject'):
                                     #
                                     nodes_topic = node.findall('./mods:topic', d_namespaces)
@@ -245,6 +262,17 @@ class Citrus():
                     result = 'Ephemera;Crate labels'
                     d_output['type'] = result
                     #print("Setting type='{}'".format(result))
+
+                    #Also add mods:note text as components to the Description value:
+                    xpath = './/mods:note'
+                    description = d_output['description']
+                    for node in input_node_root.findall(xpath, d_namespaces):
+                        description += ';' + node.text
+                    d_output['description'] = description
+
+                    creator = d_output['creator']
+                    if (len(creator) > 55):
+                        print("******* WARNING ******  file={},index={}: Got long creator={}".format(input_file_name,input_file_index,creator))
 
                     #If no data given for relation, just set "Deeply Rooted"'
                     relation = d_output.get('relation','')
@@ -316,7 +344,7 @@ class Citrus():
                     # coverage_temporal = period
                     d_output['coverage_temporal'] = coverage_temporal
                     #print("str_date='{}', start={}, end={}, period={}".format(str_date,start_year,end_year,period))
-                    d_output['date'] = str_date
+                    d_output['date'] = edtf_date
 
                     #SPATIAL COLUMNS (country,state,county,city) # see
                     country_idx = dci['country']
