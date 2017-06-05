@@ -142,20 +142,20 @@ class CitationsInspector():
             output_file_name = input_file_name + '.html'
 
             n_file_citations = 0
-            with open(str(output_file_name), encoding="utf-8", mode="w") as output_file:
+            with open(str(output_file_name), encoding="utf-8", errors='replace',mode="w") as output_file:
                 print("\nReading input file {}".format(path.name))
                 print("<!DOCTYPE html> <html>\n<head><meta charset='UTF-8'></head>\n"
                       "<body>\n<h3>APA Citations for Input File {}</h3>\n"
                       "<table border=2>\n"
                       .format(input_file_name), file=output_file)
                 # NOTE: save EXCEL file as "UNICODE text" file
-                with open (str(input_file_name), encoding="utf-8", mode="r") as input_file:
+                with open (str(input_file_name), encoding="utf-8", errors='replace',mode="r") as input_file:
                     input_lines = input_file.readlines()
                     n_unit_dois = 0
 
                     for index_line, line in enumerate(input_lines):
                         n_file_citations += 1
-
+                        line = line.replace('\n','')
                         index_doi = -1
                         try:
                             index_doi = line.find("doi:")
@@ -193,50 +193,54 @@ class CitationsInspector():
                         #  the author list
                         index_next = 0
                         print("\nInput file={}, index_line={}".format(input_file_name,index_line))
+
                         # Get the authors
                         index_open_paren = line.find('(')
                         if index_open_paren == -1:
-                            authors = line
+                            authors = line.strip()
                             index_open_paren = index_next
                         else:
-                            authors = line[:index_open_paren]
+                            authors = line[:index_open_paren].strip()
                             index_next = index_open_paren
-                        print("Got authors='{}'".format(authors))
+                        print("Got authors='{}'".format(authors).encode('utf-8'))
 
                         # Get the year
                         index_found = line[index_open_paren+1:].find(')')
                         if index_found == -1:
                             index_closed_paren = index_next
-                            pub_year = line
+                            pub_year = line.strip()
                         else:
                             index_closed_paren = index_found + index_open_paren + 1
-                            pub_year = line[index_open_paren + 1:index_closed_paren]
+                            pub_year = line[index_open_paren + 1:index_closed_paren].strip()
                             index_next = index_closed_paren
                         print("Got pub_year='{}'".format(pub_year))
 
                         #JOURNAL
-                        index_found = line[index_closed_paren + 1:].find(',')
+                        # Seek end of journal name by finding open paren of issue then backtracking to a comma
+                        index_found = line[index_closed_paren + 1:].find('(')
                         if index_found == -1:
-                            journal = line
-                            index_comma = index_next
+                            journal = line.strip()
+                            index_period = index_next
                         else:
-                            index_comma = index_found + index_closed_paren + 1
-                            journal = line[index_closed_paren+1:index_comma]
-                            index_found = journal.find('.')
-                            if index_found >= 0:
-                                journal = journal[index_found +1:]
-                            journal = journal.strip()
+                            line2 = line[index_closed_paren + 1:index_found]
+                            # find all commas between the last closed parena and this found open paren
+                            print("seeking last comma in '{}'".format(line2))
+                            l_pos_comma = [pos for pos, char in enumerate(line2) if char == ',']
+                            index_comma = l_pos_comma[-1]
+                            # Journal title is substring after last open paren(of year) and before last comma
+                            # because a title may have commas within it...
+                            journal = line[index_closed_paren: index_closed_paren + index_found].strip()
                             index_next = index_comma
                         print("Got journal = '{}'".format(journal))
 
                         #VOLUME
-                        index_found = line[index_comma +1 :].find('(')
+                        index_found = line[index_period +1 :].find('(')
                         if index_open_paren == -1:
                             volume=''
                             index_open_paren = index_next
                         else:
-                            index_open_paren = index_found + index_comma + 1
-                            volume = line[index_comma:index_open_paren].strip()
+                            index_open_paren = index_found + index_period + 1
+                            volume = line[index_period:index_open_paren].strip()
                             index_found = volume.find(',')
                             if index_found >= 0:
                                 volume = volume[index_found + 1:]
@@ -251,15 +255,11 @@ class CitationsInspector():
                             index_closed_paren = index_next
                         else:
                             index_closed_paren = index_open_paren + 1 + index_found
-                            issue = line[index_open_paren+1:index_closed_paren]
+                            issue = line[index_open_paren+1:index_closed_paren].strip()
                             index_next = index_closed_paren
                         print("Got issue = '{}'".format(issue))
-
-
-
-
-
                     # for line in input_lines
+
                 print("Inspected input file={} with {} lines and {} dois."
                   .format(input_file_name, len(input_lines), n_unit_dois))
 

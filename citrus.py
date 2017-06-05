@@ -362,7 +362,7 @@ input_folder = etl.data_folder(linux=linux, windows=windows, data_relative_folde
 
 input_folders = [input_folder]
 output_folder = etl.data_folder(linux=linux, windows=windows, data_relative_folder='data/outputs/deeply_rooted')
-output_file_name = output_folder + '/' + 'deeply_rooted.xlsx'
+output_file_name = output_folder + '/' + 'deeply_rooted.xls'
 
 edits_file = input_folder + '/citrus_20170519a.xlsx' # Angie's edited spreadsheet of citrus data
 
