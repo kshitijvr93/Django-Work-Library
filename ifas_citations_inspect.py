@@ -149,11 +149,12 @@ class CitationsInspector():
                       "<table border=2>\n"
                       .format(input_file_name), file=output_file)
                 # NOTE: save EXCEL file as "UNICODE text" file
-                with open (str(input_file_name), encoding="utf-8", errors='replace',mode="r") as input_file:
+                with open (str(input_file_name), encoding="utf-8-sig", errors='ignore', mode="r") as input_file:
                     input_lines = input_file.readlines()
                     n_unit_dois = 0
 
-                    for index_line, line in enumerate(input_lines):
+                    for index, line in enumerate(input_lines):
+                        index_line = index + 1
                         n_file_citations += 1
                         line = line.replace('\n','')
                         index_doi = -1
@@ -163,7 +164,7 @@ class CitationsInspector():
                             print("Skipping exception={}".format(repr(e.message)))
                             pass
                         if index_doi < 0:
-                            print("WARNING: Input file={}, index_line={}, {}."
+                            print("WARNING: NO DOI given in input file={}, index_line={}, {}."
                               .format(input_file_name, index_line, line.encode('ascii','ignore')))
                             doi = ''
                         else:
@@ -191,73 +192,100 @@ class CitationsInspector():
                         # Parse the rest of the line that appears before the doi.
                         #  Split the line based on the ')' that should first appear following the year that follows
                         #  the author list
-                        index_next = 0
-                        print("\nInput file={}, index_line={}".format(input_file_name,index_line))
+                        index_base = 0
+                        index_found = 0
+                        print("\n---Input file={}, index_line={}".format(input_file_name,index_line))
 
                         # Get the authors
-                        index_open_paren = line.find('(')
-                        if index_open_paren == -1:
-                            authors = line.strip()
-                            index_open_paren = index_next
+                        index_found = line[index_base:].find('(')
+                        if index_found == -1:
+                            authors = line[index_base:]
+                            index_base = len(line)
+                            continue
                         else:
-                            authors = line[:index_open_paren].strip()
-                            index_next = index_open_paren
+                            index_end = index_base + index_found
+                            authors = line[index_base : index_end].strip()
+                            index_base = index_end + 1 # plus one to skip the '(' sentinel character )
                         print("Got authors='{}'".format(authors).encode('utf-8'))
 
-                        # Get the year
-                        index_found = line[index_open_paren+1:].find(')')
-                        if index_found == -1:
-                            index_closed_paren = index_next
-                            pub_year = line.strip()
+                        # Get the pub_year
+                        if index_found < 1:
+                            continue
+                        index_found = line[index_base:].find(')')
+                        if index_found < 1:
+                            pub_year = line[index_base]
                         else:
-                            index_closed_paren = index_found + index_open_paren + 1
-                            pub_year = line[index_open_paren + 1:index_closed_paren].strip()
-                            index_next = index_closed_paren
-                        print("Got pub_year='{}'".format(pub_year))
+                            index_end = index_base + index_found
+                            pub_year = line[index_base:index_end].strip()
+                            index_base = index_end + 2 # Add 1 to also skip sentinel character PLUS the following '.'.
+                        print("Got index_found={},index_end={},pub_year='{}'".format(index_found,index_end,pub_year))
+
+                        #TITLE
+                        if index_found < 1:
+                            continue
+                        index_found = line[index_base :].find('.')
+                        if index_found < 1:
+                            title = line[index_base :]
+                        else:
+                            index_end = index_base + index_found
+                            title = line[index_base:index_end].strip()
+                            index_base = index_end + 1
+                        print("Got index_found={},end={},title='{}'".format(index_found,index_end,title))
 
                         #JOURNAL
-                        # Seek end of journal name by finding open paren of issue then backtracking to a comma
-                        index_found = line[index_closed_paren + 1:].find('(')
-                        if index_found == -1:
-                            journal = line.strip()
-                            index_period = index_next
+                        # Seek end of journal name by finding open paren of issue then backtracking to the
+                        # 'last comma or period', the true end-sentinal, because title itself may have an arbitrary number of commas.
+                        if index_found < 1:
+                            continue
+                        index_found = line[index_base:].find(',')
+                        if index_found < 1:
+                            journal = ''
+                            journal = line[index_base :]
                         else:
-                            line2 = line[index_closed_paren + 1:index_found]
-                            # find all commas between the last closed parena and this found open paren
-                            print("seeking last comma in '{}'".format(line2))
-                            l_pos_comma = [pos for pos, char in enumerate(line2) if char == ',']
-                            index_comma = l_pos_comma[-1]
+                            index_end = index_base + index_found
                             # Journal title is substring after last open paren(of year) and before last comma
                             # because a title may have commas within it...
-                            journal = line[index_closed_paren: index_closed_paren + index_found].strip()
-                            index_next = index_comma
+                            journal = line[index_base:index_end].strip()
+                            # In this case we add to the end of index_found_open
+                            index_base = index_end + 1
                         print("Got journal = '{}'".format(journal))
 
                         #VOLUME
-                        index_found = line[index_period +1 :].find('(')
-                        if index_open_paren == -1:
+                        # Again find open paren that indicates end of volume
+                        if index_found < 1:
+                            continue
+                        index_found = line[index_base:].find('(')
+                        if index_found < 1:
                             volume=''
-                            index_open_paren = index_next
+                            volume = line[index_base :]
                         else:
-                            index_open_paren = index_found + index_period + 1
-                            volume = line[index_period:index_open_paren].strip()
-                            index_found = volume.find(',')
-                            if index_found >= 0:
-                                volume = volume[index_found + 1:]
-                            volume = volume.strip()
-                            index_next = index_open_paren
+                            index_end = index_base + index_found
+                            volume = line[index_base:index_end].strip()
+                            index_base = index_end + 1
                         print("Got volume = '{}'".format(volume))
 
                         #ISSUE
-                        index_found = line[index_open_paren + 1:].find(')')
-                        if index_found == -1:
-                            issue = ''
-                            index_closed_paren = index_next
+                        if index_found < 1:
+                            continue
+                        index_found = line[index_base:].find(')')
+                        if index_found < 1:
+                            issue = line[index_base :]
                         else:
-                            index_closed_paren = index_open_paren + 1 + index_found
-                            issue = line[index_open_paren+1:index_closed_paren].strip()
-                            index_next = index_closed_paren
+                            index_end = index_base + index_found
+                            issue = line[index_base:index_end].strip()
+                            index_base = index_end + 1
                         print("Got issue = '{}'".format(issue))
+
+                        #Page Range:
+                        if index_found < 1:
+                            continue
+                        index_found = line[index_base:].find('.')
+                        if index_found < 1:
+                            page_range = line[index_base :]
+                        else:
+                            index_end = index_base + index_found
+                            page_range = line[index_base:index_end]
+                            index_base = index_end + 1
                     # for line in input_lines
 
                 print("Inspected input file={} with {} lines and {} dois."
