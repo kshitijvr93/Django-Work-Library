@@ -212,9 +212,9 @@ class CitationsInspector():
                     # DOI
                     index_doi = line.find("doi:")
                     if index_doi < 0:
-                        print("WARNING: NO DOI given in input file={}, index_line={}, {}."
-                          .format(input_file_name, index_line, line.encode('ascii','ignore')))
-                        doi = "{}:linecount={}".format(input_file_name, index_line)
+                        print("WARNING: NO DOI given in input file='{}', index_line={}, {}."
+                          .format(path.name, index_line, line.encode('ascii',errors='ignore')))
+                        doi = "'{}:line={}".format(path.name, index_line)
                         d_column_style['doi'] = easyxf('pattern: pattern solid, fore_colour pink;'
                               'font: colour black, bold True;')
                     else:
@@ -228,8 +228,8 @@ class CitationsInspector():
                             n_dup_old += 1
                             print("ERROR: Input file {}, index={}, has duplicate past doi '{}'"
                               .format(input_file_name, index_line, doi_base_dup))
-                            d_column_style['doi'] = easyxf('pattern: pattern solid, fore_colour pink;'
-                                  'font: colour white, bold True;')
+                            d_column_style['doi'] = easyxf('pattern: pattern solid, fore_colour red;'
+                                  'font: colour black, bold True;')
 
                     d_output['doi'] = doi
 
@@ -257,10 +257,8 @@ class CitationsInspector():
                     index_found = line[index_base:].find('(')
                     if index_found == -1:
                         authors = line[index_base:]
-                        index_base = len(line)
                         d_column_style['authors'] = xlwt.Style.easyxf('pattern: pattern solid, fore_colour yellow;'
                                   'font: colour red, bold False;')
-                        continue
                     else:
                         index_end = index_base + index_found
                         authors = line[index_base : index_end].strip()
@@ -270,8 +268,6 @@ class CitationsInspector():
                     d_column_style['authors'] = None
 
                     # Get the pub_year
-                    if index_found < 1:
-                        continue
                     index_found = line[index_base:].find(')')
                     if index_found < 1:
                         pub_year = line[index_base]
@@ -285,8 +281,6 @@ class CitationsInspector():
                     d_output['pub_year'] = pub_year
 
                     #TITLE
-                    if index_found < 1:
-                        continue
                     index_found = line[index_base :].find('.')
                     if index_found < 1:
                         title = line[index_base :]
@@ -302,8 +296,6 @@ class CitationsInspector():
                     #JOURNAL
                     # Seek end of journal name by finding open paren of issue then backtracking to the
                     # 'last comma or period', the true end-sentinal, because title itself may have an arbitrary number of commas.
-                    if index_found < 1:
-                        continue
                     index_found = line[index_base:].find(',')
                     if index_found < 1:
                         journal = line[index_base :]
@@ -321,8 +313,6 @@ class CitationsInspector():
 
                     #VOLUME
                     # Again find open paren that indicates end of volume
-                    if index_found < 1:
-                        continue
                     index_found = line[index_base:].find('(')
                     if index_found < 1:
                         volume = line[index_base :]
@@ -336,8 +326,6 @@ class CitationsInspector():
                     d_output['volume'] = volume
 
                     #ISSUE
-                    if index_found < 1:
-                        continue
                     index_found = line[index_base:].find(')')
                     if index_found < 1:
                         issue = line[index_base :]
@@ -351,8 +339,6 @@ class CitationsInspector():
                     d_output['issue'] = issue
 
                     #Page Range:
-                    if index_found < 1:
-                        continue
                     index_found = line[index_base:].find('.')
                     if index_found < 1:
                         page_range = line[index_base :]
