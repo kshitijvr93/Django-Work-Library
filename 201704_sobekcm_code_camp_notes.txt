@@ -26,7 +26,7 @@ and mvs we want to be html5 valid, but if we are not, please chane the core code
 rb - i had a demo that was mobile iface., started, and director of mktg kiled that
 and responsive design regular html i ahe not gotten to yet
 mvs is html 5 invalid
-rb I used, I amd switchign to chrome but use firefox now and I use alidation all the time and there are tons of woarnings and error wrt responsiveness tags
+rb I used, I amd switching to chrome but use firefox now and I use alidation all the time and there are tons of woarnings and error wrt responsiveness tags
 mvs - the responsive thing is another topic we want to addres.
 mvs my feeling is this sie is image driven, and there are mny options you can do..
 it is not like take my corp website and maek ti responsive
@@ -105,11 +105,11 @@ rb new types of content like rti is jpegs and xml files and the 3d models and te
 mvs - if oen wanted to use viewer to maek a thousand jpeg slices.
 --
 mvs we switch the sceduel a it
-today we will cover add new gneign endpoint
+today we will cover add new gneing endpoint
 and we add in bulk uploading.. and we can propose anyting else..
 -
-topic new engien endpoint
-so think of soemethign you want to handle
+topic new engine endpoint
+so think of soemething you want to handle
 coud include an entirely new structure to ssokekcms databbase like a new ead viwer with awhole other structure, showing how ontianers link, and you wnat to upullthat strucure out for another external system
 and think of a report you might want to use
 so if you writ a reporting thing it is simple to tie into html or serve item info a differetn way..
@@ -751,7 +751,7 @@ and here it expands the tree if it iexists
 and if it is an aggregation type page...then we parse the hson in the aggregation_json (see html soruce) with type "application'json", so this jil? library is i n our sytstem by default
 ..and he sees facts, banners. and he sees views and searches and you see in this json in the html soruce, a buchn of chile pages, and see label About.. and so back to the js, it parses the object and see it looks at each chidlPages and if it is an bout, then it hadds an about to tha tmeu..
 ..oh, we also have a diff search than tha y have so wef hhafe fnTr.. some other funciton
-so a good eg ouf usign js to do a good customization at the end where a...ac.uk/arte is really the aggreg menu
+so a good eg ouf using js to do a good customization at the end where a...ac.uk/arte is really the aggreg menu
 and the unchahing portions of the menu inclduees regions subejcts languages archives.. etc, and the thumbnails,e tc done mos tentirely by webskins..
 mvs - i say if these tiel images exist it should be a homepage.. now it looks for a tile subflodler and if extant it will show this...
 so we can see his copy of the agg page unde webroot/datesign/agregations/r)hg/images/TILES, a lot of jpg images.. so an admin can do this approach
@@ -884,7 +884,7 @@ and leave <permissions? as is
 and <assembly .. we can add our dll name (anticipated dll after we make it,
 but comment it out now)
 
-now under engeine mapping/path say plugins and subpath simple and subpath2 is
+now under engine mapping/path say plugins and subpath simple and subpath2 is
 also called simple
 and request type is english saying it is get only
 and under component change id to SIMPLE_COMP and change class..
@@ -892,7 +892,7 @@ and refer to them i the prior <Endoint tagg(s)... etc and
 change the path now in the xml to plugins simple/results..
 and now he jsut copied the code into his mouse and in vs now is creating
 file under config /usr enw file templseimpleservicesconfigconfi
-and now in vs is pasting in the text for oru new xml.
+and now in vs is pasting in the text for our new xml.
 so we are creating this 'plugin code and config' in our entire web VS
 project just for convenience, but when we get it working, we can
 extract our two files, the dll and config and call that our plugin - nice.
@@ -902,7 +902,7 @@ so now we go unde sytem settings i cofnig, las titem and see it did find our new
 and se wolook in the reading log and we see it found our new config.. fine.
 t1412
 
-and now loking at engine server endpoings..
+and now loking at engine server endpoints..
 so now at bttom iudne plbusins/simple are ouro 2 new endpoints.. and ti shows oure compoent info in theat componetbt table of the web page under ssytem wide settings for this ... these endpoints..
 -
 now we add our soruce code for the ethods..
@@ -910,13 +910,13 @@ we just used  endointbase to help us out as it has certain methods.. to tell sob
 -so see the method argumetns.. include url segemtns, etc, and request form provides get vs post verb type.. and the protocol was given in the config file to serve..
 so nowwe go back to our config info.. and change class naem so SimpleJson
 and define the method s by exact name we said in our config file,
-and can just do a Response.Write("In Simple_results=_JSON_method"): and test it out , wthether it is getting there when url is beign visited..
+and can just do a Response.Write("In Simple_results=_JSON_method"): and test it out , wthether it is getting there when url is being visited..
 and he goes out to add some usings.. using sytem.web, using system.collections.generic.. is all he needs to jsut those 2..
 and now testing both the xml and json ..
-also added the suign System.Collections.Specialized;
+also added the suing System.Collections.Specialized;
 
 -
-and adds usign sobckcmcore.cofnigureation.engine also
+and adds using sobckcmcore.cofnigureation.engine also
 and system.web..
 ok now compiles and tests the url..
 so if he sets aggreagtaions /code/json/dloc/en?debug=debug.. it shows all the good trace info.. and n our code we must put a stmt to say if deug =true to shwo this trace..
@@ -924,9 +924,9 @@ very useful..
 =
 now engine/plugins/simple/results trying.. no endpoint, but add to end json.. but still not found..
 so diagnosing the issue...
-look at bottom of report fo engine endpoings..
+look at bottom of report fo engine endpoints..
 
-now seeking in the report for simpleendpoings...
+now seeking in the report for simpleendpoints...
 did have to make sure the config file was under the config/users
 and the plumbing is done...
 so now we make it DO soemthing that we want it to do besides saying I am in method x.
@@ -939,7 +939,7 @@ mvs - so when you do a search it gets both things, the search stats tohat does n
 -
 so struggle 1 is objects are a bit complicated maybe a bit deep, and the second ocmplication is to make 2 calsl to see how many items are in the results and 2 is to get the results..
 -
-- so that is explanatinoof why we are doign this now..
+- so that is explanatinoof why we are doing this now..
 so now we are implemetning something.. and tyring to implemetn what we want in our new little methdos Simple_Results_Json, and in here you can make antoehr db call, say you can do:
 using System.Data
 DataTable fromDb =new tabase.Engine_Databse.Builder_lgo_search.. whatever, intellisense gives a lot.. see could see builde rlogs or Get_All_USer_groups ro ge websckien
@@ -1156,7 +1156,7 @@ so see and validat you like the xml or json output looks like what you want/need
 -could do a plugin for deeply rooted..
 - any questions on publishing plugings..
 
-so this proecrue is the easisest, work inside the soekcm core code web app an work i there, and once it is workign rooll it out into a new solution i vs, createt the plgin there with the config, modified as eneded for pugin naems or class naems..
+so this proecrue is the easisest, work inside the soekcm core code web app an work i there, and once it is working rooll it out into a new solution i vs, createt the plgin there with the config, modified as eneded for pugin naems or class naems..
 rb is familiar
 -
 and we can also alow plguins to read its own config info say to have a verbose flag that it can observe and hnor.. mark is noting a need for that..
@@ -1170,7 +1170,7 @@ rb like set expire date or something.. and soemtiems I still need to restart isi
 ---
 c ulder fucntiaonlity and packetes you can look at..
 so bulder-
-it looks at builder folders and waits for incomign maerial to be loaded
+it looks at builder folders and waits for incoming maerial to be loaded
 and so we will run builder in visual studio and we will laod bulk resource packages as we do it..
 --
 
@@ -1181,7 +1181,7 @@ and mai builder input folder usu alreadyset ok
 but o incoming folders you have to set that..
 --
 t0946
-so he needs to ddefine his incomign fodles
+so he needs to ddefine his incoming fodles
 and see button does have a button to add a new builder folder
 and he does it via web iface here.
 so generally you need to create three subfolders, named as you wish, but common
@@ -1200,7 +1200,7 @@ check that
 and the last one also check allow resource files in ap..
 and do save and done
 
-and now systemwide setting show oru single builder folder under exiting
+and now systemwide setting show our single builder folder under exiting
 builder folders on righthand side
 
 and in files go to builde/inbound and copy all i pacakes to his inbound..
@@ -1388,7 +1388,7 @@ so he grabbs some summary and param  docs strings.
 so if liook in the core in sabtract folders.. in core bulder modeul inabstractFolerMoudle.c
 see it usew s argumets- new List .. so one argumatn says this is a libary folder and another arg says these are museum .. folders
 so you can have diff args com ein
-and se public Instancewitrde Settings, and void RelesseResrouces.. you ahve access to, and have some events we can fire off oruselves for errors or regualr processing, and study this cd file
+and se public Instancewitrde Settings, and void RelesseResrouces.. you ahve access to, and have some events we can fire off ourselves for errors or regualr processing, and study this cd file
 and the dowork method..
 so we see fiel updateNonBibFolders.cs and this is similar and uder doWork we have string ssubdirs and its ars is builderoflder and naem incominpackages and deletes.. but really you want to work with builder folder, and you do subdirs - directory.getdirs(buildroflers.inboud folrer
 look through them, get naem of folde, see code
@@ -1419,8 +1419,8 @@ so nothing knows yet about this builde rmoduele, it is jsut a class there, so we
 these are diff sets of thigngs tha run.. these roles are ets and so see Stadrd Pre_process modules, standr post proces, incoing item processig, incoming deelte processing.
 and moduel tupeid.. mabye 6 is a scheudled task.. nto sure yet
 and each can have diff se
-so see incomign folder, it is set fo rmoduel id 10, and 10 is standard folder processing, adso 6 typeid is a folder type processing.
-so se add moduelset 1id 10..since that is the folder processign set
+so see incoming folder, it is set fo rmoduel id 10, and 10 is standard folder processing, adso 6 typeid is a folder type processing.
+so se add moduelset 1id 10..since that is the folder processing set
 so so now we sea select * from sobekcm dulder-moduel where moduelsetid-10 and orer by Orde.. and see..  thsese are the idnivudual builder modules that will runfo rthings in moduel set 10
 so first slook at moduel sets and ge tmoduel set it and then look at sobekcm bulder-moduels and they arehere in order...
 so on far right is enabled and order and arg 1,2,3
@@ -1437,7 +1437,7 @@ and put brackets arround col names assemly enabled, order as they are cotrolled 
 and the row is now in the db
 and now under folder builder//
 and put under bulder/incoming.. ?
-and put bp in our first line of oru DoWork()..
+and put bp in our first line of our DoWork()..
 and in config folde... gitrepo/sobemckeweb/ssobeccm bulder.bin/debug.. must add soem folder s , config
 or go to program files sobeck builder and grab all subrolders cicldiuig config... kakadu,images.. all thsoe folders and drop them in, and z3950..
 
@@ -1446,13 +1446,13 @@ and now start.. oops..
 so add a breakpoint.. or look in sobekcm builder log
 now edeugging i sobmek web app sobekcm builder ebug config.. see the connection string looks right..now try again from ommand line the builder.exe and now it hit our new breakbpoint..
 -so now at lines 45+ or so we get al lfilenames, doing a regex.matches line.. and lines 63 + stepping though, etting
-so it is steppoing, savign heitem we got auto 0001 so the aothe auto worked..
-and now see oru folder incoming.. see the folder was renamed.. and step wo to Save_Mets and then go to s and see oru mets file is in the incoming/auto... bottom level folder, it was added to incoming folder...
+so it is stepping, saving heitem we got auto 0001 so the aothe auto worked..
+and now see our folder incoming.. see the folder was renamed.. and step wo to Save_Mets and then go to s and see our mets file is in the incoming/auto... bottom level folder, it was added to incoming folder...
 and it goes through for another item.
 mvs so now be of our proecess we now have these new resoruce pacake that were jsut touchched by our new mdoudle..
 on thenow it will run through aging
 on latetst version I just moved it into the processing folrder and it vaoids this wait
-but nwo usign fs explorer I can jsut drag them into the processing - ther is no wait on them..
+but nwo using fs explorer I can jsut drag them into the processing - ther is no wait on them..
 nice..
 so now it will run again.. and every time it looks at a flolder it runs the package,a dn it processed them and loaded them..
 good.
@@ -1463,14 +1463,14 @@ resource id chine report fo th eyar
 item primary key:10895 and group priamry key 09146..
 and we can create our new other one...  like build a log file..
 --
-now addign class eternalllogbuilderwork, and now we have file externallylogbulderwork.cs and extened abstractSubmissionPackage MOdule
+now adding class eternalllogbuilderwork, and now we have file externallylogbulderwork.cs and extened abstractSubmissionPackage MOdule
 and it has a diff signature
 and again we just have to use DowWork and adcetp argumetn Incoming_Digital_Resoruce Resource arg, and it has al lthe item metadata..
 so the incoming_digital_resoruces.cs base class shwos al lyour methods, embers, and it shows actionable bulder soruc efolder, whte folder it came from and all the metadata in antoehr element and varioushelper methods, and love mets and save to databse, a lot of helper functios callable by the moduels,e tc.
 -
 so thats whet we get passed into it
 now ading string log_file=...
-now how to find wehre the application is running.. google for application startup c% fonsole.. see a link.. so shows itis.. no. another link how can I get the app used syste.reflexction.assembly.getexcutign sassembly90.Codebase
+now how to find wehre the application is running.. google for application startup c% fonsole.. see a link.. so shows itis.. no. another link how can I get the app used syste.reflexction.assembly.getexcuting sassembly90.Codebase
 
 -and put in prefix Path.GetdirectoryName(
 so useing that system.rerfl as an argument for that
@@ -1482,9 +1482,9 @@ StreamWriter writer = new Stramwriter(log_fiileName);, wrtier.WriteLIne((Resoruc
 and line writer.FLush; writer.close;
 and say using(streamwriter in the code
 and add append()
-and boolean we set as return vaalue (default is returnign voide fro mDoWork..
+and boolean we set as return vaalue (default is returning voide fro mDoWork..
 ..
-also addign a try catch onthere...
+also adding a try catch onthere...
 
 o when fired this wil ubild into the soek builder log talbble
 and so we pass th bibvid nd mets type sting(if a delete or not)
@@ -1502,7 +1502,7 @@ o now we choose wehre i this process do we want it to run.. we could do it here 
 so we had lowes to f1, so now we add row iwth 0.-
 --
 
-so now adign insert itno bulder modele a row fo r this
+so now ading insert itno bulder modele a row fo r this
 and mvs said we are luckyhere to not be doing multithreading
 but here would be aperfice palce to add ambmer public sttic object lgofile_lock; and that would be static shared by all
 and before youusing you add stemt lock(lgofile_lock) and by default it unlocosk at end of thsi clause or block startd by lock(logfile_lock) so a nother thrad would have to stocp when it hits this isf the lock is infoplace. nice feature of vs c#
@@ -1611,9 +1611,9 @@ and that link shows how they are comined..
 and now we look at systemwide settings for that..and see the ltablee ofviewers..
 so see dataset codeob, repots and viewdata, lrows appear sbe they are in the in the sobekcm item vier types table, but not in the config fil.. so class here says nto impelemntd..
 -mvs - the key in this table is the viwertyp is the ode in the db is linked into an itemr viwer prototyper... and the row if it has a class shows the class does appear
-and the vierdocee say for embedded vdieo it is evidoe, and it telsl when the url has the evideo code in it, it is askign specifically for the shthis viewr.
+and the vierdocee say for embedded vdieo it is evidoe, and it telsl when the url has the evideo code in it, it is asking specifically for the shthis viewr.
 mvs
-so the onfig file is in sobeckcm config default sobekcm_item_viewers.config (but we ove orus to default)
+so the onfig file is in sobeckcm config default sobekcm_item_viewers.config (but we ove ours to default)
 so the itemr veiwr list is important here..
 - so the ier ype atteiure shoudl match.. the type name in the sdbase maybe and the iwercode  attrib is the url segment name, and youhave assembly and class and wehtehr enabled or not..
 --so we are serious about alwasy adding for only very vfew viers, like the directory viewr, that is one of a fewi that is always added... not even the citation viewer, and it is always added on the wewbinterface side, and the d base says I am alwasy going to add the dierctory..
@@ -1625,7 +1625,7 @@ so if you always want citation view alwasy displayed if no 'citation'segment in 
 -
 and the default view again just means if you add a new item to the db,that item gets these views added no matetr where it aem from..
 -t1502
-so we add to db by addign to sobekcm-tiem_eiwr tyeps table and the TYPE column should match from the confi file
+so we add to db by adding to sobekcm-tiem_eiwr tyeps table and the TYPE column should match from the confi file
 and the last thing is to link items to it
 and you can do it programmatically to add to the sobekcmoitem_veier table tro go tot the behavor screen and manually add per item the viewr as an opton
 now on soebekrepostiry.org/help/tools he added the sanborn item viewr just a few minutes ago
@@ -1724,11 +1724,11 @@ TODO: see - what did I add on the server side to protobuf... added an index to s
 --now to do the bulk portion -- the bulk changes --
 
 mvs has no slides, but he does have docs fo rit on sobek repositry.orgy
-see under dtechnical/developers/createmets and editign exisitng mets...
-or .../editign existing mets..
+see under dtechnical/developers/createmets and editing exisitng mets...
+or .../editing existing mets..
 
 so see that editmets...
-see creatign a nenw visual studio solution... setion
+see creating a nenw visual studio solution... setion
 and do a console app.. as with plguin solutions, we shoul swith to ..net framewrok 4.5 or can also reference the dlls
 and now you only need 2 libbraryres, sobecm ore and sobek cmresrouce object.. th only sobek dlls
 and anslo need proobuf0net and 2 other dlls
@@ -1743,7 +1743,7 @@ so this si devautl console app in clas Program
 and static voie Main, nto exciting
 and so start this.. and see project DemoBulkUpdate and in file system tnow as we created the project, and crate subdir DLLS sibling to emoPublUpdate folder under vs/projects/
 and pull over JIL Protobyf0net from SobekCM...dlls
- and zoom.net and sboeckm_core and sobecm resource object and now to solutiosn add exisitng projets first of demobulk udpate, sobekcm core... and addextign proje tof sobek cm resource obejct and ins oution exploroter edemobulk update, hit references to add, but trye a compile to see what is missing. oops we need sobekcm tools.. and so bwe brign them over.. and add exxitign projec tosbjekcm_tools , and this will lwet us step through..
+ and zoom.net and sboeckm_core and sobecm resource object and now to solutiosn add exisitng projets first of demobulk udpate, sobekcm core... and addexting proje tof sobek cm resource obejct and ins oution exploroter edemobulk update, hit references to add, but trye a compile to see what is missing. oops we need sobekcm tools.. and so bwe bring them over.. and add exxiting projec tosbjekcm_tools , and this will lwet us step through..
 and try rebuild again..
 Engiene AgnsotlicLayerDb access could nto ve found..'hmm,maybe remove sobekcm core.. and ok, that helps
 so we need sobecm_tools NOT _Core and now see sobekcsm0resoruc )bobject ahs references with the soozmm.ne
@@ -1752,7 +1752,7 @@ so nwo vs is happy with the location of zooment sorlnet protobuf-net
 and so we have added the projects thand the referneces
 and we need to cick references udner demobulkudpate and now add reff to sobekcmr srouce object and sobekcm tools nowl also listed under thedmeobulkudpate secio of solutio explorer, and the c$ nodes are bloew for the actual soruce
 and now in the Main() method can add thinkgs like..
-Sobek_Itm newItem - Sobek.. no add usign sobkCm_tiem... Rad_Mets("")
+Sobek_Itm newItem - Sobek.. no add using sobkCm_tiem... Rad_Mets("")
 and add to program member private static bool process_exiting_tiem(stirng metsfile)
 and oen lien sobkcm_tiem newitem - sobemkcmiteim.readMets(Metsfile):
 an that loads and reads into our sobekcm item.. then must look around sobkcmitiem hinsolutione explroer, use yoru intellicense and look around and find newitem.bib_ifno.Mian_title.clearn;
@@ -1770,7 +1770,7 @@ or if want to add vracore... go to fiel eexplorer sobeckm library/ciation/elemen
 and coying from vra _naerial_elemetncs.. some  lines..
 and now do VraInfo.add_Mateiral("Stone","medium"
 
-so now we hae read the tiem, are makign enw chagnes, adding biblio data, and must search around and find out wehre the data is held and copy paste fromother code
+so now we hae read the tiem, are making enw chagnes, adding biblio data, and must search around and find out wehre the data is held and copy paste fromother code
 and now add section find the new desitination folder"
 and set it to builder/incoming for this example..and so create dir if not exists
 ands comemtn si save the mts there
@@ -1779,7 +1779,7 @@ and newItem.Save_ETS();
 and that is it, so toing through it will hae read the mets file and nwo we eidt the item and make chagnes and create dst dir if not her
 and save it
 and see technical develoeros/editmets
-sesee section Usign Default MEtadata COnfiguration
+sesee section Using Default MEtadata COnfiguration
 so now NEED these two lines to set dfault values and finalize
 and in main progrma nwo put those two lines and then cll your method
 and next i main oepn file with list of bib/vids to perform work on, and now read the items and creaete bmets filenamesand then in a while do console.riteline(lie) as  log and writ done.
@@ -1901,7 +1901,7 @@ string writing in repsonse string
 and so it just .. now, makes a literal
 and later instead of adding a literal to a placelhodelr,
 it will just be a responseStream writline,
-We are gettign rid of placeholders, but it makes it complex to
+We are getting rid of placeholders, but it makes it complex to
 add complex asp.net controls into it, but still probably worthwhile to ditch
 the placeholder approach.
 So all they results viewers do is Add_Html right there -- see code
@@ -2043,7 +2043,7 @@ and it assigns values again and returns
 so the factory is pretty simple as well.
 So he does not want to use reflection all lthe time so we have cases..
 so we load the assembly.
-And this mornign he created custom thumbnail results viewer, and
+And this morning he created custom thumbnail results viewer, and
 similar to old results viewer
 except line 72 fie custom thumbnails results viewer,
 we see if coll -- 2 so now we have displayed for us 2 columns of thumbnails
@@ -2101,7 +2101,7 @@ and we just use cloud slayer, a free version as well, we can jsut maek awebsdite
  it is free..
 - that is free, and good.
 -
-so do not need to chagne bottom part of the aggreg. the browse ql and you can add to from a settign table and to a left outer join to the settings table, and you could pull one row from the tiem table i n this query.. thsi browse sql on the screen.
+so do not need to chagne bottom part of the aggreg. the browse ql and you can add to from a setting table and to a left outer join to the settings table, and you could pull one row from the tiem table i n this query.. thsi browse sql on the screen.
 -so maybe we can look at another way. -
 it is transient environmental data, or add a column to item behaviors, .. or you can do it as spatial kml..
 maybe mvs will play around with it slightly..
@@ -2169,7 +2169,7 @@ so it flattens citation info almost into what you see on the display..
 so md is pushed into creator diplay field, so author tag is lost
 but it can be passed ch and forth and brief item maper has only 1 method to
 implement: maptobriefitem(sobekcm_item, out to briefiteminfo)
-START TOPIC CITATIO DISPLAY
+START TOPIC CITATION DISPLAY
 now citation display, and now we  are on citation display topic
 now you can actualy search it bec if you saved it once.. all your custom md is
 in the d, appears a new field linked to that collection, and will appear in
@@ -2228,11 +2228,11 @@ and see lines 41 or so some individula fields. down through line192or mroe...
 rb was given speific guildelines.. and if it appears strange it ws guidance he was given
 so we wanted compound subjet
 and see line 197 moduel name is potcard core
-line 204 puts in list of key value paris, and see line 208 the string that is saved in the db and it grabs nex user defined column and line 240 has nice structure with subejcttopic, perspective an subject name
+line 204 puts in list of key value paris, and see line 208 the string that is saved in the db and it grabs nex user defined column and line 240 has nice structure with subject topic, perspective an subject name
 and we hae a nice subject object ith 3 fields that we flatten to get into the db
 so this is line 266 md module
 and we can putt other stuf fin there see utitlieis fiel psotcrdcore_ogging.cs
-and lie 274 .. if subject is interesting and wantto let user do a earchwhile they ar editign see lines 274 to save stuff to addl table in the dbase so can add nicer functioaity if you want
+and lie 274 .. if subject is interesting and wantto let user do a earchwhile they ar editing see lines 274 to save stuff to addl table in the dbase so can add nicer functioaity if you want
 so now to file postcardcore_.. other last rhere files, mroe comples objects tha are par tof thsi
 and now to ouroutlie, and see threader writer, and it implemltn sine 11 the ipackege_dmdse_eraderwriter
 so it is not a placeholeronly, or it coule be idivision_dmdsec.. ro iage, but ipackage _dmdsec means top level of hierarchy
@@ -2296,7 +2296,7 @@ emulate this one, this is how to do it.
 so see also other_URL_BriefIemMapper.cs in web project
 and here lien 27 we see New.Add_DecriptionOtherItem", mainEntry
 and it also returns briefitem_Desc_termValue
-and here you can assign several other fields if you want you can assign
+and here you can assing several other fields if you want you can assign
 in line 14 the value, and get urls, see briefeietndesctermvalue.cs
 and ine 40 or so subterm
 and line 52 searchterm - if you want it to be linkable to click wi a
@@ -2311,7 +2311,7 @@ so it can be more omplex but need not be
 so in psotcard hsi briefietm mapper..
 so review what we covered
 and we will cover itation display when configuration chagnes
-so what is left is oru template ellemtns - how you can enter it oneline
+so what is left is our template ellemtns - how you can enter it oneline
 see under psotcare elemetn nobejct 9 or so cs
 files
 rb; amek sure your elt names ar unique, do not use 'forat' as he did, it shows ups elsewhere
@@ -2347,7 +2347,7 @@ w two step procsss as if it is a list ia my clearn outthe lsit and with psotcrd 
 and line 53 we sav_to_bib
 and it looks at allkeys line 57 of curent request form
 and looks fo rits on name,a dnlooks to the form to see the boes that it wrong dso gethe alu out lien 73
-and see ifthere was length to the value we assign itand ifnot length to it line 94, we assign that, wthithout this else it would be posoible to cleer out if user dleted data and hti save, that is how we get to thsi else
+and see ifthere was length to the value we assing itand ifnot length to it line 94, we assing that, wthithout this else it would be posoible to cleer out if user dleted data and hti save, that is how we get to thsi else
 and so that is how to extent preexiting elt liene 15 base extends simpeltetbox_elment
 so those ar eh template elmetns, one fo the ore tedious parts
 so if making only 1 ne field not bad, but here we had to do 7 or 8 of hese things
@@ -2364,7 +2364,7 @@ and line 84 metadata portion.. what do we do
 hwer we eregistr rne rmests eaer writer and add it to the provile
 so line 84 we add it with id lael,namespace and assembly and class iand isacive and section isdmdsec,
 so when it redsthe.. skip all that..
-no that is how we assign th reader writer so the websitedknow aout this
+no that is how we assing th reader writer so the websitedknow aout this
 so the mdtype and othermdtype ar present in the pemets file, see each mets file has those..
 so here is the dmdsec and each ETS:dmdSec has id and hte mWrap hs MDTYPE, and ould have OTHERMDTYPE attriut here soem have it fo some usef mets file..
 and same with amd sec, hcan have mdtype and othermdtype attribs

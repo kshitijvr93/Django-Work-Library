@@ -56,6 +56,18 @@ class OutBookSheet():
         self.work_book = xlwt.Workbook()
         self.sheet = self.work_book.add_sheet(name)
         self.output_columns = output_columns
+        self.d_type_style = {
+        'unparsed' : easyxf(
+            'pattern: pattern solid, fore_colour grey25; font: colour black, bold True;'),
+        'warning' :  easyxf(
+            'pattern: pattern solid, fore_colour pale_blue; font: colour black, bold True;'),
+        'error' :  easyxf(
+            'pattern: pattern solid, fore_colour pink; font: colour black, bold True;'),
+        'error2' :  easyxf(
+            'pattern: pattern solid, fore_colour red; font: colour black, bold True;'),
+        'valid' :  easyxf(
+            'pattern: pattern solid, fore_colour white; font: colour black, bold False;'),
+        }
         # Caller may use this to set a style per column before calling writerow
         self.d_column_style = {}
         # Header row
@@ -130,8 +142,7 @@ class CitationsInspector():
         ]
 
         # input and save last year's citation info to use to check for duplicates in this year's units
-        with open (str(self.base_pubs_file_name),
-                encoding="utf-8", errors='replace', mode="r") as input_file:
+        with open (str(self.base_pubs_file_name), encoding="utf-8-sig", errors='replace', mode="r") as input_file:
             input_lines = input_file.readlines()
             for (index_line, line) in enumerate(input_lines):
                 # Skip the normal number of header lines of this file and any topic section line
@@ -192,6 +203,7 @@ class CitationsInspector():
                 out_book_name = '{}'.format(path.name).replace(' ','_')
 
             self.out_book_sheet = OutBookSheet(name=out_book_name, output_columns=self.output_columns)
+            d_type_style = self.out_book_sheet.d_type_style #convenient abbreviation
             n_file_citations = 0
             print("\nReading input file {}".format(path.name))
 
@@ -203,6 +215,9 @@ class CitationsInspector():
                 for index, line in enumerate(input_lines):
                     d_column_output = {}
                     d_column_style = {}
+                    # default style to light_orange for unchecked
+                    for column_name in self.output_columns:
+                        d_column_style[column_name] = d_type_style['unparsed']
                     d_output = {}
 
                     index_line = index + 1
@@ -211,12 +226,13 @@ class CitationsInspector():
 
                     # DOI
                     index_doi = line.find("doi:")
+                    # Default to valid in this case
+                    d_column_style['doi'] = d_type_style['valid']
                     if index_doi < 0:
                         print("WARNING: NO DOI given in input file='{}', index_line={}, {}."
                           .format(path.name, index_line, line.encode('ascii',errors='ignore')))
                         doi = "'{}:line={}".format(path.name, index_line)
-                        d_column_style['doi'] = easyxf('pattern: pattern solid, fore_colour pink;'
-                              'font: colour black, bold True;')
+                        d_column_style['doi'] = d_type_style['warning']
                     else:
                         doi = line[index_doi:]
                         line = line[:index_doi] #keep the non-doi part of the line
@@ -225,24 +241,23 @@ class CitationsInspector():
                         # 'current' list of ifas citation files
                         doi_base_dup = self.d_base_doi.get(doi, None)
                         if doi_base_dup is not None:
+                            # ERROR: This doi duplicates one from base (previous) year
                             n_dup_old += 1
                             print("ERROR: Input file {}, index={}, has duplicate past doi '{}'"
                               .format(input_file_name, index_line, doi_base_dup))
-                            d_column_style['doi'] = easyxf('pattern: pattern solid, fore_colour red;'
-                                  'font: colour black, bold True;')
+                            d_column_style['doi'] = d_type_style['error2']
 
                     d_output['doi'] = doi
-
+                    # Check dup doi errors
                     doi_cur_dup = self.d_current_doi.get(doi, None)
                     if doi_cur_dup is not None:
                         n_dup_cur += 1
                         print("ERROR: Input file {} index={} has duplicate current year doi '{}'"
                               " to one in this year's input file name = '{}'"
                           .format(input_file_name,index_line,doi,doi_cur_dup))
-
-                        d_column_style['doi'] = xlwt.Style.easyxf('pattern: pattern solid, fore_colour light_blue;'
-                              'font: colour black, bold True;')
+                        d_column_style['doi'] = d_type_style['error']
                     else:
+                        # Do not reset style here for doi - keep it from prior doi check
                         self.d_current_doi[doi] = input_file_name
                     # end else clause - doi given in input line
 
@@ -257,26 +272,25 @@ class CitationsInspector():
                     index_found = line[index_base:].find('(')
                     if index_found == -1:
                         authors = line[index_base:]
-                        d_column_style['authors'] = xlwt.Style.easyxf('pattern: pattern solid, fore_colour yellow;'
-                                  'font: colour red, bold False;')
+                        d_column_style['authors'] = d_type_style['error']
                     else:
                         index_end = index_base + index_found
                         authors = line[index_base : index_end].strip()
                         index_base = index_end + 1 # plus one to skip the '(' sentinel character )
+                        d_column_style['authors'] = d_type_style['valid']
                     print("Got authors='{}'".format(authors).encode('utf-8'))
                     d_output['authors'] = authors
-                    d_column_style['authors'] = None
 
                     # Get the pub_year
                     index_found = line[index_base:].find(')')
                     if index_found < 1:
                         pub_year = line[index_base]
-                        d_column_style['pub_year'] = xlwt.Style.easyxf('pattern: pattern solid, fore_colour pale_blue;'
-                                  'font: colour white, bold True;')
+                        d_column_style['pub_year'] = d_type_style['error']
                     else:
                         index_end = index_base + index_found
                         pub_year = line[index_base:index_end].strip()
                         index_base = index_end + 2 # Add 1 to also skip sentinel character PLUS the following '.'.
+                        d_column_style['pub_year'] = d_type_style['valid']
                     #print("Got index_found={},index_end={},pub_year='{}'".format(index_found,index_end,pub_year))
                     d_output['pub_year'] = pub_year
 
@@ -284,12 +298,12 @@ class CitationsInspector():
                     index_found = line[index_base :].find('.')
                     if index_found < 1:
                         title = line[index_base :]
-                        d_column_style['title'] = xlwt.Style.easyxf('pattern: pattern solid, fore_colour light_orange;'
-                              'font: colour black, bold True;')
+                        d_column_style['title'] = d_type_style['error']
                     else:
                         index_end = index_base + index_found
                         title = line[index_base:index_end].strip()
                         index_base = index_end + 1
+                        d_column_style['title'] = d_type_style['valid']
                     #print("Got index_found={},end={},title='{}'".format(index_found,index_end,title))
                     d_output['title'] = title
 
@@ -299,8 +313,7 @@ class CitationsInspector():
                     index_found = line[index_base:].find(',')
                     if index_found < 1:
                         journal = line[index_base :]
-                        d_column_style['journal'] = xlwt.Style.easyxf('pattern: pattern solid, fore_colour light_green;'
-                              'font: colour black, bold False;')
+                        d_column_style['journal'] = d_type_style['error']
                     else:
                         index_end = index_base + index_found
                         # Journal title is substring after last open paren(of year) and before last comma
@@ -308,6 +321,7 @@ class CitationsInspector():
                         journal = line[index_base:index_end].strip()
                         # In this case we add to the end of index_found_open
                         index_base = index_end + 1
+                        d_column_style['journal'] = d_type_style['valid']
                     #print("Got journal = '{}'".format(journal))
                     d_output['journal'] = journal
 
@@ -316,12 +330,12 @@ class CitationsInspector():
                     index_found = line[index_base:].find('(')
                     if index_found < 1:
                         volume = line[index_base :]
-                        d_column_style['volume'] = xlwt.Style.easyxf('pattern: pattern solid, fore_colour rose;'
-                              'font: colour black, bold False;')
+                        d_column_style['volume'] = d_type_style['error']
                     else:
                         index_end = index_base + index_found
                         volume = line[index_base:index_end].strip()
                         index_base = index_end + 1
+                        d_column_style['volume'] = d_type_style['valid']
                     #print("Got volume = '{}'".format(volume))
                     d_output['volume'] = volume
 
@@ -329,12 +343,12 @@ class CitationsInspector():
                     index_found = line[index_base:].find(')')
                     if index_found < 1:
                         issue = line[index_base :]
-                        d_column_style['issue'] = xlwt.Style.easyxf('pattern: pattern solid, fore_colour light_turquoise;'
-                              'font: colour black, bold True;')
+                        d_column_style['issue'] = d_type_style['error']
                     else:
                         index_end = index_base + index_found
                         issue = line[index_base:index_end].strip()
                         index_base = index_end + 1
+                        d_column_style['issue'] = d_type_style['valid']
                     #print("Got issue = '{}'".format(issue))
                     d_output['issue'] = issue
 
@@ -342,13 +356,12 @@ class CitationsInspector():
                     index_found = line[index_base:].find('.')
                     if index_found < 1:
                         page_range = line[index_base :]
-                        d_column_style['page_range'] = xlwt.Style.easyxf(
-                            strg_to_parse='pattern: pattern solid, fore_colour sea_green;'
-                            'font: colour black, bold True;')
+                        d_column_style['issue'] = d_type_style['error']
                     else:
                         index_end = index_base + index_found
                         page_range = line[index_base:index_end]
                         index_base = index_end + 1
+                        d_column_style['issue'] = d_type_style['valid']
                     d_output['page_range'] = page_range
                     print("input file {}, index {}, Calling writerow ".format(input_file_name,index))
 
