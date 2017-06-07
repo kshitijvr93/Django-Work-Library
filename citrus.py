@@ -39,7 +39,7 @@ class Citrus():
                 ('language', ('xml', './/mods:languageTerm' )),
                 ('type', ('xml', './/mods:genre' )),
                 ('coverage_spatial', ('xml', './/mods:hierarchicalGeographic' )),
-                ('contributor', ('constant', 'University of Florida Libraries' )),
+                ('contributor', ('constant', 'University of Florida. Libraries' )),
                 ('date', ('xml', './/mods:dateIssued' )),
         ])
         # Ordered Column names for deeply rooted output
@@ -325,6 +325,7 @@ class Citrus():
                     dci = self.d_colname_colidx
                     edtf_date = str(ess.cell(ess_row, dci['date_issued']).value) # minority of cells have integers
                     index_dot = edtf_date.find('.')
+                    
                     # Remove .0 artifact in the string representation of excel float input values for years
                     if index_dot >= 0:
                         edtf_date = edtf_date[:index_dot]
