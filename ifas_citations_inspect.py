@@ -347,7 +347,7 @@ class CitationsInspector():
                     else:
                         index_end = index_base + index_found
                         issue = line[index_base:index_end].strip()
-                        index_base = index_end + 1
+                        index_base = index_end + 2 # increment 2 also skips the , after the ending )
                         d_column_style['issue'] = d_type_style['valid']
                     #print("Got issue = '{}'".format(issue))
                     d_output['issue'] = issue
@@ -356,12 +356,12 @@ class CitationsInspector():
                     index_found = line[index_base:].find('.')
                     if index_found < 1:
                         page_range = line[index_base :]
-                        d_column_style['issue'] = d_type_style['error']
+                        d_column_style['page_range'] = d_type_style['error']
                     else:
                         index_end = index_base + index_found
                         page_range = line[index_base:index_end]
                         index_base = index_end + 1
-                        d_column_style['issue'] = d_type_style['valid']
+                        d_column_style['page_range'] = d_type_style['valid']
                     d_output['page_range'] = page_range
                     print("input file {}, index {}, Calling writerow ".format(input_file_name,index))
 
