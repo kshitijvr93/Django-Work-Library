@@ -138,7 +138,7 @@ class CitationsInspector():
         self.d_current_doi = {}
         n_file_citations = 0
         self.output_columns = [
-        'doi', 'authors', 'title', 'journal','volume','issue','page_range'
+        'doi', 'authors', 'title', 'journal','volume','issue','page_range', 'original_line',
         ]
 
         # input and save last year's citation info to use to check for duplicates in this year's units
@@ -365,6 +365,7 @@ class CitationsInspector():
                     d_output['page_range'] = page_range
                     print("input file {}, index {}, Calling writerow ".format(input_file_name,index))
 
+                    d_output['original_line'] = line
                     # Write spreadsheet row
                     self.out_book_sheet.writerow(d_output=d_output, d_column_style=d_column_style)
                 # } end for line in input_lines
