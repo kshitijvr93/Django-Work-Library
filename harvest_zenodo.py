@@ -1,13 +1,22 @@
 '''
-Program harvest_zenodo.
+Program harvest_zenodo harvests a particular zenodo collection and creates
+some test mets file.
 
+String mets_format_str is a format string template to create a mets
+file for ufdc.
 
-mets_format_str is a format string to create a mets file for ufdc.
-    It is a simple format string used for making a METS file from reading a zenodo oai_dc xml document.
-    NOTE: this is based on Elsevier formatting that also used xslt, but use of xslt did not add much functionality over
-    using simply python 'format()' functionality and generating some snippets of xml in python code.
-    This is initially used to translate 'zenodo' MD records from their OAI-PMH feed to mets for UFDC SobekCM ingestion.
+It is a simple format string used for making a METS file from reading a
+zenodo oai_dc xml document.
+
+NOTE: this code is based on Elsevier formatting that also used xslt, but use of
+xslt did not add much functionality over using simply python 'format()'
+functionality and generating some snippets of xml in python code.
+
+This is initially used to translate 'zenodo' MD records from their OAI-PMH
+feed to mets for UFDC SobekCM ingestion.
 '''
+import etl
+import os
 mets_format_str = '''<xsl:stylesheet version="1.0" encoding="UTF-8" standalone="no" ?>
 <!--  METS/mods file designed to describe a Zenodo OAI-PMH extracted MD  -->
 
@@ -141,6 +150,12 @@ import requests
 
 request_uf1='https://zenodo.org/oai2d?verb=ListRecords&set=user-genetics-datasets&metadataPrefix=oai_dc'
 
+'''
+d_oai_zenodo is configuration info to do API calls to zenodo
+The most likely value to be changed by a caller is ['pub_search']['url'],
+which is the url to get the oai list of records for a named set of items.
+
+'''
 d_oai_zenodo = {
     'pub_search': {
         'd_request_headers': {
@@ -194,15 +209,17 @@ def url_of_zenodo(d_search, dataset_name='user-genetics-datasets', verbosity=0):
     add_curl_command(d_search)
     return url
 
-def response_of_zenodo(d_search, dataset_name='user-genetics-datasets', verbosity= 0):
+def response_of_zenodo(d_search, dataset_name=None, verbosity= 0):
     d_headers = d_search['d_request_headers']
-    url = url_of_zenodo(d_search, verbosity=verbosity)
+    url = url_of_zenodo(d_search, dataset_name=dataset_name, verbosity=verbosity)
     return requests.get(url, headers=d_headers)
 
 def run(d_run_params, verbosity=0):
     dataset_name = 'user-genetics-datasets'
     d_request = d_run_params['d_request_zenodo']
     output_folder = d_run_params['output_folder']
+    mets_output_folder = output_folder + '/mets_output/'
+    os.makedirs(mets_output_folder, exist_ok=True)
 
     response = response_of_zenodo(d_request, dataset_name=dataset_name)
     curl = d_request['curl']
@@ -224,6 +241,7 @@ def run(d_run_params, verbosity=0):
     bib_prefix = "DS"
     vid = "00001"
     start_bibint = bibint = 0
+    os.makedirs(output_folder + '/received/', exist_ok=True)
     for node_record in nodes_record:
         # identifier
         bibint += 1
@@ -239,7 +257,8 @@ def run(d_run_params, verbosity=0):
         # Parse the input record and save it to a string
         record_str = etree.tostring(node_record, pretty_print=True, xml_declaration=True)
 
-        filename_received = output_folder + 'received/' + identifier_normalized
+        filename_received = output_folder + '/received/' + identifier_normalized
+
         fn = filename_received
         with open(fn, 'wb') as outfile:
             print("Writing filename_received ='{}'".format(fn))
@@ -325,7 +344,7 @@ def run(d_run_params, verbosity=0):
         # Create mets_str and write it
         mets_str = mets_format_str.format(**d_var_val)
 
-        filename_mets = output_folder + 'mets_output/' + identifier_normalized
+        filename_mets = mets_output_folder + '/' + identifier_normalized
         fn = filename_mets
         with open(fn, 'wb') as outfile:
             print("Writing filename='{}'".format(fn))
@@ -350,4 +369,6 @@ d_run_params = {
     }
 }
 
+output_folder = etl.data_folder(linux='/home/robert', windows='U:/', data_relative_folder='data/outputs/zenodo')
+d_run_params['output_folder'] = output_folder
 run(d_run_params)

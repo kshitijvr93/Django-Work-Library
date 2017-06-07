@@ -13,6 +13,40 @@ from lxml import etree
 from lxml.etree import tostring
 from pathlib import Path
 
+'''
+Get an api result for a url decoded as utf-8.
+If json_loads is True, read the API result as a JSON result,
+so decode it to a Python result and return that.
+Otherwise just return the utf-8 result.
+'''
+def get_result_by_url(url, json_loads='True'):
+
+    if url is None or url=="":
+        raise Exception("Cannot send a request to an empty url.")
+    try:
+        print("*** BULDING GET REQUEST FOR API RESULTS FOR URL='{}' ***"
+            .format(url))
+        get_request = urllib.request.Request(url, data=None, headers={
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) '
+            'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
+            })
+
+    except:
+        raise Exception("Cannot send a request to url={}".format(url))
+    try:
+        print("*** GET REQUEST='{}' ***".format(repr(get_request)))
+        response = urllib.request.urlopen(get_request)
+    except Exception as e:
+        print("get_elsevier_api_result_by_url: Got exception instead of response for"
+              " url={}, get_request={} , exception={}"
+              .format(url, get_request, e))
+        raise
+    result = response.read().decode('utf-8')
+    if json_loads == True:
+        result = json.loads(result)
+    return result
+
+
 def data_folder(linux='/tmp/data/', windows='c:/data/',
     data_relative_folder=None, exist_ok=True, verbosity=0):
     if platform.system().lower() == 'linux':
