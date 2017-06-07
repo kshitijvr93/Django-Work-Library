@@ -16,6 +16,8 @@ from collections import OrderedDict
 ###
 doi_string = '''
 10.1115/ICONE24-60736
+
+also see specs at: https://www.openarchives.org/OAI/openarchivesprotocol.html
 '''
 
 class OAIHarvester():
@@ -24,7 +26,8 @@ class OAIHarvester():
         self.param_names = ['verb','set','metadataPrefix']
         self.url = None
         self.l_metadataPrefix = ['oai_dc', ]
-        self.l_verb = ['ListRecords','ListMetadataFormats',]
+
+        self.l_verb = ['ListSets','ListRecords','ListMetadataFormats','ListIdentifiers']
         if d_params is not None:
             self.set_params(d_params)
         return
@@ -45,12 +48,28 @@ class OAIHarvester():
 
 d_uf_dloc_params = {'set':'user-genetics-datasets', 'verb':'ListRecords',
     'metadataPrefix':'oai_dc'}
+d_uf_dloc_params = {'set':'user-genetics-datasets', 'verb':'ListIdentifiers',
+    'metadataPrefix':'marcxml'}
+d_uf_dloc_params = {'set':'user-genetics-datasets', 'verb':'ListRecords',
+    'metadataPrefix':'marcxml'}
+
 
 harvester = OAIHarvester(url_base= 'https://zenodo.org/oai2d')
 
 harvester.set_params(d_params={'set':'user-genetics-datasets', 'verb':'ListMetadataFormats',
     'metadataPrefix':'oai_dc'})
 print("Got harvester.url={}".format(harvester.url))
+
+
+harvester = OAIHarvester(url_base= 'http://ufdc.ufl.edu/sobekcm_oai.aspx')
+
+d_uf_dloc_params = {'set':'dloc1', 'verb':'ListRecords',
+    'metadataPrefix':'oai_dc'}
+
+harvester.set_params(d_params=d_uf_dloc_params)
+print("Got harvester.url={}".format(harvester.url))
+
+
 
 
 #output_folder = etl.data_folder(linux='/home/robert', windows='U:/', data_relative_folder='data/outputs/zenodo')
