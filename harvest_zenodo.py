@@ -214,6 +214,7 @@ def response_of_zenodo(d_search, dataset_name=None, verbosity= 0):
     url = url_of_zenodo(d_search, dataset_name=dataset_name, verbosity=verbosity)
     return requests.get(url, headers=d_headers)
 
+# { Method run
 def run(d_run_params, verbosity=0):
     dataset_name = 'user-genetics-datasets'
     d_request = d_run_params['d_request_zenodo']
@@ -222,6 +223,7 @@ def run(d_run_params, verbosity=0):
     os.makedirs(mets_output_folder, exist_ok=True)
 
     response = response_of_zenodo(d_request, dataset_name=dataset_name)
+
     curl = d_request['curl']
 
     print("Got response for url={}, curl={}".format(d_request['url'], d_request['curl']))
@@ -351,7 +353,7 @@ def run(d_run_params, verbosity=0):
             outfile.write(mets_str.encode('utf-8'))
 
         #save_node_to_filename(node=node_root, filename=filename)
-
+    # } end def run_params
 
 d_run_params = {
     'output_folder' : 'c:/rvp/elsevier/output_zenodo/' ,

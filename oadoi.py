@@ -83,12 +83,18 @@ l_dois = doi_string.split('\n')
 print(len(l_dois))
 
 
-def get_result_by_url(url):
+'''
+Get an api result for a url decoded as utf-8.
+If json_loads is True, read the API result as a JSON result,
+so decode it to a Python result and return that.
+Otherwise just return the utf-8 result.
+'''
+def get_result_by_url(url, json_loads='True'):
 
     if url is None or url=="":
         raise Exception("Cannot send a request to an empty url.")
     try:
-        print("*** BULDING GET REQUEST FOR SCIDIR API RESULTS FOR URL='{}' ***"
+        print("*** BULDING GET REQUEST FOR API RESULTS FOR URL='{}' ***"
             .format(url))
         get_request = urllib.request.Request(url, data=None, headers={
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) '
@@ -105,8 +111,9 @@ def get_result_by_url(url):
               " url={}, get_request={} , exception={}"
               .format(url, get_request, e))
         raise
-
-    result = json.loads(response.read().decode('utf-8'))
+    result = response.read().decode('utf-8')
+    if json_loads == True:
+        result = json.loads(result))
     return result
 
 def output_oadoi_xml(url_base=None, dois=None, output_folder=None):

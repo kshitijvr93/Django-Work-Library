@@ -20,8 +20,10 @@ class Citrus():
         self.description = ('This item has been aggregated as part of the Association of Southeastern'
               + ''' Research Libraries (ASERL)'s "Deeply Rooted: The Agricultural & Rural History of the '''
               + 'American South" project.')
-        #The keys of this dictionary double as the header column names to be output to an eventual csv or excel file
-        # The values's first tuple indicates constant, or xml (single element) or list (repeated elements)
+        #The keys of this dictionary double as the header column names to be output
+        # to an eventual csv or excel file
+        # The values's first tuple indicates constant, or xml (single element) or
+        # list (repeated elements)
         # Code cases will rely on the key name to do special processing as well.
         self.d_deeply_source = OrderedDict([
                 ('relation', ('list', './/mods:relatedItem' )),
@@ -56,7 +58,8 @@ class Citrus():
 
         # read dict of column name:index info into key-value pairings
         self.d_colname_colidx = OrderedDict(
-            {self.sheet_edits.cell(0,col_index).value : col_index for col_index in range(self.sheet_edits.ncols)})
+            {self.sheet_edits.cell(0,col_index).value :
+               col_index for col_index in range(self.sheet_edits.ncols)})
         print("Got edit spreadsheet column names,indexes = {}".format(repr(self.d_colname_colidx)))
 
         # User OrderedDict to Maintain bib order of original edits spreadsheet
@@ -99,7 +102,6 @@ class Citrus():
     def outbook_writerow(self, d_output=None, d_column_style=None):
         column_values = [ d_output[column] for column in self.l_deeply_output_columns]
         for column_index, (column_key, column_value) in enumerate(d_output.items()):
-            #print ("outbooks_writerow: index={}, key='{}', value='{}'".format(column_index, column_key, column_value) )
             style = None if d_column_style is None else d_column_style.get(column_key, None)
             if style is None:
                 self.deeply_sheet.write(self.outbook_row_index, column_index, column_value.strip())
@@ -167,7 +169,8 @@ class Citrus():
                             #but append it with those found in input with type 'original' (see below).
                             result = "Deeply Rooted"
                         elif key == 'description':
-                            #Special deeply rooted requirement. Always include following as a component in description.
+                            #Special deeply rooted requirement. Always include following as a component
+                            # in description.
                             result = self.description
                         else:
                             result = ''
@@ -192,7 +195,8 @@ class Citrus():
                                         result = '{}, {}'.format(text_name, text_place)
                                 elif key == 'description':
                                     text = '' if node.text is None else node.text
-                                    result += ';' + text # use ; sep because description always start with constant
+                                    # use ; sep because description always start with constant
+                                    result += ';' + text
                                 else:
                                     result = node.text if node is not None else ""
                             # if node is not None
@@ -204,7 +208,8 @@ class Citrus():
                                 # Nodes with potential Deeply-Rooted defined "Creator" values
                                 if (key == 'creator'):
                                     node_role_name_part = node.findall('./mods:namePart', d_namespaces)[0]
-                                    potential_creator_name = '' if node_role_name_part is None else node_role_name_part.text
+                                    potential_creator_name = (
+                                        '' if node_role_name_part is None else node_role_name_part.text )
                                     is_donor = False
                                     nodes_role_term = node.findall('.//mods:roleTerm', d_namespaces)
                                     for node_role_term in nodes_role_term:
@@ -228,7 +233,8 @@ class Citrus():
                                     #records, and they exactly match the prior subjects, and to output for deeply
                                     #rooted, we do not show authority nor does input have any other fast subjects
                                     #to add. Separately, when outputting to ufdc mets.xml files, we
-                                    #will do different subject handling. So put in a continue in prior line, but keep
+                                    #will do different subject handling.
+                                    # So put in a continue in prior line, but keep
                                     #unreachable code sitting below it that might be useful later
 
                                     authority = node.attrib.get('authority', None)
@@ -245,8 +251,10 @@ class Citrus():
                                     attr_type = node.attrib.get('type', None)
                                     if attr_type is None or attr_type != 'original':
                                         continue
-                                    # Note: if this value is not stripped (sometimes it has trailing return character)
-                                    # excel silently/puzzlingly rejects the entire value for a spreadsheet cell
+                                    # Note: if this value is not stripped (sometimes it has trailing
+                                    # return character)
+                                    # excel silently/puzzlingly rejects the entire value for a
+                                    # spreadsheet cell
                                     sep = ';' # Deeply rooted prefix is set above, so first sep is ';'
                                     result += sep + etree.tostring(node,encoding='unicode',method='text').strip()
                             #end node in nodes
@@ -272,12 +280,14 @@ class Citrus():
 
                     creator = d_output['creator']
                     if (len(creator) > 55):
-                        print("******* WARNING ******  file={},index={}: Got long creator={}".format(input_file_name,input_file_index,creator))
+                        print("******* WARNING ******  file={},index={}: Got long creator={}"
+                              .format(input_file_name,input_file_index,creator))
 
                     #If no data given for relation, just set "Deeply Rooted"'
                     relation = d_output.get('relation','')
                     if relation  == '':
-                        print("For input index {}, setting relation to Deeply Rooted".format(input_file_index))
+                        print("For input index {}, setting relation to Deeply Rooted"
+                              .format(input_file_index))
                         d_output['relation'] = "Deeply Rooted"
                     else:
                         #print("Relation check ok at '{}'".format(relation))
@@ -286,7 +296,8 @@ class Citrus():
                     # VALIDATE/REPORT MISSING INVALID DATA FROM THIS INPUT FILE
                     identifier = d_output.get('identifier', '')
                     if identifier == '':
-                        print("Input file {} has no mods:url identifier. trying mods:recordIdentifier it.".format(input_file_name))
+                        print("Input file {} has no mods:url identifier. trying mods:recordIdentifier it."
+                              .format(input_file_name))
                         # Make this cell pink
                         easyxf_style = ('pattern: pattern solid, fore_colour light_blue;'
                               'font: colour white, bold True;')
@@ -294,7 +305,8 @@ class Citrus():
                         no_mods_url += 1
                         # Workaround for now... but may want to update METS.XML later to set mods:url to this.
                         node_identifier = input_node_root.findall('.//mods:recordIdentifier',d_namespaces)[0]
-                        record_identifier = '' if node_identifier is None else node_identifier.text.replace('_','/')
+                        record_identifier = (
+                            '' if node_identifier is None else node_identifier.text.replace('_','/'))
                         if record_identifier == '':
                             print("Input file {} has no identifier. Skipping it.".format(input_file_name))
                             continue
@@ -311,19 +323,23 @@ class Citrus():
                         print("ERROR: Input file {}, bib {}, is not in edits spreadsheet. Skipping it."
                             .format(input_file, xml_bib))
                         continue
-                    # Could add check here that the identifier within the mets file matches the bibid inferred
-                    # by the filename,but such anomalies have not been seen in our data...
+                    # Could add check here that the identifier within the mets file matches
+                    # the bibid inferred# by the filename,but such anomalies have not been
+                    # seen in our data...
 
                     # Set ss row value to -1 to show it was visited
                     self.d_bibid_rowidx[xml_bib.upper()] = -1
-                    # We can follow custom spreadsheet processing rules (uf lib basecamp3 Deeply Rooted group circa 2017)
+                    # We can follow custom spreadsheet processing rules (uf lib basecamp3 Deeply Rooted
+                    # group circa 2017)
                     # Required spreadsheet column names have been agreed upon previously.
                     # RULE 1 For UFDC UPDATES
-                    #  If spreadshseet column original_date_issued is not null, use it rather than date_issued column
-                    # But for deeply rooted output, take the date_issued value that Angie has inputted in edtf format
+                    #  If spreadshseet column original_date_issued is not null, use it rather than
+                    # date_issued column. But for deeply rooted output, take the date_issued value
+                    # that Angie has inputted in edtf format
                     ess = self.sheet_edits
                     dci = self.d_colname_colidx
-                    edtf_date = str(ess.cell(ess_row, dci['date_issued']).value) # minority of cells have integers
+                    # minority of cells have integers
+                    edtf_date = str(ess.cell(ess_row, dci['date_issued']).value)
                     index_dot = edtf_date.find('.')
 
                     # Remove .0 artifact in the string representation of excel float input values for years
@@ -378,7 +394,8 @@ class Citrus():
             print("WARNING: Among {} input *.mets.xml input files, {} lacked a mods:url tag"
                 .format(len(self.input_file_paths),no_mods_url))
             # Report on bibids in the spreadsheet that were not found among the in put mets files
-            print ("WARNING: The following bibids in the edits spreadsheet were not found among the inputted mets.xml files:")
+            print ("WARNING: The following bibids in the edits spreadsheet were not found among the"
+                   "inputted mets.xml files:")
             for bibid, rowidx in self.d_bibid_rowidx.items():
                 if 1==1 and rowidx != -1: #disable unless we read all input files
                     print('No mets.xml input file found for bibid:',  bibid)
@@ -391,10 +408,12 @@ class Citrus():
 # SET UP FOR RUN to generate deeply_rooted data
 linux='/home/robert/'
 windows='U:/'
-input_folder = etl.data_folder(linux=linux, windows=windows, data_relative_folder='data/citrus_mets_base')
+input_folder = etl.data_folder(linux=linux, windows=windows,
+    data_relative_folder='data/citrus_mets_base')
 
 input_folders = [input_folder]
-output_folder = etl.data_folder(linux=linux, windows=windows, data_relative_folder='data/outputs/deeply_rooted')
+output_folder = etl.data_folder(linux=linux, windows=windows,
+    data_relative_folder='data/outputs/deeply_rooted')
 output_file_name = output_folder + '/' + 'deeply_rooted.xls'
 
 edits_file = input_folder + '/citrus_20170519a.xlsx' # Angie's edited spreadsheet of citrus data
