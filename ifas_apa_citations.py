@@ -10,6 +10,9 @@ lower case because it will again put them to lowercase.
 Rather, this is not designed to be iteratively applied - only to be
 hand-modified for final use after it is run ONCE on input.
 '''
+import sys, os, os.path, platform
+sys.path.append('{}/github/citrus/modules'.format(os.path.expanduser('~'))
+                
 from pathlib import Path
 from etl import html_escape, has_digit, has_upper, make_home_relative_folder
 

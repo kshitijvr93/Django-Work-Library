@@ -8,6 +8,8 @@ Program xml2rdb inputs xml docs from saved xml files (for example from the Elsev
 full-text api).
 Each input xml file has xml-coded information pertaining to a single xml document.
 '''
+import sys, os, os.path, platform
+sys.path.append('{}/github/citrus/modules'.format(os.path.expanduser('~')))
 import datetime
 import pytz
 import os

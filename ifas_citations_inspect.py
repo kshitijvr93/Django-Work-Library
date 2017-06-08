@@ -36,7 +36,8 @@ to a completely valid utf-8 file format. For example, of the first citations has
 a greek character that fails to be exported as utf-8, it seems.
 That detail needs to be resolved.
 '''
-
+import sys, os, os.path, platform
+sys.path.append('{}/github/citrus/modules'.format(os.path.expanduser('~')))
 from pathlib import Path
 from etl import html_escape, has_digit, has_upper, make_home_relative_folder
 import xlrd, xlwt

@@ -1,6 +1,10 @@
 '''citrus.py
 '''
 import csv
+import sys, os, os.path, platform
+sys.path.append('{}/github/citrus/modules'.format(os.path.expanduser('~')))
+
+
 import etl
 from pathlib import Path
 from lxml import etree

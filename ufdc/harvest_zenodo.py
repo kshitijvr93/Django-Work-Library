@@ -15,6 +15,18 @@ functionality and generating some snippets of xml in python code.
 This is initially used to translate 'zenodo' MD records from their OAI-PMH
 feed to mets for UFDC SobekCM ingestion.
 '''
+#Get local pythonpath of modules from 'citrus' main project directory
+
+import sys, os, os.path, platform
+
+home_directory = os.path.expanduser('~')
+print("Using home_directory='{}'".format(home_directory),file=sys.stdout)
+sys.stdout.flush()
+
+local_module_folder = '{}/github/citrus/modules'.format(home_directory)
+print("Using local local module folder='{}'".format(local_module_folder))
+sys.path.append(local_module_folder) #my current place on UF pc
+
 import etl
 import os
 mets_format_str = '''<xsl:stylesheet version="1.0" encoding="UTF-8" standalone="no" ?>
