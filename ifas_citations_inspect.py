@@ -57,16 +57,18 @@ class OutBookSheet():
         self.sheet = self.work_book.add_sheet(name)
         self.output_columns = output_columns
         self.d_type_style = {
-        'unparsed' : easyxf(
-            'pattern: pattern solid, fore_colour grey25; font: colour black, bold True;'),
-        'warning' :  easyxf(
-            'pattern: pattern solid, fore_colour pale_blue; font: colour black, bold True;'),
-        'error' :  easyxf(
-            'pattern: pattern solid, fore_colour pink; font: colour black, bold True;'),
-        'error2' :  easyxf(
-            'pattern: pattern solid, fore_colour red; font: colour black, bold True;'),
-        'valid' :  easyxf(
-            'pattern: pattern solid, fore_colour white; font: colour black, bold False;'),
+        'unparsed' : easyxf( 'pattern: pattern solid, fore_colour '
+            'grey25; font: colour black, bold True;'),
+        'warning' :  easyxf( 'pattern: pattern solid, fore_colour '
+            'pale_blue; font: colour black, bold True;'),
+        'error' :  easyxf( 'pattern: pattern solid, fore_colour '
+            'pink; font: colour black, bold True;'),
+        'error2' :  easyxf( 'pattern: pattern solid, fore_colour '
+            'rose; font: colour black, bold True;'),
+        'error3' :  easyxf( 'pattern: pattern solid, fore_colour '
+            'light_orange; font: colour black, bold True;'),
+        'valid' :  easyxf( 'pattern: pattern solid, fore_colour '
+            'white; font: colour black, bold False;'),
         }
         # Caller may use this to set a style per column before calling writerow
         self.d_column_style = {}
@@ -136,6 +138,7 @@ class CitationsInspector():
         self.d_base_index = {}
         self.d_base_doi = {}
         self.d_current_doi = {}
+        self.d_unit_doi = {}
         n_file_citations = 0
         self.output_columns = [
         'doi', 'authors', 'title', 'journal','volume','issue','page_range', 'original_line',
@@ -163,7 +166,11 @@ class CitationsInspector():
                     #print("Skip line index={}, {}. No doi found"
                     #      .format(index_line,line.encode('ascii','ignore')))
                     continue
-                doi = line[index_doi:]
+                doi = line[index_doi:].replace('\n','').strip()
+                msg = ("file={},line number={},Saving base_doi='{}'"
+                      .format(self.base_pubs_file_name,index_line,doi))
+                msg = msg.encode('ascii', errors='replace')
+                print(msg) #note HAD to encode as above else atom editor balks with error in print
                 self.d_base_doi[doi] = line
                 n_file_citations += 1
             # end with open input_file
@@ -190,6 +197,7 @@ class CitationsInspector():
         n_citations = 0
         n_dup_old = 0
         n_dup_cur = 0
+        n_dup_unit = 0
         print("{}: Found {} input files".format(me,len(self.unit_paths)))
         for path in self.unit_paths:
             input_file_name = "{}/{}".format(path.parents[0], path.name)
@@ -211,34 +219,44 @@ class CitationsInspector():
             with open (str(input_file_name), encoding="utf-8-sig", errors='ignore', mode="r") as input_file:
                 input_lines = input_file.readlines()
                 n_unit_dois = 0
+                d_unit_doi = {} # make a new dict per unit to detect local dups
                 # {
                 for index, line in enumerate(input_lines):
+                    line = line.replace('\n','')
+                    index_line = index + 1
+                    print("\nReading input line count {}".format(index_line))
+
                     d_column_output = {}
                     d_column_style = {}
-                    # default style to light_orange for unchecked
+
+                    # default style to unparsed
                     for column_name in self.output_columns:
                         d_column_style[column_name] = d_type_style['unparsed']
                     d_output = {}
-
-                    index_line = index + 1
                     n_file_citations += 1
-                    line = line.replace('\n','')
 
                     # DOI
-                    index_doi = line.find("doi:")
-                    # Default to valid in this case
+
+                    # Default to column style for valid in this case 'doi'
                     d_column_style['doi'] = d_type_style['valid']
+
+                    # Check for missing DOI
+
+                    index_doi = line.find("doi:")
                     if index_doi < 0:
                         print("WARNING: NO DOI given in input file='{}', index_line={}, {}."
                           .format(path.name, index_line, line.encode('ascii',errors='ignore')))
                         doi = "'{}:line={}".format(path.name, index_line)
                         d_column_style['doi'] = d_type_style['warning']
                     else:
+                        # A DOI STRING WAS FOUND
                         doi = line[index_doi:]
                         line = line[:index_doi] #keep the non-doi part of the line
                         n_unit_dois += 1
-                        # Complain if the doi is already in the base or this
-                        # 'current' list of ifas citation files
+
+                        # Three doi dup checks:
+                        # DOI Dup Check (error2):
+                        # check if doi already in the base, prev year's report
                         doi_base_dup = self.d_base_doi.get(doi, None)
                         if doi_base_dup is not None:
                             # ERROR: This doi duplicates one from base (previous) year
@@ -247,19 +265,41 @@ class CitationsInspector():
                               .format(input_file_name, index_line, doi_base_dup))
                             d_column_style['doi'] = d_type_style['error2']
 
+                        # DOI Dup Check  (error):
+                        # check if doi already in current year
+                        # for a unit report that has just been processed earlier in this
+                        # loop over units
+
+                        doi_current_dup = self.d_current_doi.get(doi, None)
+                        if doi_current_dup is not None:
+                            n_dup_cur += 1
+                            print("ERROR: Input file {} index={} has duplicate current year doi '{}'"
+                                  " to one in this year's input file name = '{}'"
+                              .format(input_file_name,index_line,doi,doi_current_dup))
+                            d_column_style['doi'] = d_type_style['error']
+                        else:
+                            # Do not reset style here for doi - keep it from prior doi check
+                            self.d_current_doi[doi] = input_file_name
+
+
+                        # DOI Dup Check 3 (error3):
+                        # check if doi already in previous line of
+                        # this unit report that has just been processed earlier in this
+                        # loop over units
+
+                        doi_unit_dup = d_unit_doi.get(doi, None)
+                        if doi_unit_dup is not None:
+                            n_dup_unit += 1
+                            print("ERROR: Input file {} line index={} has duplicate doi '{}'"
+                                  " to previous line {} in this unit's sheet."
+                              .format(input_file_name,index_line,doi,doi_unit_dup))
+                            d_column_style['doi'] = d_type_style['error3']
+                        else:
+                            # Do not reset style here for doi - keep it from prior doi check
+                            d_unit_doi[doi] = index_line + 1
+
                     d_output['doi'] = doi
-                    # Check dup doi errors
-                    doi_cur_dup = self.d_current_doi.get(doi, None)
-                    if doi_cur_dup is not None:
-                        n_dup_cur += 1
-                        print("ERROR: Input file {} index={} has duplicate current year doi '{}'"
-                              " to one in this year's input file name = '{}'"
-                          .format(input_file_name,index_line,doi,doi_cur_dup))
-                        d_column_style['doi'] = d_type_style['error']
-                    else:
-                        # Do not reset style here for doi - keep it from prior doi check
-                        self.d_current_doi[doi] = input_file_name
-                    # end else clause - doi given in input line
+                    # end processing the doi, if any, in input line
 
                     # Parse the rest of the line that appears before the doi.
                     #  Split the line based on the ')' that should first appear following the year that follows
@@ -383,8 +423,9 @@ class CitationsInspector():
         # end for path in self.unit paths
         self.n_dup_old = n_dup_old
         self.n_dup_cur = n_dup_cur
-        return n_dup_old, n_dup_cur
-    # end make_apa_citations
+        self.n_dup_unit = n_dup_unit
+        return
+    # end inspect()
 # end class CitationsInspector
 
 print("Starting")
@@ -399,6 +440,7 @@ print("Got d_base_doi length='{}'".format(len(inspector.d_base_doi)))
 
 n_dup_old = inspector.n_dup_old
 n_dup_cur = inspector.n_dup_cur
+n_dup_unit = inspector.n_dup_cur
 
 print("Skipped {} dois of olders ones, {} of current.Done!"
   .format(n_dup_old,n_dup_cur))
