@@ -141,7 +141,8 @@ class CitationsInspector():
         self.d_unit_doi = {}
         n_file_citations = 0
         self.output_columns = [
-        'doi', 'authors', 'title', 'journal','volume','issue','page_range', 'original_line',
+          'doi', 'authors', 'title', 'pub_year','journal','volume','issue',
+          'page_range', 'original_line',
         ]
 
         # input and save last year's citation info to use to check for duplicates in this year's units
@@ -328,7 +329,7 @@ class CitationsInspector():
                     # Get the pub_year
                     index_found = line[index_base:].find(')')
                     if index_found < 1:
-                        pub_year = line[index_base]
+                        pub_year = line[index_base:]
                         d_column_style['pub_year'] = d_type_style['error']
                     else:
                         index_end = index_base + index_found
