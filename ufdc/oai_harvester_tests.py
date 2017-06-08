@@ -55,11 +55,15 @@ print("Got harvester.url={}".format(harvester.url))
 
 #########  TEST UF OAI for set DLOC1
 url_base = 'http://ufdc.ufl.edu/sobekcm_oai.aspx'
+#local testing
+url_base = 'http://localhost:52468/sobekcm_oai.aspx'
 harvester = OAIHarvester(url_base=url_base)
 
 harvester.set_params(d_params={'set':'user-genetics-datasets', 'verb':'ListMetadataFormats',
     'metadataPrefix':'oai_dc'})
 harvester.set_params(d_params={'verb':'ListRecords','set':'dloc1'
+    ,'metadataPrefix':'oai_dc'})
+harvester.set_params(d_params={'verb':'ListMetadataFormats'
     ,'metadataPrefix':'oai_dc'})
 print("Got harvester.url={}".format(harvester.url))
 #output_folder = etl.data_folder(linux='/home/robert', windows='U:/', data_relative_folder='data/outputs/zenodo')
