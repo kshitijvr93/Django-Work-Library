@@ -123,7 +123,7 @@ class CitationsInspector():
     d_base_doi entry keyed by the doi with value being the entire line's text.
     Also keep every line i the d_base dictionary, keyed by index line number zfilled to 10 positions.
     '''
-    def __init__(self, year_input_folder_name=None, unit_has_tab_sep=False):
+    def __init__(self, year_input_folder_name=None, unit_has_tab_sep=False,verbosity=0):
         self.year_input_folder_name = year_input_folder_name
         self.units_folder = '{}/units'.format(self.year_input_folder_name)
         self.units_file_glob = 'IFAS*txt'
@@ -167,10 +167,14 @@ class CitationsInspector():
                     #      .format(index_line,line.encode('ascii','ignore')))
                     continue
                 doi = line[index_doi:].replace('\n','').strip()
-                msg = ("file={},line number={},Saving base_doi='{}'"
-                      .format(self.base_pubs_file_name,index_line,doi))
-                msg = msg.encode('ascii', errors='replace')
-                print(msg) #note HAD to encode as above else atom editor balks with error in print
+                if verbosity > 0:
+                    msg = ("file={},line number={},Saving base_doi='{}'"
+                          .format(self.base_pubs_file_name,index_line,doi))
+                    #MUST encode as below to handle printing misc chars in input
+                    omsg = msg
+                    print(msg.encode('ascii',errors='replace'))
+                    #print(omsg) -- would cause UnicodeEncodeError - charmap codec cant encodt '\ufffd\''
+                # SAVE BASE DOI to check for duplicates later
                 self.d_base_doi[doi] = line
                 n_file_citations += 1
             # end with open input_file
