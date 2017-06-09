@@ -30,7 +30,7 @@ d_server_params = {
         'output_parent' : None,
         'sets' : 'dloc1',
     },
-    
+
 }
 
 '''
@@ -71,8 +71,9 @@ class OAIHarvester():
         print("Using harvest_folder='{}'".format(harvest_folder))
         url_list = ('{}?verb=ListRecords&set={}&metadataPrefix=oai_dc'
             .format(self.url_base,set_name))
-        url_list='http://localhost:52468/sobekcm_oai.aspx?verb=ListRecords&set=dloc1&metadataPrefix=oai_dc&resumptionToken=000957UFDCdloc1:oai_dc'
-        n_batch = 956
+        # url_list='http://localhost:52468/sobekcm_oai.aspx?verb=ListRecords&set=dloc1&metadataPrefix=oai_dc&resumptionToken=000957UFDCdloc1:oai_dc'
+        # n_batch = 956
+        n_batch = 0
         while (url_list is not None):
             n_batch += 1
             print("{}:For batch {}, sending url_list request={}".format(me,n_batch,url_list))
@@ -124,8 +125,9 @@ class OAIHarvester():
     # end class OAIHarvester
 
 d_harvest_params = d_server_params['ufdc_oai']
-d_harvest_params = d_server_params['ufdc_devpc']
+#d_harvest_params = d_server_params['ufdc_devpc']
 set_name = 'dloc1'
+set_name = 'CNDL'
 
 linux='/home/robert/'
 windows='U:/'
