@@ -1,8 +1,7 @@
 #ufdc oai API tests
 #
-import os
-import sys
-print("Using python sys.version={}".format(sys.version))
+import sys, os, os.path, platform
+sys.path.append('{}/github/citrus/modules'.format(os.path.expanduser('~')))
 
 import requests
 import urllib.parse
@@ -10,24 +9,65 @@ import json
 from lxml import etree
 from lxml.etree import tostring
 from collections import OrderedDict
+import etl
 
+d_server_params = {
+    'zenodo': {
+        'name' : 'zenodo',
+        'url_base': 'https://zenodo.org/oai2d',
+        'output_parent' : None,
+        'sets' : 'user-genetics-datasets',
+    },
+    'ufdc': {
+        'name' : 'ufdc',
+        'url_base': 'http://ufdc.ufl.edu/sobekcm_oai.aspx',
+        'output_parent' : None,
+        'sets' : 'dloc1',
+    },
+}
 
-#from etl import get_result_by_url
-###
-doi_string = '''
-10.1115/ICONE24-60736
+'''
+OAIHarvester is initialized with a dict with details on a known
+OAI server. Various paramaters are required which are evident by the __init__
+code references made to values in the d_param_val argument
 '''
 
 class OAIHarvester():
-    def __init__(self, url_base=None, d_params=None):
-        self.url_base = url_base
-        self.param_names = ['verb','set','metadataPrefix']
-        self.url = None
-        self.l_metadataPrefix = ['oai_dc', ]
+    def __init__(self, d_param_val=None):
+        self.name = d_param_val['name']
+        self.url_base = d_param_val['url_base']
+        self.output_parent = d_param_val['output_parent']
+        if self.output_parent is None:
+            raise Exception(ValueError,'Error: output_parent is None')
+        os.makedirs(self.output_parent, exist_ok=True)
+
+        # later, populate this from ListMetadataFormats call
+        self.l_metadata_format = ['oai_dc']
+
+        self.oai_param = ['verb','set','metadataPrefix']
+        self.l_set = []
         self.l_verb = ['ListRecords','ListMetadataFormats',
                        'ListIdentifiers','ListSets','GetRecord']
-        if d_params is not None:
-            self.set_params(d_params)
+        self.set_name = None
+        return
+
+        '''
+        <summary>Harvest the set into xml files in the subforolder named
+        by the 'sets/(set_name)' in the output folder</summary>
+        <param name='set'> The name of the set to harvest</param>
+        '''
+    def harvest(self, set_name=None):
+        harvest_folder = ('{}/{}/set/{}/records/oai_dc/'
+            .format(self.output_parent, self.name, set_name))
+        os.makedirs(harvest_folder, exist_ok=True)
+        print("Using harvest_folder='{}'".format(harvest_folder))
+        url_list = ('{}?verb=ListRecords&set={}&metadataPrefix=oai_dc'
+            .format(self.url_base,set_name))
+
+        while (url_list is not None):
+            print("Sending request url_list='{}'".format(url_list))
+            url_list = None
+            pass
         return
     '''
     set params - and set the self.url
@@ -43,27 +83,16 @@ class OAIHarvester():
             self.url = self.url + sep + key + '=' + value
             sep = '&'
         #reset the url
+        return
 
-d_uf_dloc_params = {'set':'user-genetics-datasets', 'verb':'ListRecords',
-    'metadataPrefix':'oai_dc'}
+    # end class OAIHarvester
 
-harvester = OAIHarvester(url_base= 'https://zenodo.org/oai2d')
+d_harvest_params = d_server_params['zenodo']
 
-harvester.set_params(d_params={'set':'user-genetics-datasets', 'verb':'ListMetadataFormats',
-    'metadataPrefix':'oai_dc'})
-print("Got harvester.url={}".format(harvester.url))
+linux='/home/robert/'
+windows='U:/'
+d_harvest_params['output_parent'] = etl.data_folder(
+    linux=linux, windows=windows, data_relative_folder='data/outputs')
 
-#########  TEST UF OAI for set DLOC1
-url_base = 'http://ufdc.ufl.edu/sobekcm_oai.aspx'
-#local testing
-url_base = 'http://localhost:52468/sobekcm_oai.aspx'
-harvester = OAIHarvester(url_base=url_base)
-
-harvester.set_params(d_params={'set':'user-genetics-datasets', 'verb':'ListMetadataFormats',
-    'metadataPrefix':'oai_dc'})
-harvester.set_params(d_params={'verb':'ListRecords','set':'dloc1'
-    ,'metadataPrefix':'oai_dc'})
-harvester.set_params(d_params={'verb':'ListMetadataFormats'
-    ,'metadataPrefix':'oai_dc'})
-print("Got harvester.url={}".format(harvester.url))
-#output_folder = etl.data_folder(linux='/home/robert', windows='U:/', data_relative_folder='data/outputs/zenodo')
+harvester = OAIHarvester(d_harvest_params)
+harvester.harvest(set_name='user-genetics-datasets')

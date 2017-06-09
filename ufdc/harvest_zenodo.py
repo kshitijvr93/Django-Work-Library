@@ -383,6 +383,6 @@ d_run_params = {
     }
 }
 
-output_folder = etl.data_folder(linux='/home/robert', windows='U:/', data_relative_folder='data/outputs/zenodo')
+output_folder = etl.data_folder(linux='/home/robert/', windows='U:/', data_relative_folder='data/outputs/zenodo')
 d_run_params['output_folder'] = output_folder
 run(d_run_params)
