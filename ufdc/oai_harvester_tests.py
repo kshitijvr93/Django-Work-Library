@@ -1,6 +1,6 @@
 #ufdc oai API tests
 #
-import sys, os, os.path, platform
+import sys, os, os.path, platform, traceback
 sys.path.append('{}/github/citrus/modules'.format(os.path.expanduser('~')))
 
 import requests
@@ -12,18 +12,25 @@ from collections import OrderedDict
 import etl
 
 d_server_params = {
-    'zenodo': {
-        'name' : 'zenodo',
+    'zenodo_oai': {
+        'name' : 'zenodo_oai', # Part of output folder path
         'url_base': 'https://zenodo.org/oai2d',
         'output_parent' : None,
         'sets' : 'user-genetics-datasets',
     },
-    'ufdc': {
-        'name' : 'ufdc',
+    'ufdc_oai': {
+        'name' : 'ufdc_oai', # Part of output folder path
         'url_base': 'http://ufdc.ufl.edu/sobekcm_oai.aspx',
         'output_parent' : None,
         'sets' : 'dloc1',
     },
+    'ufdc_devpc': {
+        'name' : 'ufdc_devpc', # Part of output folder path
+        'url_base': 'http://localhost:52468/sobekcm_oai.aspx',
+        'output_parent' : None,
+        'sets' : 'dloc1',
+    },
+    
 }
 
 '''
@@ -57,17 +64,46 @@ class OAIHarvester():
         <param name='set'> The name of the set to harvest</param>
         '''
     def harvest(self, set_name=None):
+        me = 'harvest'
         harvest_folder = ('{}/{}/set/{}/records/oai_dc/'
             .format(self.output_parent, self.name, set_name))
         os.makedirs(harvest_folder, exist_ok=True)
         print("Using harvest_folder='{}'".format(harvest_folder))
         url_list = ('{}?verb=ListRecords&set={}&metadataPrefix=oai_dc'
             .format(self.url_base,set_name))
-
+        url_list='http://localhost:52468/sobekcm_oai.aspx?verb=ListRecords&set=dloc1&metadataPrefix=oai_dc&resumptionToken=000957UFDCdloc1:oai_dc'
+        n_batch = 956
         while (url_list is not None):
-            print("Sending request url_list='{}'".format(url_list))
+            n_batch += 1
+            print("{}:For batch {}, sending url_list request={}".format(me,n_batch,url_list))
+            response = requests.get(url_list)
+
+            xml = response.text.encode('utf-8')
+            print("{}:Request={},Reponse has text len={}".format(me,url_list,len(xml)))
+
+            try:
+                node_root = etree.fromstring(response.text.encode('utf-8'))
+            except Exception as e:
+                print("For batch {}, made url request ='{}'. Skipping batch with Parse() exception='{}'"
+                      .format(n_batch, url_list, repr(e)))
+
+                print("Traceback: {}".format(traceback.format_exc()))
+                # Break here - no point to continue because we cannot parse/discover the resumptionToken
+                break
+            #str_pretty = etree.tostring(node_root, pretty_print=True)
+            d_namespaces = {key:value for key,value in dict(node_root.nsmap).items() if key is not None}
+            nodes_record = node_root.findall(".//{*}record", namespaces=d_namespaces)
+
+            print ("ListRecords request found root tag name='{}', and {} records"
+                   .format(node_root.tag, len(nodes_record)))
+            node_resumption = node_root.find('.//{*}resumptionToken', namespaces=d_namespaces)
             url_list = None
-            pass
+            if node_resumption is not None:
+                url_list = ('{}?verb=ListRecords&set={}&metadataPrefix=oai_dc&resumptionToken={}'
+                    .format(self.url_base, set_name, node_resumption.text))
+            print("{}:Next url='{}'".format(me,url_list))
+            #Set to url_list to None for testing
+
         return
     '''
     set params - and set the self.url
@@ -87,7 +123,9 @@ class OAIHarvester():
 
     # end class OAIHarvester
 
-d_harvest_params = d_server_params['zenodo']
+d_harvest_params = d_server_params['ufdc_oai']
+d_harvest_params = d_server_params['ufdc_devpc']
+set_name = 'dloc1'
 
 linux='/home/robert/'
 windows='U:/'
@@ -95,4 +133,4 @@ d_harvest_params['output_parent'] = etl.data_folder(
     linux=linux, windows=windows, data_relative_folder='data/outputs')
 
 harvester = OAIHarvester(d_harvest_params)
-harvester.harvest(set_name='user-genetics-datasets')
+harvester.harvest(set_name=set_name)
