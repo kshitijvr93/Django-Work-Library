@@ -19,6 +19,13 @@ feed to mets for UFDC SobekCM ingestion.
 
 import sys, os, os.path, platform
 
+# Add the parent Path for misc UF modules
+sys.path.append('{}/github/citrus/modules'.format(os.path.expanduser('~')))
+
+import etl
+from lxml.etree import tostring
+import xml.etree.ElementTree as ET
+
 home_directory = os.path.expanduser('~')
 print("Using home_directory='{}'".format(home_directory),file=sys.stdout)
 sys.stdout.flush()
@@ -27,9 +34,15 @@ local_module_folder = '{}/github/citrus/modules'.format(home_directory)
 print("Using local local module folder='{}'".format(local_module_folder))
 sys.path.append(local_module_folder) #my current place on UF pc
 
+linux='/home/robert/'
+windows='U:/'
+
+output_folder = etl.data_folder(linux=linux, windows=windows,
+    data_relative_folder='data/outputs/zenodo_mets')
+
 import etl
 import os
-mets_format_str = '''<xsl:stylesheet version="1.0" encoding="UTF-8" standalone="no" ?>
+mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!--  METS/mods file designed to describe a Zenodo OAI-PMH extracted MD  -->
 
 <METS:mets OBJID="{bib_vid}"
@@ -54,7 +67,7 @@ mets_format_str = '''<xsl:stylesheet version="1.0" encoding="UTF-8" standalone="
 </METS:agent>
 
 <METS:agent ROLE="CREATOR" OTHERTYPE="SOFTWARE" TYPE="OTHER">
-  <METS:name>Data Marshal 0.1</METS:name>
+  <METS:name>Marshal API Harvester 0.1</METS:name>
 </METS:agent>
 
 <METS:agent ROLE="CREATOR" TYPE="INDIVIDUAL">
@@ -150,10 +163,7 @@ mets_format_str = '''<xsl:stylesheet version="1.0" encoding="UTF-8" standalone="
 </METS:dmdSec>
 
 <METS:structMap ID="STRUCT1" > <METS:div /> </METS:structMap>
-
 </METS:mets>
-</xsl:template>
-</xsl:stylesheet>
 '''
 
 from lxml import etree
@@ -264,8 +274,9 @@ def run(d_run_params, verbosity=0):
 
         header_identifier = node_record.find("./{*}header/{*}identifier").text
 
-        identifier_normalized = header_identifier.replace(':','_') + '.xml'
-        print("using bib_vid={} to output item with identifier_normalized={}".format(bib_vid, identifier_normalized))
+        identifier_normalized = header_identifier.replace(':','_') + '.mets.xml'
+        print("using bib_vid={} to output item with zenodo identifier_normalized={}"
+              .format(bib_vid, identifier_normalized))
         #zenodo_string_xml = etree.tostring(node_record, pretty_print=True)
 
         # Parse the input record and save it to a string
@@ -278,8 +289,7 @@ def run(d_run_params, verbosity=0):
             print("Writing filename_received ='{}'".format(fn))
             outfile.write(record_str)
 
-        # Set some variable to output into the METS template
-
+        # Set some variable to potentially output into the METS template
         utc_now = datetime.datetime.utcnow()
         utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -297,17 +307,35 @@ def run(d_run_params, verbosity=0):
         dc_creator = '' if node_creator is None else node_creator.text
         print("Got creator={}".format(dc_creator))
 
-        dc_date = node_oaidc.find("./dc:date", namespaces=namespaces).text
-        print("Got date={}".format(dc_date))
+        dc_date_orig = node_oaidc.find("./dc:date", namespaces=namespaces).text
+        print("Got dc date orig={}".format(dc_date_orig))
+        # Must convert dc_date_orig to valid METS format:
+        dc_date = '{}T12:00:00Z'.format(dc_date_orig)
+        print("Got dc_date='{}'".format(dc_date))
 
         node_description = node_oaidc.find(".//{*}description",namespaces=namespaces)
-        dc_description = '' if node_description is None else node_description.text
+        # Make an element trree style tree to invoke pattern to remove innter xml
+        str_description = tostring(node_description,encoding='unicode',method='text').strip().replace('\n','')
+        # Special doctype needed to handle nbsp... copyright
+        xml_dtd = '''<?xml version="1.1" encoding="UTF-8" ?><!DOCTYPE naughtyxml [
+            <!ENTITY nbsp "&#0160;">
+            <!ENTITY copy "&#0169;">
+            ]>'''
+        xml_description =  '{}<doc>{}</doc>'.format(xml_dtd,str_description)
+        print("Got str_description='{}'".format(str_description))
+        print("Got xml_description='{}'".format(xml_description))
+
+        # See: https://stackoverflow.com/questions/19369901/python-element-tree-extract-text-from-element-stripping-tags#19370075
+        tree_description = ET.fromstring(xml_description)
+        dc_description = ''.join(tree_description.itertext())
+        #dc_description = xml_description
+        print("Using dc_description='{}'".format(dc_description))
 
         nodes_identifier = node_oaidc.findall(".//{*}identifier")
         #inferred the following indexes by pure manual inspection!
         doi = nodes_identifier[0].text
-        related_url = nodes_identifier[1].text
         zenodo_id = nodes_identifier[2].text
+        related_url = '{}'.format(doi)
 
         #relation_doi = node_oaidc.find(".//{*}relation").text
         nodes_rights = node_oaidc.findall(".//{*}rights")
@@ -324,7 +352,7 @@ def run(d_run_params, verbosity=0):
         dc_title = node_oaidc.find(".//{*}title").text
         dc_type = node_oaidc.find(".//{*}type").text
 
-        sobekcm_aggregations = ['IRUF']
+        sobekcm_aggregations = ['IRUF','IUF','ALL','DATASETS']
         xml_sobekcm_aggregations = ''
         for aggregation in sobekcm_aggregations:
             xml_sobekcm_aggregations += (
@@ -357,8 +385,9 @@ def run(d_run_params, verbosity=0):
 
         # Create mets_str and write it
         mets_str = mets_format_str.format(**d_var_val)
-
-        filename_mets = mets_output_folder + '/' + identifier_normalized
+        item_output_folder = mets_output_folder + '/' + bib_vid
+        os.makedirs(item_output_folder, exist_ok=True)
+        filename_mets = item_output_folder + '/' + bib_vid + '.mets.xml'
         fn = filename_mets
         with open(fn, 'wb') as outfile:
             print("Writing filename='{}'".format(fn))
@@ -383,6 +412,8 @@ d_run_params = {
     }
 }
 
-output_folder = etl.data_folder(linux='/home/robert/', windows='U:/', data_relative_folder='data/outputs/zenodo')
+output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
+        data_relative_folder='data/outputs/zenodo_mets')
 d_run_params['output_folder'] = output_folder
+
 run(d_run_params)
