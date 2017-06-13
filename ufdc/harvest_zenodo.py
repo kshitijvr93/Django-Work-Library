@@ -85,13 +85,13 @@ mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 {description}
 </mods:abstract>
 
-<mods:accessCondition>See: {rights_text} </mods:accessCondition>
+<mods:accessCondition>{rights_text}</mods:accessCondition>
 <mods:identifier type="zenodo">{identifier}</mods:identifier>
-<mods:genre authority="-genre_authority-">-genre-</mods:genre>
+<mods:genre authority="{genre_authority}">{genre}</mods:genre>
 <mods:identifier type="doi">{doi}</mods:identifier>
 <mods:language>
-<mods:languageTerm type="text">English</mods:languageTerm>
-<mods:languageTerm type="code" authority="iso639-2b">en</mods:languageTerm>
+<mods:languageTerm type="text">eng</mods:languageTerm>
+<mods:languageTerm type="code" authority="iso639-2b">eng</mods:languageTerm>
 </mods:language>
 
 <mods:location>
@@ -139,7 +139,7 @@ mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <METS:xmlData>
     <sobekcm:procParam>
     {xml_sobekcm_aggregations}
-    <sobekcm:Tickler>{{sha1-mets-v1}}</sobekcm:Tickler>
+    <sobekcm:Tickler>{sha1-mets-v1}</sobekcm:Tickler>
     </sobekcm:procParam>
     <sobekcm:bibDesc>
         <sobekcm:BibID>{bibid}</sobekcm:BibID>
@@ -272,9 +272,12 @@ def run(d_run_params, verbosity=0):
         bibid = bib_prefix + str(bibint).zfill(8)
         bib_vid = "{}_{}".format(bibid,vid)
 
+        node_type= node_record.find(".//{}type", namespaces=d_namespaces)
+        genre = '' if not node_type else node_type.text
+
         header_identifier = node_record.find("./{*}header/{*}identifier").text
 
-        identifier_normalized = header_identifier.replace(':','_') + '.mets.xml'
+        identifier_normalized = header_identifier.replace(':','_') + '.xml'
         print("using bib_vid={} to output item with zenodo identifier_normalized={}"
               .format(bib_vid, identifier_normalized))
         #zenodo_string_xml = etree.tostring(node_record, pretty_print=True)
@@ -327,7 +330,7 @@ def run(d_run_params, verbosity=0):
 
         # See: https://stackoverflow.com/questions/19369901/python-element-tree-extract-text-from-element-stripping-tags#19370075
         tree_description = ET.fromstring(xml_description)
-        dc_description = ''.join(tree_description.itertext())
+        dc_description = etl.escape_xml_text(''.join(tree_description.itertext()))
         #dc_description = xml_description
         print("Using dc_description='{}'".format(dc_description))
 
@@ -380,7 +383,9 @@ def run(d_run_params, verbosity=0):
             'bibid': bibid,
             'vid': vid,
             'type_of_resource' : dc_type,
-            'sha1-mets-v1' : 'hash goes here',
+            'sha1-mets-v1' : '',
+            'genre' : 'dataset',
+            'genre_authority': 'zenodo',
         }
 
         # Create mets_str and write it

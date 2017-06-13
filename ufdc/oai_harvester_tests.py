@@ -16,26 +16,38 @@ d_server_params = {
         'name' : 'zenodo_oai', # Part of output folder path
         'url_base': 'https://zenodo.org/oai2d',
         'output_parent' : None,
-        'sets' : 'user-genetics-datasets',
+        'set_specs' : ['user-genetics-datasets',]
     },
     'ufdc_oai': {
         'name' : 'ufdc_oai', # Part of output folder path
         'url_base': 'http://ufdc.ufl.edu/sobekcm_oai.aspx',
         'output_parent' : None,
-        'sets' : 'dloc1',
+        'set_specs' : ['dloc1',]
     },
     'ufdc_devpc': {
         'name' : 'ufdc_devpc', # Part of output folder path
         'url_base': 'http://localhost:52468/sobekcm_oai.aspx',
         'output_parent' : None,
-        'sets' : 'dloc1',
+        'set_specs' : ['dloc1',]
     },
-    
+    'manioc': {
+        'name' : 'manioc', # Part of output folder path
+        'url_base': 'http://www.manioc.org/phpoai/oai2.php',
+        'output_parent' : None,
+        # 20170612: http://www.manioc.org/phpoai/oai2.php?verb=ListSets
+        'set_specs' : ['patrimon',
+                  'recherch',
+                  'images',
+                  'fichiers',
+                  'patrimon_martinique',
+                  'images_martinique',
+            ],
+    },
 }
 
 '''
 OAIHarvester is initialized with a dict with details on a known
-OAI server. Various paramaters are required which are evident by the __init__
+OAI server. Various parameters are required which are evident by the __init__
 code references made to values in the d_param_val argument
 '''
 
@@ -43,6 +55,7 @@ class OAIHarvester():
     def __init__(self, d_param_val=None):
         self.name = d_param_val['name']
         self.url_base = d_param_val['url_base']
+        self.set_specs = d_param_val['set_specs']
         self.output_parent = d_param_val['output_parent']
         if self.output_parent is None:
             raise Exception(ValueError,'Error: output_parent is None')
@@ -55,24 +68,25 @@ class OAIHarvester():
         self.l_set = []
         self.l_verb = ['ListRecords','ListMetadataFormats',
                        'ListIdentifiers','ListSets','GetRecord']
-        self.set_name = None
+        self.set_spec = None
         return
 
         '''
         <summary>Harvest the set into xml files in the subforolder named
-        by the 'sets/(set_name)' in the output folder</summary>
+        by the 'sets/(set_spec)' in the output folder</summary>
         <param name='set'> The name of the set to harvest</param>
         '''
-    def harvest(self, set_name=None):
+    def harvest(self, set_spec=None):
         me = 'harvest'
         harvest_folder = ('{}/{}/set/{}/records/oai_dc/'
-            .format(self.output_parent, self.name, set_name))
+            .format(self.output_parent, self.name, set_spec))
         os.makedirs(harvest_folder, exist_ok=True)
         print("Using harvest_folder='{}'".format(harvest_folder))
         url_list = ('{}?verb=ListRecords&set={}&metadataPrefix=oai_dc'
-            .format(self.url_base,set_name))
-        url_list='http://localhost:52468/sobekcm_oai.aspx?verb=ListRecords&set=dloc1&metadataPrefix=oai_dc&resumptionToken=000957UFDCdloc1:oai_dc'
-        n_batch = 956
+            .format(self.url_base,set_spec))
+        #url_list='http://localhost:52468/sobekcm_oai.aspx?verb=ListRecords&set=dloc1&metadataPrefix=oai_dc&resumptionToken=000957UFDCdloc1:oai_dc'
+        #n_batch = 956
+        n_batch = 0
         while (url_list is not None):
             n_batch += 1
             print("{}:For batch {}, sending url_list request={}".format(me,n_batch,url_list))
@@ -99,8 +113,11 @@ class OAIHarvester():
             node_resumption = node_root.find('.//{*}resumptionToken', namespaces=d_namespaces)
             url_list = None
             if node_resumption is not None:
-                url_list = ('{}?verb=ListRecords&set={}&metadataPrefix=oai_dc&resumptionToken={}'
-                    .format(self.url_base, set_name, node_resumption.text))
+                # Note: manioc allows no other args than resumption token, so try with all oai servers
+                #url_list = ('{}?verb=ListRecords&set={}&metadataPrefix=oai_dc&resumptionToken={}'
+                #    .format(self.url_base, set_spec, node_resumption.text))
+                url_list = ('{}?verb=ListRecords&resumptionToken={}'
+                    .format(self.url_base,  node_resumption.text))
             print("{}:Next url='{}'".format(me,url_list))
             #Set to url_list to None for testing
 
@@ -123,14 +140,21 @@ class OAIHarvester():
 
     # end class OAIHarvester
 
-d_harvest_params = d_server_params['ufdc_oai']
-d_harvest_params = d_server_params['ufdc_devpc']
-set_name = 'dloc1'
 
-linux='/home/robert/'
-windows='U:/'
+oai_server = 'ufdc_oai'
+oai_server = 'ufdc_devpc'
+oai_server = 'manioc'
+
+d_harvest_params = d_server_params[oai_server]
+
 d_harvest_params['output_parent'] = etl.data_folder(
-    linux=linux, windows=windows, data_relative_folder='data/outputs')
+    linux='home/robert', windows='U:/', data_relative_folder='data/outputs')
 
 harvester = OAIHarvester(d_harvest_params)
-harvester.harvest(set_name=set_name)
+
+for i in range(0, len(harvester.set_specs)):
+    set_spec = harvester.set_specs[i]
+    print("\n-----------------------------------------\nGetting records for set_spect {}".format(set_spec))
+    harvester.harvest(set_spec=set_spec)
+
+print("DONE!")
