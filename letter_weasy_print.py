@@ -1,6 +1,7 @@
 # coding: utf-8
 # Make change of address letters using weasyprint
 # python 3 code
+import os
 ######################################
 # Set some correspondent variable values.
 # They may also include html tags if desired, that must be well-formed
@@ -176,17 +177,32 @@ Gainesville, FL 32607<br></p>
 '''
 #end older letters
 ############################ GAINESVILLE HEALTH AND FITNESS ###########################
-correspondents = [
-    {'correspondent_name': 'Gainesville Health and Fitness'
+d_correspondents = {
+    'ghf' : {
+    ,'correspondent_name' : 'Sally in Accounts Receivable'
+    ,'salutation' : 'Dear Sally'
     ,'co_addr1': '4820 Newberry Road'
     ,'co_addr2': 'Gainesville, FL'
     ,'co_zip': '32607'
     ,'co_account_name': 'Membership Agreement'
     ,'co_account_id': '283756'
-    ,'outfile_prefix': 'ghf20170527'
+    ,'today': 'June 10, 2017'
+    ,'outfile_prefix': 'ghf20170610'
     },
-]
-doc_string = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+    'test' : {
+    'representative_name' : 'Sally in Accounts Receivable'
+    ,'correspondent_name': 'Gainesville Health and Fitness'
+    ,'salutation' : 'Dear Sally'
+    ,'co_addr1': '4820 Newberry Road'
+    ,'co_addr2': 'Gainesville, FL'
+    ,'co_zip': '32607'
+    ,'co_account_name': 'Membership Agreement'
+    ,'co_account_id': '283756'
+    ,'today': 'June 10, 2017'
+    ,'outfile_prefix': 'test20170610'
+    },
+}
+letter_non_renew = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
@@ -208,7 +224,7 @@ doc_string = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <p style="margin-bottom: 0in; line-height: 100%"><br>
 </p>
 <p style="margin-bottom: 0in; line-height: 100%">
-Dear {correspondent_name},</p>
+{salutation}</p>
 <p style="margin-bottom: 0in; line-height: 100%">
 This regards our {co_account_name}, #{co_account_id}.<br>
 </p>
@@ -250,20 +266,124 @@ given above.
 </body>
 </html>
 '''
+letter_ghf_20170610= '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <title></title>
+  <meta name="generator" content="LibreOffice 4.2.8.2 (Linux)">
+  <meta name="created" content="20161009;183812439632025">
+  <meta name="changed" content="20161009;184217117305396">
+  <style type="text/css">
+  <!--
+    @page {{ margin: 0.79in }}
+    p {{ margin-bottom: 0.1in; line-height: 120% }}
+  -->
+  </style>
+</head>
+<body lang="en-US" dir="ltr">
+308 SW 40th Street</br>
+Gainesville, FL 32607</br>
+<p style="margin-bottom: 0in; line-height: 100%"><br>
+{today}
+<p style="margin-bottom: 0in; line-height: 100%"><br>
+<p style="margin-bottom: 0in; line-height: 100%"><br>
+{correspondent_name}<br>
+{co_addr1}<br>
+{co_addr2} {co_zip}<br>
+</p>
+<p style="margin-bottom: 0in; line-height: 100%">
+<p>{salutation}</p>
+Thank you for your reminder about the final payment on my former account
+with you that my credit card company
+dishonored to you. They canceled that card (that was used monthly to pay you)
+before its expiration date  without my express order.
+<p style="margin-bottom: 0in; line-height: 100%">
+Please find my check enclosed for $36.85 as payment in full under our
+former {co_account_name} #{co_account_id}.<br>
+</p>
+I apologize for the inconvenience.
+<p style="margin-bottom: 0in; line-height: 100%"><br>
+</p>
+<p style="margin-bottom: 0in; line-height: 100%"><br></p>
+Thank you,
+<p style="margin-bottom: 0in; line-height: 100%">
+</p>
+<p style="margin-bottom: 0in; line-height: 100%"><br></p>
+Robert V. Phillips
+<p style="margin-bottom: 0in; line-height: 100%">{today}</p>
+</body>
+</html>
+'''
+letter_business_test_20170610= '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <title></title>
+  <meta name="generator" content="LibreOffice 4.2.8.2 (Linux)">
+  <meta name="created" content="20161009;183812439632025">
+  <meta name="changed" content="20161009;184217117305396">
+  <style type="text/css">
+  <!--
+    @page {{ margin: 0.79in }}
+    p {{ margin-bottom: 0.1in; line-height: 120% }}
+  -->
+  </style>
+</head>
+<body lang="en-US" dir="ltr">
+308 SW 40th Street</br>
+Gainesville, FL 32607</br>
+<p style="margin-bottom: 0in; line-height: 100%"><br>
+{today}
+<p style="margin-bottom: 0in; line-height: 100%"><br>
+<p style="margin-bottom: 0in; line-height: 100%"><br>
+{representative_name}<br>
+{correspondent_name}<br>
+{co_addr1}<br>
+{co_addr2} {co_zip}<br>
+</p>
+<p style="margin-bottom: 0in; line-height: 100%">
+<p>{salutation}</p>
+Thank you for your reminder about the final payment on my former account
+with you that my credit card company
+dishonored to you. They canceled that card (that was used monthly to pay you)
+before its expiration date  without my express order.
+<p style="margin-bottom: 0in; line-height: 100%">
+Please find my check enclosed for $36.85 as payment in full under our
+former {co_account_name} #{co_account_id}.<br>
+</p>
+I apologize for the inconvenience.
+<p style="margin-bottom: 0in; line-height: 100%"><br>
+</p>
+<p style="margin-bottom: 0in; line-height: 100%"><br></p>
+Thank you,
+<p style="margin-bottom: 0in; line-height: 100%">
+</p>
+<p style="margin-bottom: 0in; line-height: 100%"><br></p>
+Robert V. Phillips
+<p style="margin-bottom: 0in; line-height: 100%">{today}</p>
+</body>
+</html>
+'''
 '''
 Method out_html_letters()
-<param>doc_str is template that formats into an html letter</param>
+<param name='template_html'>The html letter template that formats correspondent
+parameters into an html letter</param>
+<param>d_correspondents is a dict keyd by correspondent initial/short name, and the value of
+each is a dictionary, keyed with template variable names and values are values to plug into the ouput
+letter template for that corerspondent.
 <param>correspondents is a list of dicts, each with the parameter values for
 filling out the template to create an html file that represents a letter to send to the correspondent</param>
 <param>output_folder is the output folder into which to write the letter.
 Note that the output folder is NOT cleared out of files first, by design </param>
 '''
-def out_html_letters(template_html=None, correspondents=None,output_folder = None):
+def out_html_letters(template_html=None, nicknames=None ,d_correspondents=None, output_folder=None):
     me = 'out_html_letters'
     if not (template_html and correspondents and output_folder):
-        raise ValueError('Args doc_str and dicts are required.')
-    print("{}: Creating html letters for {} correspondents:".format(me,repr(len(correspondents))))
-    for i,d_correspondent in enumerate(correspondents):
+        raise ValueError('Args template_html and correspondents are required.')
+    print("{}: Creating html letters for {} correspondents:".format(me,repr(len(nicknames))))
+
+    for i, d_correspondent in enumerate([d_correspondents[nickname] for nickname in nicknames ]):
         out_str = template_html.format(**d_correspondent)
         outfile_prefix = d_correspondent.get(
             'outfile_prefix','coa_mail_{}'.format(i))
@@ -271,10 +391,11 @@ def out_html_letters(template_html=None, correspondents=None,output_folder = Non
         print("{}: Outputting filename='{}'".format(me,output_filename))
         with open(output_filename, mode='w',encoding='utf-8') as fwutf8:
             fwutf8.write(out_str)
+
 from subprocess import run
 from pathlib import Path
 '''method weasyprint_html_to_pdfs()
-Given paramater head_folder, find all .html files there, and for each,
+Given parameter head_folder, find all .html files there, and for each,
 create an output file in the same folder, ending .pdf
 '''
 def weasyprint_html_to_pdfs(head_folder=None):
@@ -309,17 +430,25 @@ def print_pdfs(head_folder=None):
 def main_run(d_args):
     fshome = d_args['file_system_home']
     output_folder = d_args['output_folder']
+    os.makedirs(output_folder, exist_ok=True)
+    print("main_run: output_folder={}".format(output_folder))
+
     whether_make_pdfs_now = d_args['make_pdfs_now']
     whether_print_now = d_args['print_now']
-    correspondents = d_args['correspondents']
-    doc_string = d_args['template_letter']
+    d_correspondents = d_args['d_correspondents']
+    nicknames = d_args['nicknames']
+    template_letter = d_args['template_letter']
     #
     # Note: before running this, if you want delete contents in the output folder,
     # you must do it manually.
     # Create the formatted html files
-    print("Start: call out_html_letters() with template_letter='{}'\n, correspondents='{}'\n, output_folder='{}'\n"
-          .format(doc_string,correspondents,output_folder))
-    out_html_letters(template_html=doc_string, correspondents=correspondents, output_folder=output_folder)
+    print("Start: calling out_html_letters() with template_letter='{}'\n,"
+          " correspondents='{}'\n, output_folder='{}'\n"
+          .format(template_letter,correspondents,output_folder))
+
+    out_html_letters(template_html=template_letter, nicknames=nicknames, d_correspondents=d_correspondents,
+        output_folder=output_folder)
+
     if whether_make_pdfs_now:
         #invoke weasyprint at subprocess levelto create a pdf for every html letter
         print("Calling weasyprint_html_to_pdfs")
@@ -331,15 +460,17 @@ def main_run(d_args):
 fshome = '/home/robert'
 d_args = {
     'file_system_home':fshome,
-    'output_folder': '{}/tmpdir/ghf'.format(fshome),
+    'output_folder': '{}/tmpdir/letters'.format(fshome),
     'make_pdfs_now': True,
     'print_now': False,
-    'template_letter': doc_string,
-    'correspondents': correspondents,
+    'template_letter': letter_ghf_20170610,
+    'd_correspondents': d_correspondents,
+    'nicknames': ['ghf']
 };
 print("Starting calling main_run...")
 main_run(d_args)
 print("Back from main_run. Done!")
+
 #################################################################################################################
 ## END -- THAT PRINTED THE HTML FILES IN THE OUTPUT FOLDER. NEXT USES WEASYPRINT TO CREATE PDF FILES
 import weasyprint
