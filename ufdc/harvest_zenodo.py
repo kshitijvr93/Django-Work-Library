@@ -355,7 +355,7 @@ def run(d_run_params, verbosity=0):
         dc_title = node_oaidc.find(".//{*}title").text
         dc_type = node_oaidc.find(".//{*}type").text
 
-        sobekcm_aggregations = ['IRUF','IUF','ALL','DATASETS']
+        sobekcm_aggregations = ['UFDATASETS']
         xml_sobekcm_aggregations = ''
         for aggregation in sobekcm_aggregations:
             xml_sobekcm_aggregations += (
