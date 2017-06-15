@@ -16,11 +16,13 @@ That output is meant to be processed by xml2rdb using study name 'orpub' (see xm
 which produces related tables in a relational database.
 
 '''
+import os, sys
+sys.path.append('{}/github/citrus/modules'.format(os.path.expanduser('~')))
 
 import requests
 import json
 import urllib
-import sys
+import etl
 d_orcid = {}
 '''
 d_orcid holds the key information used to make requests of the orcid search and detailed record apis
@@ -187,7 +189,7 @@ from io import StringIO, BytesIO
 from datetime import datetime
 
 '''
-This notebook is meant to develop and test orpubtxml (ORchid PUBlic records to XML)
+This notebook is meant to develop and test orpubtxml (ORcid PUBlic records to XML)
 
 It is based on eatxml (Elsevier Api To Xml), but here revised to query for original load
 date rather than pub year, and also revised to create an output directory for every single
@@ -432,7 +434,9 @@ def orpubtxml_run(d_orcid=None):
     agent_creator_software = "orpubtxml-0.1" #may add attributes programming-language, revision-date, hash ...
     verbosity = 0
 
-    out_base_dir = 'c:/rvp/elsevier/output_orpubtxml'
+    #out_base_dir = 'c:/rvp/elsevier/output_orpubtxml'
+    out_base_dir = etl.data_folder(linux='/home/robert/', windows='U:/',
+        data_relative_folder='data/outputs/orpubtxml')
 
     # create output directory root if it does not exist
     os.makedirs(out_base_dir, exist_ok=True)
@@ -442,7 +446,7 @@ def orpubtxml_run(d_orcid=None):
         os.makedirs('{}/{}'.format(out_base_dir,sub_name), exist_ok=True)
 
     utc_now = datetime.datetime.utcnow()
-    # secsz_start: secz means seconds in utc(suffix 'z') when this run started
+    # secsz_start: secsz means seconds in utc(z means utc) when this run started
     secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
 
     print ("START ORPUBTXML RUN at {}\n\twith:\ncymd_start='{}', cymd_end='{}'\n  "
