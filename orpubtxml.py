@@ -2,17 +2,17 @@
 20170502 program orpubtxml (ORchid PUBlic records To XML)
 
 Program orpubtxml queries the orcid public api for all public record holders with a UF
-affiliation,
-then it reads the api for the public information for each record holder (identified by orcid id value)
-and outputs each record holder's info to the given output directory with a file
-name of the form orcid_<orcid id value>.xml.
+affiliation, then it reads the api for the public information for each record 
+holder (identified by orcid id value) and outputs each record holder'
+s info to the given output directory with a file name of the form 
+orcid_<orcid id value>.xml.
 
-Program orpubtxml is designed and works similarly to the elsevier ealdxml program in that
-(1) it first uses search API to get ids for records of interest,
+Program orpubtxml: 
+(1) first uses the ORCID search API to get ids for records of interest,
 (2) and for each, it uses a second API to to get more detailed info pertaining to the id,
 (3) and then it saves individual xml files, one per id, in an output folder.
 
-That output is meant to be processed by xml2rdb using study name 'orpub' (see xml2rdb code),
+That output is ready to be processed by xml2rdb using study name 'orpub' (see xml2rdb code),
 which produces related tables in a relational database.
 
 '''

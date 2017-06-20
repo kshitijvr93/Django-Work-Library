@@ -1,0 +1,46 @@
+<html>
+<head>
+<style>
+/* Tooltip container */
+.tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+}
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 920px;
+    background-color: black;
+    color: #fff;
+    text-align: left-margin;
+    padding: 5px 0;
+    border-radius: 6px;
+    top: -5px;
+    left: -250px;
+ 
+    /* Position the tooltip text - see examples below! */
+    position: absolute;
+    z-index: 1;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+}
+</style>
+
+</head>
+<body>
+<h4>File c:/users/podengo/github/citrus/aaa.html</h4>
+
+I am about to let you know to <div class="tooltip">Hover over me
+  <span class="tooltiptext">Tooltip text</span>
+</div> 
+
+
+
+</body></html>
+
+
