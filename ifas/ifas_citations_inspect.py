@@ -58,18 +58,20 @@ class OutBookSheet():
         self.sheet = self.work_book.add_sheet(name)
         self.output_columns = output_columns
         self.d_type_style = {
-        'unparsed' : easyxf( 'pattern: pattern solid, fore_colour '
-            'grey25; font: colour black, bold True;'),
         'warning' :  easyxf( 'pattern: pattern solid, fore_colour '
             'pale_blue; font: colour black, bold True;'),
         'error' :  easyxf( 'pattern: pattern solid, fore_colour '
-            'pink; font: colour black, bold True;'),
+            'yellow; font: colour black, bold True;'),
         'error2' :  easyxf( 'pattern: pattern solid, fore_colour '
             'rose; font: colour black, bold True;'),
         'error3' :  easyxf( 'pattern: pattern solid, fore_colour '
             'light_orange; font: colour black, bold True;'),
+        'unparsed' : easyxf( 'pattern: pattern solid, fore_colour '
+            'grey25; font: colour black, bold True;'),
         'valid' :  easyxf( 'pattern: pattern solid, fore_colour '
             'white; font: colour black, bold False;'),
+        'original' :  easyxf( 'pattern: pattern solid, fore_colour '
+            'light_green; font: colour black, bold False;'),
         }
         # Caller may use this to set a style per column before calling writerow
         self.d_column_style = {}
@@ -142,7 +144,7 @@ class CitationsInspector():
         self.d_unit_doi = {}
         n_file_citations = 0
         self.output_columns = [
-          'doi', 'authors', 'title', 'pub_year','journal','volume','issue',
+          'doi', 'authors',  'pub_year','title','journal','volume','issue',
           'page_range', 'original_line',
         ]
 
@@ -220,7 +222,6 @@ class CitationsInspector():
             d_type_style = self.out_book_sheet.d_type_style #convenient abbreviation
             n_file_citations = 0
             print("\nReading input file {}".format(path.name))
-
             # { NOTE: use encoding=utf-8-sig so on windows the BOM is properly ignored
             with open (str(input_file_name), encoding="utf-8-sig", errors='ignore', mode="r") as input_file:
                 input_lines = input_file.readlines()
@@ -231,6 +232,7 @@ class CitationsInspector():
                     line = line.replace('\n','')
                     index_line = index + 1
                     print("\nReading input line count {}".format(index_line))
+                    skip_remaining_parsing = 0
 
                     d_column_output = {}
                     d_column_style = {}
@@ -289,9 +291,8 @@ class CitationsInspector():
 
 
                         # DOI Dup Check 3 (error3):
-                        # check if doi already in previous line of
-                        # this unit report that has just been processed earlier in this
-                        # loop over units
+                        # check if doi already in previous line of this unit report that
+                        # has just been processed earlier this read loop of the input file
 
                         doi_unit_dup = d_unit_doi.get(doi, None)
                         if doi_unit_dup is not None:
@@ -319,6 +320,7 @@ class CitationsInspector():
                     if index_found == -1:
                         authors = line[index_base:]
                         d_column_style['authors'] = d_type_style['error']
+                        skip_remaining_parsing = 1
                     else:
                         index_end = index_base + index_found
                         authors = line[index_base : index_end].strip()
@@ -329,9 +331,12 @@ class CitationsInspector():
 
                     # Get the pub_year
                     index_found = line[index_base:].find(')')
-                    if index_found < 1:
+                    if skip_remaining_parsing == 1:
+                        pub_year = 'Not found'
+                    elif index_found < 1:
                         pub_year = line[index_base:]
                         d_column_style['pub_year'] = d_type_style['error']
+                        skip_remaining_parsing = 1
                     else:
                         index_end = index_base + index_found
                         pub_year = line[index_base:index_end].strip()
@@ -342,9 +347,12 @@ class CitationsInspector():
 
                     #TITLE
                     index_found = line[index_base :].find('.')
-                    if index_found < 1:
+                    if skip_remaining_parsing == 1:
+                        title = 'Not found'
+                    elif index_found < 1:
                         title = line[index_base :]
                         d_column_style['title'] = d_type_style['error']
+                        skip_remaining_parsing = 1
                     else:
                         index_end = index_base + index_found
                         title = line[index_base:index_end].strip()
@@ -357,9 +365,12 @@ class CitationsInspector():
                     # Seek end of journal name by finding open paren of issue then backtracking to the
                     # 'last comma or period', the true end-sentinal, because title itself may have an arbitrary number of commas.
                     index_found = line[index_base:].find(',')
-                    if index_found < 1:
+                    if skip_remaining_parsing == 1:
+                        journal =  'Not found'
+                    elif index_found < 1:
                         journal = line[index_base :]
                         d_column_style['journal'] = d_type_style['error']
+                        skip_remaining_parsing = 1
                     else:
                         index_end = index_base + index_found
                         # Journal title is substring after last open paren(of year) and before last comma
@@ -374,35 +385,60 @@ class CitationsInspector():
                     #VOLUME
                     # Again find open paren that indicates end of volume
                     index_found = line[index_base:].find('(')
-                    if index_found < 1:
-                        volume = line[index_base :]
-                        d_column_style['volume'] = d_type_style['error']
+                    skip_issue = 0
+                    if skip_remaining_parsing == 1:
+                        volume = 'Not found'
+                    elif index_found < 1:
+                        # Issue, eg (11) in parens is optional so seek ending ,
+                        index_comma = line[index_base:].find(',')
+                        d_output['issue'] = '(Missing)'
+                        d_column_style['issue'] = d_type_style['warning']
+                        if index_comma > -1:
+                            index_end = index_base + index_comma
+                            volume = line[index_base:index_end].strip()
+                            d_output['volume'] = volume
+                            index_base = index_end + 1
+                            d_column_style['volume'] = d_type_style['valid']
+                            skip_issue = 1
+                        else:
+                            skip_issue = 0
+                            volume = line[index_base :]
+                            d_column_style['volume'] = d_type_style['error']
+                            skip_remaining_parsing = 1
                     else:
                         index_end = index_base + index_found
                         volume = line[index_base:index_end].strip()
                         index_base = index_end + 1
                         d_column_style['volume'] = d_type_style['valid']
-                    #print("Got volume = '{}'".format(volume))
                     d_output['volume'] = volume
 
                     #ISSUE
-                    index_found = line[index_base:].find(')')
-                    if index_found < 1:
-                        issue = line[index_base :]
-                        d_column_style['issue'] = d_type_style['error']
-                    else:
-                        index_end = index_base + index_found
-                        issue = line[index_base:index_end].strip()
-                        index_base = index_end + 2 # increment 2 also skips the , after the ending )
-                        d_column_style['issue'] = d_type_style['valid']
-                    #print("Got issue = '{}'".format(issue))
-                    d_output['issue'] = issue
+                    if skip_issue == 0:
+                        index_found = line[index_base:].find(')')
+                        if skip_remaining_parsing == 1:
+                            issue = 'Not Found'
+                        elif index_found < 1:
+                            issue = line[index_base :]
+                            d_column_style['issue'] = d_type_style['error']
+                            skip_remaining_parsing = 1
+                        else:
+                            index_end = index_base + index_found
+                            issue = line[index_base:index_end].strip()
+                            index_base = index_end + 2 # increment 2 also skips the , after the ending )
+                            d_column_style['issue'] = d_type_style['valid']
+                        #print("Got issue = '{}'".format(issue))
+                        d_output['issue'] = issue
+                    if d_output.get('issue', None) == None:
+                        print("FieldISSUE:Issue not a key. Skip_issue={}".format(skip_issue))
 
                     #Page Range:
                     index_found = line[index_base:].find('.')
-                    if index_found < 1:
+                    if skip_remaining_parsing == 1:
+                        page_range = 'Not found'
+                    elif index_found < 1:
                         page_range = line[index_base :]
                         d_column_style['page_range'] = d_type_style['error']
+                        skip_remaining_parsing = 1
                     else:
                         index_end = index_base + index_found
                         page_range = line[index_base:index_end]
@@ -412,8 +448,10 @@ class CitationsInspector():
                     print("input file {}, index {}, Calling writerow ".format(input_file_name,index))
 
                     d_output['original_line'] = line
+                    d_column_style['original_line'] = d_type_style['original']
                     # Write spreadsheet row
-                    self.out_book_sheet.writerow(d_output=d_output, d_column_style=d_column_style)
+                    self.out_book_sheet.writerow(d_output=d_output,
+                        d_column_style=d_column_style)
                 # } end for line in input_lines
 
                 # Output this line's Excel row
