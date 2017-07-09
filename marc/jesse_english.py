@@ -25,14 +25,16 @@ def ucr_mrc_to_csv():
     print("Using {} csv fields".format(len(csv_fields)))
     use_csv_fields = 0
     d_fileField = {} # save counts of records that use each field.subfield
+    max_items_detail = 2;
     with open(input_file_name, mode='rb') as infile:
         reader = MARCReader(infile)
         for i,record in enumerate(reader):
             fsep = ''
             outline = ''
             d_recordField = {} # Save all field(tag).subfield counts for this record
-            print("RECORD {} of type {}, leader='{}' with {} MARC fields FOLLOWS:\n"
-            .format(i, type(record),record.leader,len(record.fields)))
+            if i < max_items_detail:
+                print("RECORD {} of type {}, leader='{}' with {} MARC fields FOLLOWS:\n"
+                .format(i, type(record),record.leader,len(record.fields)))
             if (use_csv_fields): #show 'pymarc' field values for this record
                 for nf,field_name in enumerate(csv_fields):
                     outline += '\nFIELD {}={}: '.format(nf,field_name)
@@ -81,14 +83,13 @@ def ucr_mrc_to_csv():
                             pass
                 # end for nf,field in enumerate(record.fields)
             # end else (formal MARC fields)
-            max_items_detail = 2;
             if i < max_items_detail:
                 print(i, ':',outline) # print subfield values
                 #next output subfield counts
 
-            for key,value in d_recordField.items():
+            for i1,(key,value) in enumerate(d_recordField.items()):
                 if i < max_items_detail:
-                    print('key={},count={}:'.format(key,value)) # print subfield values
+                    print('{}:key={},count={}:'.format(i1,key,value)) # print subfield values
                 count = d_fileField.get(key,0)
                 d_fileField[key] = count + 1
         #for i,record in enumerate(reader)
@@ -97,7 +98,16 @@ def ucr_mrc_to_csv():
     print("\nTOTAL KEYS WITH RECORD COUNTS AMONG ALL INPUT ITEMS:")
     od = OrderedDict(sorted(d_fileField.items()))
     for i,(key,value) in enumerate(od.items()):
-        print('key={},count={}:'.format(key,value)) # print subfield values
+        print('{}:key={},count={}:'.format(i,key,value)) # print subfield values
+
+    threshholds=[16000,13000, 10000,5000]
+    for threshhold in threshholds:
+        print("\nTHRESHHOLD VALUE={}".format(threshhold))
+        tcount = 0
+        for i,(key,value) in enumerate(od.items()):
+            if value >= threshhold:
+                tcount += 1
+                print('{}:key={},count={}:'.format(tcount,key,value)) # print subfield values
     return
 ucr_mrc_to_csv()
 print("Done.")
