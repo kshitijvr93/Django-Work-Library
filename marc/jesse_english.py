@@ -4,6 +4,7 @@ import pymarc
 from pymarc import MARCReader
 import etl
 import codecs
+from collections import OrderedDict
 
 '''
 Per 20170703 uf email from jesse english, read a certain mrc file and convert to a csv file
@@ -22,17 +23,20 @@ def ucr_mrc_to_csv():
         ,'publisher', 'pubyear'
     ]
     print("Using {} csv fields".format(len(csv_fields)))
-    use_csv_fields = 1
+    use_csv_fields = 0
+    d_fileField = {} # save counts of records that use each field.subfield
     with open(input_file_name, mode='rb') as infile:
         reader = MARCReader(infile)
         for i,record in enumerate(reader):
             fsep = ''
             outline = ''
-            print("RECORD {} FOLLOWS:".format(i))
-            if (use_csv_fields):
-                for nf,field in enumerate(csv_fields):
-                    outline += '\nFIELD {}={}: '.format(nf,field)
-                    value = getattr(record, field)()
+            d_recordField = {} # Save all field(tag).subfield counts for this record
+            print("RECORD {} of type {}, leader='{}' with {} MARC fields FOLLOWS:\n"
+            .format(i, type(record),record.leader,len(record.fields)))
+            if (use_csv_fields): #show 'pymarc' field values for this record
+                for nf,field_name in enumerate(csv_fields):
+                    outline += '\nFIELD {}={}: '.format(nf,field_name)
+                    value = getattr(record, field_name)()
                     outline += fsep
                     if type(value) is list:
                         vsep = ''
@@ -41,12 +45,59 @@ def ucr_mrc_to_csv():
                             vsep = '|'
                     elif type(value) is str:
                         outline += (str(value))
-
                     fsep = '-----'
-                if i > 15:
-                    break
-                print(i, ':',outline)
-        pass
+            else: # show formal MARC fields in this record
+                for nf,field in enumerate(record.fields):
+                    tag = field.tag
+                    outline += '\nFIELD {}, tag={}:'.format(nf+1, tag)
+                    if tag < '010' and tag.isdigit():
+                        outline += ("\ndata='{}'".format(field.data))
+                        f_sf = '{}.data'.format(tag)
+                        count = d_recordField.get(f_sf,0)
+                        d_recordField[f_sf] = count + 1
+                    else:
+                        outline += ('\nindicators={}:'
+                            .format(tag,repr(field.indicators)))
+                        sfs = field.subfields
+                        lsfs = len(sfs)
+
+                        # outline += ("\nSUBFIELDS: count={},subfields={}"
+                        #    .format(len(sfs),sfs))
+                        if (lsfs > 0):
+                            # even indexes are keys, odd are values, then zip to make odict
+                            od_sf = OrderedDict(zip(sfs[0:][::2],sfs[1:][::2]))
+                            for key,value in od_sf.items():
+                                outline += ("\nsubfield '{}' value='{}'"
+                                #.format(key,repr(value)))
+                                .format(key,value))
+                                # adjust this record's count for this field/subfield
+                                f_sf = '{}.{}'.format(tag,key)
+                                count = d_recordField.get(f_sf,0)
+                                d_recordField[f_sf] = count + 1
+                        else:
+                            f_sf = '{}'.format(tag)
+                            count = d_recordField.get(f_sf,0)
+                            d_recordField[f_sf] = count + 1
+                            pass
+                # end for nf,field in enumerate(record.fields)
+            # end else (formal MARC fields)
+            max_items_detail = 2;
+            if i < max_items_detail:
+                print(i, ':',outline) # print subfield values
+                #next output subfield counts
+
+            for key,value in d_recordField.items():
+                if i < max_items_detail:
+                    print('key={},count={}:'.format(key,value)) # print subfield values
+                count = d_fileField.get(key,0)
+                d_fileField[key] = count + 1
+        #for i,record in enumerate(reader)
+    # end with open
+    #output fileField final found field-subfields and counts among the input
+    print("\nTOTAL KEYS WITH RECORD COUNTS AMONG ALL INPUT ITEMS:")
+    od = OrderedDict(sorted(d_fileField.items()))
+    for i,(key,value) in enumerate(od.items()):
+        print('key={},count={}:'.format(key,value)) # print subfield values
     return
 ucr_mrc_to_csv()
 print("Done.")
