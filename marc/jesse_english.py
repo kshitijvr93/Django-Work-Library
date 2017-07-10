@@ -16,7 +16,7 @@ file UCRdatabase_2015-12-04.mrc
 def ucr_mrc_to_csv():
     # get input data folder
     in_folder_name = etl.data_folder(linux='/home/robert/github/citrus/data/',
-        windows='u:/data/', data_relative_folder='UCRiverside')
+        windows='c:/users/podengo/github/citrus/data/', data_relative_folder='UCRiverside')
     input_file_name='{}/UCRdatabase_2015-12-04.mrc'.format(in_folder_name)
     csv_fields=[
         'title', 'author','isbn','subjects','location','notes','physicaldescription'
