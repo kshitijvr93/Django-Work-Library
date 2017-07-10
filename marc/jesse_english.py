@@ -28,10 +28,16 @@ def ucr_mrc_to_csv():
     max_items_detail = 2;
     with open(input_file_name, mode='rb') as infile:
         reader = MARCReader(infile)
+        max_records = 0
         for i,record in enumerate(reader):
+            if max_records > 0 and i > max_records:
+                break
             fsep = ''
             outline = ''
             d_recordField = {} # Save all field(tag).subfield counts for this record
+            print(" [{}] ".format(i), end="")
+            if i % 20 == 0:
+                print()
             if i < max_items_detail:
                 print("RECORD {} of type {}, leader='{}' with {} MARC fields FOLLOWS:\n"
                 .format(i, type(record),record.leader,len(record.fields)))
@@ -100,7 +106,7 @@ def ucr_mrc_to_csv():
     for i,(key,value) in enumerate(od.items()):
         print('{}:key={},count={}:'.format(i,key,value)) # print subfield values
 
-    threshholds=[16000,13000, 10000,5000]
+    threshholds=[16000,13000, 10000,5000,3000,2000,1000,500,100]
     for threshhold in threshholds:
         print("\nTHRESHHOLD VALUE={}".format(threshhold))
         tcount = 0

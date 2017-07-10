@@ -2,3 +2,4 @@
 #https://stackoverflow.com/questions/8527597/how-do-i-ignore-files-in-a-directory-in-git#8527650
 c:/*
 __pycache__/
+*.swp
