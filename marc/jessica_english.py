@@ -110,7 +110,7 @@ def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,out
                     if type(value) is list:
                         vsep = ''
                         for i2 in range(len(value)):
-                            outline += ('{}{}\n'.format(vsep,value[i2]))
+                            outline += ('{}{}\n'.format(vsep,str(value[i2])))
                             vsep = '|'
                     elif type(value) is str:
                         outline += (str(value))
@@ -124,9 +124,9 @@ def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,out
                         f_sf = 'c{}_data'.format(tag)
                         base_value = od_recordField.get(f_sf,None)
                         if base_value is None:
-                            od_recordField[f_sf] = field.data
+                            od_recordField[f_sf] = str(field.data)
                         else:
-                            od_recordField = "{}|{}".format(base_value, field.data)
+                            od_recordField = "{}|{}".format(base_value, str(field.data))
                     else:
                         outline += ('\nindicators={}:'
                             .format(tag,repr(field.indicators)))
@@ -140,6 +140,7 @@ def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,out
                             # even indexes are keys, odd are values, then zip to make an odict
                             od_sf = OrderedDict(zip(sfs[0:][::2],sfs[1:][::2]))
                             for key,value in od_sf.items():
+                                value = str(value)
                                 f_sf = 'c{}_{}'.format(tag,key)
                                 outline += ("\nsubfield '{}' value='{}'".format(f_sf,value))
                                 # adjust this record's value for this field/subfield
@@ -210,9 +211,15 @@ def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,out
 
 in_folder_name = etl.data_folder(linux='/home/robert/git/citrus/data/',
     windows='c:/users/podengo/git/citrus/data/', data_relative_folder='UCRiverside')
+
+out_folder_name = etl.data_folder(linux='/home/robert/git/outputs/jessica_english/',
+    windows='c:/users/podengo/git/outputs/jessica_english/', data_relative_folder='UCRiverside')
+
+#os.makedirs(out_folder_name, exist_ok=True)
+
 input_file_name = '{}/UCRdatabase_2015-12-04.mrc'.format(in_folder_name)
-output_file_name = '{}/UCRdatabase_all_2015-12-04.txt'.format(in_folder_name)
-output_file_name2 = '{}/UCRdatabase_selected_2015-12-04.txt'.format(in_folder_name)
+output_file_name = '{}/UCRdatabase_all_2015-12-04.txt'.format(out_folder_name)
+output_file_name2 = '{}/UCRdatabase_selected_2015-12-04.txt'.format(out_folder_name)
 
 with open(output_file_name, mode='w', encoding='utf-8') as output_file, \
      open(output_file_name2, mode='w', encoding='utf-8') as output_file2:
