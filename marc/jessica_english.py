@@ -75,7 +75,8 @@ See what I can do... I copied the input to data/UCRiverside folder,
 file UCRdatabase_2015-12-04.mrc
 '''
 
-def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,output_file2=None):
+def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,output_file2=None
+    ,output_file_xml=None):
     # get input data folder
     csv_fields=[
         'title', 'author','isbn','subjects','location','notes','physicaldescription'
@@ -89,12 +90,17 @@ def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,out
         reader = MARCReader(infile)
         max_records = 0
         for i,record in enumerate(reader):
+            print("\n<record>",file=output_file_xml)
             if max_records > 0 and i > max_records:
+                print("<record>",file=output_file_xml)
                 break
             fsep = ''
             outline = ''
             od_recordField = OrderedDict() # Save all field(tag).subfield counts for this record
-            for sf in l_subfields:
+            d_recordDatafield = {}
+            d_recordField_count = {}
+
+            for sf in l_subfields: #clear all the subfields for the record
                 od_recordField[sf] = None
             print(" [{}] ".format(i), end="")
             if i % 20 == 0:
@@ -102,59 +108,52 @@ def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,out
             if i < max_items_detail:
                 print("RECORD {} of type {}, leader='{}' with {} MARC fields FOLLOWS:\n"
                 .format(i, type(record),record.leader,len(record.fields)))
-            if (use_csv_fields): #show 'pymarc' field values for this record
-                for nf,field_name in enumerate(csv_fields):
-                    outline += '\nFIELD {}={}: '.format(nf,field_name)
-                    value = getattr(record, field_name)()
-                    outline += fsep
-                    if type(value) is list:
-                        vsep = ''
-                        for i2 in range(len(value)):
-                            outline += ('{}{}\n'.format(vsep,str(value[i2])))
-                            vsep = '|'
-                    elif type(value) is str:
-                        outline += (str(value))
-                    fsep = '-----'
-            else: # show formal MARC fields in this record
-                for nf,field in enumerate(record.fields):
-                    tag = field.tag
-                    outline += '\nFIELD {}, tag={}:'.format(nf+1, tag)
-                    if tag < '010' and tag.isdigit():
-                        outline += ("\ndata='{}'".format(field.data))
-                        f_sf = 'c{}_data'.format(tag)
-                        base_value = od_recordField.get(f_sf,None)
-                        if base_value is None:
-                            od_recordField[f_sf] = str(field.data)
-                        else:
-                            od_recordField = "{}|{}".format(base_value, str(field.data))
-                    else:
-                        outline += ('\nindicators={}:'
-                            .format(tag,repr(field.indicators)))
-                        sfs = field.subfields
-                        lsfs = len(sfs)
 
-                        # outline += ("\nSUBFIELDS: count={},subfields={}"
-                        #    .format(len(sfs),sfs))
-                        if (lsfs > 0):
-                            # This tag has subfield values to reckon, whers sfs[]
-                            # even indexes are keys, odd are values, then zip to make an odict
-                            od_sf = OrderedDict(zip(sfs[0:][::2],sfs[1:][::2]))
-                            for key,value in od_sf.items():
-                                value = str(value)
-                                f_sf = 'c{}_{}'.format(tag,key)
-                                outline += ("\nsubfield '{}' value='{}'".format(f_sf,value))
-                                # adjust this record's value for this field/subfield
-                                base_value = od_recordField.get(f_sf,None)
-                                if base_value is None:
-                                    # Values cannot have pipe nor tab. Reserved for field separators.
-                                    # Replace with spaces.
-                                    od_recordField[f_sf] = value.replace("|"," ").replace("\t"," ")
-                                else:
-                                    od_recordField[f_sf] = "{}|{}".format(base_value, value)
-                        else: #field has no subfields, so keep no value in od_recordField
-                            pass
-                # end for nf,field in enumerate(record.fields)
-            # end else (handle formal MARC fields in this record (not csv_fields))
+            for nf,field in enumerate(record.fields):
+                tag = field.tag
+                outline += '\nFIELD {}, tag={}:'.format(nf+1, tag)
+                data = str(field.data)
+                if tag < '010' and tag.isdigit():
+                    print('<controlfield tag="{}">{}'.format(tag,data)
+                        , end='', file=output_file_xml)
+                    outline += ("\ndata='{}'".format(data))
+                    f_sf = 'c{}_data'.format(tag)
+                    base_value = od_recordField.get(f_sf,None)
+                    if base_value is None:
+                        od_recordField[f_sf] = str(field.data)
+                    else:
+                        od_recordField = "{}|{}".format(base_value, str(field.data))
+                    print('</controlfield',file=ouptut_file_xml)
+                else:
+                    outline += ('\nindicators={}:'
+                        .format(tag,repr(field.indicators)))
+                    # TODO: should also have to add to key the suffix _n to all field names to support diff indicators
+                    # for diff field occurrences for both od_recordField and d_recordField
+                    d_recordField[tag] = field.indicators
+                    sfs = field.subfields
+
+                    # outline += ("\nSUBFIELDS: count={},subfields={}"
+                    #    .format(len(sfs),sfs))
+                    if (lens(sfs) > 0):
+                        # This tag has subfield values to reckon, whers sfs[]
+                        # even indexes are keys, odd are values, then zip to make an odict
+                        od_sf = OrderedDict(zip(sfs[0:][::2],sfs[1:][::2]))
+                        for key,value in od_sf.items():
+                            value = str(value)
+                            f_sf = 'c{}_{}'.format(tag,key)
+                            outline += ("\nsubfield '{}' value='{}'".format(f_sf,value))
+                            # adjust this record's value for this field/subfield
+                            base_value = od_recordField.get(f_sf,None)
+                            if base_value is None:
+                                # Values cannot have pipe nor tab. Reserved for field separators.
+                                # Replace with spaces.
+                                od_recordField[f_sf] = value.replace("|"," ").replace("\t"," ")
+                            else:
+                                od_recordField[f_sf] = "{}|{}".format(base_value, value)
+                    else: #field has no subfields, so keep no value in od_recordField
+                        pass
+            # end for nf,field in enumerate(record.fields)
+
             if i < max_items_detail:
                 #just some debug output for first few input marc records
                 print(i, ':',outline) # print subfield values
@@ -166,10 +165,21 @@ def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,out
                 if value is not None: # Keep track of encounterd field value occurrences
                     count = d_fileField.get(key,0)
                     d_fileField[key] = count + 1
-            # OUTPUT filterings of this record in multiple outut files
+
+            # OUTPUT filterings of this record in multiple output files
             # First, all fields, in the tab-separated output txt file
             sep = ''
-            for value in od_recordField.values():
+            prev_tag = ''
+            for f_sf,value in od_recordField.items():
+                parts = f_sf.split('_')
+                tag = parts[0][1:] #discard leading 'c' used for column names
+                if (tag != prev_tag):
+                    if tag < '010': # controlfield
+                        print('<controlfield tag="{}">{}</controlfield'.format(tag,f_sf.value),file=output_file_xml)
+                    else: # data field
+                        print('<datafield tag="{}">ind1="{}" ind2="{}">'.format(tag,f_sf.value),file=output_file_xml)
+                prev_tag = tag
+                subfield = parts[1]
                 print("{}{}".format(sep,value), file=output_file,end="")
                 sep = '\t'
             print(file=output_file)
@@ -182,6 +192,8 @@ def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,out
                     sep = '\t'
             print(file=output_file2)
 
+            # End xml section for this record
+            print("</record>\n",file=output_file_xml)
         #for i,record in enumerate(reader)
     # end with open
     #output fileField final found field-subfields and counts among the input
@@ -220,9 +232,12 @@ out_folder_name = etl.data_folder(linux='/home/robert/git/outputs/jessica_englis
 input_file_name = '{}/UCRdatabase_2015-12-04.mrc'.format(in_folder_name)
 output_file_name = '{}/UCRdatabase_all_2015-12-04.txt'.format(out_folder_name)
 output_file_name2 = '{}/UCRdatabase_selected_2015-12-04.txt'.format(out_folder_name)
+output_file_xml_name = '{}/UCRdatabase_selected_2015-12-04.xml'.format(out_folder_name)
 
 with open(output_file_name, mode='w', encoding='utf-8') as output_file, \
-     open(output_file_name2, mode='w', encoding='utf-8') as output_file2:
+     open(output_file_name2, mode='w', encoding='utf-8') as output_file2 \
+     open(output_file_xml_name, mode='w', encoding='utf-8') as output_file_xml \
+     :
 
         # Insert first row of key (marc subfield names to output file first)
         l_subfields2 = l_subfields_5000
@@ -235,6 +250,7 @@ with open(output_file_name, mode='w', encoding='utf-8') as output_file, \
 
         # Read input marc file and produce output tab-separated file
         ucr_mrc_to_csv(input_file_name=input_file_name,output_file=output_file
-            ,output_fields2=l_subfields2, output_file2=output_file2)
+            ,output_fields2=l_subfields2, output_file2=output_file2
+            ,output_file_xml=output_file_xml)
 
 print("Done.")
