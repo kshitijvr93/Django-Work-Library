@@ -1,6 +1,7 @@
 import os
 import sys
 print("Using python sys.version={}".format(sys.version))
+sys.path.append('{}/github/citrus/modules'.format(os.path.expanduser('~')))
 
 import requests
 import urllib.parse
@@ -113,7 +114,7 @@ def get_result_by_url(url, json_loads='True'):
         raise
     result = response.read().decode('utf-8')
     if json_loads == True:
-        result = json.loads(result))
+        result = json.loads(result)
     return result
 
 def output_oadoi_xml(url_base=None, dois=None, output_folder=None):
