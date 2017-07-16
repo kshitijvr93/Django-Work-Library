@@ -78,12 +78,17 @@ Per 20170703 uf email from jesse english, read a certain mrc file and convert to
 for her.
 See what I can do... I copied the input to data/UCRiverside folder,
 file UCRdatabase_2015-12-04.mrc
+
+
+Note: the marcxml is modeled after the sample document at:
+http://www.loc.gov/standards/marcxml/Sandburg/sandburg.xml
+as referenced by http://www.metadataetc.org/book-website/exercises/exercise2-1b.htm
 '''
 
 def ucr_mrc_to_csv(input_file_name=None, text_prepend_indicators=False,output_file=None,output_fields2=None,output_file2=None
     ,output_file_xml=None):
 
-    d_fileField = {} # save counts of records that use each field.subfield
+    d_fileField = {} # save counts of records that use each field.subfield/
     max_items_detail = 2;
     d_code_typeOfRecord = {
         'a': 'Language material'
@@ -187,11 +192,11 @@ def ucr_mrc_to_csv(input_file_name=None, text_prepend_indicators=False,output_fi
                     outline += ('\nindicators={}:'
                        .format(tag,repr(field.indicators)))
 
-                    ind1 = field.indicators[0]
+                    ind1 = ' ' if field.indicators[0] == ' ' else chr(int(field.indicators[0]))
 
                     if len(field.indicators) > 1:
                         #ind2 = ' ' if field.indicators[1] == ' ' else chr(field.indicators[1])
-                        ind2 = field.indicators[1]
+                        ind2 = ' ' if field.indicators[1] == ' ' else chr(int(field.indicators[1]))
                     else:
                         ind2 = ' '
 
@@ -204,7 +209,8 @@ def ucr_mrc_to_csv(input_file_name=None, text_prepend_indicators=False,output_fi
                     else:
                         od_recordField[f_sf] = "{}|{}".format(base_inds,inds)
 
-                    #print("Got ind1 = '{}'".format(str(ind1)))
+                    print('<datafield tag="{}" ind1="{}" ind2="{}">'
+                        .format(field.tag, ind1, ind2),file=output_file_xml)
 
                     sfs = field.subfields
                     lsfs = len(sfs)
@@ -223,8 +229,8 @@ def ucr_mrc_to_csv(input_file_name=None, text_prepend_indicators=False,output_fi
                             value = str(value)
                             f_sf = 'c{}_{}'.format(tag,key)
                             outline += ("\nsubfield '{}' value='{}'".format(f_sf,value))
-                            print('<datafield tag="{}" ind1="{}" ind2="{}" subfield="{}">{}</datafield>'
-                                .format(field.tag,ind1,ind2,key,value),file=output_file_xml)
+                            print('<subfield code="{}">{}</subfield>'
+                                .format(key,value),file=output_file_xml)
                             # adjust this record's value for this field/subfield
                             base_value = od_recordField.get(f_sf,None)
                             if base_value is None:
@@ -239,6 +245,7 @@ def ucr_mrc_to_csv(input_file_name=None, text_prepend_indicators=False,output_fi
 
                     else: #field has no subfields, so keep no value in od_recordField
                         pass
+                    print('</datafield>',file=output_file_xml)
             # end for nf,field in enumerate(record.fields)
 
             if i < max_items_detail:
