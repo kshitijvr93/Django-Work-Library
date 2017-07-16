@@ -14,14 +14,17 @@ I ran a slightly modified version of this same code to generate the list of all 
 and copy-pasted them here to l_subfields
 '''
 l_subfields_5000 = [
-    'c001_data', 'c003_data', 'c005_data', 'c008_data', 'c040_a', 'c040_c', 'c040_d', 'c100_a', 'c245_a'
+    'leader', 'c001_data'
+    , 'c003_data', 'c005_data', 'c008_data', 'c040_a', 'c040_c', 'c040_d', 'c100_a', 'c245_a'
     , 'c260_a' , 'c260_b', 'c260_c', 'c300_a', 'c300_c', 'c500_8', 'c500_a', 'c510_a', 'c510_c', 'c590_a'
     , 'c590_x', 'c591_a', 'c591_x', 'c595_a', 'c595_c', 'c595_d', 'c595_f', 'c595_k', 'c595_n'
     , 'c595_r', 'c599_a', 'c599_x', 'c852_a', 'c852_b', 'c852_e', 'c852_n', 'c852_r', 'c852_s'
     , 'c852_v'
 ]
+
 l_subfields_100 = [
-    'c001_data', 'c003_data', 'c005_data', 'c008_data', 'c010_a', 'c035_a', 'c040_a', 'c040_b', 'c040_c', 'c040_d'
+  'leader', 'c001_data'
+, 'c003_data', 'c005_data', 'c008_data', 'c010_a', 'c035_a', 'c040_a', 'c040_b', 'c040_c', 'c040_d'
 , 'c041_a', 'c043_a', 'c050_a', 'c050_b', 'c100_a', 'c100_c', 'c100_d', 'c100_q', 'c110_a', 'c110_b'
 , 'c240_a', 'c245_a', 'c245_b', 'c245_c', 'c246_a', 'c250_a', 'c260_a', 'c260_b', 'c260_c', 'c300_a'
 , 'c300_b', 'c300_c', 'c490_a', 'c500_5', 'c500_8', 'c500_a', 'c500_t', 'c504_a', 'c505_a', 'c510_a'
@@ -34,8 +37,10 @@ l_subfields_100 = [
 , 'c852_e', 'c852_h', 'c852_n', 'c852_p', 'c852_q', 'c852_r', 'c852_s', 'c852_v', 'c856_3', 'c856_u'
 , 'c856_z'
 ]
+
 l_subfields = [
- 'c001_data', 'c003_data', 'c005_data', 'c008_data', 'c010_a', 'c010_z', 'c012_a', 'c012_i', 'c015_2', 'c015_a'
+ 'leader','c001_data'
+ , 'c003_data', 'c005_data', 'c008_data', 'c010_a', 'c010_z', 'c012_a', 'c012_i', 'c015_2', 'c015_a'
 , 'c016_2', 'c016_a', 'c022_2', 'c022_a', 'c022_l', 'c024_a', 'c024_z', 'c035_9', 'c035_a', 'c035_z'
 , 'c040_a', 'c040_b', 'c040_c', 'c040_d', 'c040_e', 'c040_q', 'c041_a', 'c041_h', 'c043_a', 'c045_a'
 , 'c045_b', 'c048_a', 'c050_a', 'c050_b', 'c060_a', 'c060_b', 'c070_a', 'c070_b', 'c072_a', 'c082_2'
@@ -151,6 +156,8 @@ def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,out
             od_recordField = OrderedDict() # Save all field(tag).subfield counts for this record
             for sf in l_subfields:
                 od_recordField[sf] = None
+            #populate the leader here at the record level
+            od_recordField['leader'] = record.leader
             print(" [{}] ".format(i), end="")
             if i % 20 == 0:
                 print()
