@@ -1,4 +1,3 @@
-#
 # xml2rdb-active
 # Somewhat cleaned-up code with various debug statements and cruft removed
 # to use as a supplement document for IP examination
@@ -9,11 +8,13 @@ full-text api).
 Each input xml file has xml-coded information pertaining to a single xml document.
 '''
 import sys, os, os.path, platform
-sys.path.append('{}/github/citrus/modules'.format(os.path.expanduser('~')))
+sys.path.append('{}/git/citrus/modules'.format(os.path.expanduser('~')))
+print("sys.path={}".format(repr(sys.path)))
 import datetime
 import pytz
 import os
 import sys
+from collections import OrderedDict
 
 from pathlib import Path
 import hashlib
@@ -21,15 +22,23 @@ import hashlib
 from lxml import etree
 from lxml.etree import tostring
 from pathlib import Path
+import xml2rdb_configs.mappers
 import etl
 
-#- - - - - - - - - - - START USER PARAMETERS
 '''
     Note: I also envision a revision of this program to do an initial walk-through of the
     xml input files.
-    From that, it will derive a complete set of SQL tables, infer and define the entire
+    From that, it could:
+    * register the repeat vs non-repeat nature of every xml tag, and thus be able to derive a complete
+      set of SQL tables, or candidate tables
+    * Allow the user to select a subset of tables and columns within them as well
+    * register the mapping-converson functions that a user provides and make suggestions or derive
+      function candidates for translations from which the user may also choose.
+
+    * derive a complete set of SQL tables, infer and define the entire
     hierarchical structure, and glean all of the XML input into relational tables
     for a consistent set of structured XML files.
+
 
     It will infer names for tables and columns from the xml tags and attribute names as well.
 
@@ -38,1661 +47,6 @@ import etl
     That would make some studies easier to follow and faster to create and run selected
     sub-analyses of the entire pool of xml data.
 '''
-
-'''
-Method sql_mining_params_elsevier
-
-Plain Python code here define and return the two main data structures:
-(1) od_rel_datacolumns: defines RDB output tables and data columns per table.
-     Note: table columns for the primary key composite index for each table are
-     defined indirectly by input structure 2, and populated automatically by xml2rdb
-(2) d_node_params: Define a 'mining  map'. It is a nested hierarchy of relative XPATH
-    expressions leading to XML nodes, each with a
-    with a map of xml tag(text) or attribute values to output to associated SQL table columns.
-
-The functionality of doing custom configuration can move to using configuration files to
-assist users who are not familiar with Python.
-'''
-def sql_mining_params_elsevier():
-
-    '''
-    d_nodeparams is a dictionary hierarchy of parameters for a call to node_visit_output().
-
-    The d_nodeparams dictionary may have keys with the following described values:
-    Key 'multiple':
-        If present, this means that this node will produce some output db data, and it means that the
-        other keys in this dictonary will be examined.
-        If not present, any other keys listed below will be ignored.
-        The value of 0 means this is a single (or zero)-occurrence node under its parent,
-        and value of 1 means that it is a multiple-occurrence node under its parent.
-        This parameter may be removed soon. The presence of a dbname rather can be used to infer that
-        a node has multiple of 1 and the absence of a dbname for a node implies a multiple value of 0.
-    Key 'db_name':
-       This is the table name for a db-relation for this node, which is allowed to appear multiple
-       times under its ancestor node. The node count under its ancestor will be outputted as part
-       of a sql table row composite key value.
-    Key 'text':
-        If present, this means that the text value of the visited node is to be output, with the
-        value being the name of the db output column to use for the output of any text value of this node.
-        However if that value is None or empty, the column name will be the db_name value.
-        Note: the user must pre-examine all the  db_name and text values to make sure that those
-        under the same immediate parent xpath have unique names.
-        And that no db_name with multiple = 1 is a duplicate name.
-    Key 'attrs':
-        If present, the value is a list of attribute names to produce the database column
-        names named in the values.
-        A value for each db column name will be output, regardless of whether that attribute names is
-        found on a particular node.
-        The special name 'text' now means to output the content of the node, rather than an attribute.
-        This special name may change to 'node_content' soon to avoid collision with valid attributes
-        also named 'text' in some cases.
-    Key 'child-xpaths'
-        If present, the xpath must lead to a descendant node in the tree, and the the value is another
-        dictionary like the d_nodeparams dictionary.
-
-    '''
-
-    '''
-    Note: The main program declares a root node relation name, 'doc', and affixes one special
-    column_name, called 'file_name', where it records the file name of the inputted xml doc.
-    Therefore, this od_rel_datacolumns dictionary below must define one table/key called 'doc' with
-    the column 'file_name', and add any other desired column names there as well.
-    An option to not require this of course can be easily added.
-
-    Program xml2rdb will parse each xml file to an xml document tree with a document root,
-    and it will call node_visit_output(d_node_params) on that doc root.
-    Maybe a paramter will be added to allow selection of another root relation name than 'doc',
-    but it is not a bad general name, as it is a node to describe a doc metadata, like the
-    input filename for it and other data about it...
-
-    Note: I also envision a revision of this program to do a walk-through of the xml input files and derive
-    a complete set of SQL tables, infer and define the entire hierarchical structure, and glean all of
-    the XML input into relational tables (for a consistent set of structured XML). It will infer names
-    for tables and columns from the xml tags and attribute names as well.
-    '''
-
-    od_rel_datacolumns = OrderedDict([
-        ('doc', OrderedDict([
-            ('serial_type','0'),
-            ('pii',''),
-            ('doi',''),
-            ('eid',''),
-            ('first_author_surname',''),
-            ('first_author_initial',''),
-            ('open_access','0'),
-            ('cover_year',''),
-            ('cover_date',''),
-            ('title',''),
-            ('publication_name',''),
-            ('file_name',''),
-        ])),
-
-        ('author_group', OrderedDict([('id','')])),
-
-        ('author', OrderedDict([
-            ('id',''),
-            ('given_name',''),
-            ('surname',''),
-            ('last_first_name', ''),
-            ('degrees',''),
-            ('roles',''),
-            ('e_address',''),
-            ('e_type',''),
-        ])),
-
-        ('author_ref', OrderedDict([
-            ('id',''),
-            ('refid',''),
-        ])),
-
-        ('affiliation', OrderedDict([
-            ('id',''),
-            ('uf',''),
-            ('name',''),
-            ('org_name',''),
-            ('address_line',''),
-            ('city',''),
-            ('state',''),
-            ('postal_code',''),
-        ])),
-
-        ('correspondence', OrderedDict([
-            ('id',''),
-            ('info',''),
-            ('org_name',''),
-            ('address_line',''),
-            ('city',''),
-            ('state',''),
-            ('postal_code',''),
-        ])),
-
-        ('organization_aff', OrderedDict([
-            ('id',''),
-            ('org_name',''),
-        ])),
-
-        ('organization_cor', OrderedDict([
-            ('id',''),
-            ('org_name',''),
-        ])),
-    ])
-    # - - - - - - - DEFINE COMPONENTS OF, AND FINALLY, d_node_params, the 'Mining Map'.
-    '''
-    For nonserial items, visual inspection of multiple xml files indicates that
-    every author listed in an author-group is associated with
-    every affiliation listed in that author-group, and this association is different from
-    serial items (below).
-    '''
-    d_affiliation_sa_affiliation = {
-        #'db_name':'sa_affiliation',
-        'multiple':0,
-
-        'child_xpaths' : {
-            './/sa:organization':{ 'db_name':'organization_aff', 'multiple':1,
-                'attrib_column':{'text':'org_name'},
-            },
-            './/sa:address-line':{ 'multiple':0,
-                'attrib_column':{'text':'address_line'},
-            },
-            './/sa:city':{ 'multiple':0,
-                'attrib_column':{'text':'city'},
-            },
-            './/sa:state':{ 'multiple':0,
-                'attrib_column':{'text':'state'},
-            },
-            './/sa:postal-code':{'multiple':0,
-                'attrib_column':{'text':'postal_code'},
-            },
-        }
-    }
-
-    d_correspondence_sa_affiliation = {
-        #'db_name':'sa_affiliation',
-        'multiple':0,
-
-        'child_xpaths' : {
-            './/sa:organization':{ 'db_name':'organization_cor', 'multiple':1,
-                'attrib_column':{'text':'org_name'},
-            },
-            './/sa:address-line':{ 'multiple':0,
-                'attrib_column':{'text':'address_line'},
-            },
-            './/sa:city':{ 'multiple':0,
-                'attrib_column':{'text':'city'},
-            },
-            './/sa:state':{ 'multiple':0,
-                'attrib_column':{'text':'state'},
-            },
-            './/sa:postal-code':{'multiple':0,
-                'attrib_column':{'text':'postal_code'},
-            },
-        }
-    }
-
-    d_nonserial_author_group = {
-        'db_name':'author_group', 'multiple':1,
-        'attrib_column': {'id':'id'},
-        'column_constant': {'serial_type':0},
-        'child_xpaths':{
-            ".//ce:author":{
-                'db_name':'author', 'multiple':1,
-                'attrib_column' : {'id':'id', 'last_first_name':'last_first_name'},
-                'column_function' : {'last_first_name':last_first_name},
-
-                'child_xpaths':{
-                    './/ce:given-name':{
-                        'db_name':'given_name','multiple':0,
-                        'attrib_column':{'text':'given_name'}
-                    }
-                    ,'.//ce:surname':{
-                        'db_name':'surname', 'multiple':0,
-                        'attrib_column':{'text':'surname'}
-                    }
-                    ,'.//ce:degrees':{
-                        'db_name':'degrees', 'multiple':0,
-                        'attrib_column':{'text':'degrees'}
-                    }
-                    ,'.//ce:e-address':{
-                        'db_name':'e_address',
-                        'multiple':0,
-                        'attrib_column':{'text':'e_address','type':'e_type', }
-                    }
-                    ,'.//ce:cross-ref':{
-                        'db_name':'author_ref', 'multiple':1,
-                        'attrib_column':{'id':'id', 'refid':'refid'}
-                    }
-
-                }
-
-            }
-            ,".//ce:affiliation":{
-                'db_name':'affiliation', 'multiple':1,
-                'attrib_column':{'id':'id'},
-                'child_xpaths':{
-                    './/ce:textfn':{
-                        'multiple':0,
-                        'attrib_column':{'text':'name', 'uf':'uf'},
-                        'column_function' : {'uf':(uf_affiliation_by_colname,{'colname':'name'})},
-                    },
-                    './/sa:affiliation':d_affiliation_sa_affiliation,
-                }
-            }
-            ,".//ce:correspondence":{
-                'db_name':'correspondence', 'multiple':1,
-                'attrib_column':{'id':'id'},
-                'child_xpaths':{
-                    './/ce:text':{
-                        'multiple':0,
-                        'attrib_column':{'text':'info'},
-                    },
-                    './/sa:affiliation':d_correspondence_sa_affiliation,
-                }
-            }
-        }
-    }
-    # end d_nonserial_author_group
-
-    '''
-    For serial items, visual inspection shows that in an author-group each author normally has a subelt
-    'cross-ref' with a refid value starting with af and integer suffix, and that integer suffix matches
-    the integer suffix part of an 'id' attribute for a unique affiliation subelt of the same author group,
-    thereby identifying the affiliation of each author. So we extract each author cross-ref so that once the
-    xml data is loaded into relational db tables, a custom query can be done for 'serial' authors to make
-    reports of those author-affiliations.
-    A different query (see above) would be used for author-affiliation associations for the 'B' book
-    or 'nonserial' items,and see above for those details.
-    '''
-
-    # Input parameter structure - od_rel_columns:
-    # For each relation name (for d_node_params dict nodes with multiple=1 and db_name
-    # is the relation name, the key here)
-    # Note: the 'primary key' columns are defined separately from these 'data' columns
-    # for every relation/table.
-    # Those primary key columns are now
-    # inferred from the d_node_param rooted dicts with child_xpaths.
-    #
-    # Here are:
-    # (1) the relation/table names, ordered (to allow for future foreign key
-    #     dependencies on bulk inserts), and
-    # (2) the 'data' column names, which are ordered as well to allow customized
-    #     setting of column order, each followed by its default string value, empty
-    #   for all for now.
-    #
-    # Note - Later for each column name may extend to set a db datatype and also
-    # set default value too, but now assume empty string.
-
-    d_serial_author_group = {
-        'db_name':'author_group', 'multiple':1,
-        'attrib_column': {'id':'id'},
-        'column_constant': {'serial_type':1},
-
-        'child_xpaths':{
-            ".//ce:author":{
-                'db_name':'author', 'multiple':1,
-                'attrib_column' : {'id':'id', 'last_first_name':'last_first_name'},
-                'column_function' : {'last_first_name':last_first_name},
-                'child_xpaths':{
-                    './/ce:given-name':{
-                        'db_name':'given_name',
-                        'multiple':0,
-                        'attrib_column':{'text':'given_name'}
-                        }
-                    ,'.//ce:surname':{
-                        'db_name':'surname',
-                        'multiple':0,
-                        'attrib_column':{'text':'surname'}
-                        }
-                    ,'.//ce:degrees':{
-                        'db_name':'degrees',
-                        'multiple':0,
-                        'attrib_column':{'text':'degrees'}
-                        }
-                    ,'.//ce:e-address':{
-                        'db_name':'e_address',
-                        'multiple':0,
-                        'attrib_column':{'text':'e_address'}
-                        }
-                    ,'.//ce:cross-ref':{
-                        'db_name':'author_ref',
-                        'multiple':1,
-                        'attrib_column':{'id':'id', 'refid':'refid'}
-                        }
-                }
-            }
-            ,".//ce:affiliation":{
-                'db_name':'affiliation', 'multiple':1,
-                'attrib_column':{'id': 'id'},
-                'child_xpaths':{
-                    './/ce:textfn':{
-                        #'db_name':'name',
-                        'multiple':0,
-                        'attrib_column':{'text':'name', 'uf':'uf'},
-                        'column_function' : {'uf':uf_affiliation_value}
-                    },
-                    './/sa:affiliation':d_affiliation_sa_affiliation,
-                }
-            }
-            ,".//ce:correspondence":{
-                'db_name':'correspondence',
-                'multiple':1,
-                'attrib_column':{'id':'id'},
-                'child_xpaths':{
-                    './/ce:text':{
-                        #'db_name':'name',
-                        'multiple':0,
-                        'attrib_column':{'text':'info'},
-                        },
-                    './/sa:affiliation':d_correspondence_sa_affiliation,
-                }
-            }
-        }
-    }
-    # end d_serial_author_group
-
-    d_node_params = {
-        #
-        # The db_name of this root node is always set by the caller, so db_name is
-        # NOT given for this node.
-        # Must use multiple 0 for this root node too, for technical reasons.
-        #
-        'multiple':0,
-        'child_xpaths' : {
-            ".//{*}coredata/{*}pii": {
-                'multiple':0,
-                'attrib_column': { 'text':'fpii' }, # 'fpii' name need not be used in output relation.
-                'column_function': {'pii': pii_unformatted}
-            }
-            ,".//{*}coredata/{*}eid": {
-                'multiple':0,
-                'attrib_column': { 'text':'eid' },
-            }
-            ,".//{*}openaccess": {
-                'db_name':'open_access', 'multiple':0,
-                'attrib_column': {'text':'open_access' }
-            }
-            ,".//prism:publicationName":{
-                'db_name':'publication_name', 'multiple':0,
-                'attrib_column':{'text':'publication_name'}
-            }
-            ,".//prism:doi":{
-                'multiple':0,
-                'attrib_column':{'text':'doi'},
-            }
-            ,".//prism:coverDate":{
-                'multiple':0,
-                'attrib_column':{'text':'cover_date', 'cover_year':'cover_year'},
-                'column_function': {'cover_year': cover_year}
-            }
-            ,".//dc:title":{
-                'multiple':0,
-                'attrib_column':{'text':'title'}
-            }
-            ,".//xocs:title":{
-                'multiple':0,
-                'attrib_column':{'text':'title'}
-            }
-            ,".//xocs:normalized-first-auth-surname":{
-                'multiple':0,
-                'attrib_column':{'text':'first_author_surname'}
-            }
-            ,".//xocs:normalized-first-auth-initial":{
-                'multiple':0,
-                'attrib_column':{'text':'first_author_initial'}
-            }
-            ,".//xocs:serial-item":{
-                'multiple':0,
-                'column_constant':{'serial_type':'1'},
-                'child_xpaths' : {
-                    ".//ce:author-group":d_serial_author_group
-                }
-            }
-            ,".//xocs:nonserial-item":{
-                'multiple':0,
-                'column_constant':{'serial_type':'0'},
-                'child_xpaths' : {
-                    ".//ce:author-group":d_nonserial_author_group
-                }
-            }
-        } # end child_xpaths
-    } # end d_node_params
-    return od_rel_datacolumns, d_node_params
-#end def sql_mining_params_elsevier()
-
-######################### USER-DEFINED VALUE DERIVATION METHODS ##########################
-'''
-NOTE: these methods must all take the single argument of d_row
-Any method may use any column value found in d_row, which has values
-of all child singleton nodes to the node that uses any derivation function
-in the mining map.
-
-'''
-
-import re
-
-def last_first_name(d_row):
-    first_name = d_row['given_name'] if 'given_name' in d_row else ''
-    last_name = d_row['surname'] if 'surname' in d_row else ''
-
-    return '{}, {}'.format(last_name,first_name)
-
-def uf_affiliation(text_lower=None):
-    for match in ['university of florida','univ.fl','univ. fl'
-        ,'univ fl' ,'univ of florida'
-        ,'u. of florida','u of florida']:
-        if text_lower.find(match) != -1:
-            #print("Match")
-            return '1'
-    #end for match
-    return '0'
-
-
-def uf_affiliation_value(d_row):
-    if 'name' in d_row:
-        text_lower = d_row['name'].lower()
-    else:
-        text_lower = ''
-    return uf_affiliation(text_lower)
-
-def lower_by_colname(d_row,d_params):
-    name = d_params.get('colname', None)
-    #print("Found colname to use of {}".format(name))
-    if name is None:
-        raise Exception("Did not find colname paramter")
-    if name in d_row:
-        text_lower = d_row[name].lower()
-        #print("Checking affiliation_name={}".format(text_lower))
-    else:
-        text_lower=''
-    return text_lower
-
-def uf_affiliation_by_colname(d_row,d_params):
-    name = d_params.get('colname', None)
-    #print("Found colname to use of {}".format(name))
-    if name is None:
-        raise ValueError("Did not find colname paramter")
-    if name in d_row:
-        text_lower = d_row[name].lower()
-        #print("Checking affiliation_name={}".format(text_lower))
-    else:
-        text_lower=''
-        #print("No given affiliation_name={}".format(text_lower))
-
-    rv = uf_affiliation(text_lower)
-    #print("Got uf_affiliation={}".format(rv))
-    return rv
-
-
-
-
-def cover_year(d_row):
-    if 'cover_date' in d_row:
-        # maybe check for length later... but all input data seems good now
-        return(d_row['cover_date'][0:4])
-    else:
-        return ''
-    return #need this or pass else highlighting syntax error on next def
-
-def pii_unformatted(d_row):
-    if 'fpii' in d_row:
-        # maybe check for length later... but all input data seems good now
-        return(d_row['fpii'].replace('-','').replace('(','').replace(')','').replace('.',''))
-    else:
-        return ''
-
-###### START SCOPUS INPUT PARAMS ########
-
-###### START OADOI INPUT PARAMETERS ########
-def sql_mining_params_oadoi():
-
-    od_rel_datacolumns = OrderedDict([
-        ('oadoi', OrderedDict([
-            ('title',''),
-            ('doi',''),
-            ('doi_resolver',''),
-            ('evidence',''),
-            ('free_fulltext_url',''),
-            ('is_boa_license',''),
-            ('is_free_to_read',''),
-            ('is_subscription_journal',''),
-            ('license',''),
-            ('oa_color',''),
-            ('doi_url',''),
-        ])),
-    ])
-
-#----------------------------------------------
-    d_node_params = {
-        #
-        # The db_name of this root node is given in a runtime parameter, so db_name is
-        # not given for this node.
-        #
-        'multiple':0,
-        'child_xpaths' : {
-            ".//{*}_title": {
-                'multiple':0,
-                'attrib_column': { 'text':'title' },
-            }
-            ,".//{*}doi": {
-                'multiple':0,
-                'attrib_column': { 'text':'doi' },
-            }
-            ,".//{*}doi_resolver": {
-                'multiple':0,
-                'attrib_column': {'text':'doi_resolver' }
-            }
-            ,".//{*}evidence": {
-                'multiple':0,
-                'attrib_column': {'text':'evidence' }
-            }
-
-            ,".//{*}free_fulltext_url":{
-                'multiple':0,
-                'attrib_column':{'text':'free_fulltext_url'}
-            }
-            ,".//{*}is_boai_license":{
-                'multiple':0,
-                'attrib_column':{'text':'is_free_boai_license'}
-            }
-            ,".//{*}is_subscription_journal":{
-                'multiple':0,
-                'attrib_column':{'text':'is_subscription_journal'}
-            }
-            ,".//{*}license":{
-                'multiple':0,
-                'attrib_column':{'text':'license'},
-            }
-            ,".//{*}oa_color":{
-                'multiple':0,
-                'attrib_column':{'text':'oa_color'},
-            }
-            # NOTE: one row has <open_version/> - ask api team what it is, what types of values can
-            # it have?
-            ,".//{*}url":{
-                'multiple':0,
-                'attrib_column':{'text':'doi_url'},
-            }
-        } # end child_xpaths
-    } # end d_node_params
-
-    return od_rel_datacolumns, d_node_params
-
-#end def sql_mining_params_oadoi
-
-
-###### START SCOPUS INPUT PARAMETERS ########
-# 20161205 - Next, revert to using scopus xml files, but first alter satxml to add uf-harvest tag to those
-
-def sql_mining_params_scopus():
-
-    od_rel_datacolumns = OrderedDict([
-        ('scopus', OrderedDict([
-            ('scopus_id',''),
-            ('eid',''),
-            ('doi',''),
-            ('pii',''),
-            ('title',''),
-            ('creator',''),
-            ('publication_name',''),
-            ('issn',''),
-            ('eissn',''),
-            ('cover_year',''),
-            ('cover_date',''),
-            ('citedby_count',''),
-            ('agg_type',''),
-            ('subtype',''),
-            ('subtype_description',''),
-            ('source_id',''),
-            ('file_name',''),
-            ('uf_harvest',''),
-        ])),
-
-        ('scopus_aff', OrderedDict([
-            ('name',''),
-            ('city',''),
-            ('country',''),
-        ])),
-    ])
-#----------------------------------------------
-    d_node_params = {
-        #
-        # The db_name of this root node is given in a runtime parameter, so db_name is
-        # not given for this node.
-        #
-        'multiple':0,
-        'child_xpaths' : {
-            ".//dc:identifier": {
-                'multiple':0,
-                'attrib_column': { 'text':'identifier' },
-                'column_function': {'scopus_id': make_scopus_id}
-            }
-            ,".//{*}eid": {
-                'multiple':0,
-                'attrib_column': { 'text':'eid' },
-            }
-            ,".//dc:title": {
-                'multiple':0,
-                'attrib_column': {'text':'title' }
-            }
-            ,".//dc:creator": {
-                'multiple':0,
-                'attrib_column': {'text':'creator' }
-            }
-
-            ,".//prism:publicationName":{
-                'multiple':0,
-                'attrib_column':{'text':'publication_name'}
-            }
-            ,".//prism:issn":{
-                'multiple':0,
-                'attrib_column':{'text':'issn'}
-            }
-            ,".//prism:eIssn":{
-                'multiple':0,
-                'attrib_column':{'text':'eissn'}
-            }
-            ,".//prism:coverDate":{
-                'multiple':0,
-                'attrib_column':{'text':'cover_date', 'cover_year':'cover_year'},
-                'column_function': {'cover_year': cover_year} #re-use Elsevier's method here
-            }
-            ,".//prism:doi":{
-                'multiple':0,
-                'attrib_column':{'text':'doi'},
-            }
-            ,".//{*}citedby-count":{
-                'multiple':0,
-                'attrib_column':{'text':'citedby_count'}
-            }
-            ,".//{*}pii":{
-                'multiple':0,
-                'attrib_column':{'text':'pii'},
-            }
-
-            ,".//prism:aggregationType":{
-                'multiple':0,
-                'attrib_column':{'text':'agg_type'}
-            }
-            ,".//{*}subtype":{
-                'multiple':0,
-                'attrib_column':{'text':'subtype'},
-            }
-            ,".//{*}subtypeDescription":{
-                'multiple':0,
-                'attrib_column':{'text':'subtype_description'},
-            }
-            ,".//{*}source-id":{
-                'multiple':0,
-                'attrib_column':{'text':'source_id'},
-            }
-            ,".//{*}affiliation":{
-                'db_name':'scopus_aff',
-                'multiple':1,
-                'child_xpaths' : {
-                    ".//{*}affilname":{
-                        'multiple':0,
-                        'attrib_column':{'text':'name'}
-                    },
-                    ".//{*}affiliation-city": {
-                        'multiple':0,
-                        'attrib_column':{'text':'city'}
-                    },
-                    ".//{*}affiliation-country": {
-                        'multiple':0,
-                        'attrib_column':{'text':'country'}
-                    },
-                },
-            }
-            ,".//{*}uf-harvest":{
-                'multiple':0,
-                'attrib_column':{'text':'uf_harvest'},
-            }
-        } # end child_xpaths
-    } # end d_node_params
-
-    return od_rel_datacolumns, d_node_params
-#end def sql_mining_params_scopus
-
-def make_scopus_id(d_row):
-    identifier = d_row['identifier'] if 'identifier' in d_row else ''
-    scopus_id = ''
-    if len(identifier) >= 10:
-        scopus_id = identifier[10:]
-    return scopus_id
-
-# CRATXML params
-
-def get_date(part_names=None, d_row=None):
-    if  part_names is None or d_row is None:
-        raise Exception("get_date: Missng part_names. Bad args")
-    sep = ''
-    result_date = ''
-    fills = [4,2,2]
-    for i,part_name in enumerate(part_names):
-        if part_name in d_row:
-            result_date += sep + d_row[part_name].zfill(fills[i])
-        else:
-            break
-        sep = '-'
-    return result_date
-
-def date_by_keys_year_month_day(d_row, d_params):
-    part_names = []
-    for col_key in ['year','month','day']:
-        part_names.append(d_params[col_key])
-    print("dbkymd: sending part_names='{}'".format(repr(part_names)))
-    return get_date(part_names=part_names,d_row=d_row)
-
-def make_issued_date(d_row):
-    return get_date(part_names=['issued_year','issued_month','issued_day'],d_row=d_row)
-
-def make_date(d_row, colnames=['year','month','day']):
-    return get_date(part_names=colnames, d_row=d_row)
-
-def make_crossref_author_name(d_row):
-    family = ''
-    given = ''
-    if 'family' in d_row:
-        family = d_row['family']
-    if 'given' in d_row:
-        given = d_row['given']
-    #print("Got given={} family={}".format(given,family))
-
-    if family and given:
-        name = family + ', ' + given
-    else:
-        name = family + given
-
-    return name
-
-def funder_id_by_funder_doi(d_row):
-    funder_id = ''
-    funder_doi = d_row.get('funder_doi', '/')
-    parts = funder_doi.split('/')
-    if len(parts) > 1:
-        funder_id = parts[len(parts)-1]
-    return funder_id
-
-def sql_mining_params_crossref():
-
-    od_rel_datacolumns = OrderedDict([
-        ('cross_doi', OrderedDict([
-            ('doi',''),
-            ('issn',''),
-            ('url',''),
-            ('archive',''),
-            ('container_title',''),
-            ('restriction',''),
-            ('created_date_time',''),
-            ('deposited_date_time',''),
-            ('indexed_date_time',''),
-            ('issue',''),
-            ('issued_date',''),
-            ('member',''),
-            ('original_title',''),
-            ('page_range',''),
-            ('prefix',''),
-            ('online_date',''),
-            ('print_date',''),
-            ('publisher',''),
-            ('reference_count',''),
-            ('score',''),
-            ('short_container_title',''),
-            ('short_title',''),
-            ('source',''),
-            ('subtitle',''),
-            ('title',''),
-            ('type',''),
-            ('volume',''),
-        ])),
-        ('cross_author', OrderedDict([
-            ('name',''),
-            ('family',''),
-            ('given',''),
-            ('affiliation_name',''),
-            ('affiliation_uf',''),
-            ('orcid',''),
-        ])),
-        ('cross_link', OrderedDict([
-            ('url',''),
-            ('content_type',''),
-            ('content_version',''),
-            ('intended_application',''),
-        ])),
-        ('cross_license', OrderedDict([
-            ('url',''),
-            ('content_version',''),
-            ('delay_in_days',''),
-            ('start_date',''),
-        ])),
-        ('cross_subject', OrderedDict([
-            ('term',''),
-        ])),
-        ('cross_funder', OrderedDict([
-            ('funder_doi',''),
-            ('funder_id',''),
-            ('doi_asserted_by',''),
-            ('name',''),
-        ])),
-        ('cross_award', OrderedDict([
-            ('code_id',''),
-        ])),
-    ])
-
-#-------------crossref api---------------------------------
-
-    d_node_params1 = {
-        #
-        # The db_name of this root node is given in a runtime parameter, so db_name is
-        # not given for this node.
-        #
-        'multiple':0,
-        'child_xpaths' : {
-            "./license" : { # One crossref doi record may have multiple licenses
-                'db_name': 'cross_license', 'multiple': 1,
-                'child_xpaths': {
-                    ".//{*}URL" : {
-                        'attrib_column': {'text':'url'},
-                    },
-                    ".//{*}content-version" : {
-                        'attrib_column': {'text':'content_version'},
-                    },
-                    ".//{*}delay-in-days" : {
-                        'attrib_column': {'text':'delay_in_days'},
-                    },
-
-                    ".//{*}start/{*}date-parts/item[@id='00000001']" : {
-                        'child_xpaths' : {
-                            "./item[@id='00000001']":{
-                                'attrib_column' : { 'text':'year'},
-                            },
-                            "./item[@id='00000002']":{
-                                'attrib_column' : { 'text':'month'},
-                            },
-                            "./item[@id='00000003']":{
-                                'attrib_column' : { 'text':'day'},
-                            },
-                        },
-                        'column_function': {'start_date': make_date},
-                    },
-                },
-            },
-
-            "./subject" : {
-                'db_name': 'cross_subject', 'multiple': 1,
-                'child_xpaths': {
-                    "./*" : {
-                        'attrib_column': {'text':'term'},
-                    },
-                },
-            },
-
-            "./author/item" : {
-                'db_name': 'cross_author', 'multiple': 1,
-                'child_xpaths': {
-                    ".//affiliation//name" : {
-                        'attrib_column': {'text':'affiliation_name'},
-                    },
-                    ".//family" : {
-                        'attrib_column': {'text':'family'},
-                    },
-                    ".//given" : {
-                        'attrib_column': {'text':'given'},
-                    },
-                    ".//orcid" : {
-                        'attrib_column': {'text':'orcid'},
-                    },
-                },
-                'column_function': {
-                    'name': make_crossref_author_name,
-                    'affiliation_uf': (uf_affiliation_by_colname,{'colname':'affiliation_name'}),
-                    },
-            },
-            "./link" : {
-                'db_name': 'cross_link', 'multiple': 1,
-                'child_xpaths': {
-                    ".//URL" : {
-                        'attrib_column': {'text':'url'},
-                    },
-                    ".//content_type" : {
-                        'attrib_column': {'text':'content_type'},
-                    },
-                    ".//content-version" : {
-                        'attrib_column': {'text':'content_version'},
-                    },
-                    ".//intended-application" : {
-                        'attrib_column': {'text':'intended_application'},
-                    },
-                },
-            },
-            "./funder/item" : {
-                'db_name': 'cross_funder', 'multiple': 1,
-                'child_xpaths': {
-                    "./DOI" : {
-                        'attrib_column': {'text':'funder_doi'},
-                        'column_function': {'funder_id': funder_id_by_funder_doi},
-                    },
-                    "./doi-asserted-by" : {
-                        'attrib_column': {'text':'doi_asserted_by'},
-                    },
-                    "./name" : {
-                        'attrib_column': {'text':'name'},
-                    },
-                    "./award" : {
-                        'db_name': 'cross_award', 'multiple': 1,
-                        'child_xpaths': {
-                            "./*" : {
-                                'attrib_column': {'text': 'code_id'},
-                            },
-                        },
-                    },
-                },
-            },
-
-            "./DOI": {
-                'multiple':0,
-                'attrib_column': { 'text':'doi' },
-            },
-            "./ISSN": {
-                'multiple':0,
-                'attrib_column': { 'text':'issn' },
-            },
-            "./URL": {
-                'multiple':0,
-                'attrib_column': { 'text':'url' },
-            },
-            "./archive/item[@id='00000001']": {
-                'multiple':0,
-                'attrib_column': { 'text':'archive' },
-            },
-            "./container-title": {
-                'multiple':0,
-                'attrib_column': { 'text':'container_title' },
-            },
-            "./content-domain/crossmark-restriction": {
-                'multiple':0,
-                'attrib_column': { 'text':'restriction' },
-            },
-            # Note: some xml date-like tags do NOT have tag for date-time, but for these next
-            # three that do, just use them and disregard parts for year, month, day.
-            "./created/date-time": {
-                'multiple':0,
-                'attrib_column': { 'text':'created_date_time' },
-            },
-
-            "./deposited/date-time": {
-                'multiple':0,
-                'attrib_column': { 'text':'deposited_date_time' },
-            },
-            "./indexed/date-time": {
-                'multiple':0,
-                'attrib_column': { 'text':'indexed_date_time' },
-            },
-            "./issue": {
-                'multiple':0,
-                'attrib_column': { 'text':'issue' },
-            },
-            "./issued/date-parts/item[@id='00000001']": {
-                'multiple':0,
-                'child_xpaths' : {
-                    './{*}item[@id="00000001"]':{ 'multiple':0,
-                        'attrib_column':{'text':'issued_year'}},
-                    './{*}item[@id="00000002"]':{ 'multiple':0,
-                        'attrib_column':{'text':'issued_month'}},
-                    './{*}item[@id="00000003"]':{ 'multiple':0,
-                        'attrib_column':{'text':'issued_day'}},
-                    },
-                'column_function': {'issued_date': make_issued_date}
-            },
-            "./member": {
-                'multiple':0,
-                'attrib_column': { 'text':'member' },
-            }
-            ,"./original-title": {
-                'multiple':0,
-                'attrib_column': { 'text':'original_title' },
-            }
-            ,"./page": {
-                'multiple':0,
-                'attrib_column': { 'text':'page_range' },
-            }
-            ,"./prefix": {
-                'multiple':0,
-                'attrib_column': { 'text':'prefix' },
-            }
-            ,"./eid": {
-                'multiple':0,
-                'attrib_column': { 'text':'eid' },
-            }
-            ,"./published-online/date-parts/item[@id='00000001']": {
-                'multiple':0,
-                'child_xpaths' : {
-                    './{*}item[@id="00000001"]':{ 'multiple':0,
-                        'attrib_column':{'text':'year'}},
-                    './{*}item[@id="00000002"]':{ 'multiple':0,
-                        'attrib_column':{'text':'month'}},
-                    './{*}item[@id="00000003"]':{ 'multiple':0,
-                        'attrib_column':{'text':'day'}},
-                },
-                'column_function': {'online_date': make_date }
-            }
-            ,"./published-print/date-parts/item[@id='00000001']" : {
-                'multiple':0,
-                'child_xpaths' : {
-                    './{*}item[@id="00000001"]':{ 'multiple':0,
-                        'attrib_column':{'text':'year'}},
-                    './{*}item[@id="00000002"]':{ 'multiple':0,
-                        'attrib_column':{'text':'month'}},
-                    './{*}item[@id="00000003"]':{ 'multiple':0,
-                        'attrib_column':{'text':'day'}},
-                },
-                'column_function': {'print_date': make_date}
-            }
-            ,"./publisher": {
-                'multiple':0,
-                'attrib_column': { 'text':'publisher' },
-            }
-            ,"./reference-count": {
-                'multiple':0,
-                'attrib_column': { 'text':'reference_count' },
-            }
-            ,"./score": {
-                'multiple':0,
-                'attrib_column': { 'text':'score' },
-            }
-            ,"./short-container-title": {
-                'multiple':0,
-                'attrib_column': { 'text':'short_container_title' },
-            }
-            ,"./short-title": {
-                'multiple':0,
-                'attrib_column': { 'text':'short_title' },
-            }
-            ,"./eid": {
-                'multiple':0,
-                'attrib_column': { 'text':'eid' },
-            }
-            ,"./source": {
-                'multiple':0,
-                'attrib_column': { 'text':'source' },
-            }
-            ,"./subtitle/item[@id='00000001']": {
-                'multiple':0,
-                'attrib_column': { 'text':'subtitle' },
-            }
-            ,"./title": {
-                'multiple':0,
-                'attrib_column': { 'text':'title' },
-            }
-            ,"./type": {
-                'multiple':0,
-                'attrib_column': { 'text':'type' },
-            }
-            ,"./volume": {
-                'multiple':0,
-                'attrib_column': { 'text':'volume' },
-            }
-        } # end child_xpaths
-
-    } # end d_node_params2
-
-    # Interpose a new 'message' tag to support multiple crossref xml response formats:
-    # see programs crafatxml and crawdxml for example, that produce these formats
-    d_node_params2 = {
-        'child_xpaths':{'.//message' : d_node_params1}
-    }
-
-    d_node_params = d_node_params1
-    return od_rel_datacolumns, d_node_params
-#end def sql_mining_params_crossref
-'''
-Method sql_mining_params_orcid
-
-See https://github.com/ORCID/ORCID-Source/tree/master/orcid-model/src/main/resources/record_2.0
-and its links for xsd information to assist in creating ORCID db schema and mining maps.
-'''
-def sql_mining_params_orcid():
-
-    od_rel_datacolumns = OrderedDict([
-        # The main parent table for orcid public records
-        ('person', OrderedDict([ #
-            ('orcid_id',''),    # ./common:orcid-identifier/common:path
-            ('preferred_language',''), #./preferences/preferences:locale
-            ('givens',''),       # ./person:person/perons:name/personal-details:given_names
-            ('family',''),      # ./person:person/perons:name/personal-details:family-name
-            ('family_givens',''),# method family_given(['given','family']
-            ('person_modified_date',''), # ./person:person/common:last-modified-date
-        ])),
-        # orcid_xid: has any external ids (xid) for record holders, such as ResearcherID,
-        # any others
-        ('xid', OrderedDict([ # (./person:person)
-            # ./external-identifier:external-identifiers/external-identifier:external-identifier
-            ('type',''), # ./common:external-id-type
-            ('value',''), # ./common:external-id-value
-            ('url',''), # ./common:external-id-url
-            ('relationship',''), #./common:external-id-relationship
-            ('xid_modified_date',''), #./common:last_modified_date
-        ])),
-        # orcid_education: education events
-        ('education', OrderedDict([ #./activities:activities-summary/activities:educations
-                        # ... /activities:education-summary
-            ('ed_modified_date',''), # ./common:last-modified-date
-            ('department_name',''), # ./education:department-name
-            ('role_title',''),      # ./education:role-title
-            ('start_date',''), # method() ./common:start-date (year, month,day)
-            ('end_date',''),        # method() ./common:start-date/year, month, day
-            ('organization_name',''), # ./education:organization/common:name
-            ('organization_city',''), # ./education:organization/common:address/common:city
-            ('organization_region',''), # ./education:organization/common:address/common:region
-            ('organization_country',''), # ./education:organization/common:address/common:country
-            ('disambiguated_id',''),# ./education:organization/common:disambiguated-organization
-                                 # /common:disambiguated-organization-identifier
-            ('disambiguation_source',''),# ./education:organization/common:disambiguated-organization
-                                 # /common:disambiguation-source
-        ])),
-        # orcid_employment: employment events
-        ('employment', OrderedDict([ #./activities:activities-summary
-                        # /activities:employments/employment:employment-summary
-            ('created_date',''), # ./common:created-date
-            ('emp_modified_date',''), # ./common:last-modified-date
-            ('department_name',''),
-            ('role_title',''),      # ./education:role-title
-            ('start_date',''), # method() ./common:start-date (year, month,day)
-            ('end_date',''),        # method() ./common:start-date/year, month, day
-            ('organization_name',''), # ./employment:organization/common:namedef node_
-
-            ('organization_city',''), # ./employment:organization/common:address/common:city
-            ('organization_region',''), # ./employment:organization/common:address/common:region
-            ('organization_country',''), # ./employment:organization/common:address/common:country
-            ('disambiguated_id',''),# ./employment:organization/common:disambiguated-organization
-                                 # /common:disambiguated-organization-identifier
-            ('disambiguation_source',''),# ./education:organization/common:disambiguated-organization
-                                 # /common:disambiguation-source
-        ])),
-        # orcid_work: works
-        ('work', OrderedDict([ #./activities:activities-summary
-                        # /activities:works/activities:group
-            ('created_date',''), # ./work:work-summary/common:created-modified-date
-            ('modified_date',''), # ./work:work-summary/common:last-modified-date
-            ('title',''),      # ./work:work-summary/work:title/common:title
-            ('type',''),      # ./work:work-summary/work:type
-            ('publication_date',''),  # (method on 3 ymd values)
-                        #./work:work-summary/common:publication-date
-        ])),
-        # orcid_work_xid: has any external ids (xid) for works, such as DOI, PCM,
-        # any others
-        ('work_xid', OrderedDict([ # (...activities:group)
-            # ./common:external-ids/common:external-id
-            ('type',''), # ./common:external-id-type
-            ('value',''), # ./common:external-id-value
-            ('url',''), # ./common:external-id-url
-            ('relationship',''), #./common:external-id-relationship
-         ])),
-    ])
-
-#-------------orcid api---------------------------------
-
-    d_node_params1 = {
-        #
-        # The db_name of this root node is given in a runtime parameter, so
-        # db_name is not given for this node.
-        #
-        'multiple':0,
-        'child_xpaths' : {
-            "./common:orcid-identifier/common:path" : {
-                'attrib_column':{'text':'orcid_id'},
-            },
-            "./preferences:preferences/preferences:locale" : {
-                'attrib_column':{'text':'preferred_language'},
-            },
-            "./person:person/person:name/personal-details:given-names" : {
-                'attrib_column':{'text':'givens'},
-            },
-            "./person:person/person:name/personal-details:family-name" : {
-                'attrib_column':{'text':'family'},
-            },
-            #"./person:person/person:name/personal-details:family-name"{
-            #    'attrib_column':{'text':'family-given'},
-            #},
-            "./person:person/common:last-modified-date" : {
-                'attrib_column':{'text':'person_modified_date'},
-            },
-            "./person:person/common:created-modified-date" : {
-                'attrib_column':{'text':'person_created_date'},
-            },
-
-            ########    EXTERNAL IDENTIFIERS ##########
-
-            "./person:person/external-identifier:external-identifiers/external-identifier:external-identifier" : {
-                'db_name': 'xid', 'multiple': 1,
-                'child_xpaths': {
-                    './common:external-id-type': {
-                        'attrib_column': {'text':'type'},
-                    },
-                    './common:external-id-value': {
-                        'attrib_column': {'text':'value'},
-                    },
-                    './common:external-id-url': {
-                        'attrib_column': {'text':'url'},
-                    },
-                    './common:external-id-relationship': {
-                        'attrib_column': {'text':'relationship'},
-                    },
-                    './common:last-modified-date': {
-                        'attrib_column': {'text':'modified_date'},
-                    },
-                },
-            },
-
-            ########    EMPLOYMENT ##########
-
-            "./activities:activities-summary/activities:employments/employment:employment-summary" : {
-                'db_name': 'employment',  'multiple': 1,
-                'child_xpaths': {
-                    './common:last-modified-date': {
-                        'attrib_column': {'text':'modified_date'},
-                    },
-                    './employment:role-title': {
-                        'attrib_column': {'text':'role_title'},
-                    },
-                    './employment:department-name': {
-                        'attrib_column': {'text':'department_name'},
-                    },
-
-                    './common:start-date': {
-                        'multiple':0,
-                        'child_xpaths': {
-                            './common:year': {
-                                'attrib_column': {'text':'year'},
-                            },
-                            './common:month': {
-                                'attrib_column': {'text':'month'},
-                            },
-                            './common:day': {
-                                'attrib_column': {'text':'day'},
-                            },
-                        },
-                        'column_function': {'start_date': make_date},
-                    },
-
-                    './common:end-date': {
-                        'multiple':0,
-                        'child_xpaths': {
-                            './common:year': {
-                                'attrib_column': {'text':'year'},
-                            },
-                            './common:month': {
-                                'attrib_column': {'text':'month'},
-                            },
-                            './common:day': {
-                                'attrib_column': {'text':'day'},
-                            },
-                        },
-                        'column_function': {'end_date': make_date},
-                    },
-
-                    './employment:organization/common:name': {
-                        'attrib_column': {'text':'organization_name'},
-                    },
-                    './employment:organization/common:address/common:city': {
-                        'attrib_column': {'text':'organization_city'},
-                    },
-                    './employment:organization/common:address/common:region': {
-                        'attrib_column': {'text':'organization_region'},
-                    },
-                    './employment:organization/common:address/common:country': {
-                        'attrib_column': {'text':'organization_country'},
-                    },
-                    ('./employment:organization/common:disambiguated-organization'
-                        +'/common:disambiguated-organization-identifier') : {
-                        'attrib_column': {'text':'disambiguated_id'},
-                    },
-                    ('./employment:organization/common:disambiguated-organization'
-                        +'/common:disambiguation-source') : {
-                        'attrib_column': {'text':'disambiguation_source'},
-                    },
-                },
-            },
-
-            #############       EDUCATION     #################
-
-            "./activities:activities-summary/activities:educations/education:education-summary" : {
-                'db_name': 'education',  'multiple': 1,
-                'child_xpaths': {
-                    './common:last-modified-date': {
-                        'attrib_column': {'text':'modified_date'},
-                    },
-                    './education:department-name': {
-                        'attrib_column': {'text':'department_name'},
-                    },
-                    './education:role-title': {
-                        'attrib_column': {'text':'role_title'},
-                    },
-
-                    './common:start-date': {
-                        'multiple':0,
-                        'child_xpaths': {
-                            './common:year': {
-                                'attrib_column': {'text':'year'},
-                            },
-                            './common:month': {
-                                'attrib_column': {'text':'month'},
-                            },
-                            './common:day': {
-                                'attrib_column': {'text':'day'},
-                            },
-                        },
-                        'column_function': {'start_date': make_date},
-                    },
-
-                    './common:end-date': {
-                        'multiple':0,
-                        'child_xpaths': {
-                            './common:year': {
-                                'attrib_column': {'text':'year'},
-                            },
-                            './common:month': {
-                                'attrib_column': {'text':'month'},
-                            },
-                            './common:day': {
-                                'attrib_column': {'text':'day'},
-                            },
-                        },
-                        'column_function': {'end_date': make_date},
-                    },
-
-
-                    './education:organization/common:name': {
-                        'attrib_column': {'text':'organization_name'},
-                    },
-                    './education:organization/common:address/common:city': {
-                        'attrib_column': {'text':'organization_city'},
-                    },
-                    './education:organization/common:address/common:region': {
-                        'attrib_column': {'text':'organization_region'},
-                    },
-                    './education:organization/common:address/common:country': {
-                        'attrib_column': {'text':'organization_country'},
-                    },
-                    ('./education:organization/common:disambiguated-organization'
-                        +'/common:disambiguated-organization-identifier') : {
-                        'attrib_column': {'text':'disambiguated_id'},
-                    },
-                    ('./education:organization/common:disambiguated-organization'
-                        +'/common:disambiguation-source') : {
-                        'attrib_column': {'text':'disambiguation_source'},
-                    },
-                },
-            },
-
-            ############  WORK #############
-
-            "./activities:activities-summary/activities:works/activities:group/work:work-summary" : {
-                'db_name': 'work',  'multiple': 1,
-                'child_xpaths': {
-                    './common:last-modified-date': {
-                        'attrib_column': {'text':'modified_date'},
-                    },
-                    './work:title/common:title': {
-                        'attrib_column': {'text':'title'},
-                    },
-                    './common:external-ids/common:external-id': {
-                        'db_name': 'work_xid', 'multiple':1,
-                        'child_xpaths': {
-                            './common:external-id-type' : {
-                                'attrib_column': {'text':'type'},
-                            },
-                            './common:external-id-value': {
-                                'attrib_column': {'text':'value'},
-                            },
-                            './common:external-id-url' :{
-                                'attrib_column': {'text':'url'},
-                            },
-                            './common:external-id-relationship' : {
-                                'attrib_column': {'text':'relationship'},
-                            },
-                        },
-                    },
-
-                    './work:type': {
-                        'attrib_column': {'text':'type'},
-                    },
-                    './work:title/common:title': {
-                        'attrib_column': {'text':'title'},
-                    },
-                    './work:title/common:title': {
-                        'attrib_column': {'text':'title'},
-                    },
-                    './work:title/common:title': {
-                        'attrib_column': {'text':'title'},
-                    },
-                    './common:publication-date': {
-                        'multiple':0,
-                        'child_xpaths': {
-                            './common:year': {
-                                'attrib_column': {'text':'year'},
-                            },
-                            './common:month': {
-                                'attrib_column': {'text':'month'},
-                            },
-                        },
-                        'column_constant': {'day':''},
-                        'column_function': {'publication_date': make_date},
-                    },
-                },
-            },
-        },
-
-    } # end d_node_params1
-
-    # Interpose a new 'message' tag to support multiple crossref xml response formats:
-    # see programs crafatxml and crawdxml for example, that produce these formats
-    d_node_params2 = {
-        'child_xpaths':{'.//message' : d_node_params1}
-    }
-
-    d_node_params = d_node_params1
-    return od_rel_datacolumns, d_node_params
-#end def sql_mining_params_orcid
-
-def sql_mining_params_citrus_bibs():
-    '''
-    od_rel_datacolumns notations:
-    (0) key 'attribute_text' reserves a special 'attribute name' to mean text content of a node
-         - may also introduce reserved keyword attribute_innerhtml to mean the whole xml content,
-            eg from an lxml etree.tostring() call for the node
-         - might later introduce keys for node text prefixes and tails per node, if need arises
-    (1) first table, named mods, is the main table, xpath set by caller
-    (2) other table names below show first comment is the expected xpath to be used in the mining map.
-    (3)
-
-
-    ====================== to add later... to mining map...
-
-        ('genre', OrderedDict([ # [mods]./mods:genre
-            ('authority',''), #@authority
-            ('text_content',''), # @text_content
-        #
-        ('language', None), # [mods]./mods:language - pure wrapper object
-        ('language_term', OrderedDict([ # [language]./mods:languageTerm
-            ('type',''), # @type ('text' or 'code')
-            ('authority',''), # @authority
-            ('node_text',''), # @node_text, eg, English for type text, eng for type code
-        #
-        ('location', None), # [mods]./mods:location - pure wrapper object
-        #
-        ('physical_location', OrderedDict([ #[location]./mods:physicalLocation
-            ('type',''), # @type, eg 'code' or ''
-            ('node_text',''), #@node_text, eg UFSPEC or UF Special Collections
-            ('url_access',''), #./mods:url@access
-            ('url_text',''), #/.mods_url@node_text
-        ])),
-        ('role', None), # This relation is only the index set for the html tag so no columns
-
-        ('role_term', OrderedDict([ #./mods:roleTerm
-            ('type',''), # @type
-            ('authority',''), # @authority
-            ('text_content',''), #@text_content
-        ])),
-        #
-        ('note', OrderedDict([ #./mods:note
-            ('text_content',''), # @text_content
-            ('name_part',''), # ./mods:namePart
-        ])),
-        #
-        ('related_item', OrderedDict([ #./mods:relatedItem
-            ('type',''), # ./@type
-            ('physical_description_extent',''), # ./mods:physicalDescription/mods:extent
-            ('part_detail_type') #./mods.part/mods:detail@type
-            ('part_caption'), #./mods:part/mods:caption@text_content
-            ('part_number'), #/mods:part/mods:number@text_content
-        ])),
-         -------------------------------------------------------------------------------------------------------------
-    '''
-
-    od_rel_datacolumns = OrderedDict([
-        # The main parent table
-        ('mets', OrderedDict([ # ./METS:mets
-            ('bib_vid',''),     # .//mods:mods/mods:recordInfo/mods:recordIdentifier@source
-            ('date_issued',''), #.//mods:mods/mods:originInfo/mods:dateIssued
-            ('temporal_start',''),
-            ('temporal_end',''),
-            ('temporal_period',''),
-            ('country',''),
-            ('state',''),
-            ('county',''),
-            ('city',''),
-            ('coordinates_lat_lng', ''),
-            ('abstract',''),    # .//mods:mods/mods:abstract
-            #('access_condition',''), #.//mods:mods/mods:accessCondition@node_text
-            ('url',''), #.//mods:mods/mods:url@text_content
-            ('url_access',''), #.//mods:mod/smods:url@access
-            ('original_date_issued',''),
-           #('hgeo',''), #.//mods:mods/mods:subject/mods:hierarchicalGeographic@node_innerhtml
-        ])),
-
-        #
-        ('subject', OrderedDict([ #.//mods:mods/mods:subject
-            ('id',''), # ./@ID
-            ('authority',''), # @authority
-            ('topic',''), # .//mods:mods/mods:topic@text_content
-        ])),
-
-        ('hgeo', OrderedDict([ # [subject].//mods:mods/mods:hierarchicalGeographic
-            #Note: may change to use separate table hierarchicalGeographic so reverse will
-            # keep state, county, city within a single hierarchicalGeographic tag
-            ('state',''), # .//mods:mods/mods_hierarchicalGeographic/mods:state
-            ('county',''), # .//mods:mods/mods:state
-            ('city',''), # .//mods:mods/mods:city
-            ('type',''), # .//mods:mods/mods:name@type
-            ('name_part',''), # .//mods:mods/mods:namePart
-        ])),
-    ])
-
-#-------------citrus ufdc mets xml files files---------------------------------
-
-    d_node_params1 = {
-        #
-        # The db_name of this root node is given in a runtime parameter, so
-        # db_name is not given for this node, though the name should be the first table name above.
-        #
-        'multiple':0,
-        'child_xpaths' : {
-            ".//mods:recordIdentifier" : {
-                'attrib_column':{'attribute_text':'bib_vid'},
-            },
-            ".//mods:dateIssued" : {
-                'attrib_column':{'attribute_text':'date_issued'},
-            },
-            ".//sobekcm:period" : {
-                'attrib_column':{
-                    'start':'temporal_start',
-                    'end':'temporal_end',
-                    'attribute_text':'temporal_period'
-                },
-            },
-
-            ".//mods:mods/mods:subject/mods:hierarchicalGeographic/mods:country": {
-                'attrib_column': {'attribute_text':'country'},
-            },
-
-            ".//mods:mods/mods:subject/mods:hierarchicalGeographic/mods:state": {
-                'attrib_column': {'attribute_text':'state'},
-            },
-
-            ".//mods:hierarchicalGeographic/mods:county": {
-                'attrib_column': {'attribute_text':'county'},
-            },
-
-             ".//mods:hierarchicalGeographic/mods:city": {
-                'attrib_column': {'attribute_text':'city'},
-            },
-
-             ".//{*}Coordinates": { # gml:Coordinates, but gml not in mets prefix maps
-                'attrib_column': {'attribute_text':'coordinates_lat_lng'},
-            },
-
-           ".//mods:mods/mods:abstract" : {
-                'attrib_column':{'attribute_text':'abstract'},
-            },
-            #".//mods:mods/mods:accessCondition" : {
-            #    'attrib_column':{'attribute_text':'access_condition'},
-            #},
-            ".//mods:mods/mods:url" : {
-                'attrib_column':{'attribute_text':'url'},
-            },
-            ".//mods:mods/mods:url" : {
-                'attrib_column':{'access':'url_access'},
-            },
-
-            # NOTE: due to xml2rdb constraint, must use different child_path string here than
-            # for 'date_issued' above.
-            # Just repeating the value for easy extract of duplicate column for a spreadsheet where
-            # Angie is not supposed to change this original date value.
-            ".//mods:mods//mods:dateIssued" : {
-                'attrib_column':{'attribute_text':'original_date_issued'},
-            },
-
-            ########    Subjects ##########
-
-            ".//mods:mods/mods:subject" : {
-                'db_name': 'subject', 'multiple': 1,
-                'child_xpaths': {
-                    './*': {
-                        'attrib_column': {'id':'id'},
-                    },
-                    './*': {
-                        'attrib_column': {'authority':'authority'},
-                    },
-                    './mods:topic': {
-                        'attrib_column': {'attribute_text':'topic'},
-                    },
-                    "./mods:hierarchicalGeographic" : {
-                        'db_name': 'hgeo', 'multiple': 1,
-                        'child_xpaths': {
-                            './mods:state': {
-                                'attrib_column': {'attribute_text':'state'},
-                            },
-                            './mods:county': {
-                                'attrib_column': {'attribute_text':'county'},
-                            },
-                            './mods:city': {
-                                'attrib_column': {'attribute_text':'city'},
-                            },
-                        },
-                    },
-                },
-            },
-        }, #end mods table child expaths
-
-    } # end d_node_params1
-
-    d_node_params = d_node_params1
-
-    return od_rel_datacolumns, d_node_params
-#end sql_mining_params_citrus_bibs()
-
-#############################################
-################################ END MISC USER PARAMETERS ###############################
 
 '''
 Method new_od_relation
@@ -1726,8 +80,7 @@ We get or create od_column value for the od_rel_info key 'attrib_column' .
 od_column is the dictionary of xml attribute-name keys with their sql column-name values in the
 parent dictionary.
 
-
-Note: SQL Server 2008 cannot handle utf-8 encoding, but can use it for many other RDBs.
+Note: SQL Server 2008 cannot handle utf-8 encoding, but we can use it for most if not all other RDBs.
 
 '''
 def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
@@ -2578,17 +931,11 @@ This is where a web service comes in that
   (d) paid user downloads of the SQL outputs.
   (e) and more...
 '''
-# FILE INPUT PARAMS -- IDENTIFY A PARTICULAR SET OF XML INPUT FILES TO ANALYZE
-# and the 'root' doc_path_xpath to expect in every xml file in the set.
-
 
 # Study choices
 study = 'elsevier'
-study = 'oadoi'
 study = 'scopus'
-study = 'elsevier'
 study = 'crafa'
-study = 'scopus'
 study = 'crawd' # Crossref filter where D is for doi
 study = 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
 study = 'orcid'
@@ -2606,6 +953,7 @@ folders_base = etl.home_folder_name() + '/'
 d_xml_params = {}
 
 if study == 'crafa':
+    import xml2rdb_configs.crossref
     # Note- input folder is/was populated via program crafatxml
     rel_prefix = 'y2016_'
     # All files under the input folder selected for input_path_list below will be used as input
@@ -2617,10 +965,35 @@ if study == 'crafa':
     input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
     print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
     # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-    od_rel_datacolumns, d_node_params = sql_mining_params_crossref()
+    od_rel_datacolumns, d_node_params = sql_mining_params()
     file_count_first = 0
     file_count_span = 0
+
+elif study in [ 'ccila' ] : #ccils is cuban collection i? latin america
+    import xml2rdb_configs.marcxml
+    rel_prefix = 'ccila_'
+
+    in_folder_name = etl.data_folder(linux='/home/robert/git/outputs/marcxml/',
+        windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
+
+    out_folder_name = etl.data_folder(linux='/home/robert/git/outputs/rdb/',
+        windows='c:/users/podengo/git/outputs/rdb/', data_relative_folder='UCRiverside')
+
+    input_folder = in_folder_name
+    doc_rel_name = 'record' # must match highest level table dbname in od_rel_datacolumns
+
+    doc_root_xpath = './collection'
+
+    input_path_list = list(Path(input_folder).glob('*.xml'))
+
+    print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
+    # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
+    od_rel_datacolumns, d_node_params = sql_mining_params()
+    file_count_first = 0
+    file_count_span = 0
+
 elif study == 'crawd': # CrossRefApi Works by Doi-list
+    import xml2rdb_configs.crossref
     # Note- input folder is/was populated via program crawdxml- where crawdxml gets Works Dois MD
     # for 'new' uf articles as found by diffing a week to week SCOPUS harvest of UF-affiliated dois/articles
     rel_prefix = 'crawd_' # maybe try wd_ as a prefix sometime
@@ -2630,10 +1003,12 @@ elif study == 'crawd': # CrossRefApi Works by Doi-list
     input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
     print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
     # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-    od_rel_datacolumns, d_node_params = sql_mining_params_crossref()
+    od_rel_datacolumns, d_node_params = sql_mining_params()
     file_count_first = 0
     file_count_span = 0
+
 elif study == 'crafd': # CrossRefApi filter by D for deposit date (and it selects only UF affiliations)
+    import xml2rdb_configs.crossref
     # Note- input folder is/was populated via program crafdtxml
     rel_prefix = 'crafd_'
     # NOTE LIMIT INPUT FOLDER TO YEAR 2016 for now...
@@ -2645,10 +1020,12 @@ elif study == 'crafd': # CrossRefApi filter by D for deposit date (and it select
     input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
     print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
     # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-    od_rel_datacolumns, d_node_params = sql_mining_params_crossref()
+    od_rel_datacolumns, d_node_params = sql_mining_params()
     file_count_first = 0
     file_count_span = 0
+
 elif study == 'elsevier':
+    import xml2rdb_configs.elsevier
     if env == 'uf':
         #UF Machine
         file_count_first = 0
@@ -2674,8 +1051,9 @@ elif study == 'elsevier':
     doc_root_xpath = './{*}full-text-retrieval-response'
 
     # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-    od_rel_datacolumns, d_node_params = sql_mining_params_elsevier()
+    od_rel_datacolumns, d_node_params = sql_mining_params()
 elif study == 'scopus':
+    import xml2rdb_configs.scopus
     folders_base = 'c:/rvp/elsevier'
     rel_prefix = 'h5_' #h5 is harvest 5 of 20161202
     rel_prefix = 'h6_' #h6 is harvst 6 of 20161210 saturday
@@ -2695,8 +1073,10 @@ elif study == 'scopus':
 
     doc_rel_name = 'scopus'
     doc_root_xpath = './{*}entry'
-    od_rel_datacolumns, d_node_params = sql_mining_params_scopus()
+    od_rel_datacolumns, d_node_params = sql_mining_params()
+
 elif study == 'oadoi':
+    import xml2rdb_configs.oadoi as config
     # for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
     # for 20170308 run using dois from crafd_crawd for UF year 2016
 
@@ -2715,8 +1095,10 @@ elif study == 'oadoi':
     rel_prefix = 'oa_cruf2016_'
     doc_rel_name = 'oadoi'
     doc_root_xpath = './{*}entry'
-    od_rel_datacolumns, d_node_params = sql_mining_params_oadoi()
+    od_rel_datacolumns, d_node_params = config.sql_mining_params()
+
 elif study == 'orcid':
+    import xml2rdb_configs.orcid
     #for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
     #input_folder = '{}/output_oadoi/2017-01-10T12-54-23Z'.format(folders_base)
     # for 20170308 run using dois from crafd_crawd for UF year 2016
@@ -2735,8 +1117,11 @@ elif study == 'orcid':
     #raise Exception("Development EXIT")
 
     doc_root_xpath = './{*}record'
-    od_rel_datacolumns, d_node_params = sql_mining_params_orcid()
+    od_rel_datacolumns, d_node_params = sql_mining_params()
+
 elif study == 'citrus':
+    import xml2rdb_configs.citrus as config
+
     #for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
     #input_folder = '{}/output_oadoi/2017-01-10T12-54-23Z'.format(folders_base)
     # for 20170308 run using dois from crafd_crawd for UF year 2016
@@ -2759,7 +1144,8 @@ elif study == 'citrus':
     doc_root_xpath = './METS:mets'
     d_xml_params['attribute_text'] = 'attribute_text'
     d_xml_params['attribute_innerhtml'] =  'attribute_innerhtml'
-    od_rel_datacolumns, d_node_params = sql_mining_params_citrus_bibs()
+
+    od_rel_datacolumns, d_node_params = config.sql_mining_params()
 else:
     raise Exception("Study ={} is not valid.".format(repr(study)))
 

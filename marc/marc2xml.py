@@ -90,7 +90,7 @@ def ucr_mrc_to_csv(input_file_name=None, text_prepend_indicators=False,output_fi
 
     d_fileField = {} # save counts of records that use each field.subfield/
     max_items_detail = 2;
-    d_code_typeOfRecord = {
+    d_leader06_typeOfRecord = {
         'a': 'Language material'
         ,'c': 'Notated music'
         ,'d': 'Manuscript notated music'
@@ -106,7 +106,7 @@ def ucr_mrc_to_csv(input_file_name=None, text_prepend_indicators=False,output_fi
         ,'r': 'Three dimensional artifact or naturally occurring object'
         ,'t': 'Manuscript language material'
     }
-    d_code_bibliographicLevelDescription = {
+    d_leader07_bibliographicLevelDescription = {
         'a': 'Monographic component part'
         ,'b': 'Serial component part'
         ,'c': 'collection'
@@ -117,20 +117,22 @@ def ucr_mrc_to_csv(input_file_name=None, text_prepend_indicators=False,output_fi
     }
 
     # As of around year 2017, to get field 008 Material type value,
-    # seek leader positions 6-7 first in this dictionary
+    # which is used to define the coding of field 008 positions 18-34,
+    # then if leader position 6 is a, seek key of positions6 and 7 concatenated
+    # to find the value for material type in this dictionary
     # if leader position 6 is 'a', otherwise seek leader position 6 in
     # dictionary d_code_field008C18C34Definition
-    d_code2_field008C18C34MaterialType = {
-        'aa': 'Books'
-        ,'ac': 'Books'
-        ,'ad': 'Books'
-        ,'am': 'Books'
-        ,'ab': 'Continuing resources'
-        ,'ai': 'Continuing resources'
-        ,'as': 'Continuing resources'
+    d_leadera07_MaterialTypeField008 = {
+        'a': 'Books'
+        ,'c': 'Books'
+        ,'d': 'Books'
+        ,'m': 'Books'
+        ,'b': 'Continuing resources'
+        ,'i': 'Continuing resources'
+        ,'s': 'Continuing resources'
     }
 
-    d_code_field008C18C34MaterialType = {
+    d_leader06_MaterialTypeField008 = {
          'c' : 'Music'
         ,'d' : 'Music'
         ,'e' : 'Maps'
@@ -313,8 +315,8 @@ def ucr_mrc_to_csv(input_file_name=None, text_prepend_indicators=False,output_fi
 in_folder_name = etl.data_folder(linux='/home/robert/git/citrus/data/',
     windows='c:/users/podengo/git/citrus/data/', data_relative_folder='UCRiverside')
 
-out_folder_name = etl.data_folder(linux='/home/robert/git/outputs/jessica_english/',
-    windows='c:/users/podengo/git/outputs/jessica_english/', data_relative_folder='UCRiverside')
+out_folder_name = etl.data_folder(linux='/home/robert/git/outputs/marcxml/',
+    windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
 
 #os.makedirs(out_folder_name, exist_ok=True)
 
