@@ -99,7 +99,7 @@ def sql_mining_params():
         ])),
     ])
 
-    # - - - - - - - DEFINE COMPONENTS OF, AND FINALLY, d_node_params, the 'Mining Map'.
+    #  DEFINE  d_node_params, the 'Mining Map'.
     '''
     For nonserial items, visual inspection of multiple xml files indicates that
     every author listed in an author-group is associated with
@@ -111,27 +111,39 @@ def sql_mining_params():
         #
         # The db_name of this root node is always set by the caller, so db_name is
         # NOT given for this node.
+        # Until design is improved, developer  should make sure it is the first name
+        # given above,  'record'.
         # Must use multiple 0 for this root node too, for technical reasons.
         #
         'multiple':0,
         'child_xpaths' : {
-            ".//{*}coredata/{*}pii": {
+            ".//{*}leader": {
                 'multiple':0,
-                'attrib_column': { 'text':'fpii' }, # 'fpii' name need not be used in output relation.
-                'column_function': {'pii': pii_unformatted}
-            }
-            ,".//{*}coredata/{*}eid": {
-                'multiple':0,
-                'attrib_column': { 'text':'eid' },
-            }
-            ,".//{*}openaccess": {
-                'db_name':'open_access', 'multiple':0,
-                'attrib_column': {'text':'open_access' }
-            }
+                'attrib_column': {
+                    'leader':'leader'
+                }, # 'fpii' name need not be used in output relation.
+                ,".//{*}controlfield": {
+                    'db_name':'controlfield', 'multiple':1,
+                    'attrib_column': {
+                      'tag':'tag',  'text':'value',
+                    },
+                }
+                ,".//{*}datafield": {
+                    'db_name':'datafield', 'multiple':1,
+                    'attrib_column': {'ind1':'indicator1','ind2':'indicator2' }
+                    'child_xpaths' : {
+                        'db_name':'subfield',
+                    }
+                }
             ,".//prism:publicationName":{
                 'db_name':'publication_name', 'multiple':0,
                 'attrib_column':{'text':'publication_name'}
             }
+            }
+
+
+
+
             ,".//prism:doi":{
                 'multiple':0,
                 'attrib_column':{'text':'doi'},

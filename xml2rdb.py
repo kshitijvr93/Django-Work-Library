@@ -50,6 +50,12 @@ import etl
 
 '''
 Method new_od_relation
+
+Given arg od_rel_datacolumns, use its keys of relation names
+to initialize a new odict od_relation with entries of the same key name,
+and values of values of new od_rel_info dicts.
+
+Return the new dict od_relation
 '''
 def new_od_relation(od_rel_datacolumns):
     od_relation = OrderedDict()
