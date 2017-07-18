@@ -933,16 +933,17 @@ This is where a web service comes in that
 '''
 
 # Study choices
-study = 'elsevier'
+study = 'citrus'
 study = 'scopus'
 study = 'crafa'
 study = 'crawd' # Crossref filter where D is for doi
 study = 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
+study = 'oadoi'
 study = 'orcid'
-study = 'citrus'
+study = 'elsevier'
 
 # KEEP ONLY ONE LINE NEXT: Study Selection
-study = 'citrus'
+study = 'oadoi'
 
 file_count_first = 0
 file_count_span = 0
@@ -953,7 +954,7 @@ folders_base = etl.home_folder_name() + '/'
 d_xml_params = {}
 
 if study == 'crafa':
-    import xml2rdb_configs.crossref
+    import xml2rdb_configs.crossref as config
     # Note- input folder is/was populated via program crafatxml
     rel_prefix = 'y2016_'
     # All files under the input folder selected for input_path_list below will be used as input
@@ -965,12 +966,12 @@ if study == 'crafa':
     input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
     print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
     # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-    od_rel_datacolumns, d_node_params = sql_mining_params()
+    od_rel_datacolumns, d_node_params = config.sql_mining_params()
     file_count_first = 0
     file_count_span = 0
 
 elif study in [ 'ccila' ] : #ccils is cuban collection i? latin america
-    import xml2rdb_configs.marcxml
+    import xml2rdb_configs.marcxml as config
     rel_prefix = 'ccila_'
 
     in_folder_name = etl.data_folder(linux='/home/robert/git/outputs/marcxml/',
@@ -988,12 +989,12 @@ elif study in [ 'ccila' ] : #ccils is cuban collection i? latin america
 
     print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
     # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-    od_rel_datacolumns, d_node_params = sql_mining_params()
+    od_rel_datacolumns, d_node_params = config.sql_mining_params()
     file_count_first = 0
     file_count_span = 0
 
 elif study == 'crawd': # CrossRefApi Works by Doi-list
-    import xml2rdb_configs.crossref
+    import xml2rdb_configs.crossref as config
     # Note- input folder is/was populated via program crawdxml- where crawdxml gets Works Dois MD
     # for 'new' uf articles as found by diffing a week to week SCOPUS harvest of UF-affiliated dois/articles
     rel_prefix = 'crawd_' # maybe try wd_ as a prefix sometime
@@ -1003,12 +1004,12 @@ elif study == 'crawd': # CrossRefApi Works by Doi-list
     input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
     print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
     # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-    od_rel_datacolumns, d_node_params = sql_mining_params()
+    od_rel_datacolumns, d_node_params = config.sql_mining_params()
     file_count_first = 0
     file_count_span = 0
 
 elif study == 'crafd': # CrossRefApi filter by D for deposit date (and it selects only UF affiliations)
-    import xml2rdb_configs.crossref
+    import xml2rdb_configs.crossref as config
     # Note- input folder is/was populated via program crafdtxml
     rel_prefix = 'crafd_'
     # NOTE LIMIT INPUT FOLDER TO YEAR 2016 for now...
@@ -1020,12 +1021,12 @@ elif study == 'crafd': # CrossRefApi filter by D for deposit date (and it select
     input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
     print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
     # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-    od_rel_datacolumns, d_node_params = sql_mining_params()
+    od_rel_datacolumns, d_node_params = config.sql_mining_params()
     file_count_first = 0
     file_count_span = 0
 
 elif study == 'elsevier':
-    import xml2rdb_configs.elsevier
+    import xml2rdb_configs.elsevier as config
     if env == 'uf':
         #UF Machine
         file_count_first = 0
@@ -1051,9 +1052,9 @@ elif study == 'elsevier':
     doc_root_xpath = './{*}full-text-retrieval-response'
 
     # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-    od_rel_datacolumns, d_node_params = sql_mining_params()
+    od_rel_datacolumns, d_node_params = config.sql_mining_params()
 elif study == 'scopus':
-    import xml2rdb_configs.scopus
+    import xml2rdb_configs.scopus as config
     folders_base = 'c:/rvp/elsevier'
     rel_prefix = 'h5_' #h5 is harvest 5 of 20161202
     rel_prefix = 'h6_' #h6 is harvst 6 of 20161210 saturday
@@ -1073,7 +1074,7 @@ elif study == 'scopus':
 
     doc_rel_name = 'scopus'
     doc_root_xpath = './{*}entry'
-    od_rel_datacolumns, d_node_params = sql_mining_params()
+    od_rel_datacolumns, d_node_params = config.sql_mining_params()
 
 elif study == 'oadoi':
     import xml2rdb_configs.oadoi as config
@@ -1098,7 +1099,7 @@ elif study == 'oadoi':
     od_rel_datacolumns, d_node_params = config.sql_mining_params()
 
 elif study == 'orcid':
-    import xml2rdb_configs.orcid
+    import xml2rdb_configs.orcid as config
     #for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
     #input_folder = '{}/output_oadoi/2017-01-10T12-54-23Z'.format(folders_base)
     # for 20170308 run using dois from crafd_crawd for UF year 2016
@@ -1117,7 +1118,7 @@ elif study == 'orcid':
     #raise Exception("Development EXIT")
 
     doc_root_xpath = './{*}record'
-    od_rel_datacolumns, d_node_params = sql_mining_params()
+    od_rel_datacolumns, d_node_params = config.sql_mining_params()
 
 elif study == 'citrus':
     import xml2rdb_configs.citrus as config
