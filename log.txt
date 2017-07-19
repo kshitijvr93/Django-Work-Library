@@ -1,0 +1,6 @@
+{20170719t1858
+$ ssh -l rvp a45.33.20.64
+
+However, I have to set things up for the web server to run ok...
+I think it may be related to the need for a new SSL certificate because the static ip has changed.
+}
