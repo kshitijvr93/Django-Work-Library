@@ -249,8 +249,8 @@ def node_visit_output(node=None, node_index=None, d_namespaces=None,
                     .format(repr(d_attr_column),repr(type(d_attr_column)),node.tag, node_index))
 
         node_text = etree.tostring(node, encoding='unicode', method='text')
-        # Must discard tabs, used as bulk load delimiter, else bulk insert msgs
-        # appear 4832 and 7399 and inserts fail.
+        # Must discard tabs, used as bulk load delimiter, else sql server 2008 bulk insert error
+        # messages appear, numbered 4832 and 7399, and inserts fail.
         node_text = node_text.replace('\t',' ').replace('\n',' ').strip()
         #node_text = "" if stringify is None else stringify.strip()
 
@@ -807,6 +807,7 @@ These parameters may be re-grouped later into fewer parameters to more plainly s
 the three groups, each which contains sub-parameters for its group.
 '''
 def xml2rdb(folders_base=None, input_path_list=None,
+            folder_output_base=None,
             doc_root_xpath=None, rel_prefix=None,
             doc_rel_name=None, use_db=None,
             d_node_params=None, od_rel_datacolumns=None,
@@ -816,7 +817,6 @@ def xml2rdb(folders_base=None, input_path_list=None,
     utc_now = datetime.datetime.utcnow()
     utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
     print("{}: STARTING at {}".format(me, utc_secs_z))
-
 
     if not ( 1 == 1
         #and folders_base and input_path_list
@@ -838,11 +838,12 @@ def xml2rdb(folders_base=None, input_path_list=None,
 
     d_log = OrderedDict()
 
-    folder_output_base = folders_base + me + '/'
-    folder_output_base = etl.data_folder(
-        linux = "/home/robert/data/",
-        windows = "U:/data/",
-        data_relative_folder='outputs/xml2rdb')
+    if folder_output_base is None:
+        folder_output_base = input_folders + me + '/'
+        folder_output_base = etl.data_folder(
+            linux = "/home/robert/data/",
+            windows = "U:/data/",
+            data_relative_folder='outputs/xml2rdb')
 
     d_params['folder-output-base'] = folder_output_base
     os.makedirs(folder_output_base, exist_ok=True)
@@ -949,7 +950,7 @@ study = 'orcid'
 study = 'elsevier'
 
 # KEEP ONLY ONE LINE NEXT: Study Selection
-study = 'oadoi'
+study = 'ccila'
 
 file_count_first = 0
 file_count_span = 0
@@ -958,6 +959,9 @@ use_db = 'silodb'
 folders_base = etl.home_folder_name() + '/'
 
 d_xml_params = {}
+# Part of a deprecation... now only marcxml uses this and passes it to xml2rdb,
+# So value of None is signal to interpret arguments an 'older' way.
+folder_output_base = None
 
 if study == 'crafa':
     import xml2rdb_configs.crossref as config
@@ -969,6 +973,7 @@ if study == 'crafa':
     doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns
     #doc_root_xpath = './crossref-api-filter-aff-UF' #this matches root node assignment in crafatxml program
     doc_root_xpath = './crossref-api-filter-aff-UF/message'
+    input_path_list = list(Path(input_folder).glob(input_path_glob))
     input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
     print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
     # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
@@ -983,15 +988,19 @@ elif study in [ 'ccila' ] : #ccils is cuban collection i? latin america
     in_folder_name = etl.data_folder(linux='/home/robert/git/outputs/marcxml/',
         windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
 
-    out_folder_name = etl.data_folder(linux='/home/robert/git/outputs/rdb/',
+    folder_output_base = etl.data_folder(linux='/home/robert/git/outputs/rdb/',
         windows='c:/users/podengo/git/outputs/rdb/', data_relative_folder='UCRiverside')
 
     input_folder = in_folder_name
+    input_folders = []
+    input_folders.append(input_folder)
+    input_path_glob = '**/marc*.xml'
+
     doc_rel_name = 'record' # must match highest level table dbname in od_rel_datacolumns
+    doc_root_xpath = ".//{*}record"
 
-    doc_root_xpath = './collection'
-
-    input_path_list = list(Path(input_folder).glob('*.xml'))
+    input_path_list = list(Path(input_folder).glob(input_path_glob))
+    d_xml_params['attribute_text'] = 'text'
 
     print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
     # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
@@ -1181,6 +1190,7 @@ d_params.update({
     #,'input-files-xml-folder' : input_folder
     ,'study': repr(study)
     ,'input-folders': repr(input_folders)
+    ,'folder-output-base': repr(folder_output_base)
     ,'input-files-count': str(len(input_path_list))
     ,'file-count-first': file_count_first
     ,'file-count-span': file_count_span
@@ -1195,6 +1205,7 @@ d_params.update({
 # RUN the analysis and collect stats
 log_filename, pretty_log = xml2rdb(
     folders_base=folders_base,input_path_list=input_path_list,
+    folder_output_base=folder_output_base,
     doc_root_xpath=doc_root_xpath, rel_prefix=rel_prefix,
     doc_rel_name=doc_rel_name, use_db=use_db,
     d_node_params=d_node_params, od_rel_datacolumns=od_rel_datacolumns,

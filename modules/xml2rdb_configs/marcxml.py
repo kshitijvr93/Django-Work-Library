@@ -1,4 +1,5 @@
 #
+from collections import OrderedDict
 '''
 Method sql_mining_params_elsevier
 
@@ -119,70 +120,22 @@ def sql_mining_params():
         'child_xpaths' : {
             ".//{*}leader": {
                 'multiple':0,
-                'attrib_column': {
-                    'leader':'leader'
-                }, # 'fpii' name need not be used in output relation.
-                ,".//{*}controlfield": {
+                'attrib_column': { 'leader' : 'leader' },
+            },
+            ".//{*}controlfield": {
                     'db_name':'controlfield', 'multiple':1,
-                    'attrib_column': {
-                      'tag':'tag',  'text':'value',
+                    'attrib_column': { 'tag':'tag',  'text':'value', },
+            },
+            ".//{*}datafield": {
+                'db_name':'datafield', 'multiple':1,
+                'attrib_column': {'ind1':'indicator1','ind2':'indicator2' },
+                'child_xpaths' : {
+                    ".//{*}subfield" : {
+                        'db_name':'subfield', 'multiple':1,
+                        'attrib_column' : {'code':'code', 'text':'value'},
                     },
-                }
-                ,".//{*}datafield": {
-                    'db_name':'datafield', 'multiple':1,
-                    'attrib_column': {'ind1':'indicator1','ind2':'indicator2' }
-                    'child_xpaths' : {
-                        'db_name':'subfield',
-                    }
-                }
-            ,".//prism:publicationName":{
-                'db_name':'publication_name', 'multiple':0,
-                'attrib_column':{'text':'publication_name'}
-            }
-            }
-
-
-
-
-            ,".//prism:doi":{
-                'multiple':0,
-                'attrib_column':{'text':'doi'},
-            }
-            ,".//prism:coverDate":{
-                'multiple':0,
-                'attrib_column':{'text':'cover_date', 'cover_year':'cover_year'},
-                'column_function': {'cover_year': cover_year}
-            }
-            ,".//dc:title":{
-                'multiple':0,
-                'attrib_column':{'text':'title'}
-            }
-            ,".//xocs:title":{
-                'multiple':0,
-                'attrib_column':{'text':'title'}
-            }
-            ,".//xocs:normalized-first-auth-surname":{
-                'multiple':0,
-                'attrib_column':{'text':'first_author_surname'}
-            }
-            ,".//xocs:normalized-first-auth-initial":{
-                'multiple':0,
-                'attrib_column':{'text':'first_author_initial'}
-            }
-            ,".//xocs:serial-item":{
-                'multiple':0,
-                'column_constant':{'serial_type':'1'},
-                'child_xpaths' : {
-                    ".//ce:author-group":d_serial_author_group
-                }
-            }
-            ,".//xocs:nonserial-item":{
-                'multiple':0,
-                'column_constant':{'serial_type':'0'},
-                'child_xpaths' : {
-                    ".//ce:author-group":d_nonserial_author_group
-                }
-            }
+                },
+            },
         } # end child_xpaths
     } # end d_node_params
     return od_rel_datacolumns, d_node_params
