@@ -989,7 +989,7 @@ elif study in [ 'ccila' ] : #ccila is cuban collection i? latin america
         windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
 
     folder_output_base = etl.data_folder(linux='/home/robert/git/outputs/rdb/',
-        windows='c:/test_sql/', data_relative_folder='UCRiverside')
+        windows='c:/', data_relative_folder='test_sql')
 
     input_folder = in_folder_name
     input_folders = []

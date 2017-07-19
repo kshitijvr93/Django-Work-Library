@@ -221,9 +221,7 @@ def sql_mining_params():
                         'db_name':'author_ref', 'multiple':1,
                         'attrib_column':{'id':'id', 'refid':'refid'}
                     }
-
                 }
-
             }
             ,".//ce:affiliation":{
                 'db_name':'affiliation', 'multiple':1,

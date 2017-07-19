@@ -74,10 +74,7 @@ def sql_mining_params():
 
     od_rel_datacolumns = OrderedDict([
         ('record', OrderedDict([
-            ('identifier',''),
             ('leader',''),
-            ('indicator1',''),
-            ('indicator2',''),
         ])),
 
         ('controlfield', OrderedDict([
@@ -86,6 +83,7 @@ def sql_mining_params():
         ])),
 
         ('datafield', OrderedDict([
+            ('tag', ''),
             ('indicator1',' '),
             ('indicator2',' '),
         ])),
@@ -116,7 +114,7 @@ def sql_mining_params():
         'child_xpaths' : {
             ".//{*}leader": {
                 'multiple':0,
-                'attrib_column': { 'leader' : 'leader' },
+                'attrib_column': { 'text' : 'leader' },
             },
             ".//{*}controlfield": {
                     'db_name':'controlfield', 'multiple':1,
@@ -124,11 +122,13 @@ def sql_mining_params():
             },
             ".//{*}datafield": {
                 'db_name':'datafield', 'multiple':1,
-                'attrib_column': {'ind1':'indicator1','ind2':'indicator2' },
+                'attrib_column': {
+                    'tag':'tag', 'ind1':'indicator1','ind2':'indicator2'
+                    },
                 'child_xpaths' : {
                     ".//{*}subfield" : {
                         'db_name':'subfield', 'multiple':1,
-                        'attrib_column' : {'code':'code', 'text':'value'},
+                        'attrib_column' : { 'code':'code', 'text':'value' },
                     },
                 },
             },
