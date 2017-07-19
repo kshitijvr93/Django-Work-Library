@@ -3,4 +3,16 @@ $ ssh -l rvp a45.33.20.64
 
 However, I have to set things up for the web server to run ok...
 I think it may be related to the need for a new SSL certificate because the static ip has changed.
+
+
+on linode, restart apache2?
+#
+root@lawcloud9:/var/log/apache2# /apache2prefork/bin/apachectl restart
+httpd not running, trying to start
+root@lawcloud9:/var/log/apache2# sudo service apache2 restart
+ * Restarting web server apache2                                                                                                                 ... waiting .                                                                                                                           [ OK ]
+root@lawcloud9:/var/log/apache2#
+
+from browser: https://45.33.20.64/admin
+t1910 - that works fine.
 }
