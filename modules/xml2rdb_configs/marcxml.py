@@ -74,7 +74,6 @@ def sql_mining_params():
 
     od_rel_datacolumns = OrderedDict([
         ('record', OrderedDict([
-            ('id',''),
             ('identifier',''),
             ('leader',''),
             ('indicator1',''),
@@ -82,19 +81,16 @@ def sql_mining_params():
         ])),
 
         ('controlfield', OrderedDict([
-            ('id',''),
             ('tag',''),
             ('value',''),
         ])),
 
         ('datafield', OrderedDict([
-            ('id',''),
             ('indicator1',' '),
             ('indicator2',' '),
         ])),
 
         ('subfield', OrderedDict([
-            ('id',''),
             ('code',''),
             ('value',''),
         ])),

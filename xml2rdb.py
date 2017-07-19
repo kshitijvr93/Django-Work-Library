@@ -981,7 +981,7 @@ if study == 'crafa':
     file_count_first = 0
     file_count_span = 0
 
-elif study in [ 'ccila' ] : #ccils is cuban collection i? latin america
+elif study in [ 'ccila' ] : #ccila is cuban collection i? latin america
     import xml2rdb_configs.marcxml as config
     rel_prefix = 'ccila_'
 
@@ -989,7 +989,7 @@ elif study in [ 'ccila' ] : #ccils is cuban collection i? latin america
         windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
 
     folder_output_base = etl.data_folder(linux='/home/robert/git/outputs/rdb/',
-        windows='c:/users/podengo/git/outputs/rdb/', data_relative_folder='UCRiverside')
+        windows='c:/test_sql/', data_relative_folder='UCRiverside')
 
     input_folder = in_folder_name
     input_folders = []
