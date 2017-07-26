@@ -494,9 +494,7 @@ row_columns: list
                 j = 0
         self.cursor.execute(sql)
 
-
 # end class PyodbcWriter
-
 
 import types
 
@@ -513,7 +511,7 @@ def hvp_writeheader( self ):
         print("hvp_writeheader:header_name=%s, Columns='%s'"
            % (dsw.header_name,repr(columns_line)))
 
-    with open(self.dsw.header_name, 'wb') as fh:
+    with open(self.dsw.header_name, mode='w', encoding='utf-8') as fh:
         fh.write(columns_line)
 # end def hvp_writeheader()
 
@@ -537,7 +535,7 @@ def tvp_writeheader( self ):
     # fieldnames is authoritative ordered list of colnames
     # because in future od_column_type will not be required to have
     # all columns
-    with open(dsw.header_name, 'wb') as fh:
+    with open(dsw.header_name, mode='w', encoding='utf-8') as fh:
         for colname in self.fieldnames:
             # add logic to allow missing entry and use a default spec/type
             coltype = dsw.od_column_type[colname]
@@ -549,60 +547,51 @@ def tvp_writeheader( self ):
 
 class Dataset(object):
 
-    def __init__(
-      self, dbms="csv", name=None, columns=None,
-      ds_layout=None,lspec=None,  delimiter=None,
-      workbook_file=None, sheet_name=None,
-      server=None, db=None, conn=None, table=None, query=None,
-      db_context=None, db_table_spec=None, replace=None,
-      column_names=None, od_column_type=None,
-      open_mode=None, fieldnames=None,
-      lengths=None, verbosity=None):
 
-        """
-        Create Dataset object and validate parameters and interactions.
+    """
+    Create Dataset object and validate parameters and interactions.
 
-Extended Summary:
-=================
-Create Dataset object to write to or read a relational data store.
+    Extended Summary:
+    =================
+    Create Dataset object to write to or read a relational data store.
 
-The Dataset object provides a generic uniform interface to read and write data,
-regardless of whether it exists in csv files, excel spreadsheets, or database
-tables.
+    The Dataset object provides a generic uniform interface to read and write data,
+    regardless of whether it exists in csv files, excel spreadsheets, or database
+    tables.
 
-The 'dbms' and 'open_mode' parameters control whether reading or writing
-may be done, and the database-management-style (dbms) of reading and writing.
+    The 'dbms' and 'open_mode' parameters control whether reading or writing
+    may be done, and the database-management-style (dbms) of reading and writing.
 
 
-Common Parameters:
-==================
-dbms : String
--------------
+    Common Parameters:
+    ==================
+    dbms : String
+    -------------
     -- csv, excel_srcn, pyodbc, hvp, tvp, fts (under construction),
     -- future possible: postgresql, sqllite3, mysql, etc...
 
-Parameters Where dbms='csv'(or None) and open_mode='rb'
-========================================================
-name : String
--------------
+    Parameters Where dbms='csv'(or None) and open_mode='rb'
+    ========================================================
+    name : String
+    -------------
     -- File system's full pathname of the xxx.csv file to read.
     -- The column names are assumed to be in the first row of the input file,
        comma-separated.
 
-Where dbms='csv' and open_mode='wb'
-===================================
+    Where dbms='csv' and open_mode='wb'
+    ===================================
 
-name : String
--------------
+    name : String
+    -------------
     -- File system's full pathname of the xxx.csv file to write.
 
-columns : String
-----------------
+    columns : String
+    ----------------
     -- String of comma-separated column names, in order, to write output rows.
     -- Not needed if parameter od_column_type is given.
 
-od_column_type: dictionary
---------------------------
+    od_column_type: dictionary
+    --------------------------
     -- Key is column name, value is a column type string.
     -- Code that uses the reader may use this info to decide whether to cast
        the string column value to a float or int, and so on, if needed.
@@ -611,51 +600,51 @@ od_column_type: dictionary
     -- If parameter columns or column_names is not provided, this dictionary
        is the authoritative source of column names and types
 
-Where dbms='excel_srcn' and open_mode='rb'
-==========================================
+    Where dbms='excel_srcn' and open_mode='rb'
+    ==========================================
 
-workbook_file : String
-----------------------
+    workbook_file : String
+    ----------------------
     -- Full pathname of the workbook file.
 
-sheet_name: String (optional)
------------------------------
+    sheet_name: String (optional)
+    -----------------------------
     -- Sheetname to read within the workbook file.
     -- If none is given, the first sheet of the workbook will be read.
 
 
-Where dbms='pyodbc' and open_mode='rb':
-=======================================
+    Where dbms='pyodbc' and open_mode='rb':
+    =======================================
 
-server : String
----------------
+    server : String
+    ---------------
     -- String representing the SQL Server to use.
     -- Examples: server="DCSMITHJ1\SQLEXRESS", server="38.118.83.61"
     -- Either (1) server and db are required or (2) conn is required
 
-db : String
------------
+    db : String
+    -----------
     -- Database to connect to.
     -- Examples: db="silodb", db="ScoreReportingTestData"
 
-conn: Pyodbc connection
------------------------
+    conn: Pyodbc connection
+    -----------------------
     -- pre-created pyodbc connection to the server and database of choice.
 
-query : String
---------------
+    query : String
+    --------------
     -- A select statement that will produce the rows that a
        dataset.DictReader() can read.
     -- The query may be simple or a complex query joining multiple tables.
     -- Either a query or a 'table' param must be specified, but not both.
 
-table : String
---------------
+    table : String
+    --------------
     -- The name of a database table in the default schema of the database.
     -- Either a table or a query must be specified, but not both.
 
-columns or column_names: [] List of strings
---------------------------------------------
+    columns or column_names: [] List of strings
+    --------------------------------------------
     -- Optional when given parameter "table", and required for "query"
     -- Example: column_names=["id", "name", "score" ]
     -- If the table param is given and this param not given, the column names of the
@@ -666,8 +655,8 @@ columns or column_names: [] List of strings
        column names used in its database.
     -- use of parameter name 'columns' is a candidate for deprecation
 
-od_column_type: OrderedDict()
------------------------------
+    od_column_type: OrderedDict()
+    -----------------------------
     -- Initial implementation. Not Allowed. Pyodbc will retrieve this from
        the db.
     -- Future1: Optional. If NOT given, the column names and types from the
@@ -678,26 +667,26 @@ od_column_type: OrderedDict()
        the pyodbc column type information for column names that appear
        in this dictionary.
 
-Where dbms="pyodbc" and open_mode='wb':
-========================================
-server : String
----------------
+    Where dbms="pyodbc" and open_mode='wb':
+    ========================================
+    server : String
+    ---------------
     -- String representing the SQL Server to use.
     -- Examples: server="DCSMITHJ1\SQLEXRESS", server="38.118.83.61"
 
-db : String
------------
+    db : String
+    -----------
     -- Database to connect to.
     -- Examples: db="silodb", db="ScoreReportingTestData"
 
-table : String
---------------
+    table : String
+    --------------
     -- The name of a database table in the default schema of the database.
     -- If it exists and the replace parameter is not given or false, then an attempt
        to write to the table will raise an error.
 
-column_names : [] (Optional)
------------------------------
+    column_names : [] (Optional)
+    -----------------------------
     -- List of column names in order that are to be used to create the table and
        the order to write data rows' columns to the table.
     -- Example: column_names=["id", "name", "score" ]
@@ -705,69 +694,69 @@ column_names : [] (Optional)
        specified in a call to dataset.DictWriter(), but either way it is required
        before an attempt to call the DictWriter's witerow() method is made.
 
-od_column_type: OrderedDictionary() (optional)
-----------------------------------------------
+    od_column_type: OrderedDictionary() (optional)
+    ----------------------------------------------
     -- Parameter column_names or od_column_type, but not both, must be given.
     -- Key is column name and value 'spec' is a pyodbc destination database
        server's column type.
        Eg, SQL Server may be integer, float, nvarchar(128), etc.
     -- Ex: { "id":"integer", "name":"nvarchar(128)", "score":"float" }
 
-Where dbms='fts' and open_mode='wb':(Under construction)
---------------------------------------------------------
-open_mode: 'wb'
+    Where dbms='fts' and open_mode='wb':(Under construction)
+    --------------------------------------------------------
+    open_mode: 'wb'
     -- Param open_mode must always be 'wb' for dbms='fts'.
 
-db_table_spec: TableSpec
+    db_table_spec: TableSpec
     -- A TableSpec object defining the table to which to write.
 
-Where dbms='tvp' and open_mode='rb'
-===================================
+    Where dbms='tvp' and open_mode='rb'
+    ===================================
 
-Parameter od_column_type : OrderedDictionary()
-----------------------------------------------
--- Initial Implementation: Not Allowed. This info is retrieved from the 'cty'
-   file.
--- Future1:    key is column name
+    Parameter od_column_type : OrderedDictionary()
+    ----------------------------------------------
+    -- Initial Implementation: Not Allowed. This info is retrieved from the 'cty'
+       file.
+    -- Future1:    key is column name
 
--- Future1: value is column type, not syntactically checked, but if using an
-   SQL Server Database for data conversions, it can be useful
-   to conform to that syntax.
-   Future2: may implement parameter 'dialect' to specify
-   a desired syntax for the type info here.
+    -- Future1: value is column type, not syntactically checked, but if using an
+       SQL Server Database for data conversions, it can be useful
+       to conform to that syntax.
+       Future2: may implement parameter 'dialect' to specify
+       a desired syntax for the type info here.
 
--- Note: function data(), when reading a dataset, will apply the readable
-   dataset's od_column_type info to the output dataset, if both datasets
-   use  column types via member od_column_type.
+    -- Note: function data(), when reading a dataset, will apply the readable
+       dataset's od_column_type info to the output dataset, if both datasets
+       use  column types via member od_column_type.
 
--- Each key-value pair is stored in order on a single line in a file {name}.cty
-   where name is given by parameter 'name' and cty stands for "column type".
-   Column and type fields are separated by a tab character.
-   Reminder: the data values are stored in {file}.tsv, tab separated values.
+    -- Each key-value pair is stored in order on a single line in a file {name}.cty
+       where name is given by parameter 'name' and cty stands for "column type".
+       Column and type fields are separated by a tab character.
+       Reminder: the data values are stored in {file}.tsv, tab separated values.
 
---
-Where dbms='tvp' and open_mode='wb'
-===================================
+    --
+    Where dbms='tvp' and open_mode='wb'
+    ===================================
 
-Parameter od_column_type : OrderedDictionary()
-----------------------------------------------
--- Optional. However, the paramater must be given to DictWriter() if it is
-   not given here.
+    Parameter od_column_type : OrderedDictionary()
+    ----------------------------------------------
+    -- Optional. However, the paramater must be given to DictWriter() if it is
+    not given here.
 
-Notes:
-======
+    Notes:
+    ======
 
-Read a csv file: dsr = Dataset(dbms='csv',name='path_to-some_csv_file', open_mode='rb')
--------------------------------------------------------------------------------------
--- Object dsr does not read
--- Object dsr supports method dict_reader() to create a reader.
+    Read a csv file: dsr = Dataset(dbms='csv',name='path_to-some_csv_file', open_mode='rb')
+    -------------------------------------------------------------------------------------
+    -- Object dsr does not read
+    -- Object dsr supports method dict_reader() to create a reader.
 
-rows = dsr.dict_reader()
------------------------
-- Creates iterator "rows" to enable iterate to produce a row dictionary
-  for the current (next) row in the dataset where key is the column name and
-  value is the string value.
-- For the dataset, creates and initializes a dictionary style "reader"
+    rows = dsr.dict_reader()
+    -----------------------
+    - Creates iterator "rows" to enable iterate to produce a row dictionary
+    for the current (next) row in the dataset where key is the column name and
+    value is the string value.
+    - For the dataset, creates and initializes a dictionary style "reader"
     - this reads row1 (fieldnames)from the csv file named in the 'ds'
       initialization
     - and creates and returns the iterable object, here named 'rows'.
@@ -780,38 +769,49 @@ rows = dsr.dict_reader()
        into underscores.
         - rows.fieldnames = [field.replace(' ','_').lower() for field in dr.fieldnames]
 
-- Now one reads the next row simply by iterating on rows in a for loop,
-  where each item retrieved (here 'row') is a dictionary filled with data
-  from all the column values in the next line in the input file:
+    - Now one reads the next row simply by iterating on rows in a for loop,
+    where each item retrieved (here 'row') is a dictionary filled with data
+    from all the column values in the next line in the input file:
 
-- Example to read:
+    - Example to read:
 
-column_name = "name_of_an_interesting_column"
-for row in rows:
+    column_name = "name_of_an_interesting_column"
+    for row in rows:
     print("Intesting column=", column_name, ", value=", row[column_name])
 
-Example to write to a csv file:
--------------------------------
-dsw = Dataset(dbms='csv', open_mode='wb',
-  name='C:/users/podengo/phone2.csv')
+    Example to write to a csv file:
+    -------------------------------
+    dsw = Dataset(dbms='csv', open_mode='wb',
+    name='C:/users/podengo/phone2.csv')
 
-dw = dsw.DictWriter(column_names=["id","name","score"])
-dw.writeheader()
+    dw = dsw.DictWriter(column_names=["id","name","score"])
+    dw.writeheader()
 
-rows = [{'id':"1", 'name':"Rod",'score':'35'},
-  {'id':'2','name':"Jane",'score':'55'},
-  {'id':'61','name':"Fido",'score':'28'}]
-for row in rows:
+    rows = [{'id':"1", 'name':"Rod",'score':'35'},
+    {'id':'2','name':"Jane",'score':'55'},
+    {'id':'61','name':"Fido",'score':'28'}]
+    for row in rows:
     print("writing row=%s" % repr(row))
     dw.writerow(drow)
-del dsw,dw
+    del dsw,dw
 
         """
+    def __init__(
+        self, dbms="csv", name=None, columns=None,
+        ds_layout=None,lspec=None,  delimiter=None,
+        workbook_file=None, sheet_name=None,
+          server=None, db=None, conn=None, table=None, query=None,
+        db_context=None, db_table_spec=None, replace=None,
+        column_names=None, od_column_type=None,
+        open_mode=None, fieldnames=None,
+        encoding='utf-8',
+        lengths=None, verbosity=None):
+
         iam = inspect.stack()[0][3]
 
         self.verbosity = verbosity
         if (verbosity):
-            print("\nDataset() starting...\n")
+            print("\nline814: Dataset() starting...\n")
         dbmses=['csv','hvp','tvp','pyodbc','fixed','fixed2','excel_srcn']
         if dbms is None or dbms not in dbmses:
             raise ValueError(
@@ -1096,7 +1096,7 @@ del dsw,dw
             # Compose the 'header file name' and read the fieldnames.
             base = os.path.splitext(self.name)[0]
             header_name = base + ".hdr"
-            with open(header_name, 'rb') as fh:
+            with open(header_name, mode='r',encoding="utf-8") as fh:
                 columns_line = next(fh).decode()
 
             fieldnames = columns_line.split(self.delimiter)
@@ -1130,7 +1130,7 @@ del dsw,dw
             self.header_name = header_name
             fieldnames = []
             od_column_type = OrderedDict()
-            with open(header_name, 'rb') as fh:
+            with open(header_name, mode='r',encoding='utf-8') as fh:
                 # get one column name and type per ".cty" file line
                 for line in fh:
                     line = line.split('\n')[0]
@@ -1183,6 +1183,7 @@ del dsw,dw
               verbosity=self.verbosity)
         else:
             raise ValueError("dbms=%s is not supported" % self.dbms)
+
         # Could add check here on dr that its column names match
         # self.column_names if we require self.column_names someday for
         # init of dict readers... or perhaps
@@ -1587,7 +1588,7 @@ class FixedReader(object):
         #Create a struct-based line parser
         self.parse = struct.Struct(self.format_string).unpack_from
         # open the input file
-        self.file = open(self.name,mode='rb')
+        self.file = open(self.name,mode='r', encoding='utf-8')
 
     def __getitem__(self, index):
 
@@ -1629,7 +1630,7 @@ class FixedReader2(object):
         #Create a struct-based line parser
         self.parse = struct.Struct(self.format_string).unpack_from
         # open the input file
-        self.file = open(filename,mode='rb')
+        self.file = open(filename,mode='r',encoding='utf-8')
     def __getitem__(self, index):
 
         # Populate the dict with the file's next line of fixed column values
@@ -1874,7 +1875,7 @@ def test_tvp_tvp_001(verbosity=False):
 
     # write the column type info to .ct file
     fn_cty = tddir + "testtvp.cty"
-    with open(fn_cty,"w") as fw:
+    with open(fn_cty, mode="w", encoding="utf-8") as fw:
         for colname, coltype in testtvp_od_column_type.items():
             outline="%s\t%s\n" % (colname,coltype)
             if verbosity:
@@ -1906,7 +1907,7 @@ def test_tvp_tvp_001(verbosity=False):
     dsw = Dataset(dbms='tvp', open_mode='wb', name=fn2_tsv, verbosity=verbosity)
     data(dsr,dsw, verbosity=verbosity, rows_chunk=1)
     # Read the second dataset and make assertions.
-    with open(fn2_tsv,'rb') as fr:
+    with open(fn2_tsv,mode='r',encoding='utf-8') as fr:
         line = fr.readline()
         values = line.split('\t')
     #assert(values[3]
@@ -1922,10 +1923,10 @@ def test_pyodbc_tvp_001(verbosity=0):
     tddir = "C:/Users/podengo/testdata/tddir/"
     server='.\SQLEXPRESS'
     db='silodb'
-    dsr=Dataset(dbms='pyodbc', server=server, db=db, open_mode='rb', table='rvp_tmp_means')
+    dsr=Dataset(dbms='pyodbc', server=server, db=db, open_mode='r', table='rvp_tmp_means',encoding='utf-8')
     # Define Writable dataset
     fn2_tsv = tddir + "testpyo2tvp.tsv"
-    dsw = Dataset(dbms='tvp', open_mode='wb', name=fn2_tsv, verbosity=verbosity)
+    dsw = Dataset(dbms='tvp', open_mode='wb', name=fn2_tsv, encoding='utf-8',verbosity=verbosity)
     data(dsr,dsw, verbosity=verbosity, rows_chunk=99)
     return
 #end def
@@ -2029,12 +2030,6 @@ elif env == 2:
 
 print("Tests: Done!")
 
-# <codecell>
-
-#
-
-# <codecell>
-
 # test_datacheck.py follows..
 import unittest
 import os
@@ -2136,9 +2131,10 @@ class TestDatacheck(unittest.TestCase):
         #input datasets
         fn_input = tddir + "rescorecheck_input.csv"
         ds_input = Dataset(dbms='csv', name=fn_input, open_mode='rb')
-        #dr = ds_input.DictReader()
-        #dr2 = ds_input.DictReader()
-        #print("input fields='%s'" % repr(dr2.fieldnames))
+
+        # dr = ds_input.DictReader()
+        # dr2 = ds_input.DictReader()
+        # print("input fields='%s'" % repr(dr2.fieldnames))
         bookmaplocs_filename = (
           tddir + "OGT_SP13_Op_DataLayout_bookmapLocations.xls")
 
