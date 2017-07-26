@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
-# <nbformat>3.0</nbformat>
-
-# <codecell>
 
 # 20131007_dataset_unittests
 # snapshot of revision #453 - to create base more unit tests based on this code.
-
-# <codecell>
 
 import os
 import csv
@@ -16,7 +11,6 @@ import inspect
 # import xlwt
 from collections import OrderedDict
 #from airassessmentreporting.airutility import Joiner
-#-----
 
 # <codecell>
 
@@ -71,7 +65,7 @@ Notes
         # read in by init.
         # So, be aware that index 0 really returns the row
         # labeled as 'row 2' of this type of excel spreadsheet.
-        #print "SheetReader: getitem: index=%d, nrows=%d" % (index, self.sheet.nrows)
+        #print"SheetReader: getitem: index=%d, nrows=%d" % (index, self.sheet.nrows)
         if index >= self.sheet.nrows -1  or index < 0:
             raise IndexError
         for idx_col, key in enumerate(self.odict):
@@ -173,7 +167,7 @@ class PyodbcReader(object):
             raise ValueError("Parameter cursor is None")
 
         if verbosity:
-            print ("%s: Got table='%s',\n\tquery='%s'" % (iam,table,query))
+            print("%s: Got table='%s',\n\tquery='%s'" % (iam,table,query))
         # Also make member fieldnames[] semi-compatible with csv DictReader.
         # User may provide them but they should be of equal number as the
         # columns in a result row.
@@ -201,7 +195,7 @@ class PyodbcReader(object):
             # given, so use all its database-stored column names.
             # Todo: may get this from new od_column_type sometimes
             for col in self.cursor.columns(table=table):
-                # print "PyodbcReader: table column='%s'" % col.column_name
+                # print("PyodbcReader: table column='%s'" % col.column_name)
                 self.fieldnames.append(col.column_name)
         for column_name in self.fieldnames:
             self.odict[column_name] = ""
@@ -224,7 +218,7 @@ class PyodbcReader(object):
         Populate the result dict with the result's next row of column values
         (stripped) and return the result dict 'row'.
         """
-        #print "PyodbcReader: getitem: index=%d, nrows=%d" % (index, self.sheet.nrows)
+        #print("PyodbcReader: getitem: index=%d, nrows=%d" % (index, self.sheet.nrows))
         row = self.cursor.fetchone()
         if row is None:
             raise IndexError
@@ -415,7 +409,7 @@ default_column_spec: string (Optional)
             "create table %s ( %s )" % (self.table_name, column_specs))
         self.sql_create = sql_create
         if self.verbosity:
-            print ("sql_create='%s'" % sql_create)
+            print("sql_create='%s'" % sql_create)
 
         self.cursor = self.conn.cursor()
         # Create the table.
@@ -445,7 +439,7 @@ default_column_spec: string (Optional)
           " insert into %s(%s) values " %
           (self.table_name, columns_string)
           )
-        #print ("insert_sql= '%s'" % self.insert_sql)
+        #print("insert_sql= '%s'" % self.insert_sql)
 
     def writeheader(self, column_names=None):
         # No header action needed because __init__() already created the table, but
@@ -479,7 +473,7 @@ row_columns: list
         elif row is not None:
             # Must use order in self.column_names
             row_columns = [ row[x] for x in self.column_names]
-            # print "row_columns='%s'" % repr(row_columns)
+            # print("row_columns='%s'" % repr(row_columns))
             self.cursor.execute(self.insert_sql, *row_columns)
         else:
             raise ValueError(
@@ -516,7 +510,7 @@ def hvp_writeheader( self ):
     dsw = self.dsw
     columns_line = dsw.delimiter.join(self.fieldnames)
     if self.verbosity and self.verbosity is not None:
-        print ("hvp_writeheader:header_name=%s, Columns='%s'"
+        print("hvp_writeheader:header_name=%s, Columns='%s'"
            % (dsw.header_name,repr(columns_line)))
 
     with open(self.dsw.header_name, 'wb') as fh:
@@ -538,7 +532,7 @@ def tvp_writeheader( self ):
     dsw = self.dsw
 
     if self.verbosity and self.verbosity is not None:
-        print ("tvp_writeheader:header_name=%s, fieldnames='%s'"
+        print("tvp_writeheader:header_name=%s, fieldnames='%s'"
            % (dsw.header_name, repr(self.fieldnames)))
     # fieldnames is authoritative ordered list of colnames
     # because in future od_column_type will not be required to have
@@ -642,7 +636,7 @@ server : String
 db : String
 -----------
     -- Database to connect to.
-    -- Examples: db="testdb", db="ScoreReportingTestData"
+    -- Examples: db="silodb", db="ScoreReportingTestData"
 
 conn: Pyodbc connection
 -----------------------
@@ -694,7 +688,7 @@ server : String
 db : String
 -----------
     -- Database to connect to.
-    -- Examples: db="testdb", db="ScoreReportingTestData"
+    -- Examples: db="silodb", db="ScoreReportingTestData"
 
 table : String
 --------------
@@ -794,12 +788,12 @@ rows = dsr.dict_reader()
 
 column_name = "name_of_an_interesting_column"
 for row in rows:
-    print "Intesting column=", column_name, ", value=", row[column_name]
+    print("Intesting column=", column_name, ", value=", row[column_name])
 
 Example to write to a csv file:
 -------------------------------
 dsw = Dataset(dbms='csv', open_mode='wb',
-  name='C:/users/temp_rphillips/phone2.csv')
+  name='C:/users/podengo/phone2.csv')
 
 dw = dsw.DictWriter(column_names=["id","name","score"])
 dw.writeheader()
@@ -808,7 +802,7 @@ rows = [{'id':"1", 'name':"Rod",'score':'35'},
   {'id':'2','name':"Jane",'score':'55'},
   {'id':'61','name':"Fido",'score':'28'}]
 for row in rows:
-    print "writing row=%s" % repr(row)
+    print("writing row=%s" % repr(row))
     dw.writerow(drow)
 del dsw,dw
 
@@ -817,7 +811,7 @@ del dsw,dw
 
         self.verbosity = verbosity
         if (verbosity):
-            print "\nDataset() starting...\n"
+            print("\nDataset() starting...\n")
         dbmses=['csv','hvp','tvp','pyodbc','fixed','fixed2','excel_srcn']
         if dbms is None or dbms not in dbmses:
             raise ValueError(
@@ -890,7 +884,7 @@ del dsw,dw
                       "When query is given, column_names or "
                       "od_column_type must be given.")
             if verbosity:
-                print ("Dataset(): pyodbc parameters are ok" )
+                print("Dataset(): pyodbc parameters are ok" )
 
             if conn is not None:
                 # We should have an extant connection
@@ -1147,7 +1141,7 @@ del dsw,dw
             # Promote the column type info to the Dataset
             self.od_column_type = od_column_type
             if self.verbosity:
-                print ("%s:dbms=%s,od_column_type=%s,fieldnames=%s"
+                print("%s:dbms=%s,od_column_type=%s,fieldnames=%s"
                 % (iam,self.dbms,repr(od_column_type),repr(fieldnames)))
 
             # The header column names were read from the header_name
@@ -1256,7 +1250,7 @@ del dsw,dw
         verbosity = (
           verbosity if verbosity is not None else self.verbosity)
         if verbosity:
-            print ("%s: dsw (self) =%s" % (iam, repr(self)) )
+            print("%s: dsw (self) =%s" % (iam, repr(self)) )
         if self.open_mode != 'wb':
             raise ValueError(
               "%s: Dataset name=%s, mode is '%s', cannot write it."
@@ -1324,11 +1318,11 @@ del dsw,dw
             self.od_column_type = od_column_type
 
             if verbosity:
-                print ("%s: dbms='%s', using column_names='%s'"
+                print("%s: dbms='%s', using column_names='%s'"
                     % (iam, self.dbms, repr(self.column_names)))
                 print("%s: using od_column_type='%s'"
                        % (iam, repr(self.od_column_type)))
-                print ("%s: using csvfile='%s'" % (iam,repr(self.csvfile)))
+                print("%s: using csvfile='%s'" % (iam,repr(self.csvfile)))
 
             # May insert 'normalizing loop' for all column names here,
             # as done by DictReader, if need arises. For now, caller can
@@ -1357,9 +1351,9 @@ del dsw,dw
                 dw.writeheader = types.MethodType(tvp_writeheader, dw)
 
             if verbosity and self.dbms in ['hvp','tvp']:
-                print ("%s: dbms='%s', set header_name=%s"
+                print("%s: dbms='%s', set header_name=%s"
                     % (iam, self.dbms, self.header_name))
-                print (
+                print(
                     "%s:csv dict writer: column_names='%s'"
                     % (iam,repr(column_names)))
         # end block: if self.dbms in ('csv','hvp',tvp')
@@ -1451,18 +1445,18 @@ def data(dsr=None, dsw=None, id_new_name=None, dict_col_name=None
     if dsr is None or dsw is None:
         raise ValueError("Both dsr and dsw keyword params must be set")
     if verbosity:
-        print "data(): dsr=%s, dsw=%s" % (repr(dsr), repr(dsw))
+        print("data(): dsr=%s, dsw=%s" % (repr(dsr), repr(dsw)))
     reader = dsr.DictReader()
 
     # If dsr has odFirst set od_column_type to that from dsr, if it has that
     if hasattr(reader, 'od_column_type') and reader.od_column_type is not None:
         output_od_column_type = reader.od_column_type
         if verbosity:
-            print ("data(): reader has od_column_type")
+            print("data(): reader has od_column_type")
         # Augment the dict with info from any argument od_column_type
         if od_column_type is not None:
             if verbosity:
-                print ("data(): But using param od_column_type")
+                print("data(): But using param od_column_type")
 
             #Future: augment output_od_column_type here with
             # info in parameter od_column_type.
@@ -1473,7 +1467,7 @@ def data(dsr=None, dsw=None, id_new_name=None, dict_col_name=None
 
     # convey the input column types, possibly revised, to output.
     if verbosity:
-        print ("data(): using od_column_type=%s" % repr(output_od_column_type ))
+        print("data(): using od_column_type=%s" % repr(output_od_column_type ))
     dsw.od_column_type = output_od_column_type
     if rows_chunk is None:
         rows_chunk = 500
@@ -1484,7 +1478,7 @@ def data(dsr=None, dsw=None, id_new_name=None, dict_col_name=None
     # Use column_names from the reader
     out_column_names.extend(reader.fieldnames)
     if verbosity:
-        print ("data(): out_column_names='%s'"
+        print("data(): out_column_names='%s'"
            % repr(out_column_names))
     if dict_col_name is not None:
         # rename given output column names
@@ -1513,10 +1507,10 @@ def data(dsr=None, dsw=None, id_new_name=None, dict_col_name=None
             # Read-write loop.
             for idx, row in enumerate(reader, start=1):
                 #if (idx < 10):
-                #   print ("data1: writerow idx=%d, row_columns='%s'"
+                #   print("data1: writerow idx=%d, row_columns='%s'"
                 #   % (idx, repr(row.itervalues())))
                 if verbosity and (idx % rows_chunk == 0):
-                    print "l1:Outputted row %d" % idx
+                    print("l1:Outputted row {}".format(idx))
 
                 out_column_values=[]
                 out_column_values.extend([ row[x] for x in reader.fieldnames])
@@ -1527,13 +1521,13 @@ def data(dsr=None, dsw=None, id_new_name=None, dict_col_name=None
             for idx, row in enumerate(reader, start=1):
                 # Writer expects a dict to output so we must populate it.
                 if verbosity and idx % rows_chunk == 0:
-                    print "l2:Outputted row %d" % idx
+                    print("l2:Outputted row %d" % idx)
 
                 orow = OrderedDict()
                 orow = zip(
                   out_column_names, [row[x] for x in reader.fieldnames])
                 if verbosity:
-                    print ("data7: writerow idx=%d, row='%s'" % (idx, repr(orow)))
+                    print("data7: writerow idx=%d, row='%s'" % (idx, repr(orow)))
                 writer.writerow(orow)
 
     elif id_new_name is not None:
@@ -1541,16 +1535,16 @@ def data(dsr=None, dsw=None, id_new_name=None, dict_col_name=None
         # Read-write loop: also add a simple id column to output
         for idx, row in enumerate(reader, start=1):
             if verbosity and idx % rows_chunk == 0:
-                print "l3:Outputted row %d" % idx
+                print("l3:Outputted row %d" % idx)
             orow = row.copy()
             orow[id_new_name] = repr(idx)
-            #print ("data3: writerow idx=%d, row='%s'" % (idx, repr(orow)))
+            #print("data3: writerow idx=%d, row='%s'" % (idx, repr(orow)))
             writer.writerow(orow)
     elif unsafecopy:
         writer.copyreader_unsafe(reader)
     else:
         for row in reader:
-            #print ("data2: writerow idx=%d, row='%s'" % (idx, repr(row)))
+            #print("data2: writerow idx=%d, row='%s'" % (idx, repr(row)))
             writer.writerow(row)
 
     # close the underlying files
@@ -1609,7 +1603,7 @@ class FixedReader(object):
         # Populate dict of column_name:values from row.
         # All data values are normalized to stripped string.
         for key,val in zip(self.odict.iterkeys(), fields):
-            #print ("Got row: key='%s', val='%s'" % (key,val.strip()))
+            #print("Got row: key='%s', val='%s'" % (key,val.strip()))
             self.odict[key] = val.strip()
         return self.odict
 
@@ -1651,7 +1645,7 @@ class FixedReader2(object):
         # All data values are normalized to stripped string.
 
         for key,val in zip(self.odict.iterkeys(), fields):
-            #print ("Got row: key='%s', val='%s'" % (key,val.strip()))
+            #print("Got row: key='%s', val='%s'" % (key,val.strip()))
             self.odict[key] = val.strip()
         return self.odict
 
@@ -1731,7 +1725,7 @@ columns: list of strings
             delim = ", "
 
         sql_create = "create  table %s ( %s )" % (table_name, column_specs)
-        #print ("sql_create = '%s'" % sql_create)
+        #print("sql_create = '%s'" % sql_create)
 
         self.cursor = self.conn.cursor()
 
@@ -1753,7 +1747,7 @@ columns: list of strings
           "insert into %s(%s) values (%s)" %
           (table_name, columns_string, qmarks)
           )
-        # print ("insert_sql= '%s'" % self.insert_sql)
+        # print("insert_sql= '%s'" % self.insert_sql)
 
     def writerow(self, row=None, row_columns=None):
 
@@ -1787,7 +1781,7 @@ columns: list of strings
             for idx,(key,val) in enumerate(row.iteritems()):
                 self.odict[key] = val;
             row_columns = [val for key,val in self.odict.iteritems()]
-            # print "row_columns='%s'" % repr(row_columns)
+            # print("row_columns='%s'" % repr(row_columns))
             self.cursor.execute(self.insert_sql, *row_columns)
         else:
             raise ValueError("Either row or dict_row must be given")
@@ -1805,20 +1799,20 @@ if  __name__ == "__main__" and 1 == 2:
     # local temporary testing area...
     #
 
-    print "Testing fixed reads..."
-    ddir='C:/users/temp_rphillips/'
+    print("Testing fixed reads...")
+    ddir='C:/users/podengo/'
     ds_layout = Dataset(name=ddir+'layout.csv', open_mode='rb')
     ds_fixed = Dataset(dbms='fixed',ds_layout=ds_layout, open_mode='rb',
         name=ddir+'fixed.txt')
     dr = ds_fixed.DictReader()
     for row in dr:
-        print "row = %s" % repr(row)
+        print("row = %s" % repr(row))
 
-    #print "Testing dict_col_name substitutions"
+    #print"Testing dict_col_name substitutions"
     import os
     #from airassessmentreporting.datacheck.dataset import *
-    server='DC1PHILLIPSR\SQLEXPRESS'
-    db='testdb'
+    server='.\SQLEXPRESS'
+    db='silodb'
     home = os.path.expanduser("~")+ os.sep
     tddir = home+"testdata/intake_local/"
     fnr_intake_layout = tddir + 'OGT_SP12_Op_DataLayout_IntakeLayout_local.xls'
@@ -1846,11 +1840,11 @@ def test_pyodbc_tvp_002(verbosity=0):
     """
     iam = inspect.stack()[0][3]
     if verbosity:
-        print ("%s: Starting" % iam)
+        print("%s: Starting" % iam)
     server='38.118.83.61'
     db='Python_OGT_12SU'
     table='rc1FINAL_cmrg'
-    tddir = "C:/Users/temp_rphillips/testdata/tddir/"
+    tddir = "C:/Users/podengo/testdata/tddir/"
     dsr=Dataset(dbms='pyodbc', server=server, db=db, open_mode='rb', table=table,
         verbosity=verbosity)
     # Define Writable dataset
@@ -1864,8 +1858,10 @@ def test_tvp_tvp_001(verbosity=False):
     """Takes 2 seconds
     """
     iam = inspect.stack()[0][3]
-    tddir = "C:/Users/temp_rphillips/testdata/tddir/"
-    tddir = "/home/rvp/testdata/dataset"
+    tddir = "C:/Users/podengo/testdata/tddir/"
+    os.makedirs(tddir, exist_ok=True)
+    # tddir = "/home/rvp/testdata/dataset/"
+
 
     # Ordered test column-names with data-types
     tups_col_type = (
@@ -1878,7 +1874,7 @@ def test_tvp_tvp_001(verbosity=False):
 
     # write the column type info to .ct file
     fn_cty = tddir + "testtvp.cty"
-    with open(fn_cty,"wb") as fw:
+    with open(fn_cty,"w") as fw:
         for colname, coltype in testtvp_od_column_type.items():
             outline="%s\t%s\n" % (colname,coltype)
             if verbosity:
@@ -1892,7 +1888,7 @@ def test_tvp_tvp_001(verbosity=False):
         ["50","HI", "Hawaii", "82.732"]
         ]
     fn_tsv = tddir + "testtvp.tsv"
-    with open (fn_tsv, 'wb') as fw:
+    with open (fn_tsv, 'w') as fw:
         for row in testrows:
             delim=""
             outline=""
@@ -1922,10 +1918,10 @@ def test_pyodbc_tvp_001(verbosity=0):
     """
     iam = inspect.stack()[0][3]
     if verbosity:
-        print ("%s: Starting" % iam)
-    tddir = "C:/Users/temp_rphillips/testdata/tddir/"
-    server='DC1PHILLIPSR\SQLEXPRESS'
-    db='testdb'
+        print("{}: Starting".format(iam))
+    tddir = "C:/Users/podengo/testdata/tddir/"
+    server='.\SQLEXPRESS'
+    db='silodb'
     dsr=Dataset(dbms='pyodbc', server=server, db=db, open_mode='rb', table='rvp_tmp_means')
     # Define Writable dataset
     fn2_tsv = tddir + "testpyo2tvp.tsv"
@@ -1939,10 +1935,10 @@ def test_tvp_pyodbc_001(verbosity=0):
     """
     iam = inspect.stack()[0][3]
     if verbosity:
-        print ("%s: Starting" % iam)
-    tddir = "C:/Users/temp_rphillips/testdata/tddir/"
-    server='DC1PHILLIPSR\SQLEXPRESS'
-    db='testdb'
+        print("{}: Starting".format(iam))
+    tddir = "C:/Users/podengo/testdata/tddir/"
+    server='.\SQLEXPRESS'
+    db='silodb'
     fn2_tsv = tddir + "testpyo2tvp.tsv"
     dsr=Dataset(dbms='tvp',  open_mode='rb', name=fn2_tsv)
     # Define Writable dataset
@@ -1962,12 +1958,12 @@ def test_csv_pyodbc_001(verbosity=False):
     from collections import OrderedDict
     iam = inspect.stack()[0][3]
     if verbosity:
-        print ("%s: Starting" % iam)
-    server="DC1PHILLIPSR\SQLEXPRESS"
-    database='testdb'
-    namer = "C:/users/temp_rphillips/testdata/means_test_read.csv"
+        print("%s: Starting" % iam)
+    server=".\SQLEXPRESS"
+    database='silodb'
+    namer = "C:/users/podengo/testdata/means_test_read.csv"
     dsr = Dataset(open_mode='rb', dbms='csv', name=namer)
-    print "dsr=%s" % (dsr)
+    print("dsr=%s" % (dsr))
     dsw = Dataset(open_mode='wb', dbms='pyodbc', table="rvp_tmp_means"
                   ,server=server,db=database,replace=True )
     data(dsr=dsr, dsw=dsw
@@ -1976,7 +1972,7 @@ def test_csv_pyodbc_001(verbosity=False):
          , od_column_type=OrderedDict({"item_id":"int not null", "robo_score":"float" })
         )
     if verbosity:
-        print ("%s: Done." % iam)
+        print("%s: Done." % iam)
     return
 #end def test_csv_pyodbc_001
 
@@ -1985,12 +1981,12 @@ def test_pyodbc_tsv_write_002(verbosity=0):
     """
     iam = inspect.stack()[0][3]
     if verbosity:
-        print ("%s: Starting" % iam)
-    server="DC1PHILLIPSR\SQLEXPRESS"
-    database='testdb'
+        print("%s: Starting" % iam)
+    server=".\SQLEXPRESS"
+    database='silodb'
     dsr=Dataset(open_mode='rb', dbms='pyodbc', table="rvp_tmp_means"
                   ,server=server,db=database,replace=True )
-    namew = "C:/users/temp_rphillips/testdata/test_write.tsv"
+    namew = "C:/users/podengo/testdata/test_write.tsv"
     #dr = dsr.DictReader()
     dsw=Dataset(open_mode='wb', dbms='tvp', name=namew
                 # , od_column_type=dr.od_column_type
@@ -1998,7 +1994,7 @@ def test_pyodbc_tsv_write_002(verbosity=0):
     dr = dsr.DictReader()
     for k,v  in dr.od_column_type.items():
      if verbosity:
-        print ("test: key='%s',val='%s'" % (k,v))
+        print("test: key='%s',val='%s'" % (k,v))
     data(dsr=dsr, dsw=dsw)
     del dsw
     #now write to pyodbc table
@@ -2010,7 +2006,7 @@ def test_pyodbc_tsv_write_002(verbosity=0):
                   ,replace=True )
     data(dsr=dsr, dsw=dsw)
     if verbosity:
-        print ("%s: Done." % iam)
+        print("%s: Done." % iam)
     return
 #end def
 
@@ -2020,7 +2016,7 @@ env = 2
 if (env == 1):
     v = 1
     if v == 1:
-        print ("Invoking TESTS...")
+        print("Invoking TESTS...")
     test_pyodbc_tvp_002(verbosity=v)
     test_tvp_tvp_001(verbosity=v)
     test_pyodbc_tvp_001(verbosity=v)
@@ -2031,7 +2027,7 @@ elif env == 2:
     v = 1
     test_tvp_tvp_001(verbosity=v)
 
-print "Tests: Done!"
+print("Tests: Done!")
 
 # <codecell>
 
@@ -2142,7 +2138,7 @@ class TestDatacheck(unittest.TestCase):
         ds_input = Dataset(dbms='csv', name=fn_input, open_mode='rb')
         #dr = ds_input.DictReader()
         #dr2 = ds_input.DictReader()
-        #print "input fields='%s'" % repr(dr2.fieldnames)
+        #print("input fields='%s'" % repr(dr2.fieldnames))
         bookmaplocs_filename = (
           tddir + "OGT_SP13_Op_DataLayout_bookmapLocations.xls")
 
@@ -2206,13 +2202,13 @@ class TestDatacheck(unittest.TestCase):
         fn_sumcheck_report2 = tddir + "sumcheck_report2.csv"
         ds_sumcheck_report2 = Dataset(name=fn_sumcheck_report2, open_mode='wb')
 
-        print "Using ds_standards = '%s'" % repr(ds_standards)
-        print "Using ds_raw_scores = '%s'" % repr(ds_raw_scores)
-        print "Using ds_out = '%s'" % repr(ds_out)
-        print "Using ds_report2= '%s'" % repr(ds_report2)
+        print("Using ds_standards = '%s'" % repr(ds_standards))
+        print("Using ds_raw_scores = '%s'" % repr(ds_raw_scores))
+        print("Using ds_out = '%s'" % repr(ds_out))
+        print("Using ds_report2= '%s'" % repr(ds_report2))
         dict_loc_subs = {r'&ctpath.\\': tddir}
-        print "Using dict_loc_subs= '%s'" % repr(dict_loc_subs)
-        print "Calling raw_converter(...)"
+        print("Using dict_loc_subs= '%s'" % repr(dict_loc_subs))
+        print("Calling raw_converter(...)")
         #
         dcc.raw_converter(
           grade='10', subject="Math",
@@ -2239,19 +2235,19 @@ class TestDatacheck(unittest.TestCase):
           "PythonUnitTestData/"
           "data_copier/")
 
-        print "\ntest_data_001: Starting: Assigning datasets for first run of data()"
+        print("\ntest_data_001: Starting: Assigning datasets for first run of data()")
         dsr=Dataset(open_mode='rb', name=tdd+"students_time0.csv")
         dsw=Dataset(open_mode='wb', name=tdd+"students_data2.csv")
 
-        print "Run 1 of data() to copy from csv to csv"
+        print("Run 1 of data() to copy from csv to csv")
 
         column_names = data(dsr,dsw)
-        print "Done run 1."
+        print("Done run 1.")
 
         # Write new csv file to table tmptable1
-        #server = 'DC1PHILLIPSR\SQLEXPRESS'
-        #database = 'testdb'
-        print "Assigning datasets for run 2 of data()"
+        #server = '.\SQLEXPRESS'
+        #database = 'silodb'
+        print("Assigning datasets for run 2 of data()")
 
         server = "38.118.83.61"
         database = 'ScoreReportingTestData'
@@ -2261,18 +2257,18 @@ class TestDatacheck(unittest.TestCase):
         dsw = Dataset(dbms='pyodbc', table='tmp_data_test1', replace=True, columns=column_names,
           server=server, db=database, open_mode='wb')
 
-        print "Run 2 of data() to copy from csv to pyodbc table 'tmp_data_test1'"
+        print("Run 2 of data() to copy from csv to pyodbc table 'tmp_data_test1'")
         data(dsr,dsw)
-        print "Done run 2."
+        print("Done run 2.")
 
-        print "Assigning datasets for run 3 of data()"
+        print("Assigning datasets for run 3 of data()")
 
         dsr = Dataset(dbms='pyodbc', table='tmp_data_test1',
           server=server, db=database, open_mode='rb')
         fn_data3 = tdd+"students_data3.csv"
         dsw = Dataset(name=fn_data3, open_mode='wb')
 
-        print "Run 3 of data() to copy from pyodbc table to csv"
+        print("Run 3 of data() to copy from pyodbc table to csv")
 
         data(dsr,dsw)
 
@@ -2286,7 +2282,7 @@ class TestDatacheck(unittest.TestCase):
           nl, 14339, "Lines in students_data3.csv is %d, not 14339" % nl)
 
 
-        print "Done run 3. All done testing test_data_001().\n"
+        print("Done run 3. All done testing test_data_001().\n")
         return
     def test_rvp_001(self):
         tdd = (
@@ -2300,15 +2296,15 @@ class TestDatacheck(unittest.TestCase):
         dsr=Dataset(open_mode='rb', name=tdd+"students_time0.csv")
         dsw=Dataset(open_mode='wb', name=tdd+"students_data2.csv")
 
-        print "Run 1 of data() to copy from csv to csv"
+        print("Run 1 of data() to copy from csv to csv")
 
         column_names = data(dsr,dsw)
-        print "Done run 1."
+        print("Done run 1.")
 
         # Write new csv file to table tmptable1
-        #server = 'DC1PHILLIPSR\SQLEXPRESS'
-        #database = 'testdb'
-        print "Assigning datasets for run 2 of data()"
+        #server = '.\SQLEXPRESS'
+        #database = 'silodb'
+        print("Assigning datasets for run 2 of data()")
 
         server = "38.118.83.61"
         database = 'ScoreReportingTestData'
@@ -2318,18 +2314,18 @@ class TestDatacheck(unittest.TestCase):
         dsw = Dataset(dbms='pyodbc', table='tmp_data_test1', replace=True, columns=column_names,
           server=server, db=database, open_mode='wb')
 
-        print "Run 2 of data() to copy from csv to pyodbc table 'tmp_data_test1'"
+        print("Run 2 of data() to copy from csv to pyodbc table 'tmp_data_test1'")
         data(dsr,dsw)
-        print "Done run 2."
+        print("Done run 2.")
 
-        print "Assigning datasets for run 3 of data()"
+        print("Assigning datasets for run 3 of data()")
 
         dsr = Dataset(dbms='pyodbc', table='tmp_data_test1',
           server=server, db=database, open_mode='rb')
         fn_data3 = tdd+"students_data3.csv"
         dsw = Dataset(name=fn_data3, open_mode='wb')
 
-        print "Run 3 of data() to copy from pyodbc table to csv"
+        print("Run 3 of data() to copy from pyodbc table to csv")
 
         data(dsr,dsw)
 
@@ -2343,7 +2339,7 @@ class TestDatacheck(unittest.TestCase):
           nl, 14339, "Lines in students_data3.csv is %d, not 14339" % nl)
 
 
-        print "Done run 3. All done testing test_data_001().\n"
+        print("Done run 3. All done testing test_data_001().\n")
         return
 
 
