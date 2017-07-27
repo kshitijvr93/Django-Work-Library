@@ -265,7 +265,9 @@ class PyodbcReader(object):
 #end class PyodbcReader()
 
 
-        """
+"""
+class PyodbcWriter():
+
 Create a table with pyodbc and return a duck-instance of a DictWriter for it.
 
 Consider: rather than here, create the table in Dataset's __init__ and allow
@@ -274,7 +276,8 @@ in parallel to insert their own rows into the table.
 
 Along the same lines, but independent issue; consider allowing an option to
 specify appending to an extant table.
-For example, copy the SAS param name "replace", and if 1 then create else
+
+For example, add a parameter ('append=0'), and if 0 then create else
 assume table exists for appending...
 
 Parameters:
@@ -301,7 +304,7 @@ column_names: list of column_name strings
 ------------------------------------------
     -- (to be deprecated. Use default_column_spec instead.)
     -- the size of the nvarchar field for each column
-    -- default is 128
+    -- default is 3456
 
 od_column_type: OrderedDict() (Optional)
 ------------------------------
@@ -311,13 +314,14 @@ od_column_type: OrderedDict() (Optional)
   the authoritative list of column names, and
   each key in this dict must exist in the list of
   parameter column names.
+
 - The writer will create a table with default spec for each column from parameter
   column_names that is not in dict od_column_type, and use the spec
   in this dict for column names that are found in it.
 
 default_column_spec: string (Optional)
 
-- Defaults to 'nvarchar(128)'
+- Defaults to 'nvarchar(3456)'
 - Provides the default column spec to use with columns for a database-based dataset.
 - This spec value is overridden for columns named in parameter od_column_type.
 - Examples: "int", "float", "int not null"
@@ -328,7 +332,7 @@ class PyodbcWriter(object):
         column_names=None, default_column_spec=None,
         od_column_type=None,
         replace=None,
-        nvarchar_fixed_size=128,
+        nvarchar_fixed_size=3456,
         verbosity=None):
 
         self.conn = conn
@@ -343,7 +347,7 @@ class PyodbcWriter(object):
         self.replace = False if replace is None else replace
 
         self.nvarchar_fixed_size = (
-          128 if nvarchar_fixed_size is None else nvarchar_fixed_size)
+          3456 if nvarchar_fixed_size is None else nvarchar_fixed_size)
 
         if column_names is None and od_column_type is None:
             raise ValueError(
@@ -365,8 +369,8 @@ class PyodbcWriter(object):
             # exact same storage for most fields, so use 7999 here.
             # Update: use 3999 or fewer. (1)  try 3999 because SQL
             # local server is SQL Express, max is 4000. No, It seems slow.
-            # (2) Stick with 128. Caller can override it anyway.
-            self.default_column_spec = "nvarchar(128)"
+            # (2) Stick with 3456. Caller can override it anyway.
+            self.default_column_spec = "nvarchar(3456)"
         else:
             self.default_column_spec = default_column_spec
         # Maybe remove this self.fieldnames member...? it is set by dr, but
@@ -394,20 +398,26 @@ class PyodbcWriter(object):
         delim = ""
 
         for cn in self.column_names:
-            if self.od_column_type.get(cn, None) is None:
+            spec = self.od_column_type.get(cn, None)
+            if spec is None or spec == '':
                 spec = self.default_column_spec
             else:
                 spec = self.od_column_type[cn]
-            cs = "%s%s %s" % (delim, cn, spec)
+            #cs = "%s%s %s" % (delim, cn, spec)
+            cs = "{}{} {}".format(delim, cn, spec)
             column_specs += cs
             columns_string += delim + cn
             qmarks +=  delim + "?"
             delim = ", "
+            print("cn={},spec={},delim={}".format(cn,spec,delim))
+
         sql_create = (
             "create table %s ( %s )" % (self.table_name, column_specs))
+        sql_create = (
+            "create table {} ( {} )".format(self.table_name, column_specs))
         self.sql_create = sql_create
         if self.verbosity:
-            print("sql_create='%s'" % sql_create)
+            print("415:sql_create='%s'" % sql_create)
 
         self.cursor = self.conn.cursor()
         # Create the table.
@@ -548,7 +558,6 @@ def tvp_writeheader( self ):
             fh.write(line)
 
 # end  def tvp_writeheader()
-
 
 """
     Dataset def _init_(): Create Dataset object and validate parameters and interactions.
@@ -700,8 +709,8 @@ def tvp_writeheader( self ):
     -- Parameter column_names or od_column_type, but not both, must be given.
     -- Key is column name and value 'spec' is a pyodbc destination database
        server's column type.
-       Eg, SQL Server may be integer, float, nvarchar(128), etc.
-    -- Ex: { "id":"integer", "name":"nvarchar(128)", "score":"float" }
+       Eg, SQL Server may be integer, float, nvarchar(3456), etc.
+    -- Ex: { "id":"integer", "name":"nvarchar(3456)", "score":"float" }
 
     Where dbms='fts' and open_mode='w':(Under construction)
     --------------------------------------------------------
@@ -1264,7 +1273,7 @@ class Dataset(object):
             replace = (
               self.replace if self.replace is not None else False)
         if default_column_spec is None:
-            default_column_spec = 'nvarchar(128)'
+            default_column_spec = 'nvarchar(3456)'
 
         csv_dbmses = ('csv', 'hvp', 'tvp')
 
@@ -1421,7 +1430,7 @@ def data(dsr=None, dsw=None, id_new_name=None, dict_col_name=None
     od_column_type: dict
     --------------------
     -- dictionary of output column name keys, and value is a spec (eg, integer,
-       nvarchar(128), etc) to use (by a dbms style that supports sql table
+       nvarchar(3456), etc) to use (by a dbms style that supports sql table
        creation: eg, pyodbc, maybe others) to create that column in the
        output dataset.
     -- If parameter dict_col_name is used, the 'new name' should be a key here,
@@ -1666,7 +1675,7 @@ class FastTableStreamWriter(object):
     def __init__(self,
       conn=None, cursor=None, table_name=None, columns=None,
       replace=None,
-      nvarchar_fixed_size=128):
+      nvarchar_fixed_size=3456):
         """
 NOTE::: not ready for primetime... Code is just pushed here so it does not get
 lost in case an effort to pick up this work direction is undertaken.
@@ -1713,7 +1722,7 @@ columns: list of strings
         self.fieldnames = columns
         replace = False if replace is None else replace
         self.nvarchar_fixed_size = (
-          128 if nvarchar_fixed_size is None else nvarchar_fixed_size)
+          3456 if nvarchar_fixed_size is None else nvarchar_fixed_size)
 
         # create a new table with the given column names of generic string type.
         column_specs = ""
@@ -1728,7 +1737,7 @@ columns: list of strings
             delim = ", "
 
         sql_create = "create  table %s ( %s )" % (table_name, column_specs)
-        #print("sql_create = '%s'" % sql_create)
+        print("1734:sql_create = '%s'" % sql_create)
 
         self.cursor = self.conn.cursor()
 
