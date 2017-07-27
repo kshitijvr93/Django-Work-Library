@@ -19,29 +19,31 @@ class SheetDictReader(object):
     Create and return a csv.DictReader style of iterable to read an excel sheet.
     """
 
-    def __init__(self, sheet=None,nskip=0):
-        """
+    """
+    method __init__:
         Create and return a csv.DictReader style of iterable to read an excel
-        sheet.
 
-Extended Summary
-================
-Create and return a csv.DictReader style of iterable to read an excel sheet, where the
-column names are in row1 of the sheet, and where the sheet object is returned by xlrd
-method workbook.get_sheet_by_name() or workbook.get_sheet_by_index.
+    sheet.
 
-Params
-======
-sheet: sheet object ala package xlrd
-This is the excel worksheet to read.
+    Extended Summary
+    ================
+    Create and return a csv.DictReader style of iterable to read an excel sheet, where the
+    column names are in row1 of the sheet, and where the sheet object is returned by xlrd
+    method workbook.get_sheet_by_name() or workbook.get_sheet_by_index.
 
-nskip: integer
-Integer number of initial sheet rows to skip, afterwhich is a row of column names,
-after which are all of the data rows.
+    Params
+    ======
+    sheet: sheet object ala package xlrd
+    This is the excel worksheet to read.
 
-Notes
-======
-        """
+    nskip: integer
+    Integer number of initial sheet rows to skip, afterwhich is a row of column names,
+    after which are all of the data rows.
+
+    Notes
+    ======
+    """
+    def __init__(self, sheet=None,nskip=0):
         if sheet is None:
             # Future, maybe default to sheet 0 if no name, but error for now.
             raise ValueError("sheet is None")
@@ -548,6 +550,8 @@ def tvp_writeheader( self ):
 class Dataset(object):
 
     """
+    method: __init__ (Dataset())
+
     Create Dataset object and validate parameters and interactions.
 
     Extended Summary:
@@ -2023,7 +2027,7 @@ elif env == 2:
     # test_tvp_tvp_001(verbosity=v)
     pass
 
-print("Tests: Done!")
+#print("Tests: Done!")
 
 # test_datacheck.py follows..
 import unittest
@@ -2343,5 +2347,7 @@ class TestDatacheck(unittest.TestCase):
         print("Done run 3. All done testing test_data_001().\n")
         return
 
+        '''
 if __name__ == '__main__':
     unittest.main()
+    '''
