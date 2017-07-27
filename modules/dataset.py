@@ -1,28 +1,24 @@
 # -*- coding: utf-8 -*-
 
-# 20131007_dataset_unittests
-# snapshot of revision #453 - to create base more unit tests based on this code.
-
 import os
 import csv
 import pyodbc
 import xlrd
 import inspect
-# import xlwt
+import xlwt
 from collections import OrderedDict
-#from airassessmentreporting.airutility import Joiner
 
-# <codecell>
+"""
+    class SheetDictReader(object):
+        Create and return a csv.DictReader style of iterable to read an excel sheet.
+"""
 
 class SheetDictReader(object):
-    """
-    Create and return a csv.DictReader style of iterable to read an excel sheet.
-    """
 
     """
-    method __init__:
-        Create and return a csv.DictReader style of iterable to read an excel
+    class SheetDictReader, constructor method def __init__ ():
 
+    Create and return a csv.DictReader style of iterable to read an excel
     sheet.
 
     Extended Summary
@@ -43,7 +39,8 @@ class SheetDictReader(object):
     Notes
     ======
     """
-    def __init__(self, sheet=None,nskip=0):
+    def __init__(self, sheet=None,nskip=-1):
+
         if sheet is None:
             # Future, maybe default to sheet 0 if no name, but error for now.
             raise ValueError("sheet is None")
@@ -153,7 +150,6 @@ class PyodbcReader(object):
 
         Notes:
         ======
-
         -- This is called by Dataset.DictReader(), which has passed through its
         'query=' parameter value (or other parameter values)
          or created a query for all rows of a table.
@@ -269,14 +265,6 @@ class PyodbcReader(object):
 #end class PyodbcReader()
 
 
-class PyodbcWriter(object):
-    def __init__(self,
-      conn=None, cursor=None, table_name=None,
-      column_names=None, default_column_spec=None,
-      od_column_type=None,
-      replace=None,
-      nvarchar_fixed_size=128,
-      verbosity=None):
         """
 Create a table with pyodbc and return a duck-instance of a DictWriter for it.
 
@@ -334,6 +322,15 @@ default_column_spec: string (Optional)
 - This spec value is overridden for columns named in parameter od_column_type.
 - Examples: "int", "float", "int not null"
         """
+class PyodbcWriter(object):
+    def __init__(self,
+        conn=None, cursor=None, table_name=None,
+        column_names=None, default_column_spec=None,
+        od_column_type=None,
+        replace=None,
+        nvarchar_fixed_size=128,
+        verbosity=None):
+
         self.conn = conn
         self.cursor = cursor
         self.verbosity = verbosity
@@ -390,7 +387,6 @@ default_column_spec: string (Optional)
         if self.column_names is None:
             raise ValueError("Parameter column_names is missing.")
 
-
         # Create a new table for given column names of given spec type.
         column_specs = ""
         columns_string = ""
@@ -443,17 +439,19 @@ default_column_spec: string (Optional)
           )
         #print("insert_sql= '%s'" % self.insert_sql)
 
+  # def writeheader(): No header action needed because __init__()
+  # already created the table, but must maintain this stub to
+  # support generic Dataset() interface.
+
     def writeheader(self, column_names=None):
-        # No header action needed because __init__() already created the table, but
-        # must maintain this stub to support generic Dataset() interface.
         return
 
-    def writerow(self, row=None, row_columns=None):
-        """ Write a row of data to a table.
+    """"
+    <summary name="def writerow"> Write a row of data to a table.
 
-Parameters:
-===========
-row: dictionary {column_name : string_value}
+    Parameters:
+      ===========
+      row: dictionary {column_name : string_value}
 
    - A dictionary whose keys are column names and values are string values to
      write to a new row in the table.
@@ -462,12 +460,17 @@ row: dictionary {column_name : string_value}
    - If not all columns in self.column_names exist in the dictionary,
      the result of the operation is undefined or an exception may be raised.
 
-row_columns: list
+      row_columns: list
 
     - A list of string values to write a new row to the table.
     - The column order given in self.column_names is written.
-      An error is raised if too many or too few string values exist in the list.
-        """
+      An error is raised if too many or too few string values exist
+      in the list.
+
+      </summary>
+      """
+
+    def writerow(self, row=None, row_columns=None):
         iam = inspect.stack()[0][3]
 
         if row_columns is not None:
@@ -544,15 +547,11 @@ def tvp_writeheader( self ):
             line = "%s\t%s\n" % (colname, coltype)
             fh.write(line)
 
+# end  def tvp_writeheader()
 
-# end ----------------  def tvp_writeheader() ------------------
 
-class Dataset(object):
-
-    """
-    method: __init__ (Dataset())
-
-    Create Dataset object and validate parameters and interactions.
+"""
+    Dataset def _init_(): Create Dataset object and validate parameters and interactions.
 
     Extended Summary:
     =================
@@ -565,7 +564,6 @@ class Dataset(object):
     The 'dbms' and 'open_mode' parameters control whether reading or writing
     may be done, and the database-management-style (dbms) of reading and writing.
 
-
     Common Parameters:
     ==================
     dbms : String
@@ -573,7 +571,7 @@ class Dataset(object):
     -- csv, excel_srcn, pyodbc, hvp, tvp, fts (under construction),
     -- future possible: postgresql, sqllite3, mysql, etc...
 
-    Parameters Where dbms='csv'(or None) and open_mode='rb'
+    Parameters Where dbms='csv'(or None) and open_mode='r'
     ========================================================
     name : String
     -------------
@@ -581,7 +579,7 @@ class Dataset(object):
     -- The column names are assumed to be in the first row of the input file,
        comma-separated.
 
-    Where dbms='csv' and open_mode='wb'
+    Where dbms='csv' and open_mode='w'
     ===================================
 
     name : String
@@ -603,7 +601,7 @@ class Dataset(object):
     -- If parameter columns or column_names is not provided, this dictionary
        is the authoritative source of column names and types
 
-    Where dbms='excel_srcn' and open_mode='rb'
+    Where dbms='excel_srcn' and open_mode='r'
     ==========================================
 
     workbook_file : String
@@ -616,7 +614,7 @@ class Dataset(object):
     -- If none is given, the first sheet of the workbook will be read.
 
 
-    Where dbms='pyodbc' and open_mode='rb':
+    Where dbms='pyodbc' and open_mode='r':
     =======================================
 
     server : String
@@ -670,7 +668,7 @@ class Dataset(object):
        the pyodbc column type information for column names that appear
        in this dictionary.
 
-    Where dbms="pyodbc" and open_mode='wb':
+    Where dbms="pyodbc" and open_mode='w':
     ========================================
     server : String
     ---------------
@@ -705,15 +703,15 @@ class Dataset(object):
        Eg, SQL Server may be integer, float, nvarchar(128), etc.
     -- Ex: { "id":"integer", "name":"nvarchar(128)", "score":"float" }
 
-    Where dbms='fts' and open_mode='wb':(Under construction)
+    Where dbms='fts' and open_mode='w':(Under construction)
     --------------------------------------------------------
-    open_mode: 'wb'
-    -- Param open_mode must always be 'wb' for dbms='fts'.
+    open_mode: 'w'
+    -- Param open_mode must always be 'w' for dbms='fts'.
 
     db_table_spec: TableSpec
     -- A TableSpec object defining the table to which to write.
 
-    Where dbms='tvp' and open_mode='rb'
+    Where dbms='tvp' and open_mode='r'
     ===================================
 
     Parameter od_column_type : OrderedDictionary()
@@ -738,7 +736,7 @@ class Dataset(object):
        Reminder: the data values are stored in {file}.tsv, tab separated values.
 
     --
-    Where dbms='tvp' and open_mode='wb'
+    Where dbms='tvp' and open_mode='w'
     ===================================
 
     Parameter od_column_type : OrderedDictionary()
@@ -749,7 +747,7 @@ class Dataset(object):
     Notes:
     ======
 
-    Read a csv file: dsr = Dataset(dbms='csv',name='path_to-some_csv_file', open_mode='rb')
+    Read a csv file: dsr = Dataset(dbms='csv',name='path_to-some_csv_file', open_mode='r')
     -------------------------------------------------------------------------------------
     -- Object dsr does not read
     -- Object dsr supports method dict_reader() to create a reader.
@@ -784,7 +782,7 @@ class Dataset(object):
 
     Example to write to a csv file:
     -------------------------------
-    dsw = Dataset(dbms='csv', open_mode='wb',
+    dsw = Dataset(dbms='csv', open_mode='w',
     name='C:/users/podengo/phone2.csv')
 
     dw = dsw.DictWriter(column_names=["id","name","score"])
@@ -798,7 +796,8 @@ class Dataset(object):
     dw.writerow(drow)
     del dsw,dw
 
-        """
+    """
+class Dataset(object):
     def __init__(
         self, dbms="csv", name=None, columns=None,
         ds_layout=None,lspec=None,  delimiter=None,
@@ -826,9 +825,9 @@ class Dataset(object):
             raise ValueError(
               "Parameter 'name' must be a pathname to a dataset value file.")
         self.name = name
-        if not open_mode or open_mode not in ('rb','wb'):
+        if not open_mode or open_mode not in ('r','w'):
             raise ValueError(
-                "open_mode = %s is not in ('rb','wb')" % open_mode)
+                "open_mode = %s is not in ('r','w')" % open_mode)
         self.open_mode = open_mode
         self.replace = replace
         self.column_names = (
@@ -854,7 +853,7 @@ class Dataset(object):
             self.od_column_type = od_column_type
 
         elif self.dbms == 'fts':
-            if (open_mode != 'wb'):
+            if (open_mode != 'w'):
                 raise ValueError(
                   "dbms='%s', open_mode='%s' not supported."
                   % (self.dbms, open_mode))
@@ -921,7 +920,7 @@ class Dataset(object):
                   "%s: ERROR - Cannot open cursor." % repr(self))
 
             # Now that we have self.cursor, if need to get columns, we can.
-            if table is not None and open_mode == 'rb':
+            if table is not None and open_mode == 'r':
                 # For given table, make a query of all columns in order
                 # Set query to get all columns from the table, in order.
                 # First, get those colum names.
@@ -938,7 +937,7 @@ class Dataset(object):
                 columns_string = ",".join(self.column_names)
                 self.query = (
                     'select %s from %s' % (columns_string, self.table))
-            # if table and open_mode=='rb'
+            # if table and open_mode=='r'
             if self.verbosity:
                 print("%s: dbms='%s',open_mode='%s',table=%s, query='%s'"
                   % (iam, dbms, open_mode, repr(self.table),
@@ -1075,7 +1074,7 @@ class Dataset(object):
         """
         iam = inspect.stack()[0][3]
 
-        if self.open_mode != 'rb':
+        if self.open_mode != 'r':
             raise ValueError(
               "Dataset name=%s, mode is '%s', cannot read it."
               % (self.name, self.open_mode))
@@ -1255,7 +1254,7 @@ class Dataset(object):
           verbosity if verbosity is not None else self.verbosity)
         if verbosity:
             print("%s: dsw (self) =%s" % (iam, repr(self)) )
-        if self.open_mode != 'wb':
+        if self.open_mode != 'w':
             raise ValueError(
               "%s: Dataset name=%s, mode is '%s', cannot write it."
               % (iam, self.name, self.open_mode))
@@ -1396,11 +1395,11 @@ def data(dsr=None, dsw=None, id_new_name=None, dict_col_name=None
     """ Copies the dsr (readable) input dataset to output dsw (writable).
     Parameters:
     ===========
-    dsr : Dataset(...open_mode='rb'...)
+    dsr : Dataset(...open_mode='r'...)
     -----------------------------------
     - Readable dataset with data that will be copied to the output dataset
 
-    dsw : Dataset(...open_mode='wb'...)
+    dsw : Dataset(...open_mode='w'...)
     -----------------------------------
     - Writable dataset to which the data from dsr will be copied
 
@@ -1805,8 +1804,8 @@ if  __name__ == "__main__" and 1 == 2:
 
     print("Testing fixed reads...")
     ddir='C:/users/podengo/'
-    ds_layout = Dataset(name=ddir+'layout.csv', open_mode='rb')
-    ds_fixed = Dataset(dbms='fixed',ds_layout=ds_layout, open_mode='rb',
+    ds_layout = Dataset(name=ddir+'layout.csv', open_mode='r')
+    ds_fixed = Dataset(dbms='fixed',ds_layout=ds_layout, open_mode='r',
         name=ddir+'fixed.txt')
     dr = ds_fixed.DictReader()
     for row in dr:
@@ -1820,16 +1819,21 @@ if  __name__ == "__main__" and 1 == 2:
     home = os.path.expanduser("~")+ os.sep
     tddir = home+"testdata/intake_local/"
     fnr_intake_layout = tddir + 'OGT_SP12_Op_DataLayout_IntakeLayout_local.xls'
-
-    dsr_intake_layout = Dataset(open_mode='rb',dbms='excel_srcn',
+    dsr_intake_layout = Dataset(open_mode='r',dbms='excel_srcn',
       workbook_file=fnr_intake_layout)
-
-    dsw_intake_layout = Dataset(open_mode='wb',dbms='pyodbc',
+    dsw_intake_layout = Dataset(open_mode='w',dbms='pyodbc',
       server=server,db=db,table="rvp_intake_recoding_layout",replace=True)
     data(dsr=dsr_intake_layout,dsw=dsw_intake_layout,
          dict_col_name={'end':'endpos', "min":'vmin', 'max':'vmax'})
 
 
+# <codecell>
+
+#
+
+# <codecell>
+
+#test remote pyodbc rc1FINAL_cmrg to tvp. takes 10 seconds.
 #from airassessmentreporting.datacheck.dataset import *
 import inspect
 from collections import OrderedDict
@@ -1844,11 +1848,11 @@ def test_pyodbc_tvp_002(verbosity=0):
     db='Python_OGT_12SU'
     table='rc1FINAL_cmrg'
     tddir = "C:/Users/podengo/testdata/tddir/"
-    dsr=Dataset(dbms='pyodbc', server=server, db=db, open_mode='rb', table=table,
+    dsr=Dataset(dbms='pyodbc', server=server, db=db, open_mode='r', table=table,
         verbosity=verbosity)
     # Define Writable dataset
     fn2_tsv = tddir + "%s.tsv"  % table
-    dsw = Dataset(dbms='tvp', open_mode='wb', name=fn2_tsv, verbosity=verbosity)
+    dsw = Dataset(dbms='tvp', open_mode='w', name=fn2_tsv, verbosity=verbosity)
     data(dsr,dsw, verbosity=verbosity, rows_chunk=99)
     return
 # end def test_pyodbc_tvp_002()
@@ -1901,8 +1905,8 @@ def test_tvp_tvp_001(verbosity=False):
     # Use data() to copy the tvp file pair to another
     fn2_cty = tddir + "testtvp2.cty"
     fn2_tsv = tddir + "testtvp2.tsv"
-    dsr = Dataset(dbms='tvp', open_mode='rb', name=fn_tsv, verbosity=verbosity)
-    dsw = Dataset(dbms='tvp', open_mode='wb', name=fn2_tsv, verbosity=verbosity)
+    dsr = Dataset(dbms='tvp', open_mode='r', name=fn_tsv, verbosity=verbosity)
+    dsw = Dataset(dbms='tvp', open_mode='w', name=fn2_tsv, verbosity=verbosity)
     data(dsr,dsw, verbosity=verbosity, rows_chunk=1)
     # Read the second dataset and make assertions.
     with open(fn2_tsv,mode='r',encoding='utf-8') as fr:
@@ -1924,7 +1928,7 @@ def test_pyodbc_tvp_001(verbosity=0):
     dsr=Dataset(dbms='pyodbc', server=server, db=db, open_mode='r', table='rvp_tmp_means',encoding='utf-8')
     # Define Writable dataset
     fn2_tsv = tddir + "testpyo2tvp.tsv"
-    dsw = Dataset(dbms='tvp', open_mode='wb', name=fn2_tsv, encoding='utf-8',verbosity=verbosity)
+    dsw = Dataset(dbms='tvp', open_mode='w', name=fn2_tsv, encoding='utf-8',verbosity=verbosity)
     data(dsr,dsw, verbosity=verbosity, rows_chunk=99)
     return
 #end def
@@ -1939,9 +1943,9 @@ def test_tvp_pyodbc_001(verbosity=0):
     server='.\SQLEXPRESS'
     db='silodb'
     fn2_tsv = tddir + "testpyo2tvp.tsv"
-    dsr=Dataset(dbms='tvp',  open_mode='rb', name=fn2_tsv)
+    dsr=Dataset(dbms='tvp',  open_mode='r', name=fn2_tsv)
     # Define Writable dataset
-    dsw = Dataset(dbms='pyodbc', open_mode='wb', server=server, db=db,
+    dsw = Dataset(dbms='pyodbc', open_mode='w', server=server, db=db,
         table='tvp_pyodbc_means2', replace=1, verbosity=verbosity)
     data(dsr,dsw, verbosity=verbosity, rows_chunk=99)
     return
@@ -1961,9 +1965,9 @@ def test_csv_pyodbc_001(verbosity=False):
     server=".\SQLEXPRESS"
     database='silodb'
     namer = "C:/users/podengo/testdata/means_test_read.csv"
-    dsr = Dataset(open_mode='rb', dbms='csv', name=namer)
+    dsr = Dataset(open_mode='r', dbms='csv', name=namer)
     print("dsr=%s" % (dsr))
-    dsw = Dataset(open_mode='wb', dbms='pyodbc', table="rvp_tmp_means"
+    dsw = Dataset(open_mode='w', dbms='pyodbc', table="rvp_tmp_means"
                   ,server=server,db=database,replace=True )
     data(dsr=dsr, dsw=dsw
          ,dict_col_name={"upcx_score":"robo_score"}
@@ -1983,11 +1987,11 @@ def test_pyodbc_tsv_write_002(verbosity=0):
         print("%s: Starting" % iam)
     server=".\SQLEXPRESS"
     database='silodb'
-    dsr=Dataset(open_mode='rb', dbms='pyodbc', table="rvp_tmp_means"
+    dsr=Dataset(open_mode='r', dbms='pyodbc', table="rvp_tmp_means"
                   ,server=server,db=database,replace=True )
     namew = "C:/users/podengo/testdata/test_write.tsv"
     #dr = dsr.DictReader()
-    dsw=Dataset(open_mode='wb', dbms='tvp', name=namew
+    dsw=Dataset(open_mode='w', dbms='tvp', name=namew
                 # , od_column_type=dr.od_column_type
                 )
     dr = dsr.DictReader()
@@ -1997,9 +2001,9 @@ def test_pyodbc_tsv_write_002(verbosity=0):
     data(dsr=dsr, dsw=dsw)
     del dsw
     #now write to pyodbc table
-    dsr=Dataset(open_mode='rb', dbms='tvp', name=namew )
+    dsr=Dataset(open_mode='r', dbms='tvp', name=namew )
     #dr = dsr.DictReader()
-    dsw=Dataset(open_mode='wb', dbms='pyodbc', table="rvp_tmp_means2"
+    dsw=Dataset(open_mode='w', dbms='pyodbc', table="rvp_tmp_means2"
                   ,server=server,db=database
                   # ,od_column_type=dr.od_column_type,
                   ,replace=True )
@@ -2024,20 +2028,21 @@ if (env == 1):
     test_pyodbc_tsv_write_002(verbosity=v)
 elif env == 2:
     v = 1
-    # test_tvp_tvp_001(verbosity=v)
-    pass
+    test_tvp_tvp_001(verbosity=v)
 
-#print("Tests: Done!")
+print("Tests: Done!")
 
 # test_datacheck.py follows..
 import unittest
 import os
 import inspect
 
-#from airassessmentreporting.datacheck.dataset import (Dataset, data)
-#import airassessmentreporting.datacheck.longcomp as dcl
-#import airassessmentreporting.datacheck.rescore as dcr
-#import airassessmentreporting.datacheck.raw_converter as dcc
+'''
+from airassessmentreporting.datacheck.dataset import (Dataset, data)
+import airassessmentreporting.datacheck.longcomp as dcl
+import airassessmentreporting.datacheck.rescore as dcr
+import airassessmentreporting.datacheck.raw_converter as dcc
+'''
 
 class TestDatacheck(unittest.TestCase):
     """ Contains methods to test SAS-similar datacheck()-related functions """
@@ -2084,29 +2089,27 @@ class TestDatacheck(unittest.TestCase):
         Finally, non-sensitive input data like the ini file, and layout files should be kept under project source code control for reliable continuous integration.
 
         """
-        # Need to get test data. Just return for now
-        return
         # set up longcomp input datasets
         tdir = ("H:/Assessment/CSSC/AnalysisTeam/AssessmentReporting"
           "/PythonUnitTestData/longcomp/")
 
         fn_time0=tdir + "OGT_longcomp_time0.csv"
-        dsr_time0 = Dataset(name=fn_time0,open_mode='rb')
+        dsr_time0 = Dataset(name=fn_time0,open_mode='r')
 
         fn_time1=tdir + "OGT_longcomp_time1.csv"
-        dsr_time1 = Dataset(name=fn_time1,open_mode='rb')
+        dsr_time1 = Dataset(name=fn_time1,open_mode='r')
 
-        fn_longcomp_wb= tdir + "OGT_longcomp.xls"
+        fn_longcomp_w= tdir + "OGT_longcomp.xls"
         dsr_longcomp = Dataset(
-          dbms='excel_srcn', workbook_file=fn_longcomp_wb,
-          sheet_name=None, open_mode='rb')
+          dbms='excel_srcn', workbook_file=fn_longcomp_w,
+          sheet_name=None, open_mode='r')
 
         #set up longcomp output datasets
         fnw_full_report = tdir + "longcomp_full_report.csv"
-        dsw_full_report = Dataset(name=fnw_full_report,open_mode='wb')
+        dsw_full_report = Dataset(name=fnw_full_report,open_mode='w')
 
         brief_name = tdir +"longcomp_brief_report.csv"
-        dsw_brief_report = Dataset(name=brief_name, open_mode='wb')
+        dsw_brief_report = Dataset(name=brief_name, open_mode='w')
 
         #Call longcomp
         output = dcl.longcomp(
@@ -2122,9 +2125,8 @@ class TestDatacheck(unittest.TestCase):
     def test_rescorecheck_001(self):
         """
         Test rescorecheck()
-        need to get test data just return for now
+
         """
-        return
         # set up longcomp input datasets
         tddir = (
           "H:/Assessment/CSSC/AnalysisTeam/AssessmentReporting/"
@@ -2132,7 +2134,7 @@ class TestDatacheck(unittest.TestCase):
 
         #input datasets
         fn_input = tddir + "rescorecheck_input.csv"
-        ds_input = Dataset(dbms='csv', name=fn_input, open_mode='rb')
+        ds_input = Dataset(dbms='csv', name=fn_input, open_mode='r')
 
         # dr = ds_input.DictReader()
         # dr2 = ds_input.DictReader()
@@ -2143,14 +2145,14 @@ class TestDatacheck(unittest.TestCase):
         ds_bookmaplocs = Dataset(
           dbms='excel_srcn',
           workbook_file=bookmaplocs_filename,
-          sheet_name="Bookmap", open_mode='rb')
+          sheet_name="Bookmap", open_mode='r')
 
         #output datasets
         out_filename = tddir+"rescore_out.csv"
-        ds_out = Dataset(name=out_filename, open_mode='wb')
+        ds_out = Dataset(name=out_filename, open_mode='w')
 
         report2_filename = tddir+"rescore_report2.csv"
-        ds_report2 = Dataset(name=report2_filename, open_mode='wb')
+        ds_report2 = Dataset(name=report2_filename, open_mode='w')
 
         dcr.rescorecheck(grade='10', subject="Math",
           ds_input=ds_input,
@@ -2167,12 +2169,12 @@ class TestDatacheck(unittest.TestCase):
         self.assertEqual (
           nl, 168, "Lines in rescore_report2 is %d, not 168" % nl)
 
+    '''
     def test_raw_converter_001(self):
         """
         Test raw_converter()
-        need to get test data. Just return for now.
+
         """
-        return
         # Define the test data directory
         tddir = ("H:/Assessment/CSSC/AnalysisTeam/AssessmentReporting/"
           "PythonUnitTestData/"
@@ -2180,26 +2182,26 @@ class TestDatacheck(unittest.TestCase):
 
         # input datasets
         fn_input_csv = tddir + "OGT_raw_converter_input.csv"
-        ds_raw_scores = Dataset(name=fn_input_csv, open_mode='rb')
+        ds_raw_scores = Dataset(name=fn_input_csv, open_mode='r')
 
         fn_semantic_workbook = tddir + "OGT_semantic_workbook.xls"
         ds_standards = Dataset(
           dbms='excel_srcn',
           workbook_file=fn_semantic_workbook,
-          sheet_name="Standards", open_mode='rb')
+          sheet_name="Standards", open_mode='r')
         #&ctpath_breach
         # output datasets
         fn_converter_out = tddir + "converter_out.csv"
-        ds_out = Dataset(name=fn_converter_out, open_mode='wb')
+        ds_out = Dataset(name=fn_converter_out, open_mode='w')
 
         fn_converter_report2 = tddir +"converter_report2.csv"
-        ds_report2 = Dataset(name=fn_converter_report2, open_mode='wb')
+        ds_report2 = Dataset(name=fn_converter_report2, open_mode='w')
 
         fn_sumcheck_out = tddir + "sumcheck_out.csv"
-        ds_sumcheck_out = Dataset(name=fn_sumcheck_out, open_mode='wb')
+        ds_sumcheck_out = Dataset(name=fn_sumcheck_out, open_mode='w')
 
         fn_sumcheck_report2 = tddir + "sumcheck_report2.csv"
-        ds_sumcheck_report2 = Dataset(name=fn_sumcheck_report2, open_mode='wb')
+        ds_sumcheck_report2 = Dataset(name=fn_sumcheck_report2, open_mode='w')
 
         print("Using ds_standards = '%s'" % repr(ds_standards))
         print("Using ds_raw_scores = '%s'" % repr(ds_raw_scores))
@@ -2227,18 +2229,17 @@ class TestDatacheck(unittest.TestCase):
 
         self.assertEqual (
           nl, 222, "Lines in converter_report2 is %d, not 222" % nl)
+    '''
 
     def test_data_001(self):
-        # need to get test data -- just return for now
-        return
         tdd = (
           "H:/Assessment/CSSC/AnalysisTeam/AssessmentReporting/"
           "PythonUnitTestData/"
           "data_copier/")
 
         print("\ntest_data_001: Starting: Assigning datasets for first run of data()")
-        dsr=Dataset(open_mode='rb', name=tdd+"students_time0.csv")
-        dsw=Dataset(open_mode='wb', name=tdd+"students_data2.csv")
+        dsr=Dataset(open_mode='r', name=tdd+"students_time0.csv")
+        dsw=Dataset(open_mode='w', name=tdd+"students_data2.csv")
 
         print("Run 1 of data() to copy from csv to csv")
 
@@ -2253,10 +2254,10 @@ class TestDatacheck(unittest.TestCase):
         server = "38.118.83.61"
         database = 'ScoreReportingTestData'
 
-        dsr = Dataset(open_mode='rb', name=tdd+"students_data2.csv")
+        dsr = Dataset(open_mode='r', name=tdd+"students_data2.csv")
 
         dsw = Dataset(dbms='pyodbc', table='tmp_data_test1', replace=True, columns=column_names,
-          server=server, db=database, open_mode='wb')
+          server=server, db=database, open_mode='w')
 
         print("Run 2 of data() to copy from csv to pyodbc table 'tmp_data_test1'")
         data(dsr,dsw)
@@ -2265,9 +2266,9 @@ class TestDatacheck(unittest.TestCase):
         print("Assigning datasets for run 3 of data()")
 
         dsr = Dataset(dbms='pyodbc', table='tmp_data_test1',
-          server=server, db=database, open_mode='rb')
+          server=server, db=database, open_mode='r')
         fn_data3 = tdd+"students_data3.csv"
-        dsw = Dataset(name=fn_data3, open_mode='wb')
+        dsw = Dataset(name=fn_data3, open_mode='w')
 
         print("Run 3 of data() to copy from pyodbc table to csv")
 
@@ -2285,12 +2286,7 @@ class TestDatacheck(unittest.TestCase):
 
         print("Done run 3. All done testing test_data_001().\n")
         return
-
     def test_rvp_001(self):
-        '''
-        Note: need to get test files, just return for now
-        '''
-        return
         tdd = (
           "H:/Assessment/CSSC/AnalysisTeam/AssessmentReporting/"
           "PythonUnitTestData/"
@@ -2299,8 +2295,8 @@ class TestDatacheck(unittest.TestCase):
 
         print(
           "\n%s: Starting: Create and copy dbms='tvp' Dataset." % iam)
-        dsr=Dataset(open_mode='rb', name=tdd+"students_time0.csv")
-        dsw=Dataset(open_mode='wb', name=tdd+"students_data2.csv")
+        dsr=Dataset(open_mode='r', name=tdd+"students_time0.csv")
+        dsw=Dataset(open_mode='w', name=tdd+"students_data2.csv")
 
         print("Run 1 of data() to copy from csv to csv")
 
@@ -2315,10 +2311,10 @@ class TestDatacheck(unittest.TestCase):
         server = "38.118.83.61"
         database = 'ScoreReportingTestData'
 
-        dsr = Dataset(open_mode='rb', name=tdd+"students_data2.csv")
+        dsr = Dataset(open_mode='r', name=tdd+"students_data2.csv")
 
         dsw = Dataset(dbms='pyodbc', table='tmp_data_test1', replace=True, columns=column_names,
-          server=server, db=database, open_mode='wb')
+          server=server, db=database, open_mode='w')
 
         print("Run 2 of data() to copy from csv to pyodbc table 'tmp_data_test1'")
         data(dsr,dsw)
@@ -2327,9 +2323,9 @@ class TestDatacheck(unittest.TestCase):
         print("Assigning datasets for run 3 of data()")
 
         dsr = Dataset(dbms='pyodbc', table='tmp_data_test1',
-          server=server, db=database, open_mode='rb')
+          server=server, db=database, open_mode='r')
         fn_data3 = tdd+"students_data3.csv"
-        dsw = Dataset(name=fn_data3, open_mode='wb')
+        dsw = Dataset(name=fn_data3, open_mode='w')
 
         print("Run 3 of data() to copy from pyodbc table to csv")
 
@@ -2344,10 +2340,11 @@ class TestDatacheck(unittest.TestCase):
         self.assertEqual (
           nl, 14339, "Lines in students_data3.csv is %d, not 14339" % nl)
 
+
         print("Done run 3. All done testing test_data_001().\n")
         return
 
-        '''
+'''
 if __name__ == '__main__':
     unittest.main()
-    '''
+'''
