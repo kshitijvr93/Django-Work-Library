@@ -12,10 +12,8 @@ from etl import add_subelements_from_dict
 from dataset import Dataset, data
 
 '''
-
 Load a couple of csv text files saved from some excel workbooks that Elsevier's Letitia
 Mukherjee emailed me in 2017, into an sql server database.
-
 '''
 
 filename_input_csv = "C:/users/podengo/git/citrus/data/am4ir/FloridaQatar_AM4IR_pilot_filtered.txt"

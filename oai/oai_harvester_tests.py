@@ -1,7 +1,9 @@
 #ufdc oai API tests
 #
-import sys, os, os.path, platform, traceback
-sys.path.append('{}/github/citrus/modules'.format(os.path.expanduser('~')))
+
+import sys, os, os.path, platform
+sys.path.append('{}/git/citrus/modules'.format(os.path.expanduser('~')))
+print("sys.path={}".format(repr(sys.path)))
 
 import requests
 import urllib.parse
@@ -43,6 +45,15 @@ d_server_params = {
                   'images_martinique',
             ],
     },
+    'merrick': {
+        'name' : 'merrick', # Part of output folder path
+        'url_base': 'http://merrick.library.miami.edu/oai/oai.php',
+        'output_parent' : None,
+        # See spreadsheet from laura perry to rvp in uf email of 2017071:
+        'set_specs' : ['asm0085',
+                  'asm0304',
+            ],
+    },
 }
 
 '''
@@ -57,6 +68,7 @@ class OAIHarvester():
         self.url_base = d_param_val['url_base']
         self.set_specs = d_param_val['set_specs']
         self.output_parent = d_param_val['output_parent']
+        print("first set_spec={}".format(self.set_specs[0]))
         if self.output_parent is None:
             raise Exception(ValueError,'Error: output_parent is None')
         os.makedirs(self.output_parent, exist_ok=True)
@@ -83,7 +95,7 @@ class OAIHarvester():
         os.makedirs(harvest_folder, exist_ok=True)
         print("Using harvest_folder='{}'".format(harvest_folder))
         url_list = ('{}?verb=ListRecords&set={}&metadataPrefix=oai_dc'
-            .format(self.url_base,set_name))
+            .format(self.url_base,set_spec))
         # url_list='http://localhost:52468/sobekcm_oai.aspx?verb=ListRecords&set=dloc1&metadataPrefix=oai_dc&resumptionToken=000957UFDCdloc1:oai_dc'
         # n_batch = 956
         n_batch = 0
@@ -147,8 +159,12 @@ set_name = 'CNDL'
 
 oai_server = 'ufdc_oai'
 oai_server = 'ufdc_devpc'
+
 oai_server = 'manioc'
 
+oai_server = 'merrick'
+
+# From oai_server name, access the proper d_harvest_params to build the harvester
 d_harvest_params = d_server_params[oai_server]
 
 d_harvest_params['output_parent'] = etl.data_folder(
@@ -158,7 +174,7 @@ harvester = OAIHarvester(d_harvest_params)
 
 for i in range(0, len(harvester.set_specs)):
     set_spec = harvester.set_specs[i]
-    print("\n-----------------------------------------\nGetting records for set_spect {}".format(set_spec))
+    print("\n-----------------------------------------\nGetting records for set_spec {}".format(set_spec))
     harvester.harvest(set_spec=set_spec)
 
 print("DONE!")
