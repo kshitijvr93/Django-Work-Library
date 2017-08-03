@@ -51,7 +51,7 @@ d_server_params = {
         'output_parent' : None,
         # See spreadsheet from laura perry to rvp in uf email of 2017071:
         'set_specs' : ['asm0085',
-                  'asm0304',
+                  # 'asm0304',
             ],
     },
 }
@@ -67,6 +67,10 @@ class OAIHarvester():
         self.name = d_param_val['name']
         self.url_base = d_param_val['url_base']
         self.set_specs = d_param_val['set_specs']
+        self.basic_verbs = [ # see http://www.oaforum.org/tutorial/english/page4.htm
+             'GetRecord', 'Identify'
+             , 'ListIdentifiers', 'ListMetaDataFormats', 'ListRecords' , 'ListSets'
+        ]
         self.output_parent = d_param_val['output_parent']
         print("first set_spec={}".format(self.set_specs[0]))
         if self.output_parent is None:
@@ -74,19 +78,21 @@ class OAIHarvester():
         os.makedirs(self.output_parent, exist_ok=True)
 
         # later, populate this from ListMetadataFormats call
-        self.l_metadata_format = ['oai_dc']
 
-        self.oai_param = ['verb','set','metadataPrefix']
         self.l_set = []
         self.l_verb = ['ListRecords','ListMetadataFormats',
                        'ListIdentifiers','ListSets','GetRecord']
         self.set_spec = None
         return
 
-        '''
-        <summary>Harvest the set into xml files in the subforolder named
+    def get_set_specs(self):
+        url_sets = ('{}?verb=ListSets'.format(self.url_base))
+        print(url_sets)
+
+
+        ''' <summary>Harvest the set into xml files in the subfolder named
         by the 'sets/(set_spec)' in the output folder</summary>
-        <param name='set'> The name of the set to harvest</param>
+        <param name='set_spec'>The name of the set to harvest</param>
         '''
     def harvest(self, set_spec=None):
         me = 'harvest'
@@ -171,7 +177,10 @@ d_harvest_params['output_parent'] = etl.data_folder(
     linux='home/robert', windows='U:/', data_relative_folder='data/outputs')
 
 harvester = OAIHarvester(d_harvest_params)
+print("Calling harvester.get_set_specs")
+harvester.get_set_specs()
 
+print("Calling harvester.harvest for each set_spec:")
 for i in range(0, len(harvester.set_specs)):
     set_spec = harvester.set_specs[i]
     print("\n-----------------------------------------\nGetting records for set_spec {}".format(set_spec))

@@ -43,6 +43,7 @@ import etl
     It will infer names for tables and columns from the xml tags and attribute names as well.
 
     However the user configuration will remain useful mainly to simplify and target creation
+
     of SQL data to simplify and abbreviate the outputted SQL database.
     That would make some studies easier to follow and faster to create and run selected
     sub-analyses of the entire pool of xml data.
@@ -57,9 +58,10 @@ and values of values of new od_rel_info dicts.
 
 Return the new dict od_relation
 '''
-def new_od_relation(od_rel_datacolumns):
+def new_od_relation(od_rel_datacolumns, verbosity=1):
     od_relation = OrderedDict()
-    print("Creating relation with datacolumns:")
+    if verbosity:
+        print("Creating relation with datacolumns:")
     for i,key in enumerate(od_rel_datacolumns.keys()):
         od_rel_info = OrderedDict()
         od_relation[key] = od_rel_info
@@ -105,7 +107,7 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
 
     od_rel_info = od_relation.get(db_name, None)
     if od_rel_info is None:
-        raise Exception("{}:od_relation key (db_name) '{}' is undefined. ".format(me,db_name))
+        raise Exception("{}:od_relation key (db_name) '{}' is undefined. ".format(me,repr(db_name)))
 
     od_column = od_rel_info.get('attrib_column', None)
     if od_column is None:
@@ -193,6 +195,8 @@ def node_visit_output(node=None, node_index=None, d_namespaces=None,
     me = 'node_visit_output()'
     verbose = 0
     msg = ("{}:START: node.tag={}, node_index={}".format(me, node.tag, node_index))
+    if 1 == 1:
+        print(msg)
     log_messages = []
 
     if (node is None
@@ -209,7 +213,7 @@ def node_visit_output(node=None, node_index=None, d_namespaces=None,
         raise RuntimeError(msg)
     attribute_text = d_xml_params.get('attribute_text','text')
     attribute_innerhtml = d_xml_params.get('attribute_innerhtml','attribute_innerhtml')
-    #if 'multiple' not in d_node_params:
+    # if 'multiple' not in d_node_params:
     #    raise RuntimeError("{}: multiple keyword missing for node.tag={}"
     #            .format(me,node.tag))
     # pass along the parent index - we will append our index below only if multiple is 1
@@ -304,7 +308,7 @@ def node_visit_output(node=None, node_index=None, d_namespaces=None,
         for xpath, d_child_node_params in d_child_xpaths.items():
             #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_node_params)))
             children = node.findall(xpath, d_namespaces )
-            #print("{}:for xpath={} found {} children".format(me,xpath,len(children)))
+            print("{}:for xpath={} found {} children".format(me,xpath,len(children)))
             # TODO:Future: may add a new argument for caller-object that child may use to accumulate, figure,
             # summary statistic
             d_child_row = None
@@ -473,7 +477,7 @@ def xml_doc_rdb(
 
     # (1) Read an input xml file to variable input_xml_str
     # correcting newlines and doubling up on curlies so format() works on them later.
-    with open (str(input_file_name), "r") as input_file:
+    with open (str(input_file_name), "r", encoding='utf-8') as input_file:
         input_xml_str = input_file.read().replace('\n','')
 
     # (2) and convert input_xml_str to a tree input_doc using etree.fromstring,
@@ -528,6 +532,9 @@ def xml_doc_rdb(
         },
         'child_xpaths':{doc_root_xpath:d_node_params}
     }
+
+    print("xml2rdb: Using db_name='{}', doc_root_xpath='{}'"
+          .format(doc_rel_name , doc_root_xpath))
 
     # OrderedDict with key of parent tag name and value is parent's index among its siblings.
     od_parent_index = OrderedDict()
@@ -617,14 +624,16 @@ def xml_paths_rdb(
     for i, path in enumerate(input_path_list):
         if (max_input_files > 0) and ( i >= max_input_files):
             # This clause used for testing only...
-            log_messages.append(
-                "Max number of {} files processed. Breaking.".format(i))
+            msg =  "Max number of {} files processed. Breaking.".format(i)
+            print('{}:msg'.format(me,msg))
+            log_messages.append(msg)
             break
 
         file_count = file_count_first + i + 1
 
         # Full absolute path of input file name is:
         input_file_name = "{}/{}".format(path.parents[0], path.name)
+        print("{}:Reading file {} with file_count={}".format(me,input_file_name,file_count))
         batch_size = 250
         if batch_size > 0  and (i % batch_size == 0):
             progress_report = 1
@@ -645,18 +654,19 @@ def xml_paths_rdb(
                     file.flush()
 
         # Try to read the article's input full-text xml file and accrue its statistics
-        with open(str(input_file_name), "r") as input_file:
+        with open(str(input_file_name), "r", encoding='utf-8') as input_file:
             try:
                 input_xml_str = input_file.read().replace('\n','')
                 # print("### Got input_xml_str={}".format(input_xml_str))
             except Exception as e:
                 if 1 == 1:
-                    log_messages.append(
-                        "\tSkipping read failure {} for input_file_name={}"
+                    msg = ( "\tSkipping read failure {} for input_file_name={}"
                         .format(e,input_file_name))
+                    print("{}:ERROR: {}".format(me,msg))
+                    log_messages.append(msg)
                 count_input_file_failures += 1
                 continue
-
+        print("{}:Have read input file {} with length = {}".format(me,input_file_name,len(input_xml_str)))
         row_index += 1
 
         #Create an internal root document node to manage database outputs
@@ -664,7 +674,8 @@ def xml_paths_rdb(
         doc_root.attrib['file_name'] = input_file_name
         msg = ("{}:calling xml_doc_rdb with doc_root.tag={}, file_count={},"
           .format(me,doc_root.tag, file_count))
-        #print(msg)
+
+        print("{}:{}".format(me,msg))
 
         sub_messages = xml_doc_rdb(od_relation=od_relation
             , output_folder=output_folder
@@ -687,7 +698,7 @@ def xml_paths_rdb(
                  )
         # end for i, fname in input_file_list
     # end with open() as output_file
-    print ("Finished processing through file_count={}".format(file_count))
+    print ("{}:Finished processing through file_count={}".format(me,file_count))
 
     #### CREATE THE RDB INSERT COMMANDS - HERE USING SQL THAT WORKS WITH MSOFT SQL
     # SERVER 2008, maybe 2008+
@@ -839,7 +850,7 @@ def xml2rdb(folders_base=None, input_path_list=None,
     d_log = OrderedDict()
 
     if folder_output_base is None:
-        folder_output_base = input_folders + me + '/'
+        # folder_output_base = input_folders + me + '/'
         folder_output_base = etl.data_folder(
             linux = "/home/robert/data/",
             windows = "U:/data/",
@@ -940,17 +951,19 @@ This is where a web service comes in that
 '''
 
 # Study choices
+study = 'ccila'
 study = 'citrus'
-study = 'scopus'
 study = 'crafa'
-study = 'crawd' # Crossref filter where D is for doi
 study = 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
+study = 'crawd' # Crossref filter where D is for doi
+study = 'elsevier'
+study = 'merrick_oai_set'
 study = 'oadoi'
 study = 'orcid'
-study = 'elsevier'
+study = 'scopus'
 
 # KEEP ONLY ONE LINE NEXT: Study Selection
-study = 'ccila'
+study = 'merrick_oai_set'
 
 file_count_first = 0
 file_count_span = 0
@@ -1138,10 +1151,7 @@ elif study == 'orcid':
 elif study == 'citrus':
     import xml2rdb_configs.citrus as config
 
-    #for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
-    #input_folder = '{}/output_oadoi/2017-01-10T12-54-23Z'.format(folders_base)
-    # for 20170308 run using dois from crafd_crawd for UF year 2016
-    input_folder = '{}/output_citrus_mets'.format(folders_base)
+
     input_folder = etl.data_folder(linux='/home/robert/', windows='u:/',
         data_relative_folder='data/citrus_mets_base')
     input_folders = [ input_folder]
@@ -1158,6 +1168,29 @@ elif study == 'citrus':
     #raise Exception("Development EXIT")
 
     doc_root_xpath = './METS:mets'
+    d_xml_params['attribute_text'] = 'attribute_text'
+    d_xml_params['attribute_innerhtml'] =  'attribute_innerhtml'
+
+    od_rel_datacolumns, d_node_params = config.sql_mining_params()
+elif study == 'merrick_oai_set':
+    import xml2rdb_configs.merrick_oai_sets as config
+
+    input_folder = etl.data_folder(linux='/home/robert/', windows='u:/',
+        data_relative_folder='data/merrick_oai_set')
+    input_folders = [ input_folder]
+    input_path_glob = '**/*listsetspecs.xml'
+    input_path_list = list(Path(input_folder).glob(input_path_glob))
+
+    print("Study {}, input folder={}, input path glob={}, input files={}"
+          .format(study, input_folder,input_path_glob,len(input_path_list)))
+    input_path_list = list(Path(input_folder).glob(input_path_glob))
+    rel_prefix = 'merrick_oai_'
+    doc_rel_name = 'parent'
+    #TODO: add batch id or dict column_constant to define column name and constant to insert in the
+    # doc_rel_name table to hold hash for external grouping studies, repeated/longitutinal studies
+    #raise Exception("Development EXIT")
+
+    doc_root_xpath = './/{*}ListSets'
     d_xml_params['attribute_text'] = 'attribute_text'
     d_xml_params['attribute_innerhtml'] =  'attribute_innerhtml'
 

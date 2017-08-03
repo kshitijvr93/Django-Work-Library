@@ -807,6 +807,7 @@ def tvp_writeheader( self ):
 
     """
 class Dataset(object):
+
     def __init__(
         self, dbms="csv", name=None, columns=None,
         ds_layout=None,lspec=None,  delimiter=None,
@@ -1067,9 +1068,9 @@ class Dataset(object):
 
         Return:
         =======
-        Return an iterator, where each iteration is a dictionary with key
-        of field name and value of the input field value in the next row
-        in the csv input file file.
+        Return an iterator, where each iteration is a dictionary representing
+        the next relational row of data, where key
+         field name and value of the input field value
 
         Notes:
         ======
@@ -1460,7 +1461,8 @@ def data(dsr=None, dsw=None, id_new_name=None, dict_col_name=None
         print("data(): dsr=%s, dsw=%s" % (repr(dsr), repr(dsw)))
     reader = dsr.DictReader()
 
-    # If dsr has odFirst set od_column_type to that from dsr, if it has that
+    # If reader has od_column_type not None,  set output_od_column_type it
+    # and ignore the argument od_column_type
     if hasattr(reader, 'od_column_type') and reader.od_column_type is not None:
         output_od_column_type = reader.od_column_type
         if verbosity:
@@ -1474,10 +1476,10 @@ def data(dsr=None, dsw=None, id_new_name=None, dict_col_name=None
             # info in parameter od_column_type.
             output_od_column_type = od_column_type
             pass
-    else:
+    else: # adopt the argument od_column_type setting
         output_od_column_type = od_column_type
 
-    # convey the input column types, possibly revised, to output.
+    # Copy the input column types, possibly revised, to the writer for outputting.
     if verbosity:
         print("data(): using od_column_type=%s" % repr(output_od_column_type ))
     dsw.od_column_type = output_od_column_type
@@ -1487,7 +1489,8 @@ def data(dsr=None, dsw=None, id_new_name=None, dict_col_name=None
     out_column_names = []
     if id_new_name is not None:
         out_column_names.append(id_new_name)
-    # Use column_names from the reader
+
+    # For writer output, use column_names from the reader
     out_column_names.extend(reader.fieldnames)
     if verbosity:
         print("data(): out_column_names='%s'"
@@ -1499,9 +1502,14 @@ def data(dsr=None, dsw=None, id_new_name=None, dict_col_name=None
                 # cname is a replacement column name to use.
                 out_column_names[idx] = dict_col_name[cname]
 
+
     writer = dsw.DictWriter(column_names=out_column_names
       ,default_column_spec=default_column_spec
-      ,od_column_type=output_od_column_type, verbosity=verbosity)
+      ,od_column_type=output_od_column_type
+      # later: add some per-column translations while converting data
+      # after also adding it as an  arg to this method, data()
+      # ,d_column_functions=d_column_function
+      , verbosity=verbosity)
 
     writer.writeheader()
     #reader = dsr.DictReader()
