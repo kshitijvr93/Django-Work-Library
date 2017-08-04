@@ -50,7 +50,8 @@ d_server_params = {
         'url_base': 'http://merrick.library.miami.edu/oai/oai.php',
         'output_parent' : None,
         # See spreadsheet from laura perry to rvp in uf email of 2017071:
-        'set_specs' : ['asm0085',
+        'set_specs' : ['chc5017'
+                # asm0085',
                   # 'asm0304',
             ],
     },
@@ -61,6 +62,8 @@ OAIHarvester is initialized with a dict with details on a known
 OAI server. Various parameters are required which are evident by the __init__
 code references made to values in the d_param_val argument
 '''
+from lxml.etree import tostring
+import xml.etree.ElementTree as ET
 
 class OAIHarvester():
     def __init__(self, d_param_val=None):
@@ -100,24 +103,25 @@ class OAIHarvester():
             .format(self.output_parent, self.name, set_spec))
         os.makedirs(harvest_folder, exist_ok=True)
         print("Using harvest_folder='{}'".format(harvest_folder))
-        url_list = ('{}?verb=ListRecords&set={}&metadataPrefix=oai_dc'
+        url_list_records = ('{}?verb=ListRecords&set={}&metadataPrefix=oai_dc'
             .format(self.url_base,set_spec))
         # url_list='http://localhost:52468/sobekcm_oai.aspx?verb=ListRecords&set=dloc1&metadataPrefix=oai_dc&resumptionToken=000957UFDCdloc1:oai_dc'
         # n_batch = 956
         n_batch = 0
-        while (url_list is not None):
+        while (url_list_records is not None):
             n_batch += 1
-            print("{}:For batch {}, sending url_list request={}".format(me,n_batch,url_list))
-            response = requests.get(url_list)
+
+            print("{}:For batch {}, sending url_list_records request={}".format(me,n_batch,url_list_records))
+            response = requests.get(url_list_records)
 
             xml = response.text.encode('utf-8')
-            print("{}:Request={},Reponse has text len={}".format(me,url_list,len(xml)))
+            print("{}:The ListRecords reponse has text len={}".format(me,len(xml)))
 
             try:
                 node_root = etree.fromstring(response.text.encode('utf-8'))
             except Exception as e:
                 print("For batch {}, made url request ='{}'. Skipping batch with Parse() exception='{}'"
-                      .format(n_batch, url_list, repr(e)))
+                      .format(n_batch, url_list_records, repr(e)))
 
                 print("Traceback: {}".format(traceback.format_exc()))
                 # Break here - no point to continue because we cannot parse/discover the resumptionToken
@@ -128,6 +132,11 @@ class OAIHarvester():
 
             print ("ListRecords request found root tag name='{}', and {} records"
                    .format(node_root.tag, len(nodes_record)))
+
+            # For every record, write an output file.
+            for node_record in nodes_record:
+                pass
+
             node_resumption = node_root.find('.//{*}resumptionToken', namespaces=d_namespaces)
             url_list = None
             if node_resumption is not None:
@@ -140,6 +149,7 @@ class OAIHarvester():
             #Set to url_list to None for testing
 
         return
+    # end def harvest
     '''
     set params - and set the self.url
     '''
@@ -155,8 +165,8 @@ class OAIHarvester():
             sep = '&'
         #reset the url
         return
-
-    # end class OAIHarvester
+    # end def set_params()
+# end class OAIHarvester
 
 d_harvest_params = d_server_params['ufdc_oai']
 #d_harvest_params = d_server_params['ufdc_devpc']

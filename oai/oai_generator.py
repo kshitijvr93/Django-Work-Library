@@ -242,7 +242,7 @@ def response_of_zenodo(d_search, dataset_name=None, verbosity= 0):
 class OAI_Harvester(object):
   def __init__(self, oai_url=None, output_folder=None,verbosity=None):
     pnames = ['oai_url','output_folder',]
-    if not all(output_folder, oai_url):
+    if not all([output_folder, oai_url]):
       raise ValueError("Error: Some parameters not set: {}.".format(pnames))
     self.oai_url = oai_url
     self.output_folder = output_folder
@@ -259,9 +259,9 @@ class OAI_Harvester(object):
     pass
 
   def url_list_records(self, set_spec=None, metadata_format=None):
-    url = ("{}?ListRecords&set={}&metadataPrefix={}"
+    url = ("{}?verb=ListRecords&set={}&metadataPrefix={}"
       .format(self.oai_url,set_spec,metadata_format))
-    return request.get(url)
+    return url
 
   def generator_list_records(self,  metadata_format=None, set_spec=None, verbosity=0):
     pnames = ['metadata_format','set_spec',]
@@ -273,11 +273,12 @@ class OAI_Harvester(object):
       raise ValueError("Error: unknown metadata format: {}.".format(metadata_format))
 
     n_batch = 0;
-    url_list = url_list_records(set_spec=set_spec,metadata_format=metadata_format)
+    url_list = self.url_list_records(set_spec=set_spec,metadata_format=metadata_format)
     while (url_list is not None):
       n_batch += 1
-      response = request.get(url_list)
+      response = requests.get(url_list)
       xml = response.text.encode('utf-8')
+      print("Using url_list='{}', got response with xml length = {}".format(url_list,len(xml)))
 
       try:
           node_root = etree.fromstring(xml)
@@ -291,7 +292,7 @@ class OAI_Harvester(object):
       # str_pretty = etree.tostring(node_root, pretty_print=True)
       d_namespaces = {key:value for key,value in dict(node_root.nsmap).items() if key is not None}
       nodes_record = node_root.findall(".//{*}record", namespaces=d_namespaces)
-
+      print("From the xml found {} xml tags for records".format(len(nodes_record)))
       print ("ListRecords request found root tag name='{}', and {} records"
              .format(node_root.tag, len(nodes_record)))
 
@@ -317,7 +318,7 @@ class OAI_Harvester(object):
 
 #
 #  Method list_records_to_mets_xml_files
-def list_records_to_mets_xml_files(d_run_params, set_spec='user-genetics-datasets',verbosity=0):
+def list_records_to_mets_xml_filesxx(d_run_params, set_spec='user-genetics-datasets',verbosity=0):
     #
     output_folder = d_run_params['output_folder']
     mets_output_folder = output_folder + '/mets_output/'
@@ -484,9 +485,9 @@ def list_records_to_mets_xml_files(d_run_params, set_spec='user-genetics-dataset
         with open(fn, 'wb') as outfile:
             print("Writing filename='{}'".format(fn))
             outfile.write(mets_str.encode('utf-8'))
-        # end with ... outfile
-    # end for node_record in nodes_record
-# } end def list_records_to_xml_files
+
+     # end for node_record in nodes_record
+#  end def list_records_to_xml_files
 
 d_run_params = {
     'output_folder' : 'c:/rvp/elsevier/output_zenodo/' ,
@@ -509,5 +510,17 @@ output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
 
 d_run_params['output_folder'] = output_folder
 set_spec='user-genetics-datasets'
+metadata_format="oai_dc"
+output_folder2 = etl.data_folder(linux='/home/robert/', windows='U:/',
+        data_relative_folder='data/outputs/zenodo_generated_mets')
+#run(d_run_params, set_spec=set_spec)
+oai_url = 'https://zenodo.org/oai2d'
+oai = OAI_Harvester(oai_url=oai_url, output_folder = output_folder2,)
 
-list_records_to_mets_xml_files(d_run_params, set_spec=set_spec)
+num_records = 0
+for nodes_record in oai.generator_list_records(set_spec=set_spec,metadata_format=metadata_format):
+    if nodes_record is None:
+        break;
+    num_records += 1
+
+print("Generator got {} records. DONE.".format(num_records))

@@ -74,4 +74,4 @@ def sql_mining_params():
 
     return od_rel_datacolumns, d_node_params
 
-#end def sql_mining_params_oadoi
+#end def sql_mining_params

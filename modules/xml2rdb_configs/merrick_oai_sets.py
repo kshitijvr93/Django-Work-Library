@@ -17,7 +17,7 @@ def sql_mining_params():
         ('parent', OrderedDict([
             ('notes',''),
         ])),
-        ('set', OrderedDict([
+        ('oaiset', OrderedDict([
             ('set_spec',''),
             ('set_name',''),
             ('set_description',''),
@@ -36,7 +36,7 @@ def sql_mining_params():
         'multiple':0,
         'child_xpaths': {
             './{*}set' : {
-                'db_name' : 'set', 'multiple': 1,
+                'db_name' : 'oaiset', 'multiple':1,
                 'child_xpaths' : {
                     ".//{*}setSpec": {
                         'multiple':0,
