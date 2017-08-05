@@ -205,149 +205,155 @@ def response_of_zenodo(d_search, dataset_name=None, verbosity= 0):
     url = url_of_zenodo(d_search, dataset_name=dataset_name, verbosity=verbosity)
     return requests.get(url, headers=d_headers)
 
-def zenodo_record_to_file(node_record=None, namespaces=None, output_folder=None,bib_vid='XX00000000'
+def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib_vid='XX00000000'
   ,verbosity=0):
-  required_params = ['node_record','namespaces','output_folder','bib_vid']
-  if not all(required_params):
-    raise ValueError("Some params are not given: {}".format(required_params))
-  # NOTE: the caller must get the bib_last value and count up to provide here the entire bib_vid value
-  # to use in this output file.
-  # Note this is passed as an argument to intialize an OAI harvester and is invoked by its method x that passes along
-  # some of its arguments to here (node_record, bib prefix, .. or just bib_vid is better --, and output_folder)
-  # and node_record is given by calls to that class method within a loop
-  #######################
-    #######################
-        #####################################
-        node_type= node_record.find(".//{}type", namespaces=d_namespaces)
-        genre = '' if not node_type else node_type.text
+    required_params = ['node_record','namespaces','output_folder','bib_vid']
+    if not all(required_params):
+      raise ValueError("Some params are not given: {}".format(required_params))
+    # NOTE: the caller must get the bib_last value and count up to provide here the entire bib_vid value
+    # to use in this output file.
+    # Note this is passed as an argument to intialize an OAI harvester and is invoked by its method x that passes along
+    # some of its arguments to here (node_record, bib prefix, .. or just bib_vid is better --, and output_folder)
+    # and node_record is given by calls to that class method within a loop
+    bibid = bib_vid[2:10]
+    vid = bib_vid[11:16]
 
-        header_identifier = node_record.find("./{*}header/{*}identifier").text
+    node_type= node_record.find(".//{}type", namespaces=namespaces)
+    genre = '' if not node_type else node_type.text
 
-        identifier_normalized = header_identifier.replace(':','_') + '.xml'
-        print("using bib_vid={} to output item with zenodo identifier_normalized={}"
-              .format(bib_vid, identifier_normalized))
-        #zenodo_string_xml = etree.tostring(node_record, pretty_print=True)
+    header_identifier = node_record.find("./{*}header/{*}identifier").text
 
-        # Parse the input record and save it to a string
-        record_str = etree.tostring(node_record, pretty_print=True, xml_declaration=True)
+    identifier_normalized = header_identifier.replace(':','_') + '.xml'
+    print("using bib={}, vid={}, bib_vid={} to output item with zenodo identifier_normalized={}"
+          .format(bibid,vid,bib_vid, identifier_normalized))
+    #zenodo_string_xml = etree.tostring(node_record, pretty_print=True)
 
-        filename_received = output_folder + '/received/' + identifier_normalized
+    # Parse the input record and save it to a string
+    record_str = etree.tostring(node_record, pretty_print=True, xml_declaration=True)
+    print("Got record string={}".format(record_str))
 
-        fn = filename_received
-        with open(fn, 'wb') as outfile:
-            print("Writing filename_received ='{}'".format(fn))
-            outfile.write(record_str)
+    filename_received = output_folder + '/' + identifier_normalized
 
-        # Set some variable to potentially output into the METS template
-        utc_now = datetime.datetime.utcnow()
-        utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    fn = filename_received
+    with open(fn, 'wb') as outfile:
+        print("Writing filename_received ='{}'".format(fn))
+        outfile.write(record_str)
 
-        #Get basic values from input doc
+    # Set some variable to potentially output into the METS template
+    utc_now = datetime.datetime.utcnow()
+    utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        node_oaidc = node_record.find(".//{*}dc", namespaces=d_namespaces)
-        if node_oaidc is None:
-            raise Exception("Cannot find oai_dc:dc node")
+    #Get basic values from input doc
 
-        namespaces = {key:value for key,value in dict(node_oaidc.nsmap).items() if key is not None}
+    node_oaidc = node_record.find(".//{*}dc", namespaces=namespaces)
+    if node_oaidc is None:
+        raise Exception("Cannot find oai_dc:dc node")
 
-        print("Got oai_dc prefix map='{}'\n\n".format(repr(namespaces)))
+    namespaces = {key:value for key,value in dict(node_oaidc.nsmap).items() if key is not None}
 
-        node_creator = node_oaidc.find(".//dc:creator", namespaces=namespaces)
-        dc_creator = '' if node_creator is None else node_creator.text
-        print("Got creator={}".format(dc_creator))
+    print("Got oai_dc prefix map='{}'\n\n".format(repr(namespaces)))
 
-        dc_date_orig = node_oaidc.find("./dc:date", namespaces=namespaces).text
-        print("Got dc date orig={}".format(dc_date_orig))
-        # Must convert dc_date_orig to valid METS format:
-        dc_date = '{}T12:00:00Z'.format(dc_date_orig)
-        print("Got dc_date='{}'".format(dc_date))
+    node_creator = node_oaidc.find(".//dc:creator", namespaces=namespaces)
+    dc_creator = '' if node_creator is None else node_creator.text
+    print("Got creator={}".format(dc_creator))
 
-        node_description = node_oaidc.find(".//{*}description",namespaces=namespaces)
-        # Make an element trree style tree to invoke pattern to remove innter xml
-        str_description = tostring(node_description,encoding='unicode',method='text').strip().replace('\n','')
-        # Special doctype needed to handle nbsp... copyright
-        xml_dtd = '''<?xml version="1.1" encoding="UTF-8" ?><!DOCTYPE naughtyxml [
-            <!ENTITY nbsp "&#0160;">
-            <!ENTITY copy "&#0169;">
-            ]>'''
-        xml_description =  '{}<doc>{}</doc>'.format(xml_dtd,str_description)
-        print("Got str_description='{}'".format(str_description))
-        print("Got xml_description='{}'".format(xml_description))
+    dc_date_orig = node_oaidc.find("./dc:date", namespaces=namespaces).text
+    print("Got dc date orig={}".format(dc_date_orig))
+    # Must convert dc_date_orig to valid METS format:
+    dc_date = '{}T12:00:00Z'.format(dc_date_orig)
+    print("Got dc_date='{}'".format(dc_date))
 
+    node_description = node_oaidc.find(".//{*}description",namespaces=namespaces)
+    # Make an element trree style tree to invoke pattern to remove innter xml
+    str_description = tostring(node_description,encoding='unicode',method='text').strip().replace('\n','')
+
+    # Special doctype needed to handle nbsp... copyright
+    xml_dtd = '''<?xml version="1.1" encoding="UTF-8" ?><!DOCTYPE naughtyxml [
+        <!ENTITY nbsp "&#0160;">
+        <!ENTITY copy "&#0169;">
+        ]>'''
+
+    xml_description =  '{}<doc>{}</doc>'.format(xml_dtd,str_description)
+    print("Got str_description='{}'".format(str_description))
+    print("Got xml_description='{}'".format(xml_description))
+    print
+    if (1 ==2):
         # See: https://stackoverflow.com/questions/19369901/python-element-tree-extract-text-from-element-stripping-tags#19370075
         tree_description = ET.fromstring(xml_description)
         dc_description = etl.escape_xml_text(''.join(tree_description.itertext()))
-        #dc_description = xml_description
+    else:
+        dc_description = xml_description
         print("Using dc_description='{}'".format(dc_description))
 
-        nodes_identifier = node_oaidc.findall(".//{*}identifier")
-        #inferred the following indexes by pure manual inspection!
-        doi = nodes_identifier[0].text
-        zenodo_id = nodes_identifier[2].text
-        related_url = '{}'.format(doi)
+    nodes_identifier = node_oaidc.findall(".//{*}identifier")
+    #inferred the following indexes by pure manual inspection!
+    doi = nodes_identifier[0].text
+    zenodo_id = nodes_identifier[2].text
+    related_url = '{}'.format(doi)
 
-        #relation_doi = node_oaidc.find(".//{*}relation").text
-        nodes_rights = node_oaidc.findall(".//{*}rights")
-        rights_text = 'See:'
-        for node_rights in nodes_rights:
-            rights_text += ' ' + node_rights.text
+    #relation_doi = node_oaidc.find(".//{*}relation").text
+    nodes_rights = node_oaidc.findall(".//{*}rights")
+    rights_text = 'See:'
+    for node_rights in nodes_rights:
+        rights_text += ' ' + node_rights.text
 
-        nodes_subject = node_oaidc.findall(".//{*}subject")
-        mods_subjects = ''
-        for node_subject in nodes_subject:
-            mods_subjects += ('<mods:subject><mods:topic>' + node_subject.text
-              + '</mods:topic></mods:subject>\n')
+    nodes_subject = node_oaidc.findall(".//{*}subject")
+    mods_subjects = ''
+    for node_subject in nodes_subject:
+        mods_subjects += ('<mods:subject><mods:topic>' + node_subject.text
+          + '</mods:topic></mods:subject>\n')
 
-        dc_title = node_oaidc.find(".//{*}title").text
-        dc_type = node_oaidc.find(".//{*}type").text
+    dc_title = node_oaidc.find(".//{*}title").text
+    dc_type = node_oaidc.find(".//{*}type").text
 
-        sobekcm_aggregations = ['UFDATASETS']
-        xml_sobekcm_aggregations = ''
-        for aggregation in sobekcm_aggregations:
-            xml_sobekcm_aggregations += (
-                '<sobekcm:Aggregation>{}</sobekcm:Aggregation>'
-                .format(aggregation))
+    sobekcm_aggregations = ['UFDATASETS']
+    xml_sobekcm_aggregations = ''
+    for aggregation in sobekcm_aggregations:
+        xml_sobekcm_aggregations += (
+            '<sobekcm:Aggregation>{}</sobekcm:Aggregation>'
+            .format(aggregation))
 
-        # Apply basic input values to METS template variables
+    # Apply basic input values to METS template variables
 
-        d_var_val = {
-            'bib_vid' : bib_vid,
-            'create_date' : dc_date,
-            'last_mod_date' : utc_secs_z,
-            'agent_creator_individual_name': dc_creator,
-            'agent_creator_individual_note' : 'Creation via zenodo harvest',
-            'identifier' : header_identifier,
-            'mods_subjects' : mods_subjects,
-            'rights_text' : rights_text,
-            'utc_secs_z' :  utc_secs_z,
-            'title' : dc_title,
-            'related_url' : related_url,
-            'xml_sobekcm_aggregations' : xml_sobekcm_aggregations,
-            'doi': doi,
-            'description' : dc_description,
-            'creator' : dc_creator,
-            'bibid': bibid,
-            'vid': vid,
-            'type_of_resource' : dc_type,
-            'sha1-mets-v1' : '',
-            'genre' : 'dataset',
-            'genre_authority': 'zenodo',
-        }
+    d_var_val = {
+        'bib_vid' : bib_vid,
+        'create_date' : dc_date,
+        'last_mod_date' : utc_secs_z,
+        'agent_creator_individual_name': dc_creator,
+        'agent_creator_individual_note' : 'Creation via zenodo harvest',
+        'identifier' : header_identifier,
+        'mods_subjects' : mods_subjects,
+        'rights_text' : rights_text,
+        'utc_secs_z' :  utc_secs_z,
+        'title' : dc_title,
+        'related_url' : related_url,
+        'xml_sobekcm_aggregations' : xml_sobekcm_aggregations,
+        'doi': doi,
+        'description' : dc_description,
+        'creator' : dc_creator,
+        'bibid': bibid,
+        'vid': vid,
+        'type_of_resource' : dc_type,
+        'sha1-mets-v1' : '',
+        'genre' : 'dataset',
+        'genre_authority': 'zenodo',
+    }
 
-        # Create mets_str and write it
-        mets_str = mets_format_str.format(**d_var_val)
-        item_output_folder = mets_output_folder + '/' + bib_vid
-        os.makedirs(item_output_folder, exist_ok=True)
-        filename_mets = item_output_folder + '/' + bib_vid + '.mets.xml'
-        fn = filename_mets
-        with open(fn, 'wb') as outfile:
-            print("Writing filename='{}'".format(fn))
-            outfile.write(mets_str.encode('utf-8'))
-        # end with ... outfile
-  #######################
-  #######################
+    # Create mets_str and write it
+    mets_str = zenodo_mets_format_str.format(**d_var_val)
+    item_output_folder = output_folder + '/mets/' + bib_vid
+    os.makedirs(item_output_folder, exist_ok=True)
+    filename_mets = item_output_folder + '/' + bib_vid + '.mets.xml'
+    fn = filename_mets
+    with open(fn, 'wb') as outfile:
+        print("Writing filename='{}'".format(fn))
+        outfile.write(mets_str.encode('utf-8'))
+    # end with ... outfile
+    #######################
+    #######################
 
-  return
+    return
+    #end def zenodo_node_writer
 
 class OAI_Harvester(object):
   '''
@@ -356,19 +362,22 @@ class OAI_Harvester(object):
   in the output folder for the node_record </param>
   '''
   def __init__(self, oai_url=None, output_folder=None,bib_prefix='XX'
-      ,bib_zfills=[8,5], bib_last=0, d_crosswalk=None, str_output_format=None,
+      ,bib_zfills=[8,5], bib_last=0, d_crosswalk=None, str_output_format=None
       ,node_writer=None, verbosity=None):
 
-    required_pnames = ['oai_url','output_folder',]
+    required_pnames = ['node_writer','oai_url','output_folder',]
     if not all([output_folder, oai_url]):
       raise ValueError("Error: Some parameters not set: {}.".format(required_pnames))
     self.oai_url = oai_url
     self.output_folder = output_folder
     self.bib_prefix = bib_prefix
-    self.bib_zfills = bib.zfills
+    self.bib_zfills = bib_zfills
     self.bib_last = bib_last
     self.d_crosswalk = d_crosswalk
     self.str_output_format = str_output_format
+    self.node_writer = node_writer
+    # namespaces will be reset by each xml file inputted by generator_node_records()
+    self.namespaces = None #will be overwritten when each xml file is input by the generator_node_records
 
     # Later: use API with verb metadataFormats to get them. Now try a one-size-fits-all list
     #
@@ -413,13 +422,17 @@ class OAI_Harvester(object):
           # Break here - no point to continue because we cannot parse/discover the resumptionToken
           break
       # str_pretty = etree.tostring(node_root, pretty_print=True)
-      d_namespaces = {key:value for key,value in dict(node_root.nsmap).items() if key is not None}
+      d_namespaces={key:value for key,value in dict(node_root.nsmap).items() if key is not None}
+      # Can set self.namespaces here, or could return namespaces in a tuple value from the yield,
+      # but this  somehow seems a better way to possibly support future methods
+      self.namespaces=d_namespaces
+
       nodes_record = node_root.findall(".//{*}record", namespaces=d_namespaces)
       print("From the xml found {} xml tags for records".format(len(nodes_record)))
       print ("ListRecords request found root tag name='{}', and {} records"
              .format(node_root.tag, len(nodes_record)))
 
-      # For every record, write an output file.
+      # For every input node/record, yield it so caller can write an output file.
       for node_record in nodes_record:
           yield node_record
 
@@ -443,12 +456,13 @@ class OAI_Harvester(object):
     for node_record in oai.generator_node_records(set_spec=set_spec,metadata_format=metadata_format):
       # Call crosswalk this xml node's record content to output the record to a file
       self.bib_last +=1
-      bibvid = self.bib_prefix + str(bibint).zfill(bib_zfills[0]) + '00001' #may implement vid later
-      zw = self.node_writer()
-
-      if nodes_record is None:
+      bibvid = self.bib_prefix + str(self.bib_last).zfill(self.bib_zfills[0]) + '00001' #may implement vid later
+      # zw = self.node_writer()
+      if node_record is None:
             break;
       num_records += 1
+      # call the crosswalk function to generate output
+      self.node_writer(node_record=node_record,namespaces=self.namespaces,output_folder=self.output_folder)
     return num_records
   # end def output()
 # end class OAI_Harvester
@@ -551,13 +565,15 @@ def list_records_to_mets_xml_filesxx(d_run_params, set_spec='user-genetics-datas
             ]>'''
         xml_description =  '{}<doc>{}</doc>'.format(xml_dtd,str_description)
         print("Got str_description='{}'".format(str_description))
-        print("Got xml_description='{}'".format(xml_description))
+        print("Got xml_description='{}'.".format(xml_description))
 
         # See: https://stackoverflow.com/questions/19369901/python-element-tree-extract-text-from-element-stripping-tags#19370075
-        tree_description = ET.fromstring(xml_description)
-        dc_description = etl.escape_xml_text(''.join(tree_description.itertext()))
-        #dc_description = xml_description
-        print("Using dc_description='{}'".format(dc_description))
+        if (1 == 2):
+            tree_description = ET.fromstring(xml_description)
+            dc_description = etl.escape_xml_text(''.join(tree_description.itertext()))
+        else:
+            #dc_description = xml_description
+            print("Using dc_description='{}'".format(dc_description))
 
         nodes_identifier = node_oaidc.findall(".//{*}identifier")
         #inferred the following indexes by pure manual inspection!
@@ -681,13 +697,16 @@ def zenodo_record_to_mets_xml_file(d_run_params, set_spec='user-genetics-dataset
         # Parse the input record and save it to a string
         record_str = etree.tostring(node_record, pretty_print=True, xml_declaration=True)
 
-        filename_received = output_folder + '/received/' + identifier_normalized
-
+        # Save the pure xml file in subfolder received
+        folder_received =  output_folder + '/received/' + identifier_normalized
+        filename_received = folder_received + identifier_normalized
         fn = filename_received
+        os.makedirs(fn, exist_ok=True)
         with open(fn, 'wb') as outfile:
             print("Writing filename_received ='{}'".format(fn))
             outfile.write(record_str)
 
+        # Also create and save a mets file
         # Set some variable to potentially output into the METS template
         utc_now = datetime.datetime.utcnow()
         utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -725,8 +744,9 @@ def zenodo_record_to_mets_xml_file(d_run_params, set_spec='user-genetics-dataset
         print("Got xml_description='{}'".format(xml_description))
 
         # See: https://stackoverflow.com/questions/19369901/python-element-tree-extract-text-from-element-stripping-tags#19370075
-        tree_description = ET.fromstring(xml_description)
+        tree_description = ET.fromstring(str_description)
         dc_description = etl.escape_xml_text(''.join(tree_description.itertext()))
+
         #dc_description = xml_description
         print("Using dc_description='{}'".format(dc_description))
 
@@ -787,7 +807,7 @@ def zenodo_record_to_mets_xml_file(d_run_params, set_spec='user-genetics-dataset
         # Create mets_str and write it
         mets_str = mets_format_str.format(**d_var_val)
         item_output_folder = mets_output_folder + '/' + bib_vid
-        os.makedirs(item_output_folder, exist_ok=True)
+        osself.makedirs(item_output_folder, exist_ok=True)
         filename_mets = item_output_folder + '/' + bib_vid + '.mets.xml'
         fn = filename_mets
         with open(fn, 'wb') as outfile:
@@ -830,7 +850,8 @@ if study == 'zenodo':
   output_folder2 = etl.data_folder(linux='/home/robert/', windows='U:/',
         data_relative_folder='data/outputs/oai/zenodo_generated_mets')
 
-  oai = OAI_Harvester(oai_url=oai_url, output_folder=output_folder, bib_prefix="DS")
+  oai = OAI_Harvester(oai_url=oai_url, output_folder=output_folder, bib_prefix="DS"
+      ,node_writer=zenodo_node_writer)
   num_records = oai.output()
   print("oai.output() returned num_records={}".format(num_records))
 
