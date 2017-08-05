@@ -46,6 +46,7 @@ print("Using output_folder='{}'".format(output_folder),file=sys.stdout)
 
 import etl
 import os
+
 zenodo_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!--  METS/mods file designed to describe a Zenodo OAI-PMH extracted MD  -->
 
@@ -120,7 +121,7 @@ zenodo_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no"
   </mods:role>
 </mods:name>
 
-<!-- subject topics- These from Elsevier are phrases with no authority info -->
+<!-- subject topics: var mods_subjects may be phrases with no authority info -->
 {mods_subjects}
 <mods:note displayLabel="Harvest Date">{utc_secs_z}</mods:note>
 
@@ -188,23 +189,6 @@ def add_curl_command(d_request):
     #print("Curl={}".format(curl))
     return
 
-def url_of_zenodo(d_search, dataset_name='user-genetics-datasets', verbosity=0):
-    me = "url_of_zenodo"
-    if d_search is None:
-        raise(ValueError,"d_search is required")
-    if verbosity != 0 :
-        print("{}:Starting".format(me))
-
-    url = d_search['url_format'].format(dataset_name)
-    d_search['url'] = url # save for diagnostics
-    add_curl_command(d_search)
-    return url
-
-def response_of_zenodo(d_search, dataset_name=None, verbosity= 0):
-    d_headers = d_search['d_request_headers']
-    url = url_of_zenodo(d_search, dataset_name=dataset_name, verbosity=verbosity)
-    return requests.get(url, headers=d_headers)
-
 def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib_vid='XX00000000_00001'
   ,verbosity=0):
     required_params = ['node_record','namespaces','output_folder','bib_vid']
@@ -224,7 +208,8 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
 
     header_identifier = node_record.find("./{*}header/{*}identifier").text
 
-    identifier_normalized = header_identifier.replace(':','_') + '.xml'
+    identifier_normalized = (header_identifier
+      .replace(':','_').replace('/','_').replace('.','-') + '.xml' )
     print("using bib={}, vid={}, bib_vid={} to output item with zenodo identifier_normalized={}"
           .format(bibid,vid,bib_vid, identifier_normalized))
     #zenodo_string_xml = etree.tostring(node_record, pretty_print=True)
@@ -234,6 +219,8 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
     print("Got record string={}".format(record_str))
 
     output_folder_xml = output_folder + 'xml/'
+    # TO CONSIDER: maybe add a class member flag to delete all preexisting files in this directory?
+    # maybe dir for mets too?
     os.makedirs(output_folder_xml, exist_ok=True)
 
     filename_xml= output_folder_xml + identifier_normalized
@@ -372,7 +359,7 @@ class OAI_Harvester(object):
   '''
   def __init__(self, oai_url=None, output_folder=None,bib_prefix='XX'
       ,bib_zfills=[8,5], bib_last=0, d_crosswalk=None, str_output_format=None
-      ,node_writer=None, verbosity=None):
+      ,node_writer=None, record_xpath=".//{*}record",verbosity=None):
 
     required_pnames = ['node_writer','oai_url','output_folder',]
     if not all([output_folder, oai_url]):
@@ -385,6 +372,7 @@ class OAI_Harvester(object):
     self.d_crosswalk = d_crosswalk
     self.str_output_format = str_output_format
     self.node_writer = node_writer
+    self.record_xpath = record_xpath
     # namespaces will be reset by each xml file inputted by generator_node_records()
     self.namespaces = None #will be overwritten when each xml file is input by the generator_node_records
 
@@ -403,7 +391,8 @@ class OAI_Harvester(object):
       .format(self.oai_url,set_spec,metadata_format))
     return url
 
-  def generator_node_records(self,  metadata_format=None, set_spec=None, verbosity=0):
+  def generator_node_records(self,  metadata_format=None, set_spec=None
+      , verbosity=0):
     pnames = ['metadata_format','set_spec',]
 
     if not all(set_spec):
@@ -435,7 +424,7 @@ class OAI_Harvester(object):
       # but this  somehow seems a better way to possibly support future methods
       self.namespaces=d_namespaces
 
-      nodes_record = node_root.findall(".//{*}record", namespaces=d_namespaces)
+      nodes_record = node_root.findall(self.record_xpath, namespaces=d_namespaces)
       print("From the xml found {} xml tags for records".format(len(nodes_record)))
       print ("ListRecords request found root tag name='{}', and {} records"
              .format(node_root.tag, len(nodes_record)))
@@ -464,7 +453,7 @@ class OAI_Harvester(object):
     bibvid = self.bib_prefix + str(self.bib_last).zfill(self.bib_zfills[0]) + '00001' #may implement vid later
 
     for (namespaces, node_record) in oai.generator_node_records(
-        set_spec=set_spec,metadata_format=metadata_format):
+        set_spec=set_spec ,metadata_format=metadata_format):
       # Increment the bib_id
       self.bib_last += 1
       bib_vid = self.bib_prefix + str(self.bib_last).zfill(8) + '_00001' #may implement vid later
@@ -540,25 +529,46 @@ class XmlBibWalker(object):
           return
 
 #end class XMLCrossWalker
-
-
-
+#studies
+studies = ['zenodo','merrick']
 # Set study config for thus run
+
 study = 'zenodo'
+study = 'merrick/chc5017'
 
 if study == 'zenodo':
   set_spec='user-genetics-datasets'
   metadata_format="oai_dc"
+
   oai_url = 'https://zenodo.org/oai2d'
   output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
         data_relative_folder='data/outputs/oai/{}/{}/'.format(study,set_spec))
   print("Study = {}, set_spec={}, base_output_folder={}".format(study,set_spec,output_folder))
 
   oai = OAI_Harvester(oai_url=oai_url, output_folder=output_folder, bib_prefix="DS"
-      ,node_writer=zenodo_node_writer)
+      ,node_writer=zenodo_node_writer, record_xpath=".//{*}record")
 
   num_records = oai.output()
   print("oai.output() returned num_records={}".format(num_records))
+
+elif study == "merrick/chc5017":
+  parts = study.split('/')
+  study = parts[0]
+  set_spec = parts[1]
+  metadata_format="oai_dc"
+
+  oai_url = 'http://merrick.library.miami.edu/oai/oai.php'
+  output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
+      data_relative_folder='data/outputs/oai/{}/{}/'.format(study,set_spec))
+  print("Study = {}, set_spec={}, base_output_folder={}".format(study,set_spec,output_folder))
+
+  oai = OAI_Harvester(oai_url=oai_url, output_folder=output_folder, bib_prefix="CX"
+      ,node_writer=zenodo_node_writer, record_xpath=".//{*}record")
+
+  num_records = oai.output()
+else:
+    raise ValueError('ERROR: unknown study={}'.format(study))
+
 
 #d_run_params['output_folder'] = output_folder
 
