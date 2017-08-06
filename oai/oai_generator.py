@@ -91,7 +91,7 @@ zenodo_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no"
 </mods:abstract>
 
 <mods:accessCondition>{rights_text}</mods:accessCondition>
-<mods:identifier type="xxzenodo">{identifier}</mods:identifier>
+<mods:identifier type="zenodo">{identifier}</mods:identifier>
 <mods:genre authority="{genre_authority}">{genre}</mods:genre>
 <mods:identifier type="doi">{doi}</mods:identifier>
 <mods:language>
@@ -173,7 +173,7 @@ zenodo_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no"
 '''
 #
 merrick_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<!--  METS/mods file designed to describe a Zenodo OAI-PMH extracted MD  -->
+<!--  METS/mods file designed to describe OAI-PMH extracted MD from Miami-Merrick ->
 
 <METS:mets OBJID="{bib_vid}"
   xmlns:METS="http://www.loc.gov/METS/"
@@ -393,7 +393,8 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
     nodes_identifier = node_oaidc.findall(".//{*}identifier")
     #inferred the following indexes by pure manual inspection!
     doi = nodes_identifier[0].text
-    zenodo_id = nodes_identifier[2].text
+    if len(nodes_identifier) > 1:
+        zenodo_id = nodes_identifier[1].text
     related_url = '{}'.format(doi)
 
     #relation_doi = node_oaidc.find(".//{*}relation").text
@@ -476,9 +477,8 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None,bi
     header_identifier = node_record.find("./{*}header/{*}identifier").text
     identifier_normalized = (header_identifier
       .replace(':','_').replace('/','_').replace('.','-') + '.xml' )
-    print("using bib={}, vid={}, bib_vid={} to output item with zenodo identifier_normalized={}"
+    print("using bib={}, vid={}, bib_vid={} to output item with merrick identifier_normalized={}"
           .format(bibid,vid,bib_vid, identifier_normalized))
-    #zenodo_string_xml = etree.tostring(node_record, pretty_print=True)
 
     # Parse the input record and save it to a string
     record_str = etree.tostring(node_record, pretty_print=True, encoding='unicode')
@@ -545,13 +545,15 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None,bi
         print("Using dc_description='{}'".format(dc_description))
 
     nodes_identifier = node_oaidc.findall(".//{*}identifier")
+
     #inferred the following indexes by pure manual inspection!
     len_ids = len(nodes_identifier)
+
     doi = nodes_identifier[0].text
     if len_ids > 1:
-       zenodo_id = nodes_identifier[1].text
+       merrick_id = nodes_identifier[1].text
     else:
-       zenodo_id = 'none'
+       merrick_id = 'none'
     related_url = '{}'.format(doi)
 
     #relation_doi = node_oaidc.find(".//{*}relation").text
@@ -605,7 +607,7 @@ the item.'''
         'create_date' : dc_date,
         'last_mod_date' : utc_secs_z,
         'agent_creator_individual_name': dc_creator,
-        'agent_creator_individual_note' : 'Creation via zenodo harvest',
+        'agent_creator_individual_note' : 'Creation via Miami-Merrick OAI  harvest',
         'identifier' : header_identifier,
         'mods_subjects' : mods_subjects,
         'rights_text' : rights_text,
@@ -621,7 +623,7 @@ the item.'''
         'type_of_resource' : dc_type,
         'sha1-mets-v1' : '',
         'genre' : 'dataset',
-        'genre_authority': 'zenodo',
+        'genre_authority': '',
     }
 
     # Create mets_str and write it to mets.xml output file
