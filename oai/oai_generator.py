@@ -4,7 +4,7 @@ Program oai_generator supports reading from a configured oai feed and producing 
 zenodo was used as a test base, and others like miami-merrick, and more may be added as this approach
 will be refined with experience... 20170804
 
-Strings like zenodo_mets_format_str are python format string templates
+Strings like oai_mets_format_str are python format string templates
 designed to use to create a mets file for ufdc from an oai (zenodo) response to a ListRecords
 request.
 
@@ -36,16 +36,16 @@ print("Using local local module folder='{}'".format(local_module_folder))
 sys.path.append(local_module_folder) #my current place on UF pc
 '''
 
+'''
 folder_output_linux='/home/robert/'
 folder_output_windows='U:/'
-
 output_folder = etl.data_folder(linux=folder_output_linux, windows=folder_output_windows,
     data_relative_folder='data/outputs/zenodo_mets')
-
-print("Using output_folder='{}'".format(output_folder),file=sys.stdout)
+print("xx:Using output_folder='{}'".format(output_folder),file=sys.stdout)
 
 import etl
 import os
+'''
 
 zenodo_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!--  METS/mods file designed to describe a Zenodo OAI-PMH extracted MD  -->
@@ -91,7 +91,7 @@ zenodo_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no"
 </mods:abstract>
 
 <mods:accessCondition>{rights_text}</mods:accessCondition>
-<mods:identifier type="zenodo">{identifier}</mods:identifier>
+<mods:identifier type="xxzenodo">{identifier}</mods:identifier>
 <mods:genre authority="{genre_authority}">{genre}</mods:genre>
 <mods:identifier type="doi">{doi}</mods:identifier>
 <mods:language>
@@ -144,6 +144,7 @@ zenodo_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no"
 <METS:xmlData>
     <sobekcm:procParam>
     {xml_sobekcm_aggregations}
+    {xml_sobekcm_wordmarks}
     <sobekcm:Tickler>{sha1-mets-v1}</sobekcm:Tickler>
     </sobekcm:procParam>
     <sobekcm:bibDesc>
@@ -170,6 +171,128 @@ zenodo_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no"
 <METS:structMap ID="STRUCT1" > <METS:div /> </METS:structMap>
 </METS:mets>
 '''
+#
+merrick_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!--  METS/mods file designed to describe a Zenodo OAI-PMH extracted MD  -->
+
+<METS:mets OBJID="{bib_vid}"
+  xmlns:METS="http://www.loc.gov/METS/"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:mods="http://www.loc.gov/mods/v3"
+  xmlns:sobekcm="http://sobekrepository.org/schemas/sobekcm/"
+  xmlns:lom="http://sobekrepository.org/schemas/sobekcm_lom"
+  xsi:schemaLocation="http://www.loc.gov/METS/
+    http://www.loc.gov/standards/mets/mets.xsd
+    http://www.loc.gov/mods/v3
+    http://www.loc.gov/mods/v3/mods-3-4.xsd
+    http://sobekrepository.org/schemas/sobekcm/
+    http://sobekrepository.org/schemas/sobekcm.xsd">
+
+<METS:metsHdr CREATEDATE="{create_date}" ID="{bib_vid}"
+  LASTMODDATE="{last_mod_date}" RECORDSTATUS="COMPLETE">
+
+<METS:agent ROLE="CREATOR" TYPE="ORGANIZATION">
+  <METS:name>IUF, University of Florida</METS:name>
+</METS:agent>
+
+<METS:agent ROLE="CREATOR" OTHERTYPE="SOFTWARE" TYPE="OTHER">
+  <METS:name>UF Marshal API Harvester 0.2</METS:name>
+</METS:agent>
+
+<METS:agent ROLE="CREATOR" TYPE="INDIVIDUAL">
+  <METS:name>{agent_creator_individual_name}</METS:name>
+  <METS:note>{agent_creator_individual_note}</METS:note>
+</METS:agent>
+</METS:metsHdr>
+
+<METS:dmdSec ID="DMD1">
+<METS:mdWrap MDTYPE="MODS" MIMETYPE="text/xml" LABEL="MODS Metadata">
+<METS:xmlData>
+
+<mods:mods>
+<mods:abstract>
+{description}
+</mods:abstract>
+
+<mods:accessCondition>{rights_text}</mods:accessCondition>
+<mods:identifier type="miami_merrick_2017">{identifier}</mods:identifier>
+<mods:genre authority="{genre_authority}">{genre}</mods:genre>
+<mods:identifier type="doi">{doi}</mods:identifier>
+<mods:language>
+<mods:languageTerm type="text">eng</mods:languageTerm>
+<mods:languageTerm type="code" authority="iso639-2b">eng</mods:languageTerm>
+</mods:language>
+
+<mods:location>
+  <mods:url displayLabel="External Link">{related_url}</mods:url>
+</mods:location>
+<mods:location>
+  <mods:physicalLocation>University of Miami Libraries</mods:physicalLocation>
+  <mods:physicalLocation type="code">iUM</mods:physicalLocation>
+</mods:location>
+
+<mods:typeOfResource>text</mods:typeOfResource>
+<mods:name type="corporate">
+  <mods:namePart>University of Florida</mods:namePart>
+  <mods:role>
+    <mods:roleTerm type="text">host institution</mods:roleTerm>
+  </mods:role>
+</mods:name>
+<mods:name type="personal">
+  <mods:namePart>{creator}</mods:namePart>
+  <mods:role>
+    <mods:roleTerm type="text">creator</mods:roleTerm>
+  </mods:role>
+</mods:name>
+
+<!-- subject topics: var mods_subjects may be phrases with no authority info -->
+{mods_subjects}
+<mods:note displayLabel="Harvest Date">{utc_secs_z}</mods:note>
+
+<mods:recordInfo>
+  <mods:recordIdentifier source="sobekcm">{bib_vid}</mods:recordIdentifier>
+  <mods:recordContentSource>Zenodo</mods:recordContentSource>
+</mods:recordInfo>
+<mods:titleInfo>
+  <mods:title>{title}</mods:title>
+</mods:titleInfo>
+</mods:mods>
+</METS:xmlData>
+
+</METS:mdWrap>
+</METS:dmdSec>
+
+<METS:dmdSec ID="DMD2">
+<METS:mdWrap MDTYPE="OTHER" OTHERMDTYPE="SOBEKCM" MIMETYPE="text/xml" LABEL="SobekCM Custom Metadata">
+
+<METS:xmlData>
+    <sobekcm:procParam>
+    {xml_sobekcm_aggregations}
+    <sobekcm:Tickler>{sha1-mets-v1}</sobekcm:Tickler>
+    </sobekcm:procParam>
+    <sobekcm:bibDesc>
+        <sobekcm:BibID>{bibid}</sobekcm:BibID>
+        <sobekcm:VID>{vid}</sobekcm:VID>
+        <sobekcm:Affiliation>
+          <sobekcm:HierarchicalAffiliation>
+           <sobekcm:Center>University of Florida</sobekcm:Center>
+          </sobekcm:HierarchicalAffiliation>
+        </sobekcm:Affiliation>
+        <sobekcm:Source>
+        <sobekcm:statement code="iUM">University of Miamia Libraries</sobekcm:statement>
+        </sobekcm:Source>
+    </sobekcm:bibDesc>
+</METS:xmlData>
+
+</METS:mdWrap>
+</METS:dmdSec>
+
+<METS:structMap ID="STRUCT1" > <METS:div /> </METS:structMap>
+</METS:mets>
+'''
+#
+################################################3
 
 from lxml import etree
 import datetime
@@ -433,7 +556,23 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None,bi
 
     #relation_doi = node_oaidc.find(".//{*}relation").text
     nodes_rights = node_oaidc.findall(".//{*}rights")
-    rights_text = 'See:'
+    # rights-text per UF email from Laura Perry to rvp 20170713
+    rights_text = '''This item was contributed to the Digital Library
+of the Caribbean (dLOC) by the source institution listed in the metadata.
+This item may or may not be protected by copyright in the country
+where it was produced. Users of this work have responsibility for
+determining copyright status prior to reusing, publishing or
+reproducing this item for purposes other than what is allowed by
+applicable law, including any applicable international copyright
+treaty or fair use or fair dealing statutes, which dLOC partners
+have explicitly supported and endorsed. Any reuse of this item
+in excess of applicable copyright exceptions may require
+permission. dLOC would encourage users to contact the source
+institution directly or dloc@fiu.edu to request more information
+about copyright status or to provide additional information about
+the item.'''
+
+    # Some list-variable input values
     for node_rights in nodes_rights:
         rights_text += ' ' + node_rights.text
 
@@ -446,15 +585,21 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None,bi
     dc_title = node_oaidc.find(".//{*}title").text
     dc_type = node_oaidc.find(".//{*}type").text
 
-    sobekcm_aggregations = ['UFDATASETS']
+    sobekcm_aggregations = ['ALL', 'DLOC1', 'IUM']
     xml_sobekcm_aggregations = ''
     for aggregation in sobekcm_aggregations:
         xml_sobekcm_aggregations += (
             '<sobekcm:Aggregation>{}</sobekcm:Aggregation>'
             .format(aggregation))
 
-    # Apply basic input values to METS template variables
+    sobekcm_wordmarks = ['UM','DLOC']
+    xml_sobekcm_wordmarks = ''
+    for wordmark in sobekcm_wordmarks:
+        xml_sobekcm_wordmarks += (
+            '<sobekcm:Wordmark>{}</sobekcm:Wordmark>'
+            .format(wordmark))
 
+    # Set some template variable values
     d_var_val = {
         'bib_vid' : bib_vid,
         'create_date' : dc_date,
@@ -479,8 +624,8 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None,bi
         'genre_authority': 'zenodo',
     }
 
-    # Create mets_str and write it
-    mets_str = zenodo_mets_format_str.format(**d_var_val)
+    # Create mets_str and write it to mets.xml output file
+    mets_str = merrick_mets_format_str.format(**d_var_val)
     output_folder_mets = output_folder + 'mets/'
     os.makedirs(output_folder_mets, exist_ok=True)
 
