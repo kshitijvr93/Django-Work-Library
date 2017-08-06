@@ -173,7 +173,7 @@ zenodo_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no"
 '''
 #
 merrick_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<!--  METS/mods file designed to describe OAI-PMH extracted MD from Miami-Merrick ->
+<!--  METS/mods file designed to describe OAI-PMH extracted MD from Miami-Merrick -->
 
 <METS:mets OBJID="{bib_vid}"
   xmlns:METS="http://www.loc.gov/METS/"
@@ -269,6 +269,7 @@ merrick_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no
 <METS:xmlData>
     <sobekcm:procParam>
     {xml_sobekcm_aggregations}
+    {xml_sobekcm_wordmarks}
     <sobekcm:Tickler>{sha1-mets-v1}</sobekcm:Tickler>
     </sobekcm:procParam>
     <sobekcm:bibDesc>
@@ -434,6 +435,7 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
         'title' : dc_title,
         'related_url' : related_url,
         'xml_sobekcm_aggregations' : xml_sobekcm_aggregations,
+        'xml_sobekcm_wordmarks' : xml_sobekcm_wordmarks,
         'doi': doi,
         'description' : dc_description,
         'creator' : dc_creator,
@@ -598,7 +600,7 @@ the item.'''
     xml_sobekcm_wordmarks = ''
     for wordmark in sobekcm_wordmarks:
         xml_sobekcm_wordmarks += (
-            '<sobekcm:Wordmark>{}</sobekcm:Wordmark>'
+            '<sobekcm:Wordmark>{}</sobekcm:Wordmark>\n'
             .format(wordmark))
 
     # Set some template variable values
@@ -615,6 +617,7 @@ the item.'''
         'title' : dc_title,
         'related_url' : related_url,
         'xml_sobekcm_aggregations' : xml_sobekcm_aggregations,
+        'xml_sobekcm_wordmarks' : xml_sobekcm_wordmarks,
         'doi': doi,
         'description' : dc_description,
         'creator' : dc_creator,
