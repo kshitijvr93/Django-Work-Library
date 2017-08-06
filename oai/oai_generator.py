@@ -314,9 +314,9 @@ def add_curl_command(d_request):
     return
 
 def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib_vid='XX00000000_00001'
-  ,verbosity=0):
+  ,set_spec=None,metadata_prefix=None,verbosity=0):
     me = 'zenodo_node_writer'
-    required_params = ['node_record','namespaces','output_folder','bib_vid']
+    required_params = ['set_spec', 'metadata_prefix','node_record','namespaces','output_folder','bib_vid']
     if not all(required_params):
       raise ValueError("{}:Some params are not given: {}".format(me,required_params))
 
@@ -328,7 +328,7 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
 
     header_identifier = node_record.find("./{*}header/{*}identifier").text
     identifier_normalized = (header_identifier
-      .replace(':','_').replace('/','_').replace('.','-') + '.xml' )
+      .replace(':','_').replace('/','_').replace('.','-') )
     print("using bib={}, vid={}, bib_vid={} to output item with zenodo identifier_normalized={}"
           .format(bibid,vid,bib_vid, identifier_normalized))
     #zenodo_string_xml = etree.tostring(node_record, pretty_print=True)
@@ -341,10 +341,11 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
     # TO CONSIDER: maybe add a class member flag to delete all preexisting files in this directory?
     # maybe dir for mets too?
     os.makedirs(output_folder_xml, exist_ok=True)
-    filename_xml= output_folder_xml + identifier_normalized
-    with open(filename_xml, mode='w', encoding='utf-8') as outfile:
-        print("{}:Writing filename_received ='{}'".format(me,filename_xml))
-        outfile.write(record_str)
+    filename_xml= output_folder_xml + identifier_normalized + './xml'
+
+    with open(filename_xml, mode='w', encoding='utf-8') as outfile_xml:
+        print("{}:Writing filename_xml ='{}'".format(me,filename_xml))
+        outfile_xml.write(record_str)
 
     # Set some variables to potentially output into the METS template
     utc_now = datetime.datetime.utcnow()
@@ -457,16 +458,15 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
     with open(fn, mode='w', encoding='utf-8') as outfile:
         print("{}:Writing METS filename='{}'".format(me,fn))
         outfile.write(mets_str.encode('utf-8'))
-    # end with ... outfile
-    #######################
-    #######################
-
     return
     #end def zenodo_node_writer
-def merrick_node_writer(node_record=None, namespaces=None, output_folder=None,bib_vid='XX00000000_00001'
+
+def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
+  ,set_spec=None, metadata_prefix=None, bib_vid='XX00000000_00001'
   ,verbosity=0):
     me = 'merrick_node_writer'
-    required_params = ['node_record','namespaces','output_folder','bib_vid']
+    required_params = ['set_spec','metadata_prefix'
+        ,'node_record','namespaces','output_folder','bib_vid']
     if not all(required_params):
       raise ValueError("{}:Some params are not given: {}".format(me,required_params))
 
@@ -478,7 +478,7 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None,bi
 
     header_identifier = node_record.find("./{*}header/{*}identifier").text
     identifier_normalized = (header_identifier
-      .replace(':','_').replace('/','_').replace('.','-') + '.xml' )
+      .replace(':','_').replace('/','_').replace('.','-'))
     print("using bib={}, vid={}, bib_vid={} to output item with merrick identifier_normalized={}"
           .format(bibid,vid,bib_vid, identifier_normalized))
 
@@ -487,12 +487,14 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None,bi
     print("{}:Got record string={}".format(me,record_str))
 
     output_folder_xml = output_folder + 'xml/'
-    # TO CONSIDER: maybe add a class member flag to delete all preexisting files in this directory?
-    # maybe dir for mets too?
+    # TO CONSIDER: maybe add a class member flag to delete all preexisting
+    # files in this directory? maybe dir for mets too?
     os.makedirs(output_folder_xml, exist_ok=True)
-    filename_xml= output_folder_xml + identifier_normalized
+    print("{}:using output_folder_xml={}".format(me,output_folder_xml))
+
+    filename_xml = output_folder_xml + identifier_normalized + '.xml'
     with open(filename_xml, mode='w', encoding='utf-8') as outfile:
-        print("{}:Writing filename_received ='{}'".format(me, filename_xml))
+        print("{}:Writing filename_xml ='{}'".format(me, filename_xml))
         outfile.write(record_str)
 
     # Set some variables to potentially output into the METS template
@@ -551,7 +553,9 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None,bi
     #inferred the following indexes by pure manual inspection!
     len_ids = len(nodes_identifier)
 
+    # todo - get id type too... id[0] is not doi for merrick miami...
     doi = nodes_identifier[0].text
+
     if len_ids > 1:
        merrick_id = nodes_identifier[1].text
     else:
@@ -640,10 +644,6 @@ the item.'''
         print("{}:Writing METS filename='{}'".format(me,fn))
         #outfile.write(mets_str.encode('utf-8'))
         outfile.write(mets_str)
-    # end with ... outfile
-    #######################
-    #######################
-
     return
     #end def merrick_node_writer
 class OAI_Harvester(object):
@@ -659,9 +659,10 @@ class OAI_Harvester(object):
   '''
   def __init__(self, oai_url=None, output_folder=None,bib_prefix='XX'
       ,bib_zfills=[8,5], bib_last=0, d_crosswalk=None, str_output_format=None
-      ,node_writer=None, record_xpath=".//{*}record",verbosity=None):
+      ,node_writer=None, set_spec=None, metadata_format=None
+      ,record_xpath=".//{*}record",verbosity=None):
 
-    required_pnames = ['node_writer','oai_url','output_folder',]
+    required_pnames = ['set_spec','metadata_format','node_writer','oai_url','output_folder',]
     if not all([output_folder, oai_url]):
       raise ValueError("Error: Some parameters not set: {}.".format(required_pnames))
     self.oai_url = oai_url
@@ -675,9 +676,10 @@ class OAI_Harvester(object):
     self.record_xpath = record_xpath
     # namespaces will be reset by each xml file inputted by generator_node_records()
     self.namespaces = None #will be overwritten when each xml file is input by the generator_node_records
+    self.set_spec = set_spec
+    self.metadata_format = metadata_format
 
     # Later: use API with verb metadataFormats to get them. Now try a one-size-fits-all list
-    #
     self.metadata_formats=['oai_dc']
     self.verbosity = verbosity # default verbosity
     self.basic_verbs = [ # see http://www.oaforum.org/tutorial/english/page4.htm
@@ -686,14 +688,16 @@ class OAI_Harvester(object):
     ]
     return
 
-  def url_list_records(self, set_spec=None, metadata_format=None):
+  def url_list_records(self):
     url = ("{}?verb=ListRecords&set={}&metadataPrefix={}"
-      .format(self.oai_url,set_spec,metadata_format))
+      .format(self.oai_url,self.set_spec,self.metadata_format))
     return url
 
-  def generator_node_records(self,  metadata_format=None, set_spec=None
-      , verbosity=0):
+  def generator_node_records(self, verbosity=0):
     pnames = ['metadata_format','set_spec',]
+
+    metadata_format = self.metadata_format
+    set_spec = self.set_spec
 
     if not all(set_spec):
       raise ValueError("Error: Some parameters not set: {}.".format(pnames))
@@ -702,7 +706,7 @@ class OAI_Harvester(object):
       raise ValueError("Error: unknown metadata format: {}.".format(metadata_format))
 
     n_batch = 0;
-    url_list = self.url_list_records(set_spec=set_spec,metadata_format=metadata_format)
+    url_list = self.url_list_records()
     while (url_list is not None):
       n_batch += 1
       response = requests.get(url_list)
@@ -753,8 +757,7 @@ class OAI_Harvester(object):
     num_records = 0
     bibvid = self.bib_prefix + str(self.bib_last).zfill(self.bib_zfills[0]) + '00001' #may implement vid later
 
-    for (namespaces, node_record) in oai.generator_node_records(
-        set_spec=set_spec ,metadata_format=metadata_format):
+    for (namespaces, node_record) in oai.generator_node_records():
       # Increment the bib_id
       self.bib_last += 1
       bib_vid = self.bib_prefix + str(self.bib_last).zfill(8) + '_00001' #may implement vid later
@@ -764,10 +767,12 @@ class OAI_Harvester(object):
       if node_record is None:
             break;
       num_records += 1
+      # save the xml in its own output ... folder ***
+      #
       # call the crosswalk function to generate output
-
-      self.node_writer(node_record=node_record,namespaces=namespaces,output_folder=self.output_folder
-          ,bib_vid=bib_vid)
+      output_folder_format = '{}/{}/'.format(self.output_folder, self.metadata_format)
+      self.node_writer(node_record=node_record ,namespaces=namespaces
+          ,output_folder=output_folder_format, bib_vid=bib_vid)
 
     return num_records
   # end def output()
@@ -866,7 +871,8 @@ elif study == "merrick/chc5017":
   print("Study = {}, set_spec={}, base_output_folder={}".format(study,set_spec,output_folder))
 
   oai = OAI_Harvester(oai_url=oai_url, output_folder=output_folder, bib_prefix="CX"
-      ,node_writer=merrick_node_writer, record_xpath=".//{*}record")
+      ,node_writer=merrick_node_writer, set_spec=set_spec
+      ,metadata_format=metadata_format, record_xpath=".//{*}record")
 
   num_records = oai.output()
 else:
