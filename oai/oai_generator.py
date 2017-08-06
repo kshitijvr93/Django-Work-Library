@@ -702,9 +702,6 @@ class OAI_Harvester(object):
     if not all(set_spec):
       raise ValueError("Error: Some parameters not set: {}.".format(pnames))
 
-    if metadata_format not in self.metadata_formats:
-      raise ValueError("Error: unknown metadata format: {}.".format(metadata_format))
-
     n_batch = 0;
     url_list = self.url_list_records()
     while (url_list is not None):
@@ -863,7 +860,7 @@ elif study == "merrick/chc5017":
   parts = study.split('/')
   study = parts[0]
   set_spec = parts[1]
-  metadata_format="oai_dc"
+  metadata_format="oai_qdc"
 
   oai_url = 'http://merrick.library.miami.edu/oai/oai.php'
   output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
