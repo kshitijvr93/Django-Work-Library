@@ -27,25 +27,6 @@ import etl
 from lxml.etree import tostring
 import xml.etree.ElementTree as ET
 
-'''home_directory = os.path.expanduser('~')
-print("Using home_directory='{}'".format(home_directory),file=sys.stdout)
-sys.stdout.flush()
-
-local_module_folder = '{}/github/citrus/modules'.format(home_directory)
-print("Using local local module folder='{}'".format(local_module_folder))
-sys.path.append(local_module_folder) #my current place on UF pc
-'''
-
-'''
-folder_output_linux='/home/robert/'
-folder_output_windows='U:/'
-output_folder = etl.data_folder(linux=folder_output_linux, windows=folder_output_windows,
-    data_relative_folder='data/outputs/zenodo_mets')
-print("xx:Using output_folder='{}'".format(output_folder),file=sys.stdout)
-
-import etl
-import os
-'''
 
 zenodo_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!--  METS/mods file designed to describe a Zenodo OAI-PMH extracted MD  -->
@@ -253,7 +234,7 @@ merrick_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no
 
 <mods:recordInfo>
   <mods:recordIdentifier source="sobekcm">{bib_vid}</mods:recordIdentifier>
-  <mods:recordContentSource>Zenodo</mods:recordContentSource>
+  <mods:recordContentSource>University of Miami Libraries</mods:recordContentSource>
 </mods:recordInfo>
 <mods:titleInfo>
   <mods:title>{title}</mods:title>
@@ -483,7 +464,8 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
     if not all(required_params):
       raise ValueError("{}:Some params are not given: {}".format(me,required_params))
 
-    bibid = bib_vid[2:10]
+    bibint = bib_vid[2:10]
+    bibid = bib_vid[:10]
     vid = bib_vid[11:16]
 
     # Consider: also save text from the xml and put in METS notes?
@@ -660,7 +642,7 @@ the item.'''
         'vid': vid,
         'type_of_resource' : dc_type,
         'sha1-mets-v1' : '',
-        'genre' : 'dataset',
+        'genre' : '',
         'genre_authority': '',
     }
 
