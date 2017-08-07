@@ -217,8 +217,8 @@ merrick_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no
 
 <mods:accessCondition>{rights_text}</mods:accessCondition>
 <mods:identifier type="miami_merrick_2017">{identifier}</mods:identifier>
+{xml_dc_ids}
 <mods:genre authority="{genre_authority}">{genre}</mods:genre>
-<mods:identifier type="doi">{doi}</mods:identifier>
 <mods:language>
 <mods:languageTerm type="text">eng</mods:languageTerm>
 <mods:languageTerm type="code" authority="iso639-2b">eng</mods:languageTerm>
@@ -227,6 +227,7 @@ merrick_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no
 <mods:location>
   <mods:url displayLabel="External Link">{related_url}</mods:url>
 </mods:location>
+
 <mods:location>
   <mods:physicalLocation>University of Miami Libraries</mods:physicalLocation>
   <mods:physicalLocation type="code">iUM</mods:physicalLocation>
@@ -291,7 +292,7 @@ merrick_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no
 
 <METS:structMap ID="STRUCT1" > <METS:div /> </METS:structMap>
 </METS:mets>
-'''
+''' # end merrick_mets_format_str
 #
 ################################################3
 
@@ -313,21 +314,28 @@ def add_curl_command(d_request):
     #print("Curl={}".format(curl))
     return
 
+'''
+<summary>Accept a node_record as an lxml root document and for the given set_spec
+write a METS file for the record</summary>
+
+'''
 def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib_vid='XX00000000_00001'
   ,set_spec=None,metadata_prefix=None,verbosity=0):
     me = 'zenodo_node_writer'
-    required_params = ['set_spec', 'metadata_prefix','node_record','namespaces','output_folder','bib_vid']
+    required_params = ['set_spec', 'metadata_prefix','node_record','namespaces'
+      ,'output_folder','bib_vid']
     if not all(required_params):
       raise ValueError("{}:Some params are not given: {}".format(me,required_params))
 
     bibid = bib_vid[2:10]
     vid = bib_vid[11:16]
 
-    node_type= node_record.find(".//{}type", namespaces=namespaces)
+    node_type= node_record.find(".//{*}type", namespaces=namespaces)
     genre = '' if not node_type else node_type.text
 
-    header_identifier = node_record.find("./{*}header/{*}identifier").text
-    identifier_normalized = (header_identifier
+    header_identifier_text = ( node_record.find(
+      "./{*}header/{*}identifier", namespaces=namespaces).text )
+    identifier_normalized = (header_identifier_text
       .replace(':','_').replace('/','_').replace('.','-') )
     print("using bib={}, vid={}, bib_vid={} to output item with zenodo identifier_normalized={}"
           .format(bibid,vid,bib_vid, identifier_normalized))
@@ -351,26 +359,27 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
     utc_now = datetime.datetime.utcnow()
     utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    #Get basic values from input doc
-    node_oaidc = node_record.find(".//{*}dc", namespaces=namespaces)
-    if node_oaidc is None:
-        raise Exception("Cannot find oai_dc:dc node")
+    node_mdf = node_record.find(".//{*}dc", namespaces=namespaces)
+    if node_mdf is None:
+        # This happens for received 'delete' records
+        # Just return None to ignore them pending requirements to process them
+        print ("Cannot find node_mdf for xml tag/node: {*}dc")
+        return None
+    else:
+      #print("{}: Got node_mdf with tag='{}'",format(node_mdf.tag))
+      pass
 
-    namespaces = {key:value for key,value in dict(node_oaidc.nsmap).items() if key is not None}
-
-    print("Got oai_dc prefix map='{}'\n\n".format(repr(namespaces)))
-
-    node_creator = node_oaidc.find(".//dc:creator", namespaces=namespaces)
+    node_creator = node_mdf.find(".//{*}creator", namespaces=namespaces)
     dc_creator = '' if node_creator is None else node_creator.text
     print("{}:Got creator={}".format(me,dc_creator))
 
-    dc_date_orig = node_oaidc.find("./dc:date", namespaces=namespaces).text
+    dc_date_orig = node_mdf.find("./{*}date", namespaces=namespaces).text
     print("Got dc date orig={}".format(dc_date_orig))
     # Must convert dc_date_orig to valid METS format:
     dc_date = '{}T12:00:00Z'.format(dc_date_orig)
     print("Got dc_date='{}'".format(dc_date))
 
-    node_description = node_oaidc.find(".//{*}description",namespaces=namespaces)
+    node_description = node_mdf.find(".//{*}description",namespaces=namespaces)
     # Make an element trree style tree to invoke pattern to remove innter xml
     str_description = tostring(node_description,encoding='unicode',method='text').strip().replace('\n','')
 
@@ -392,27 +401,30 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
         dc_description = xml_description
         print("Using dc_description='{}'".format(dc_description))
 
-    nodes_identifier = node_oaidc.findall(".//{*}identifier")
-    #inferred the following indexes by pure manual inspection!
+
+    # NOTE:inferred the identifier indexes by pure manual inspection of the merrick
+    # ListRecords results
+
+    nodes_identifier = node_mdf.findall(".//{*}identifier", namespaces=namespaces)
     doi = nodes_identifier[0].text
     if len(nodes_identifier) > 1:
         zenodo_id = nodes_identifier[1].text
     related_url = '{}'.format(doi)
 
-    #relation_doi = node_oaidc.find(".//{*}relation").text
-    nodes_rights = node_oaidc.findall(".//{*}rights")
+    #relation_doi = node_mdf.find(".//{*}relation").text
+    nodes_rights = node_mdf.findall(".//{*}rights", namespaces=namespaces)
     rights_text = 'See:'
     for node_rights in nodes_rights:
         rights_text += ' ' + node_rights.text
 
-    nodes_subject = node_oaidc.findall(".//{*}subject")
+    nodes_subject = node_mdf.findall(".//{*}subject", namespaces=namespaces)
     mods_subjects = ''
     for node_subject in nodes_subject:
         mods_subjects += ('<mods:subject><mods:topic>' + node_subject.text
           + '</mods:topic></mods:subject>\n')
 
-    dc_title = node_oaidc.find(".//{*}title").text
-    dc_type = node_oaidc.find(".//{*}type").text
+    dc_title = node_mdf.find(".//{*}title", namespaces=namespaces).text
+    dc_type = node_mdf.find(".//{*}type", namespaces=namespaces).text
 
     sobekcm_aggregations = ['UFDATASETS']
     xml_sobekcm_aggregations = ''
@@ -429,7 +441,7 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
         'last_mod_date' : utc_secs_z,
         'agent_creator_individual_name': dc_creator,
         'agent_creator_individual_note' : 'Creation via zenodo harvest',
-        'identifier' : header_identifier,
+        'identifier' : header_identifier_text,
         'mods_subjects' : mods_subjects,
         'rights_text' : rights_text,
         'utc_secs_z' :  utc_secs_z,
@@ -462,8 +474,8 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
     #end def zenodo_node_writer
 
 def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
-  ,set_spec=None, metadata_prefix=None, bib_vid='XX00000000_00001'
-  ,verbosity=0):
+  , set_spec=None, metadata_prefix=None, bib_vid='XX00000000_00001'
+  , verbosity=0):
     me = 'merrick_node_writer'
     required_params = ['set_spec','metadata_prefix'
         ,'node_record','namespaces','output_folder','bib_vid']
@@ -473,18 +485,25 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
     bibid = bib_vid[2:10]
     vid = bib_vid[11:16]
 
-    node_type= node_record.find(".//{}type", namespaces=namespaces)
-    genre = '' if not node_type else node_type.text
+    # Consider: also save text from the xml and put in METS notes?
+    # <set_spec>,
+    # add note for identifier0 vs identifier1... ordering..
 
-    header_identifier = node_record.find("./{*}header/{*}identifier").text
-    identifier_normalized = (header_identifier
+    node_type= node_record.find(".//{*}type", namespaces=namespaces)
+    genre = '' if node_type is None else node_type.text
+
+    node_identifier = node_record.find("./{*}header/{*}identifier", namespaces=namespaces)
+    header_identifier_text = '' if node_identifier is None else node_identifier.text
+
+    header_identifier_normalized = (header_identifier_text
       .replace(':','_').replace('/','_').replace('.','-'))
-    print("using bib={}, vid={}, bib_vid={} to output item with merrick identifier_normalized={}"
-          .format(bibid,vid,bib_vid, identifier_normalized))
+    print("using bib={}, vid={}, bib_vid={} to output item with "
+          "merrick header_identifier_normalized={}"
+          .format(bibid,vid,bib_vid, header_identifier_normalized))
 
     # Parse the input record and save it to a string
     record_str = etree.tostring(node_record, pretty_print=True, encoding='unicode')
-    print("{}:Got record string={}".format(me,record_str))
+    # print("{}:Got record string={}".format(me,record_str))
 
     output_folder_xml = output_folder + 'xml/'
     # TO CONSIDER: maybe add a class member flag to delete all preexisting
@@ -492,7 +511,7 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
     os.makedirs(output_folder_xml, exist_ok=True)
     print("{}:using output_folder_xml={}".format(me,output_folder_xml))
 
-    filename_xml = output_folder_xml + identifier_normalized + '.xml'
+    filename_xml = output_folder_xml + header_identifier_normalized + '.xml'
     with open(filename_xml, mode='w', encoding='utf-8') as outfile:
         print("{}:Writing filename_xml ='{}'".format(me, filename_xml))
         outfile.write(record_str)
@@ -501,20 +520,24 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
     utc_now = datetime.datetime.utcnow()
     utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    #Get basic values from input doc
-    node_oaidc = node_record.find(".//{*}dc", namespaces=namespaces)
-    if node_oaidc is None:
+    node_mdf = node_record.find(".//{*}dc", namespaces=namespaces)
+
+    if node_mdf is None:
+        # This happens for received 'delete' records
+        # Just return None to ignore them pending requirements to process them
+        print ("Cannot find node_mdf for xml tag/node: {*}dc")
         return None
-        raise Exception("Cannot find oai_dc:dc node")
+    else:
+      #print("{}: Got node_mdf with tag='{}'",format(node_mdf.tag))
+      pass
 
-    namespaces = {key:value for key,value in dict(node_oaidc.nsmap).items() if key is not None}
+    #print("{}:got namespaces='{}'".format(me,repr(namespaces)))
 
-    print("Got oai_dc prefix map='{}'\n\n".format(repr(namespaces)))
-    node_creator = node_oaidc.find(".//dc:creator", namespaces=namespaces)
+    node_creator = node_mdf.find(".//{*}creator", namespaces=namespaces)
     dc_creator = '' if node_creator is None else node_creator.text
     print("{}:Got creator={}".format(me,dc_creator))
 
-    node_date = node_oaidc.find("./dc:date", namespaces=namespaces)
+    node_date = node_mdf.find("./{*}date", namespaces=namespaces)
     dc_date_orig='1969-01-01'
     if node_date is not None:
         dc_date_orig = node_date.text
@@ -523,7 +546,7 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
     dc_date = '{}T12:00:00Z'.format(dc_date_orig)
     print("{}:Got dc_date='{}'".format(me,dc_date))
 
-    node_description = node_oaidc.find(".//{*}description",namespaces=namespaces)
+    node_description = node_mdf.find(".//{*}description",namespaces=namespaces)
     # Make an element tree style tree to invoke pattern to remove inner xml
     #str_description = etree.tostring(node_description,encoding='unicode',method='text').strip().replace('\n','')
     str_description = ''
@@ -537,8 +560,8 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
         ]>'''
 
     xml_description =  '{}<doc>{}</doc>'.format(xml_dtd,str_description)
-    print("Got str_description='{}'".format(str_description))
-    print("Got xml_description='{}'".format(xml_description))
+    # get charmap codec error for some here: print("Got str_description='{}'".format(str_description))
+    # get charmap codec error on windows for some here:print("Got xml_description='{}'".format(xml_description))
     print
     if (1 == 2):
         # See: https://stackoverflow.com/questions/19369901/python-element-tree-extract-text-from-element-stripping-tags#19370075
@@ -546,24 +569,24 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
         dc_description = etl.escape_xml_text(''.join(tree_description.itertext()))
     else:
         dc_description = xml_description
-        print("Using dc_description='{}'".format(dc_description))
+        # avoid charmap codec windows errors:print("Using dc_description='{}'".format(dc_description))
 
-    nodes_identifier = node_oaidc.findall(".//{*}identifier")
+    nodes_dc_identifier = node_mdf.findall(
+      ".//{*}identifier", namespaces=namespaces)
 
-    #inferred the following indexes by pure manual inspection!
-    len_ids = len(nodes_identifier)
+    xml_dc_ids = '\n'
+    related_url = ''
+    # id type names based on data received in 2017
+    # I invented the id_types, based on the data harvested in 2017.
+    id_types = ['merrick_set_spec_index', 'merrick_url']
+    for i,nid in enumerate(nodes_dc_identifier):
+        xml_dc_ids = ('<mods:identifier type="{}">{}</mods_identifier>\n'
+          .format(id_types[i], nid.text))
+        if (i == 1):
+          related_url = nid.text
 
-    # todo - get id type too... id[0] is not doi for merrick miami...
-    doi = nodes_identifier[0].text
-
-    if len_ids > 1:
-       merrick_id = nodes_identifier[1].text
-    else:
-       merrick_id = 'none'
-    related_url = '{}'.format(doi)
-
-    #relation_doi = node_oaidc.find(".//{*}relation").text
-    nodes_rights = node_oaidc.findall(".//{*}rights")
+    # Relation_doi = node_mdf.find(".//{*}relation").text
+    nodes_rights = node_mdf.findall(".//{*}rights",namespaces=namespaces)
     # rights-text per UF email from Laura Perry to rvp 20170713
     rights_text = '''This item was contributed to the Digital Library
 of the Caribbean (dLOC) by the source institution listed in the metadata.
@@ -582,16 +605,16 @@ the item.'''
 
     # Some list-variable input values
     for node_rights in nodes_rights:
-        rights_text += ' ' + node_rights.text
+        rights_text += '\n' + node_rights.text
 
-    nodes_subject = node_oaidc.findall(".//{*}subject")
+    nodes_subject = node_mdf.findall(".//{*}subject", namespaces=namespaces)
     mods_subjects = ''
     for node_subject in nodes_subject:
         mods_subjects += ('<mods:subject><mods:topic>' + node_subject.text
           + '</mods:topic></mods:subject>\n')
 
-    dc_title = node_oaidc.find(".//{*}title").text
-    dc_type = node_oaidc.find(".//{*}type").text
+    dc_title = node_mdf.find(".//{*}title", namespaces=namespaces).text
+    dc_type = node_mdf.find(".//{*}type", namespaces=namespaces).text
 
     sobekcm_aggregations = ['ALL', 'DLOC1', 'IUM']
     xml_sobekcm_aggregations = ''
@@ -614,7 +637,7 @@ the item.'''
         'last_mod_date' : utc_secs_z,
         'agent_creator_individual_name': dc_creator,
         'agent_creator_individual_note' : 'Creation via Miami-Merrick OAI  harvest',
-        'identifier' : header_identifier,
+        'identifier' : header_identifier_text,
         'mods_subjects' : mods_subjects,
         'rights_text' : rights_text,
         'utc_secs_z' :  utc_secs_z,
@@ -622,7 +645,7 @@ the item.'''
         'related_url' : related_url,
         'xml_sobekcm_aggregations' : xml_sobekcm_aggregations,
         'xml_sobekcm_wordmarks' : xml_sobekcm_wordmarks,
-        'doi': doi,
+        'xml_dc_ids' : xml_dc_ids,
         'description' : dc_description,
         'creator' : dc_creator,
         'bibid': bibid,
@@ -646,6 +669,7 @@ the item.'''
         outfile.write(mets_str)
     return
     #end def merrick_node_writer
+
 class OAI_Harvester(object):
   '''
   <synopsis name='OAI_Harvester'>
@@ -680,7 +704,7 @@ class OAI_Harvester(object):
     self.metadata_format = metadata_format
 
     # Later: use API with verb metadataFormats to get them. Now try a one-size-fits-all list
-    self.metadata_formats=['oai_dc']
+    self.metadata_formats=['oai_dc','oai_qdc']
     self.verbosity = verbosity # default verbosity
     self.basic_verbs = [ # see http://www.oaforum.org/tutorial/english/page4.htm
          'GetRecord', 'Identify'
@@ -695,7 +719,7 @@ class OAI_Harvester(object):
 
   def generator_node_records(self, verbosity=0):
     pnames = ['metadata_format','set_spec',]
-
+    me = 'generator_node_records'
     metadata_format = self.metadata_format
     set_spec = self.set_spec
 
@@ -724,6 +748,8 @@ class OAI_Harvester(object):
       # Can set self.namespaces here, or could return namespaces in a tuple value from the yield,
       # but this  somehow seems a better way to possibly support future methods
       self.namespaces=d_namespaces
+      # NOTE: namespace 'dc' is not explicitly listed in the API response
+      print("{}:got self.namespaces='{}'".format(me,repr(self.namespaces)))
 
       nodes_record = node_root.findall(self.record_xpath, namespaces=d_namespaces)
       print("From the xml found {} xml tags for records".format(len(nodes_record)))
@@ -860,7 +886,10 @@ elif study == "merrick/chc5017":
   parts = study.split('/')
   study = parts[0]
   set_spec = parts[1]
+
+  # Set one last to test it
   metadata_format="oai_qdc"
+  metadata_format="oai_dc"
 
   oai_url = 'http://merrick.library.miami.edu/oai/oai.php'
   output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
