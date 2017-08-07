@@ -271,6 +271,7 @@ merrick_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no
     <sobekcm:procParam>
     {xml_sobekcm_aggregations}
     {xml_sobekcm_wordmarks}
+    <sobekcm:MainThumbnail>{sobekcm_thumbnail_src}</sobekcm:MainThumbnail>
     <sobekcm:Tickler>{sha1-mets-v1}</sobekcm:Tickler>
     </sobekcm:procParam>
     <sobekcm:bibDesc>
@@ -363,7 +364,7 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
     if node_mdf is None:
         # This happens for received 'delete' records
         # Just return None to ignore them pending requirements to process them
-        print ("Cannot find node_mdf for xml tag/node: {*}dc")
+        #print ("Cannot find node_mdf for xml tag/node: {*}dc")
         return None
     else:
       #print("{}: Got node_mdf with tag='{}'",format(node_mdf.tag))
@@ -371,13 +372,13 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
 
     node_creator = node_mdf.find(".//{*}creator", namespaces=namespaces)
     dc_creator = '' if node_creator is None else node_creator.text
-    print("{}:Got creator={}".format(me,dc_creator))
+    #print("{}:Got creator={}".format(me,dc_creator))
 
     dc_date_orig = node_mdf.find("./{*}date", namespaces=namespaces).text
-    print("Got dc date orig={}".format(dc_date_orig))
+    #print("Got dc date orig={}".format(dc_date_orig))
     # Must convert dc_date_orig to valid METS format:
     dc_date = '{}T12:00:00Z'.format(dc_date_orig)
-    print("Got dc_date='{}'".format(dc_date))
+    #print("Got dc_date='{}'".format(dc_date))
 
     node_description = node_mdf.find(".//{*}description",namespaces=namespaces)
     # Make an element trree style tree to invoke pattern to remove innter xml
@@ -497,7 +498,9 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
 
     header_identifier_normalized = (header_identifier_text
       .replace(':','_').replace('/','_').replace('.','-'))
-    print("using bib={}, vid={}, bib_vid={} to output item with "
+
+    if verbosity > 0:
+        print("using bib={}, vid={}, bib_vid={} to output item with "
           "merrick header_identifier_normalized={}"
           .format(bibid,vid,bib_vid, header_identifier_normalized))
 
@@ -509,11 +512,11 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
     # TO CONSIDER: maybe add a class member flag to delete all preexisting
     # files in this directory? maybe dir for mets too?
     os.makedirs(output_folder_xml, exist_ok=True)
-    print("{}:using output_folder_xml={}".format(me,output_folder_xml))
+    #print("{}:using output_folder_xml={}".format(me,output_folder_xml))
 
     filename_xml = output_folder_xml + header_identifier_normalized + '.xml'
     with open(filename_xml, mode='w', encoding='utf-8') as outfile:
-        print("{}:Writing filename_xml ='{}'".format(me, filename_xml))
+        #print("{}:Writing filename_xml ='{}'".format(me, filename_xml))
         outfile.write(record_str)
 
     # Set some variables to potentially output into the METS template
@@ -525,26 +528,27 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
     if node_mdf is None:
         # This happens for received 'delete' records
         # Just return None to ignore them pending requirements to process them
-        print ("Cannot find node_mdf for xml tag/node: {*}dc")
+        #print ("Cannot find node_mdf for xml tag/node: {*}dc")
         return None
     else:
       #print("{}: Got node_mdf with tag='{}'",format(node_mdf.tag))
       pass
 
+
     #print("{}:got namespaces='{}'".format(me,repr(namespaces)))
 
     node_creator = node_mdf.find(".//{*}creator", namespaces=namespaces)
     dc_creator = '' if node_creator is None else node_creator.text
-    print("{}:Got creator={}".format(me,dc_creator))
+    #print("{}:Got creator={}".format(me,dc_creator))
 
     node_date = node_mdf.find("./{*}date", namespaces=namespaces)
     dc_date_orig='1969-01-01'
     if node_date is not None:
         dc_date_orig = node_date.text
-    print("Got dc date orig={}".format(dc_date_orig))
+    # print("Got dc date orig={}".format(dc_date_orig))
     # Must convert dc_date_orig to valid METS format:
     dc_date = '{}T12:00:00Z'.format(dc_date_orig)
-    print("{}:Got dc_date='{}'".format(me,dc_date))
+    #print("{}:Got dc_date='{}'".format(me,dc_date))
 
     node_description = node_mdf.find(".//{*}description",namespaces=namespaces)
     # Make an element tree style tree to invoke pattern to remove inner xml
@@ -585,7 +589,11 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
         if (i == 1):
           related_url = nid.text
 
-    # Relation_doi = node_mdf.find(".//{*}relation").text
+    # Create thumbnail src per algorithm provided 20170807 by elliot williams,
+    # Digital Initiatives MD Librarian, of Miami-Merrick
+    thumbnail_src = 'http://merrick.library.miami.edu/utils/getthumbnail/collection/'
+    thumbnail_src += '/'.join(related_url.split('/')[-3:])
+
     nodes_rights = node_mdf.findall(".//{*}rights",namespaces=namespaces)
     # rights-text per UF email from Laura Perry to rvp 20170713
     rights_text = '''This item was contributed to the Digital Library
@@ -622,7 +630,6 @@ the item.'''
         xml_sobekcm_aggregations += (
             '<sobekcm:Aggregation>{}</sobekcm:Aggregation>'
             .format(aggregation))
-
     sobekcm_wordmarks = ['UM','DLOC']
     xml_sobekcm_wordmarks = ''
     for wordmark in sobekcm_wordmarks:
@@ -645,6 +652,7 @@ the item.'''
         'related_url' : related_url,
         'xml_sobekcm_aggregations' : xml_sobekcm_aggregations,
         'xml_sobekcm_wordmarks' : xml_sobekcm_wordmarks,
+        'sobekcm_thumbnail_src' : thumbnail_src,
         'xml_dc_ids' : xml_dc_ids,
         'description' : dc_description,
         'creator' : dc_creator,
@@ -664,7 +672,7 @@ the item.'''
     filename_mets = output_folder_mets  + bib_vid + '.mets.xml'
     fn = filename_mets
     with open(fn, mode='w', encoding='utf-8') as outfile:
-        print("{}:Writing METS filename='{}'".format(me,fn))
+        #print("{}:Writing METS filename='{}'".format(me,fn))
         #outfile.write(mets_str.encode('utf-8'))
         outfile.write(mets_str)
     return
@@ -749,7 +757,7 @@ class OAI_Harvester(object):
       # but this  somehow seems a better way to possibly support future methods
       self.namespaces=d_namespaces
       # NOTE: namespace 'dc' is not explicitly listed in the API response
-      print("{}:got self.namespaces='{}'".format(me,repr(self.namespaces)))
+      #print("{}:got self.namespaces='{}'".format(me,repr(self.namespaces)))
 
       nodes_record = node_root.findall(self.record_xpath, namespaces=d_namespaces)
       print("From the xml found {} xml tags for records".format(len(nodes_record)))
