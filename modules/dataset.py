@@ -792,7 +792,7 @@ def tvp_writeheader( self ):
     Example to write to a csv file:
     -------------------------------
     dsw = Dataset(dbms='csv', open_mode='w',
-    name='C:/users/podengo/phone2.csv')
+    name='fixme/users/podengo/phone2.csv')
 
     dw = dsw.DictWriter(column_names=["id","name","score"])
     dw.writeheader()
@@ -1820,7 +1820,9 @@ if  __name__ == "__main__" and 1 == 2:
     #
 
     print("Testing fixed reads...")
-    ddir='C:/users/podengo/'
+    # Note - need to create os/sensitive data file refs else cannot port to linux and ruins
+    # git pulls too...if have c: in the name
+    ddir='fixme/home/users/podengo/'
     ds_layout = Dataset(name=ddir+'layout.csv', open_mode='r')
     ds_fixed = Dataset(dbms='fixed',ds_layout=ds_layout, open_mode='r',
         name=ddir+'fixed.txt')
@@ -1864,7 +1866,7 @@ def test_pyodbc_tvp_002(verbosity=0):
     server='38.118.83.61'
     db='Python_OGT_12SU'
     table='rc1FINAL_cmrg'
-    tddir = "C:/Users/podengo/testdata/tddir/"
+    tddir = "fixme/Users/podengo/testdata/tddir/"
     dsr=Dataset(dbms='pyodbc', server=server, db=db, open_mode='r', table=table,
         verbosity=verbosity)
     # Define Writable dataset
@@ -1878,7 +1880,7 @@ def test_tvp_tvp_001(verbosity=False):
     """Takes 2 seconds
     """
     iam = inspect.stack()[0][3]
-    tddir = "C:/Users/podengo/testdata/tddir/"
+    tddir = "fixme/Users/podengo/testdata/tddir/"
     os.makedirs(tddir, exist_ok=True)
     # tddir = "/home/rvp/testdata/dataset/"
 
@@ -1939,7 +1941,7 @@ def test_pyodbc_tvp_001(verbosity=0):
     iam = inspect.stack()[0][3]
     if verbosity:
         print("{}: Starting".format(iam))
-    tddir = "C:/Users/podengo/testdata/tddir/"
+    tddir = "fixme/Users/podengo/testdata/tddir/"
     server='.\SQLEXPRESS'
     db='silodb'
     dsr=Dataset(dbms='pyodbc', server=server, db=db, open_mode='r', table='rvp_tmp_means',encoding='utf-8')
@@ -1956,7 +1958,7 @@ def test_tvp_pyodbc_001(verbosity=0):
     iam = inspect.stack()[0][3]
     if verbosity:
         print("{}: Starting".format(iam))
-    tddir = "C:/Users/podengo/testdata/tddir/"
+    tddir = "fixme/Users/podengo/testdata/tddir/"
     server='.\SQLEXPRESS'
     db='silodb'
     fn2_tsv = tddir + "testpyo2tvp.tsv"
@@ -1981,7 +1983,7 @@ def test_csv_pyodbc_001(verbosity=False):
         print("%s: Starting" % iam)
     server=".\SQLEXPRESS"
     database='silodb'
-    namer = "C:/users/podengo/testdata/means_test_read.csv"
+    namer = "fixme/users/podengo/testdata/means_test_read.csv"
     dsr = Dataset(open_mode='r', dbms='csv', name=namer)
     print("dsr=%s" % (dsr))
     dsw = Dataset(open_mode='w', dbms='pyodbc', table="rvp_tmp_means"
@@ -2006,7 +2008,7 @@ def test_pyodbc_tsv_write_002(verbosity=0):
     database='silodb'
     dsr=Dataset(open_mode='r', dbms='pyodbc', table="rvp_tmp_means"
                   ,server=server,db=database,replace=True )
-    namew = "C:/users/podengo/testdata/test_write.tsv"
+    namew = "fixme/users/podengo/testdata/test_write.tsv"
     #dr = dsr.DictReader()
     dsw=Dataset(open_mode='w', dbms='tvp', name=namew
                 # , od_column_type=dr.od_column_type
