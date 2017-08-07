@@ -600,11 +600,17 @@ the item.'''
     for node_rights in nodes_rights:
         rights_text += '\n' + node_rights.text
 
+    # Subjects
     nodes_subject = node_mdf.findall(".//{*}subject", namespaces=namespaces)
-    mods_subjects = ''
+    mods_subjects = '<mods:subject>'
     for node_subject in nodes_subject:
-        mods_subjects += ('<mods:subject><mods:topic>' + node_subject.text
-          + '</mods:topic></mods:subject>\n')
+        subjects = node_subject.text.split(';')
+        for subject in subjects:
+          subject = subject.strip()
+          if len(subject) < 1:
+            continue
+          mods_subjects += '<mods:topic>' + subject + '</mods:topic>\n'
+    mods_subjects += ('<\mods:subject>\n')
 
     dc_title = node_mdf.find(".//{*}title", namespaces=namespaces).text
     dc_type = node_mdf.find(".//{*}type", namespaces=namespaces).text
