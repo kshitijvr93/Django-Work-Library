@@ -264,7 +264,7 @@ merrick_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no
           </sobekcm:HierarchicalAffiliation>
         </sobekcm:Affiliation>
         <sobekcm:Source>
-        <sobekcm:statement code="iUM">University of Miamia Libraries</sobekcm:statement>
+        <sobekcm:statement code="iUM">University of Miami Libraries</sobekcm:statement>
         </sobekcm:Source>
     </sobekcm:bibDesc>
 </METS:xmlData>
@@ -366,6 +366,7 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
     str_description = tostring(node_description,encoding='unicode',method='text').strip().replace('\n','')
 
     # Special doctype needed to handle nbsp... copyright
+
     xml_dtd = '''<?xml version="1.1" encoding="UTF-8" ?><!DOCTYPE naughtyxml [
         <!ENTITY nbsp "&#0160;">
         <!ENTITY copy "&#0169;">
@@ -539,11 +540,9 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
     if (node_description is not None):
         str_description = etree.tostring(node_description,encoding='unicode').strip().replace('\n','')
 
+    '''
     # Special doctype needed to handle nbsp... copyright
-    xml_dtd = '''<?xml version="1.1" encoding="UTF-8" ?><!DOCTYPE naughtyxml [
-        <!ENTITY nbsp "&#0160;">
-        <!ENTITY copy "&#0169;">
-        ]>'''
+    xml_dtd = '<?xml version="1.1" encoding="UTF-8" ?><!DOCTYPE naughtyxml [ <!ENTITY nbsp "&#0160;"> <!ENTITY copy "&#0169;"> ]>'
 
     xml_description =  '{}<doc>{}</doc>'.format(xml_dtd,str_description)
     # get charmap codec error for some here: print("Got str_description='{}'".format(str_description))
@@ -554,7 +553,11 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
         tree_description = ET.fromstring(xml_description)
         dc_description = etl.escape_xml_text(''.join(tree_description.itertext()))
     else:
-        dc_description = xml_description
+    '''
+
+    if (1 ==1):
+        #dc_description = xml_description
+        dc_description = str_description
         # avoid charmap codec windows errors:print("Using dc_description='{}'".format(dc_description))
 
     nodes_dc_identifier = node_mdf.findall(
