@@ -324,14 +324,14 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
     #zenodo_string_xml = etree.tostring(node_record, pretty_print=True)
 
     # Parse the input record and save it to a string
-    record_str = etree.tostring(node_record, pretty_print=True, xml_declaration=True)
+    record_str = etree.tostring(node_record, pretty_print=True, xml_declaration=True,encoding="utf-8")
     print("{}:Got record string={}".format(me,record_str))
 
     output_folder_xml = output_folder + 'xml/'
     # TO CONSIDER: maybe add a class member flag to delete all preexisting files in this directory?
     # maybe dir for mets too?
     os.makedirs(output_folder_xml, exist_ok=True)
-    filename_xml= output_folder_xml + identifier_normalized + './xml'
+    filename_xml = output_folder_xml + identifier_normalized + './xml'
 
     with open(filename_xml, mode='w', encoding='utf-8') as outfile_xml:
         print("{}:Writing filename_xml ='{}'".format(me,filename_xml))
@@ -353,6 +353,7 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
 
     node_creator = node_mdf.find(".//{*}creator", namespaces=namespaces)
     dc_creator = '' if node_creator is None else node_creator.text
+    dc_creator = etl.escape_xml_text(dc_creator)
     #print("{}:Got creator={}".format(me,dc_creator))
 
     dc_date_orig = node_mdf.find("./{*}date", namespaces=namespaces).text
@@ -368,9 +369,9 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
     node_description = node_mdf.find(".//{*}description",namespaces=namespaces)
     # Make an element trree style tree to invoke pattern to remove innter xml
     str_description = tostring(node_description,encoding='unicode',method='text').strip().replace('\n','')
+    str_description = etl.escape_xml_text(str_description)
 
     # Special doctype needed to handle nbsp... copyright
-
     xml_dtd = '''<?xml version="1.1" encoding="UTF-8" ?><!DOCTYPE naughtyxml [
         <!ENTITY nbsp "&#0160;">
         <!ENTITY copy "&#0169;">
@@ -385,7 +386,7 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
         tree_description = ET.fromstring(xml_description)
         dc_description = etl.escape_xml_text(''.join(tree_description.itertext()))
     else:
-        dc_description = xml_description
+        dc_description = etl.escape_xml_text(xml_description)
         print("Using dc_description='{}'".format(dc_description))
 
 
@@ -403,15 +404,18 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
     rights_text = 'See:'
     for node_rights in nodes_rights:
         rights_text += ' ' + node_rights.text
+    rights_text = etl.escape_xml_text(rights_text)
 
     nodes_subject = node_mdf.findall(".//{*}subject", namespaces=namespaces)
     mods_subjects = ''
     for node_subject in nodes_subject:
-        mods_subjects += ('<mods:subject><mods:topic>' + node_subject.text
+        mods_subjects += ('<mods:subject><mods:topic>' + etl.escape_xml_text(node_subject.text)
           + '</mods:topic></mods:subject>\n')
 
     dc_title = node_mdf.find(".//{*}title", namespaces=namespaces).text
+    dc_title = etl.escape_xml_text(dc_title)
     dc_type = node_mdf.find(".//{*}type", namespaces=namespaces).text
+    dc_type = etl.escape_xml_text(dc_type)
 
     sobekcm_aggregations = ['UFDATASETS']
     xml_sobekcm_aggregations = ''
@@ -479,6 +483,7 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
 
     node_type= node_record.find(".//{*}type", namespaces=namespaces)
     genre = '' if node_type is None else node_type.text
+    genre = etl.escape_xml_text(genre)
 
     node_identifier = node_record.find("./{*}header/{*}identifier", namespaces=namespaces)
     header_identifier_text = '' if node_identifier is None else node_identifier.text
@@ -516,16 +521,16 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
         # This happens for received 'delete' records
         # Just return None to ignore them pending requirements to process them
         #print ("Cannot find node_mdf for xml tag/node: {*}dc")
-        return None
+        return 0
     else:
       #print("{}: Got node_mdf with tag='{}'",format(node_mdf.tag))
       pass
-
 
     #print("{}:got namespaces='{}'".format(me,repr(namespaces)))
 
     node_creator = node_mdf.find(".//{*}creator", namespaces=namespaces)
     dc_creator = '' if node_creator is None else node_creator.text
+    dc_creator = etl.escape_xml_text(dc_creator)
     #print("{}:Got creator={}".format(me,dc_creator))
 
     node_date = node_mdf.find("./{*}date", namespaces=namespaces)
@@ -551,7 +556,7 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
     str_description = ''
     if (node_description is not None):
         #str_description = etree.tostring(node_description,encoding='unicode').strip().replace('\n','')
-        str_description = node_description.text
+        str_description = etl.escape_xml_text(node_description.text)
 
     if (1 ==1):
         dc_description = str_description
@@ -596,6 +601,7 @@ the item.'''
     # Some list-variable input values
     for node_rights in nodes_rights:
         rights_text += '\n' + node_rights.text
+    rights_text = etl.escape_xml_text(rights_text)
 
     # Subjects
     nodes_subject = node_mdf.findall(".//{*}subject", namespaces=namespaces)
@@ -606,11 +612,11 @@ the item.'''
           subject = subject.strip()
           if len(subject) < 1:
             continue
-          mods_subjects += '<mods:topic>' + subject + '</mods:topic>\n'
+          mods_subjects += '<mods:topic>' + etl.escape_xml_text(subject) + '</mods:topic>\n'
     mods_subjects += ('</mods:subject>\n')
 
-    dc_title = node_mdf.find(".//{*}title", namespaces=namespaces).text
-    dc_type = node_mdf.find(".//{*}type", namespaces=namespaces).text
+    dc_title = etl.escape_xml_text(node_mdf.find(".//{*}title", namespaces=namespaces).text)
+    dc_type = etl.escape_xml_text(node_mdf.find(".//{*}type", namespaces=namespaces).text)
 
     sobekcm_aggregations = ['ALL', 'DLOC1', 'IUM']
     xml_sobekcm_aggregations = ''
@@ -665,7 +671,7 @@ the item.'''
         #print("{}:Writing METS filename='{}'".format(me,fn))
         #outfile.write(mets_str.encode('utf-8'))
         outfile.write(mets_str)
-    return
+    return 1
     #end def merrick_node_writer
 
 class OAI_Harvester(object):
@@ -729,14 +735,26 @@ class OAI_Harvester(object):
     while (url_list is not None):
       n_batch += 1
       response = requests.get(url_list)
-      xml = response.text.encode('utf-8')
-      print("Using url_list='{}', got response with xml length = {}".format(url_list,len(xml)))
+      # see http://docs.python-requests.org/en/latest/api/#main-interface
+      # It says to set response.encoding before accessing response.text
+      #response.encoding = 'utf-8'
+      #xml = response.text
+      # CRITICAL: needed to call this encode() method else accents got munged!
+      # Trial and error -- examination of headers and response.encoding were needed to determine
+      # the encoding setting to use.
+      xml = response.text.encode('ISO-8859-1')
+
+      print("Using url_list='{}', got response with encoding='{}',lenngth = {}, headers:"
+            .format(url_list, response.encoding, len(xml)))
+      for k,v in response.headers.items():
+          print("{}:{}".format(k,v))
+      print("-----------------\n")
 
       try:
           node_root = etree.fromstring(xml)
       except Exception as e:
-          print("For batch {}, made url request ='{}'. Skipping batch with Parse() exception='{}'"
-                .format(n_batch, url_list_records, repr(e)))
+          print("For batch {}, made url request ='{}'.\nSkipping batch with Parse() exception='{}'"
+                .format(n_batch, url_list, repr(e)))
 
           print("Traceback: {}".format(traceback.format_exc()))
           # Break here - no point to continue because we cannot parse/discover the resumptionToken
@@ -777,23 +795,31 @@ class OAI_Harvester(object):
   def output(self):
     num_records = 0
     bibvid = self.bib_prefix + str(self.bib_last).zfill(self.bib_zfills[0]) + '00001' #may implement vid later
+    output_folder_format = '{}/{}/'.format(self.output_folder, self.metadata_format)
+
+    # increment the candiate bib_last integer to offer for the output of the next mets
+    self.bib_last += 1
 
     for (namespaces, node_record) in oai.generator_node_records():
-      # Increment the bib_id
-      self.bib_last += 1
       bib_vid = self.bib_prefix + str(self.bib_last).zfill(8) + '_00001' #may implement vid later
 
       # Call crosswalk this xml node's record content to output the record to a file
       # zw = self.node_writer()
       if node_record is None:
             break;
-      num_records += 1
       # save the xml in its own output ... folder ***
       #
-      # call the crosswalk function to generate output
-      output_folder_format = '{}/{}/'.format(self.output_folder, self.metadata_format)
-      self.node_writer(node_record=node_record ,namespaces=namespaces
+      # Call the crosswalk function to read the node_record and write mets file output
+      rv = self.node_writer(node_record=node_record ,namespaces=namespaces
           ,output_folder=output_folder_format, bib_vid=bib_vid)
+
+      # Increment the integer bib_last id candidate for the next mets record.
+      # NOTE: some received OAI node_records are for 'delete' ,
+      # Later - change the node_writer to return true if it wrote a mets
+      # and false if it detected a delete record and so did not write a mets.
+      # if rv == 1: # uncomment after finishing testing other things to keep bibids the same in meantime
+      self.bib_last += 1
+      num_records += 1
 
     return num_records
   # end def output()
@@ -905,4 +931,5 @@ else:
 
 #d_run_params['output_folder'] = output_folder
 
-print("Generator got {} records. DONE.".format(num_records))
+print("Generator got info for total records (new and deleted). DONE."
+      .format(num_records))
