@@ -735,19 +735,23 @@ class OAI_Harvester(object):
     while (url_list is not None):
       n_batch += 1
       response = requests.get(url_list)
-      # see http://docs.python-requests.org/en/latest/api/#main-interface
-      # It says to set response.encoding before accessing response.text
-      #response.encoding = 'utf-8'
-      #xml = response.text
-      # CRITICAL: needed to call this encode() method else accents got munged!
-      # Trial and error -- examination of headers and response.encoding were needed to determine
-      # the encoding setting to use.
-      xml = response.text.encode('ISO-8859-1')
 
-      print("Using url_list='{}', got response with encoding='{}',lenngth = {}, headers:"
-            .format(url_list, response.encoding, len(xml)))
+      print("Using url_list='{}', got response with encoding='{}', headers:"
+            .format(url_list, response.encoding))
       for k,v in response.headers.items():
           print("{}:{}".format(k,v))
+
+      # see http://docs.python-requests.org/en/latest/api/#main-interface
+      # It says that one may  set response.encoding before accessing response.text
+      # response.encoding = 'utf-8' # utf-8 did not work to interpret accent characters.
+      # It seems Miami-Merrick server sends out ISO-8559-1 format
+      # Set it explicitly, to match the Miami-Merrick encoding
+      # requests' package 'usually' 'detects' this from the server and sets it,
+      # but it seems to not work.
+      # A fundamental python principle is 'explict is better than  implicit', so set it here.
+      # response.encoding = 'ISO-8859-1' # that fails! But next call to encode() seems to work.
+      xml = response.text.encode('ISO-8859-1')
+      print("xml len={}, response.encoding={}".format(len(xml), response.encoding))
       print("-----------------\n")
 
       try:
