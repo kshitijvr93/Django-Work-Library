@@ -358,6 +358,10 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
     dc_date_orig = node_mdf.find("./{*}date", namespaces=namespaces).text
     #print("Got dc date orig={}".format(dc_date_orig))
     # Must convert dc_date_orig to valid METS format:
+    # If we get only a year, pad it to year-01-01 to make
+    # it valid for this field.
+    if len(dc_date_orig) < 5:
+        dc_date_orig += "01-01"
     dc_date = '{}T12:00:00Z'.format(dc_date_orig)
     #print("Got dc_date='{}'".format(dc_date))
 
@@ -528,6 +532,14 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
     dc_date_orig='1969-01-01'
     if node_date is not None:
         dc_date_orig = node_date.text
+    # If we get only a year, pad it to year-01-01 to make
+    # it valid for this field.
+    if len(dc_date_orig) < 5:
+        dc_date_orig += "-01-01"
+    elif len(dc_date_orig) < 8:
+        dc_date_orig += "-01"
+
+    dc_date = '{}T12:00:00Z'.format(dc_date_orig)
     # print("Got dc date orig={}".format(dc_date_orig))
     # Must convert dc_date_orig to valid METS format:
     dc_date = '{}T12:00:00Z'.format(dc_date_orig)
@@ -538,25 +550,10 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
     #str_description = etree.tostring(node_description,encoding='unicode',method='text').strip().replace('\n','')
     str_description = ''
     if (node_description is not None):
-        str_description = etree.tostring(node_description,encoding='unicode').strip().replace('\n','')
-
-    '''
-    # Special doctype needed to handle nbsp... copyright
-    xml_dtd = '<?xml version="1.1" encoding="UTF-8" ?><!DOCTYPE naughtyxml [ <!ENTITY nbsp "&#0160;"> <!ENTITY copy "&#0169;"> ]>'
-
-    xml_description =  '{}<doc>{}</doc>'.format(xml_dtd,str_description)
-    # get charmap codec error for some here: print("Got str_description='{}'".format(str_description))
-    # get charmap codec error on windows for some here:print("Got xml_description='{}'".format(xml_description))
-    print
-    if (1 == 2):
-        # See: https://stackoverflow.com/questions/19369901/python-element-tree-extract-text-from-element-stripping-tags#19370075
-        tree_description = ET.fromstring(xml_description)
-        dc_description = etl.escape_xml_text(''.join(tree_description.itertext()))
-    else:
-    '''
+        #str_description = etree.tostring(node_description,encoding='unicode').strip().replace('\n','')
+        str_description = node_description.text
 
     if (1 ==1):
-        #dc_description = xml_description
         dc_description = str_description
         # avoid charmap codec windows errors:print("Using dc_description='{}'".format(dc_description))
 
@@ -569,7 +566,7 @@ def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
     # I invented the id_types, based on the data harvested in 2017.
     id_types = ['merrick_set_spec_index', 'merrick_url']
     for i,nid in enumerate(nodes_dc_identifier):
-        xml_dc_ids = ('<mods:identifier type="{}">{}</mods_identifier>\n'
+        xml_dc_ids = ('<mods:identifier type="{}">{}</mods:identifier>\n'
           .format(id_types[i], nid.text))
         if (i == 1):
           related_url = nid.text
@@ -610,7 +607,7 @@ the item.'''
           if len(subject) < 1:
             continue
           mods_subjects += '<mods:topic>' + subject + '</mods:topic>\n'
-    mods_subjects += ('<\mods:subject>\n')
+    mods_subjects += ('</mods:subject>\n')
 
     dc_title = node_mdf.find(".//{*}title", namespaces=namespaces).text
     dc_type = node_mdf.find(".//{*}type", namespaces=namespaces).text
