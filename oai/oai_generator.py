@@ -654,7 +654,9 @@ the item.'''
 
     # Create mets_str and write it to mets.xml output file
     mets_str = merrick_mets_format_str.format(**d_var_val)
-    output_folder_mets = output_folder + 'mets/'
+    # Nest filename in folder of the bib_vid,
+    # because loads in sobek bulder faster this way
+    output_folder_mets = output_folder + 'mets/' + bib_vid + '/'
     os.makedirs(output_folder_mets, exist_ok=True)
 
     filename_mets = output_folder_mets  + bib_vid + '.mets.xml'
