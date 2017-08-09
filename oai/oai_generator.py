@@ -346,7 +346,7 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
         # This happens for received 'delete' records
         # Just return None to ignore them pending requirements to process them
         #print ("Cannot find node_mdf for xml tag/node: {*}dc")
-        return None
+        return 0
     else:
       #print("{}: Got node_mdf with tag='{}'",format(node_mdf.tag))
       pass
@@ -461,7 +461,7 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
     with open(fn, mode='w', encoding='utf-8') as outfile:
         print("{}:Writing METS filename='{}'".format(me,fn))
         outfile.write(mets_str.encode('utf-8'))
-    return
+    return 1
     #end def zenodo_node_writer
 
 def merrick_node_writer(node_record=None, namespaces=None, output_folder=None
@@ -736,10 +736,14 @@ class OAI_Harvester(object):
       n_batch += 1
       response = requests.get(url_list)
 
-      print("Using url_list='{}', got response with encoding='{}', headers:"
-            .format(url_list, response.encoding))
+      print("Using url_list='{}'\nand got response with apparent_encoding='{}', encoding='{}',headers:"
+            .format(url_list, response.apparent_encoding, response.encoding))
       for k,v in response.headers.items():
           print("{}:{}".format(k,v))
+
+      response_str = requests.utils.get_unicode_from_response(response)
+      encodings = requests.utils.get_encodings_from_content(response_str)
+      print("Encoding from unicode response_str='{}'".format(encodings))
 
       # see http://docs.python-requests.org/en/latest/api/#main-interface
       # It says that one may  set response.encoding before accessing response.text
@@ -750,12 +754,13 @@ class OAI_Harvester(object):
       # but it seems to not work.
       # A fundamental python principle is 'explict is better than  implicit', so set it here.
       # response.encoding = 'ISO-8859-1' # that fails! But next call to encode() seems to work.
-      xml = response.text.encode('ISO-8859-1')
-      print("xml len={}, response.encoding={}".format(len(xml), response.encoding))
+      xml_bytes = response.text.encode('ISO-8859-1')
+      print("xml_bytes len={}, response.encoding={}".format(len(xml_bytes), response.encoding))
       print("-----------------\n")
 
       try:
-          node_root = etree.fromstring(xml)
+          node_root = etree.fromstring(xml_bytes)
+          #node_root = etree.fromstring(response_str) #error: unicode strings not supported
       except Exception as e:
           print("For batch {}, made url request ='{}'.\nSkipping batch with Parse() exception='{}'"
                 .format(n_batch, url_list, repr(e)))
@@ -797,7 +802,7 @@ class OAI_Harvester(object):
   # end def reader_list_records()
 
   def output(self):
-    num_records = 0
+    num_records = num_deleted = 0
     bibvid = self.bib_prefix + str(self.bib_last).zfill(self.bib_zfills[0]) + '00001' #may implement vid later
     output_folder_format = '{}/{}/'.format(self.output_folder, self.metadata_format)
 
@@ -817,6 +822,8 @@ class OAI_Harvester(object):
       rv = self.node_writer(node_record=node_record ,namespaces=namespaces
           ,output_folder=output_folder_format, bib_vid=bib_vid)
 
+      if rv == 0:
+          num_deleted += 1
       # Increment the integer bib_last id candidate for the next mets record.
       # NOTE: some received OAI node_records are for 'delete' ,
       # Later - change the node_writer to return true if it wrote a mets
@@ -825,7 +832,7 @@ class OAI_Harvester(object):
       self.bib_last += 1
       num_records += 1
 
-    return num_records
+    return num_records, num_deleted
   # end def output()
 # end class OAI_Harvester
 
@@ -850,7 +857,6 @@ class XmlBibWalker(object):
     Hence the class name XmlBibWalker.
     The custom handling of the required/known schema is performed by a caller-defined function,
     whose name is given in argument node_writer.
-
     '''
 
     def __init__(self, output_folder=None, bib_id_last_str='XX00000000', vid="00001",
@@ -907,7 +913,7 @@ if study == 'zenodo':
   oai = OAI_Harvester(oai_url=oai_url, output_folder=output_folder, bib_prefix="DS"
       ,node_writer=zenodo_node_writer, record_xpath=".//{*}record")
 
-  num_records = oai.output()
+  num_records, num_deleted = oai.output()
   print("oai.output() returned num_records={}".format(num_records))
 
 elif study == "merrick/chc5017":
@@ -928,12 +934,10 @@ elif study == "merrick/chc5017":
       ,node_writer=merrick_node_writer, set_spec=set_spec
       ,metadata_format=metadata_format, record_xpath=".//{*}record")
 
-  num_records = oai.output()
+  num_records, num_deleted = oai.output()
 else:
     raise ValueError('ERROR: unknown study={}'.format(study))
 
 
-#d_run_params['output_folder'] = output_folder
-
-print("Generator got info for total records (new and deleted). DONE."
-      .format(num_records))
+print("Generator got info for {} total records, {} deleted. DONE."
+      .format(num_records, num_deleted))
