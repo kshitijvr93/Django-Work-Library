@@ -1,4 +1,9 @@
 '''citrus.py
+
+<summary name='citrus.py'>Read METS files for the UFDC citrus collection and
+transform to a predefined spreadsheet output format, suitable for manual edits and
+submittal to the "Deeply Rooted" project.</summary>
+
 '''
 
 import sys, os, os.path, platform
@@ -9,13 +14,17 @@ env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
 path_user = os.environ.get(env_var)
 
 print("Using path_user='{}'".format(path_user))
-
+print("Note: HOME variable is '{}'".format(os.environ.get('HOME')))
 # For this user, add this project's modules to sys.path
 path_modules = '{}/git/citrus/modules'.format(path_user)
 print("Using path_modules='{}'".format(path_modules))
 sys.path.append(path_modules)
 
-print("using sys.path='{}'".format(sys.path))
+print("\n------------\n------------using sys.path='{}'\n\n".format(sys.path))
+print("ABC")
+print("TESTEXIT")
+sys.stdout.flush()
+raise Exception(ValueError,"TEST EXIT")
 
 import etl
 
