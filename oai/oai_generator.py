@@ -16,12 +16,22 @@ This is initially used to translate 'zenodo' MD records from their OAI-PMH
 feed to mets for UFDC SobekCM ingestion.
 '''
 #Get local pythonpath of modules from 'citrus' main project directory
-
 import sys, os, os.path, platform
 
-# Add the parent Path for misc UF modules
-sys.path.append('{}/git/citrus/modules'.format(os.path.expanduser('~')))
-print("sys.path={}".format(repr(sys.path)))
+# Note: expanduser depends on HOME and USERPROFILE vars that may get changed by
+# Automatic updates, (this happened to me, causing much angst) so be explicit.
+env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+path_user = os.environ.get(env_var)
+
+print("Using path_user='{}'".format(path_user))
+
+# For this user, add this project's modules to sys.path
+path_modules = '{}/git/citrus/modules'.format(path_user)
+print("Using path_modules='{}'".format(path_modules))
+sys.path.append(path_modules)
+
+print("using sys.path='{}'".format(sys.path))
+
 
 import etl
 from lxml.etree import tostring

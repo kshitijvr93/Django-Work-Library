@@ -1,0 +1,4 @@
+sn	int
+state	nvarchar(2)
+state_name	nvarchar(16)
+temperature_fahrenheit	float

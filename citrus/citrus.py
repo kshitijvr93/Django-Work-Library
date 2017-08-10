@@ -1,11 +1,25 @@
 '''citrus.py
 '''
-import csv
-import sys, os, os.path, platform
-sys.path.append('{}/github/citrus/modules'.format(os.path.expanduser('~')))
 
+import sys, os, os.path, platform
+
+# Note: expanduser depends on HOME and USERPROFILE vars that may get changed by
+# Automatic updates, (this happened to me, causing much angst) so be explicit.
+env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+path_user = os.environ.get(env_var)
+
+print("Using path_user='{}'".format(path_user))
+
+# For this user, add this project's modules to sys.path
+path_modules = '{}/git/citrus/modules'.format(path_user)
+print("Using path_modules='{}'".format(path_modules))
+sys.path.append(path_modules)
+
+print("using sys.path='{}'".format(sys.path))
 
 import etl
+
+import csv
 from pathlib import Path
 from lxml import etree
 from lxml.etree import tostring
