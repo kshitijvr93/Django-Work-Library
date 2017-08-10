@@ -24,7 +24,7 @@ print("\n------------\n------------using sys.path='{}'\n\n".format(sys.path))
 print("ABC")
 print("TESTEXIT")
 sys.stdout.flush()
-raise Exception(ValueError,"TEST EXIT")
+#raise Exception(ValueError,"TEST EXIT")
 
 import etl
 

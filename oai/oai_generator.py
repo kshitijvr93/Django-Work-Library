@@ -32,11 +32,9 @@ sys.path.append(path_modules)
 
 print("using sys.path='{}'".format(sys.path))
 
-
 import etl
 from lxml.etree import tostring
 import xml.etree.ElementTree as ET
-
 
 zenodo_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!--  METS/mods file designed to describe a Zenodo OAI-PMH extracted MD  -->
@@ -625,8 +623,11 @@ the item.'''
           mods_subjects += '<mods:topic>' + etl.escape_xml_text(subject) + '</mods:topic>\n'
     mods_subjects += ('</mods:subject>\n')
 
-    dc_title = etl.escape_xml_text(node_mdf.find(".//{*}title", namespaces=namespaces).text)
-    dc_type = etl.escape_xml_text(node_mdf.find(".//{*}type", namespaces=namespaces).text)
+    tnode = node_mdf.find(".//{*}title", namespaces=namespaces)
+    dc_title = '(none)' if tnode is None else etl.escape_xml_text(tnode.text)
+
+    tnode = node_mdf.find(".//{*}type", namespaces=namespaces)
+    dc_type = '' if tnode is None else etl.escape_xml_text(tnode.text)
 
     sobekcm_aggregations = ['ALL', 'DLOC1', 'IUM']
     xml_sobekcm_aggregations = ''
@@ -687,12 +688,15 @@ the item.'''
 class OAI_Harvester(object):
   '''
   <synopsis name='OAI_Harvester'>
-  <summary>OAI_Harvester encapsulates information about a specific OAI server
-  needed to make url requests to it, and it also contains a generator method to
-  read the OAI server response and parse it into a node_record xml object that is returned</summary>
-  <param name="node_writer">A function that takes arguments of node_record (eg, a next() value from
-  generator_node_records() ), output_folder, bib_prefix, bib_zfills, bib_last) and creates one file
-  in the output folder for the node_record </param>
+  <summary>OAI_Harvester encapsulates information required to make requests to a
+  specific OAI server. It also contains
+  (1) a generator method named list_nodes_record() to read the OAI server listRecords
+  and parse it into a node_record xml object that is returned
+  </summary>
+  <param name="node_writer">A function that takes arguments of (1) node_record and
+  (2) namespaces (eg, the return values from a call to list_nodes_record() ,
+  (3) output_folder, and for other params, see calls to it in this source code.
+</param>
   </synopsis>
   '''
   def __init__(self, oai_url=None, output_folder=None,bib_prefix='XX'
@@ -712,8 +716,8 @@ class OAI_Harvester(object):
     self.str_output_format = str_output_format
     self.node_writer = node_writer
     self.record_xpath = record_xpath
-    # namespaces will be reset by each xml file inputted by generator_node_records()
-    self.namespaces = None #will be overwritten when each xml file is input by the generator_node_records
+    # namespaces will be reset by each xml file inputted by list_nodes_record()
+    self.namespaces = None #will be overwritten when each xml file is input by the list_nodes_record
     self.set_spec = set_spec
     self.metadata_format = metadata_format
 
@@ -731,9 +735,14 @@ class OAI_Harvester(object):
       .format(self.oai_url,self.set_spec,self.metadata_format))
     return url
 
-  def generator_node_records(self, verbosity=0):
+  def url_list_sets(self):
+    url = ("{}?verb=ListSets&metadataPrefix={}"
+      .format(self.oai_url,self.metadata_format))
+    return url
+
+  def list_nodes_record(self, verbosity=0):
     pnames = ['metadata_format','set_spec',]
-    me = 'generator_node_records'
+    me = 'list_nodes_record'
     metadata_format = self.metadata_format
     set_spec = self.set_spec
 
@@ -798,7 +807,8 @@ class OAI_Harvester(object):
       node_resumption = node_root.find('.//{*}resumptionToken', namespaces=d_namespaces)
       url_list = None
       if node_resumption is not None:
-          # Note: manioc allows no other args than resumption token, so try with all oai servers
+          # Note: manioc allows no other args than resumption token, so
+          # also do not specify/restate the metadataPrefix with all oai servers
           #url_list = ('{}?verb=ListRecords&set={}&metadataPrefix=oai_dc&resumptionToken={}'
           #    .format(self.url_base, set_spec, node_resumption.text))
 
@@ -811,7 +821,7 @@ class OAI_Harvester(object):
 
   # end def reader_list_records()
 
-  def output(self):
+  def output_records(self):
     num_records = num_deleted = 0
     bibvid = self.bib_prefix + str(self.bib_last).zfill(self.bib_zfills[0]) + '00001' #may implement vid later
     output_folder_format = '{}/{}/'.format(self.output_folder, self.metadata_format)
@@ -819,7 +829,7 @@ class OAI_Harvester(object):
     # increment the candiate bib_last integer to offer for the output of the next mets
     self.bib_last += 1
 
-    for (namespaces, node_record) in oai.generator_node_records():
+    for (namespaces, node_record) in oai.list_nodes_record():
       bib_vid = self.bib_prefix + str(self.bib_last).zfill(8) + '_00001' #may implement vid later
 
       # Call crosswalk this xml node's record content to output the record to a file
@@ -843,7 +853,7 @@ class OAI_Harvester(object):
       num_records += 1
 
     return num_records, num_deleted
-  # end def output()
+  # end def output_records()
 # end class OAI_Harvester
 
 #
@@ -851,7 +861,7 @@ class XmlBibWalker(object):
     ''' DESIGN NOTES - UNDER CONSIDERATION:
     This is considered to separate the writing-side functionality from class OAI_Generator...
     Rather than pass a node_writer and other of the writing-related  parameters to it
-    and use OAI_Generator.output() to produce output, it may be more useful to have this as
+    and use OAI_Generator.output_records() to produce output, it may be more useful to have this as
     a separate object -- a good place to also stick bib id management..
     TODO: come back to this later
 
@@ -886,8 +896,9 @@ class XmlBibWalker(object):
       self.d_crosswalk = d_crosswalk
       self.str_output_template = str_output_template
       self.node_writer = node_writer
-      # namespaces will be reset by each xml file inputted by generator_node_records()
-      self.namespaces = None #will be overwritten when each xml file is input by the generator_node_records
+
+      # namespaces will be reset by each xml file inputted by list_nodes_record()
+      self.namespaces = None #will be overwritten when each xml file is input by the list_nodes_record
 
       # Later: use API with verb metadataFormats to get them. Now try a one-size-fits-all list
       #
@@ -900,7 +911,7 @@ class XmlBibWalker(object):
 
       return
 
-      def output(self):
+      def output_records(self):
           return
 
 #end class XMLCrossWalker
@@ -910,12 +921,13 @@ studies = ['zenodo','merrick']
 
 study = 'zenodo'
 study = 'merrick/chc5017'
+study = "manioc/patrimon"
 
 if study == 'zenodo':
+  oai_url = 'https://zenodo.org/oai2d'
   set_spec='user-genetics-datasets'
   metadata_format="oai_dc"
 
-  oai_url = 'https://zenodo.org/oai2d'
   output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
         data_relative_folder='data/outputs/oai/{}/{}/'.format(study,set_spec))
   print("Study = {}, set_spec={}, base_output_folder={}".format(study,set_spec,output_folder))
@@ -923,10 +935,11 @@ if study == 'zenodo':
   oai = OAI_Harvester(oai_url=oai_url, output_folder=output_folder, bib_prefix="DS"
       ,node_writer=zenodo_node_writer, record_xpath=".//{*}record")
 
-  num_records, num_deleted = oai.output()
-  print("oai.output() returned num_records={}".format(num_records))
+  num_records, num_deleted = oai.output_records()
+  print("oai.output_records() returned num_records={}".format(num_records))
 
-elif study == "merrick/chc5017":
+elif study.startswith("manioc/"):
+  oai_url = 'http://www.manioc.org/phpoai/oai2.php'
   parts = study.split('/')
   study = parts[0]
   set_spec = parts[1]
@@ -935,7 +948,6 @@ elif study == "merrick/chc5017":
   metadata_format="oai_qdc"
   metadata_format="oai_dc"
 
-  oai_url = 'http://merrick.library.miami.edu/oai/oai.php'
   output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
       data_relative_folder='data/outputs/oai/{}/{}/'.format(study,set_spec))
   print("Study = {}, set_spec={}, base_output_folder={}".format(study,set_spec,output_folder))
@@ -944,7 +956,7 @@ elif study == "merrick/chc5017":
       ,node_writer=merrick_node_writer, set_spec=set_spec
       ,metadata_format=metadata_format, record_xpath=".//{*}record")
 
-  num_records, num_deleted = oai.output()
+  num_records, num_deleted = oai.output_records()
 else:
     raise ValueError('ERROR: unknown study={}'.format(study))
 
