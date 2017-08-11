@@ -5,27 +5,17 @@ transform to a predefined spreadsheet output format, suitable for manual edits a
 submittal to the "Deeply Rooted" project.</summary>
 
 '''
-
+#Get local pythonpath of modules from 'citrus' main project directory
 import sys, os, os.path, platform
+def get_path_modules(verbosity=0):
+    env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+    path_user = os.environ.get(env_var)
+    path_modules = '{}/git/citrus/modules'.format(path_user)
+    if verbosity > 1:
+        print("Assigned path_modules='{}'".format(path_modules))
+    return path_modules
 
-# Note: expanduser depends on HOME and USERPROFILE vars that may get changed by
-# Automatic updates, (this happened to me, causing much angst) so be explicit.
-env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
-path_user = os.environ.get(env_var)
-
-print("Using path_user='{}'".format(path_user))
-print("Note: HOME variable is '{}'".format(os.environ.get('HOME')))
-# For this user, add this project's modules to sys.path
-path_modules = '{}/git/citrus/modules'.format(path_user)
-print("Using path_modules='{}'".format(path_modules))
-sys.path.append(path_modules)
-
-print("\n------------\n------------using sys.path='{}'\n\n".format(sys.path))
-print("ABC")
-print("TESTEXIT")
-sys.stdout.flush()
-#raise Exception(ValueError,"TEST EXIT")
-
+sys.path.append(get_path_modules())
 import etl
 
 import csv
@@ -38,7 +28,6 @@ from xlrd import open_workbook
 from etl import FilePaths
 
 class Citrus():
-
     def __init__(self, paths=None, edits_file=None, input_folders=None, input_path_glob=None
         ,deeply_rooted_output_file_name=None):
 

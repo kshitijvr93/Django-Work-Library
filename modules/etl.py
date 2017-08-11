@@ -12,6 +12,44 @@ from collections import OrderedDict
 from lxml import etree
 from lxml.etree import tostring
 from pathlib import Path
+'''
+NOTE: for the morning of 20170810, my WIN7 'update' on my UF PC had a 'HOME'
+variable defined to U:, which changed the expanduser() return value unexpectedly
+because expanduser() has been relying on the USERPROFILE windows env variable because
+HOME was not defined. This caused some development snags. Since then, a new restart was
+done and HOME is again not defined, but use below code as protection against future outages.
+
+So now we rely specifically on USEPROFILE on non-windows to return path_modules
+In all project source code files, must use this to append to sys.path before importing
+this etl module and all others in this group
+
+#Get local pythonpath of modules from 'citrus' main project directory
+import sys, os, os.path, platform
+def get_path_modules(context='debug',verbosity=0):
+    if context == 'debug':
+        user_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+        user_folder = os.environ.get(user_var)
+        path_modules = '{}/git/citrus/modules'.format(user_folder)
+    else:
+        raise Exception("get_path_modules: context'{}' not supported'".format(context))
+
+    if verbosity > 1:
+        print("Assigned path_modules='{}'".format(path_modules))
+    return path_modules
+
+sys.path.append(get_path_modules())
+# the etl.py module resides under get_path_modules()
+import etl
+'''
+
+def utc_now():
+    return datetime.datetime.utcnow()
+
+def utc_now_secs():
+     now = utc_now = datetime.datetime.utcnow()
+     now_secs_str = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+     return now, now_secs_str
+
 
 '''
 Get an api result for a url decoded as utf-8.
@@ -19,33 +57,50 @@ If json_loads is True, read the API result as a JSON result,
 so decode it to a Python result and return that.
 Otherwise just return the utf-8 result.
 '''
-def get_result_by_url(url, json_loads='True'):
+def get_result_by_url(url, json_loads='True', verbosity=0):
 
     if url is None or url=="":
         raise Exception("Cannot send a request to an empty url.")
     try:
-        print("*** BULDING GET REQUEST FOR API RESULTS FOR URL='{}' ***"
-            .format(url))
+        if verbosity > 0:
+            print("*** BULDING GET REQUEST FOR API RESULTS FOR URL='{}' ***"
+              .format(url))
         get_request = urllib.request.Request(url, data=None, headers={
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) '
             'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
             })
-
     except:
-        raise Exception("Cannot send a request to url={}".format(url))
+        raise Exception("Cannot create a request for url={}".format(url))
     try:
         print("*** GET REQUEST='{}' ***".format(repr(get_request)))
         response = urllib.request.urlopen(get_request)
     except Exception as e:
-        print("get_elsevier_api_result_by_url: Got exception instead of response for"
-              " url={}, get_request={} , exception={}"
-              .format(url, get_request, e))
+        if verbosity > 0:
+            print("get_result_by_url: Got exception instead of response for"
+                " url={}, get_request={} , exception={}"
+                .format(url, get_request, e))
         raise
     result = response.read().decode('utf-8')
     if json_loads == True:
         result = json.loads(result)
     return result
 
+'''
+Somewhat better name ... same functionality to replace more poorly named method data_folder()
+'''
+def platform_output_folder(
+       linux_base_folder=None
+       ,windows_base_folder=None
+       , output_subfolder=None, exist_ok=True, verbosity=0 ):
+    rparams = ['linux_base_folder','windows_base_folder']
+    if not all(rparams):
+        raise ValueError('All required params({}) were not given'.format(rparams))
+    if platform.system().lower() == 'linux':
+        folder = linux + data_relative_folder
+    else:
+        folder = windows + data_relative_folder
+    os.makedirs(folder, exist_ok=exist_ok)
+    return folder
 
 def data_folder(linux='/tmp/data/', windows='c:/data/',
     data_relative_folder=None, exist_ok=True, verbosity=0):
@@ -56,8 +111,14 @@ def data_folder(linux='/tmp/data/', windows='c:/data/',
     os.makedirs(folder, exist_ok=exist_ok)
     return folder
 
+def user_folder_name():
+    user_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+    user_folder = os.environ.get(user_var)
+    return user_folder
+
 def home_folder_name():
     from os.path import expanduser
+    print("*** DEPRECATED ***: Use method user_folder_name instead")
     return expanduser("~")
 
 def make_home_relative_folder(home_relative_folder='',exist_ok=True, verbosity=0):
