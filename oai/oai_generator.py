@@ -17,24 +17,23 @@ feed to mets for UFDC SobekCM ingestion.
 '''
 #Get local pythonpath of modules from 'citrus' main project directory
 import sys, os, os.path, platform
+def get_path_modules(verbosity=0):
+    env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+    path_user = os.environ.get(env_var)
+    path_modules = '{}/git/citrus/modules'.format(path_user)
+    if verbosity > 1:
+        print("Assigned path_modules='{}'".format(path_modules))
+    return path_modules
 
-# Note: expanduser depends on HOME and USERPROFILE vars that may get changed by
-# Automatic updates, (this happened to me, causing much angst) so be explicit.
-env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
-path_user = os.environ.get(env_var)
-
-print("Using path_user='{}'".format(path_user))
-
-# For this user, add this project's modules to sys.path
-path_modules = '{}/git/citrus/modules'.format(path_user)
-print("Using path_modules='{}'".format(path_modules))
-sys.path.append(path_modules)
+sys.path.append(get_path_modules())
+import etl
+import oai_server
 
 print("using sys.path='{}'".format(sys.path))
 
-import etl
 from lxml.etree import tostring
 import xml.etree.ElementTree as ET
+import manioc
 
 zenodo_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!--  METS/mods file designed to describe a Zenodo OAI-PMH extracted MD  -->
@@ -690,11 +689,11 @@ class OAI_Harvester(object):
   <synopsis name='OAI_Harvester'>
   <summary>OAI_Harvester encapsulates information required to make requests to a
   specific OAI server. It also contains
-  (1) a generator method named list_nodes_record() to read the OAI server listRecords
+  (1) a generator method named namespaces_node() to read the OAI server listRecords
   and parse it into a node_record xml object that is returned
   </summary>
   <param name="node_writer">A function that takes arguments of (1) node_record and
-  (2) namespaces (eg, the return values from a call to list_nodes_record() ,
+  (2) namespaces (eg, the return values from a call to namespaces_node() ,
   (3) output_folder, and for other params, see calls to it in this source code.
 </param>
   </synopsis>
@@ -716,8 +715,8 @@ class OAI_Harvester(object):
     self.str_output_format = str_output_format
     self.node_writer = node_writer
     self.record_xpath = record_xpath
-    # namespaces will be reset by each xml file inputted by list_nodes_record()
-    self.namespaces = None #will be overwritten when each xml file is input by the list_nodes_record
+    # namespaces will be reset by each xml file inputted by namespaces_node()
+    self.namespaces = None #will be overwritten when each xml file is input by the list_namespaces_node
     self.set_spec = set_spec
     self.metadata_format = metadata_format
 
@@ -740,17 +739,19 @@ class OAI_Harvester(object):
       .format(self.oai_url,self.metadata_format))
     return url
 
-  def list_nodes_record(self, verbosity=0):
-    pnames = ['metadata_format','set_spec',]
-    me = 'list_nodes_record'
-    metadata_format = self.metadata_format
-    set_spec = self.set_spec
+  def list_sets(self, verbosity=0):
+    me = 'list_sets'
+    n_batch = 0;
+    url_sets = '{}?verb=ListSets'.format(self.oai_url)
+    while (url_sets is not None):
+      n_batch += 1
+      response = requests.get(url_sets)
 
-    if not all(set_spec):
-      raise ValueError("Error: Some parameters not set: {}.".format(pnames))
+  def list_namespaces_node(self, url=None, verbosity=0):
+    if (url is None):
+      url_list = self.url_list_records()
 
     n_batch = 0;
-    url_list = self.url_list_records()
     while (url_list is not None):
       n_batch += 1
       response = requests.get(url_list)
@@ -807,19 +808,29 @@ class OAI_Harvester(object):
       node_resumption = node_root.find('.//{*}resumptionToken', namespaces=d_namespaces)
       url_list = None
       if node_resumption is not None:
-          # Note: manioc allows no other args than resumption token, so
-          # also do not specify/restate the metadataPrefix with all oai servers
-          #url_list = ('{}?verb=ListRecords&set={}&metadataPrefix=oai_dc&resumptionToken={}'
-          #    .format(self.url_base, set_spec, node_resumption.text))
-
           url_list = ('{}?verb=ListRecords&resumptionToken={}'
               .format(self.oai_url,  node_resumption.text))
       if verbosity > 0:
           print("{}:Next url='{}'".format(me,url_list))
     # end while url_list is not None
     return None
+  # end def list_namespaces_node()
 
-  # end def reader_list_records()
+  def output_sets(self,verbosity=1):
+    num_records = 0
+    output_filename = '{}/{}/list_sets.xml'.format(self.output_folder, self.metadata_format)
+    with open(output_filename, mode='wb', encoding='utf-8') as outfile:
+      for (namespaces, node_record) in oai.list_namespaces_node():
+        if node_record is None:
+              break;
+        sets_str = etree.tostring(node_record, pretty_print=True)
+        print(sets_str, file=output_file)
+        num_records += 1
+
+    if verbosity > 0:
+      print("Outputted xml for {} OAI set_specs to filename {}...".format(num_records,output_filename))
+    return num_records, num_deleted
+  # end def output_sets()
 
   def output_records(self):
     num_records = num_deleted = 0
@@ -829,7 +840,7 @@ class OAI_Harvester(object):
     # increment the candiate bib_last integer to offer for the output of the next mets
     self.bib_last += 1
 
-    for (namespaces, node_record) in oai.list_nodes_record():
+    for (namespaces, node_record) in oai.list_namespaces_node():
       bib_vid = self.bib_prefix + str(self.bib_last).zfill(8) + '_00001' #may implement vid later
 
       # Call crosswalk this xml node's record content to output the record to a file
@@ -854,6 +865,8 @@ class OAI_Harvester(object):
 
     return num_records, num_deleted
   # end def output_records()
+
+
 # end class OAI_Harvester
 
 #
@@ -897,8 +910,8 @@ class XmlBibWalker(object):
       self.str_output_template = str_output_template
       self.node_writer = node_writer
 
-      # namespaces will be reset by each xml file inputted by list_nodes_record()
-      self.namespaces = None #will be overwritten when each xml file is input by the list_nodes_record
+      # namespaces will be reset by each xml file inputted by list_namespaces_node()
+      self.namespaces = None #will be overwritten when each xml file is input by the namespaces_node
 
       # Later: use API with verb metadataFormats to get them. Now try a one-size-fits-all list
       #
@@ -913,53 +926,79 @@ class XmlBibWalker(object):
 
       def output_records(self):
           return
+# end class XMLCrossWalker
 
-#end class XMLCrossWalker
-#studies
-studies = ['zenodo','merrick']
-# Set study config for thus run
+def run_harvester():
+  # studies
+  study = 'zenodo'
+  study = 'merrick/chc5017'
+  study = "manioc/patrimon"
+  list_records = 0
+  if (list_records == 1):
+    if study == 'zenodo':
+      oai_url = 'https://zenodo.org/oai2d'
+      set_spec = 'user-genetics-datasets'
+      metadata_format = "oai_dc"
 
-study = 'zenodo'
-study = 'merrick/chc5017'
-study = "manioc/patrimon"
+      output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
+            data_relative_folder='data/outputs/oai/{}/{}/'.format(study,set_spec))
+      print("Study = {}, set_spec={}, base_output_folder={}".format(study,set_spec,output_folder))
 
-if study == 'zenodo':
-  oai_url = 'https://zenodo.org/oai2d'
-  set_spec='user-genetics-datasets'
-  metadata_format="oai_dc"
+      oai = OAI_Harvester(oai_url=oai_url, output_folder=output_folder, bib_prefix="DS"
+          ,node_writer=zenodo_node_writer, record_xpath=".//{*}record")
 
-  output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
-        data_relative_folder='data/outputs/oai/{}/{}/'.format(study,set_spec))
-  print("Study = {}, set_spec={}, base_output_folder={}".format(study,set_spec,output_folder))
+      num_records, num_deleted = oai.output_records()
+      print("oai.output_records() returned num_records={}".format(num_records))
 
-  oai = OAI_Harvester(oai_url=oai_url, output_folder=output_folder, bib_prefix="DS"
-      ,node_writer=zenodo_node_writer, record_xpath=".//{*}record")
+    elif study.startswith("manioc/"):
+      oai_url = 'http://www.manioc.org/phpoai/oai2.php'
+      parts = study.split('/')
+      study = parts[0]
+      set_spec = parts[1]
 
-  num_records, num_deleted = oai.output_records()
-  print("oai.output_records() returned num_records={}".format(num_records))
+      # Set one last to test it
+      metadata_format="oai_qdc"
+      metadata_format="oai_dc"
 
-elif study.startswith("manioc/"):
-  oai_url = 'http://www.manioc.org/phpoai/oai2.php'
-  parts = study.split('/')
-  study = parts[0]
-  set_spec = parts[1]
+      output_folder = etl.platform_output_folder(
+        linux_base_folder='/home/robert/', windows_base_folder='U:/'
+        , subfolder='data/outputs/oai/{}/{}/'.format(study,set_spec))
+      print("Study = {}, set_spec={}, base_output_folder={}".format(study,set_spec,output_folder))
 
-  # Set one last to test it
-  metadata_format="oai_qdc"
-  metadata_format="oai_dc"
+      oai = OAI_Harvester(oai_url=oai_url, output_folder=output_folder, bib_prefix="CX"
+          ,node_writer=merrick_node_writer, set_spec=set_spec
+          ,metadata_format=metadata_format, record_xpath=".//{*}record")
+    elif study.startswith("usf/"):
+      oai_url = 'http://scholarcommons.usf.edu/do/oai/'
+      list_sets_url = 'http://scholarcommons.usf.edu/do/oai?verb=ListSets'
+      list_sets_url = 'http://scholarcommons.usf.edu/do/oai/?verb=ListSets'
+      parts = study.split('/')
+      study = parts[0]
+      set_spec = parts[1]
 
-  output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
-      data_relative_folder='data/outputs/oai/{}/{}/'.format(study,set_spec))
-  print("Study = {}, set_spec={}, base_output_folder={}".format(study,set_spec,output_folder))
+      # Set one last to test it
+      metadata_format="oai_qdc"
+      metadata_format="oai_dc"
 
-  oai = OAI_Harvester(oai_url=oai_url, output_folder=output_folder, bib_prefix="CX"
-      ,node_writer=merrick_node_writer, set_spec=set_spec
-      ,metadata_format=metadata_format, record_xpath=".//{*}record")
+      output_folder = etl.platform_output_folder(
+        linux_base_folder='/home/robert/', windows_base_folder='U:/'
+        , subfolder='data/outputs/oai/{}/{}/'.format(study,set_spec))
+      print("Study = {}, set_spec={}, base_output_folder={}".format(study,set_spec,output_folder))
 
-  num_records, num_deleted = oai.output_records()
-else:
-    raise ValueError('ERROR: unknown study={}'.format(study))
+      oai = OAI_Harvester(oai_url=oai_url, output_folder=output_folder, bib_prefix="CX"
+          ,node_writer=merrick_node_writer, set_spec=set_spec
+          ,metadata_format=metadata_format, record_xpath=".//{*}record")
+      num_records, num_deleted = oai.output_records()
+    else:
+        raise ValueError('ERROR: unknown study={}'.format(study))
+  else: # just listSets for this server
+      oai_url = 'http://www.manioc.org/phpoai/oai2.php'
+      oai = OAI_Harvester(oai_url=oai_url, output_folder=output_folder, bib_prefix="ZA"
+          ,node_writer=None, set_spec=None, metadata_format='oaidc', record_xpath=".//{*}record")
 
 
-print("Generator got info for {} total records, {} deleted. DONE."
-      .format(num_records, num_deleted))
+  print("Generator got info for {} total records, {} deleted. DONE."
+        .format(num_records, num_deleted))
+  # def run_harvester
+  now = etl.now()
+  print("Now is {}. Done.".format(now))
