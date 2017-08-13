@@ -250,6 +250,12 @@ class OAI_Server(object):
             yield d_record
         return None
 
+    def list_metadata_formats(self, metadata_prefix=None):
+        url_list = self.get_url_list_identifiers(metadata_prefix=metadata_prefix)
+        for d_record in self.list_nodes(url_list=url_list, verb='ListMetadataFormats'):
+            yield d_record
+        return None
+
     def get_d_spec_name(self):
         d_set_name = {}
         url = self.oai_url
@@ -269,7 +275,7 @@ class OAI_Server(object):
 
     #end class OAI_Server
 
-def run_test():
+def run_test_reords():
     url_usf = 'http://scholarcommons.usf.edu/do/oai/'
     oai_server = OAI_Server(oai_url=url_usf,verbosity=1)
     metadata_prefix='oai_dc'
@@ -284,7 +290,7 @@ def run_test():
         identifier_text = '' if node_identifier is None else node_identifier.text
         print("id count={}, id-{}".format(n_id,identifier_text))
 
-def run_test2():
+def run_test_sets():
     url_usf = 'http://scholarcommons.usf.edu/do/oai/'
     oai_server = OAI_Server(oai_url=url_usf,load_sets=1,verbosity=1)
 
@@ -293,6 +299,26 @@ def run_test2():
         n_id += 1
         print("{}: set_spec={}, set_name={}".format(n_id,key,val))
     return
-# RUN
-#run_test2() #test...
-run_test() #test...
+
+
+def run_test_metadata_formats():
+    url_usf = 'http://scholarcommons.usf.edu/do/oai/'
+    oai_server = OAI_Server(oai_url=url_usf,verbosity=1)
+    n_id = 0;
+    for d_record in oai_server.list_metadata_formats(metadata_prefix='oai_dc'):
+        n_id += 1
+        namespaces = d_record['namespaces']
+        node_record = d_record['node_record']
+        node_prefix = node_record.find(".//{*}metadataPrefix")
+        node_schema = node_record.find(".//{*}schema")
+        node_mdns = node_record.find(".//{*}metadataNamespace")
+        prefix = '' if node_prefix is None else node_prefix.text
+        schema = '' if node_schema is None else node_schema.text
+        ns = '' if node_mdns is None else node_mdns.text
+        print("count={}, prefix={}, schema={}, mdnamespace={}"
+            .format(n_id,prefix,schema,ns))
+
+# TEST RUNS
+#run_test_sets() #test...
+#run_test_records() #test...
+#run_test_metadata_formats()
