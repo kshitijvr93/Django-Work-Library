@@ -15,11 +15,11 @@ class OAI_Server(object):
     </synopsis>
     <see-also>http://www.openarchives.org/OAI/openarchivesprotocol.html</see-also>
     '''
-    def __init__(self, oai_url=None, encoding=None, set_spec=None,metadata_prefix=None,verbosity=0):
+    def __init__(self, oai_url=None, encoding=None, set_spec=None, metadata_prefix=None
+        ,load_sets=0,verbosity=0):
 
         if oai_url is None:
             raise ValueError("oai_url must be given")
-
         self.oai_url = oai_url
 
         self.d_verb_record_xpath = {
@@ -45,6 +45,11 @@ class OAI_Server(object):
         # That time cost would be a waste if you already know the set_spec and/or
         # metadata format that you want... as these lists normally would change
         # infrequently, on the order or months-long periods # or even longer.
+
+        if (load_sets > 0):
+            self.d_spec_name = self.get_d_spec_name();
+            print("OAI_Server: loading sets, got {} sets".format(len(self.d_spec_name.items())))
+
         return
 
         # return the set_spec and metadata_prefix based on supplied args and default self.* values.
@@ -64,10 +69,8 @@ class OAI_Server(object):
         if metadata_prefix is None:
             metadata_prefix = self.metadata_prefix
             if metadata_prefix is None:
-                raise ValueError("No metadata_prefix is given.")
-
-            if metadata_prefix is None:
                 metadata_prefix = "oai_dc" #Set the basic metadata format
+                self.metadata_prefix = metadata_prefix
             # also can add checks here vs all legal metadataPrefix values if preloaded
             # However, in my personal experience, many oai servers report set_specs that are
             # rejected by server requests to list records, etc, or metadata_prefix values.
@@ -84,27 +87,31 @@ class OAI_Server(object):
 
     def get_url_list_records(self, set_spec=None, metadata_prefix=None):
       set_spec = self._get_set_spec(set_spec=set_spec)
-      metadata_format = self._get_set_metadata_prefix( metadata_prefix)
+      metadata_format = self._get_set_metadata_prefix( metadata_prefix=metadata_prefix)
       url = ("{}?verb=ListRecords&set={}&metadataPrefix={}"
         .format(self.oai_url, set_spec, metadata_prefix))
       return url
 
+    ''' NOTE: even though metadata_prefix is a kwarg, you must set it to None
+        rather than not state it at all, else only one record will issue no matter
+        how many sets are on the OAI server host
+    '''
     def get_url_list_sets(self, metadata_prefix=None):
-      metadata_prefix = self._get_metadata_prefix(metadata_prefix)
+      metadata_prefix = self._get_metadata_prefix(metadata_prefix=metadata_prefix)
       url = ("{}?verb=ListSets&metadataPrefix={}"
         .format(self.oai_url, metadata_prefix))
       return url
 
     def get_url_list_identifiers(self,  metadata_prefix=None):
       set_spec = None
-      metadata_prefix = self._get_metadata_prefix( metadata_prefix)
+      metadata_prefix = self._get_metadata_prefix( metadata_prefix=metadata_prefix)
       url = ("{}?verb=ListIdentifiers&metadataPrefix={}"
         .format(self.oai_url,self.metadata_prefix))
       return url
 
     '''
     <summary>list_oai_nodes is a generator function that accepts a url
-    and a record xpath and expects a 'resumptiontoeken', ala oai-pmh standards,
+    and a record xpath and expects a 'resumptiontoken', ala oai-pmh standards,
     to indicate multiple 'batches' of responses that comprise a complete
     logical response
     </summary>
@@ -128,9 +135,12 @@ class OAI_Server(object):
     encoding "iso-8559-1" explicitly as an argument and not trust the 'chardet'
     default encoding of the requests package.
     '''
-    def list_nodes(self, url_list=None, verb=None, encoding=None
-        , verbosity=0):
-
+    def list_nodes(self, url_list=None, verb=None, metadata_prefix=None, encoding=None
+        , verbosity=1):
+        me = 'list_nodes'
+        rparams = ['url_list','verb']
+        if not all(rparams):
+            raise ValueError("missing required param from; {}".format(rparams))
         d_return = {}
         d_return['node_record'] = None
 
@@ -145,14 +155,15 @@ class OAI_Server(object):
 
         if (url_list is None):
             raise ValueError("missing url parameter.")
-
+        if verbosity > 0:
+            print("{}: Starting with url={}".format(me,url_list))
         n_batch = 0;
         while (url_list is not None):
             n_batch += 1
             d_return['n_batch'] = n_batch
             response = requests.get(url_list)
 
-            if verbosity> 0:
+            if verbosity > 0:
               response_str = requests.utils.get_unicode_from_response(response)
               encodings = requests.utils.get_encodings_from_content(response_str)
               print("using url_list='{}'\nand got response with apparent_encoding='{}', encoding='{}',headers:"
@@ -190,9 +201,8 @@ class OAI_Server(object):
 
             nodes_record = node_root.findall(record_xpath, namespaces=d_namespaces)
             if (verbosity > 0):
-              print("from the xml found {} xml tags for records".format(len(nodes_record)))
-              print ("listrecords request found root tag name='{}', and {} records"
-                 .format(node_root.tag, len(nodes_record)))
+              print("list_nodes:from the xml found {} xml tags for record_xpath={}"
+                   .format(len(nodes_record),record_xpath))
 
             # for every input node/record, yield it to caller
             for node_record in nodes_record:
@@ -200,11 +210,20 @@ class OAI_Server(object):
               yield d_return
 
             # 'resumption tokens' is the "oai" server way to serve continuation of respsonses
-            node_resumption = node_root.find('.//{*}resumptiontoken', namespaces=d_namespaces)
+            node_resumption = node_root.find('.//{*}resumptionToken', namespaces=d_namespaces)
             url_list = None
             if node_resumption is not None:
-              url_list = ('{}?verb=listrecords&resumptiontoken={}'
-                  .format(self.oai_url,  node_resumption.text))
+              # This one says generic error message
+              url_list = ('{}?verb={}&resumptiontoken={}'
+                  .format(self.oai_url,  verb, node_resumption.text))
+              # This one says generic error message which does say a verb is needed, so add md prefix?
+              url_list = ('{}?resumptiontoken={}'
+                  .format(self.oai_url, node_resumption.text))
+
+              url_list = ('{}?verb={}&metadataPrefix=oai_dc&resumptiontoken={}'
+                  .format(self.oai_url,  verb, node_resumption.text))
+            else:
+                print("No resumptionToken found in batch {}".format(n_batch))
             if verbosity > 0:
               print("{}:next url='{}'".format(me,url_list))
         # end while url_list is not None
@@ -213,16 +232,16 @@ class OAI_Server(object):
 
     ''' generator functions for specific oai lists
     '''
-    def list_record_nodes(self, set_spec=None,metadata_prefix=None):
+    def list_records(self, set_spec=None,metadata_prefix=None):
         url_list = self.get_url_list_records(set_spec=set_spec, metadata_prefix=metadata_prefix)
         for d_record in self.list_nodes(url_list=url_list, verb='ListRecords'):
           yield d_record
-        return NoneNone
+        return None
 
-    def list_set_nodes(self, metadata_prefix=None):
+    def list_sets(self, metadata_prefix=None):
         url_list = self.get_url_list_sets(metadata_prefix=metadata_prefix)
         for d_record in self.list_nodes(url_list=url_list, verb='ListSets'):
-          yield d_record
+            yield d_record
         return None
 
     def list_identifiers(self, metadata_prefix=None):
@@ -230,7 +249,25 @@ class OAI_Server(object):
         for d_record in self.list_nodes(url_list=url_list, verb='ListIdentifiers'):
             yield d_record
         return None
-#end class OAI_Server
+
+    def get_d_spec_name(self):
+        d_set_name = {}
+        url = self.oai_url
+        metadata_prefix = self._get_metadata_prefix()
+        n_id = 0
+        for d_record in self.list_sets(metadata_prefix=None):
+            n_id += 1
+            namespaces = d_record['namespaces']
+            node_record = d_record['node_record']
+            node_set_spec = node_record.find(".//{*}setSpec")
+            set_spec = '' if node_set_spec is None else node_set_spec.text
+            node_set_name = node_record.find(".//{*}setName")
+            set_name = '' if node_set_name is None else node_set_name.text
+            d_set_name[set_spec]=set_name
+            print("init: {}: got set_spec={}, set_name={}".format(n_id,set_spec,set_name))
+            return d_set_name
+
+    #end class OAI_Server
 
 def run_test():
     url_usf = 'http://scholarcommons.usf.edu/do/oai/'
@@ -247,5 +284,15 @@ def run_test():
         identifier_text = '' if node_identifier is None else node_identifier.text
         print("id count={}, id-{}".format(n_id,identifier_text))
 
+def run_test2():
+    url_usf = 'http://scholarcommons.usf.edu/do/oai/'
+    oai_server = OAI_Server(oai_url=url_usf,load_sets=1,verbosity=1)
+
+    n_id = 0
+    for key, val in oai_server.d_spec_name.items():
+        n_id += 1
+        print("{}: set_spec={}, set_name={}".format(n_id,key,val))
+    return
 # RUN
-run_test()
+#run_test2() #test...
+run_test() #test...
