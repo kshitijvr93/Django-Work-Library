@@ -1,3 +1,7 @@
+import requests
+from lxml import etree
+from lxml.etree import tostring
+import xml.etree.ElementTree as ET
 class OAI_Server(object):
     '''
     <synopsis name='OAI_Server'>
@@ -15,7 +19,9 @@ class OAI_Server(object):
 
         if oai_url is None:
             raise ValueError("oai_url must be given")
+
         self.oai_url = oai_url
+
         self.d_verb_record_xpath = {
             "GetRecord" : ".//{*}record",
             "ListIdentifiers" : ".//{*}header",
@@ -70,7 +76,6 @@ class OAI_Server(object):
 
         return(metadata_prefix)
 
-
     '''
     get_url_list_records(): return the url to list records for the given set_spec
     and metadata_format (or default to current setting).
@@ -124,18 +129,21 @@ class OAI_Server(object):
     default encoding of the requests package.
     '''
     def list_nodes(self, url_list=None, verb=None, encoding=None
-
         , verbosity=0):
 
         d_return = {}
         d_return['node_record'] = None
 
-        record_xpath = self.d_verb_record_path[verb]
+        record_xpath = self.d_verb_record_xpath.get(verb,None)
+        if record_xpath is None:
+            keys = [x for x in self.d_verb_record_xpath.keys()]
+            raise ValueError("Error Exit: Given verb={} is not a key in {}"
+                .format(repr(verb),keys))
 
         if record_xpath is None:
             raise ValueError("missing record_xpath value.")
 
-        if (url is None):
+        if (url_list is None):
             raise ValueError("missing url parameter.")
 
         n_batch = 0;
@@ -157,8 +165,9 @@ class OAI_Server(object):
             # a fundamental python principle is 'explict is better than  implicit', so call encode() here
             # if encoding argument is set (need it for miami-merrick server, possibly others to come)
             # response.encoding = 'iso-8859-1' # that fails! but next call to encode() seems to work.
-            if encoding is not None:
+            if encoding is not None or  1 == 1:
               #xml_bytes = response.text.encode('iso-8859-1')
+              encoding = 'utf-8'
               xml_bytes = response.text.encode(encoding)
             else:
               xml_bytes = response.text
@@ -169,7 +178,7 @@ class OAI_Server(object):
             try:
               node_root = etree.fromstring(xml_bytes)
               d_return['node_root'] = node_root
-            except exception as e:
+            except Exception as e:
               # give detailed diagnostic info
               print("for batch {}, made url request ='{}'.\got batch with parse() exception='{}'"
                     .format(n_batch, url_list, repr(e)))
@@ -206,19 +215,19 @@ class OAI_Server(object):
     '''
     def list_record_nodes(self, set_spec=None,metadata_prefix=None):
         url_list = self.get_url_list_records(set_spec=set_spec, metadata_prefix=metadata_prefix)
-        for d_record in self.list_nodes(url_list=url_list):
+        for d_record in self.list_nodes(url_list=url_list, verb='ListRecords'):
           yield d_record
         return NoneNone
 
     def list_set_nodes(self, metadata_prefix=None):
         url_list = self.get_url_list_sets(metadata_prefix=metadata_prefix)
-        for d_record in self.list_nodes(url_list=url_list):
+        for d_record in self.list_nodes(url_list=url_list, verb='ListSets'):
           yield d_record
         return None
 
     def list_identifiers(self, metadata_prefix=None):
         url_list = self.get_url_list_identifiers(metadata_prefix=metadata_prefix)
-        for d_record in self.list_nodes(url_list=url_list):
+        for d_record in self.list_nodes(url_list=url_list, verb='ListIdentifiers'):
             yield d_record
         return None
 #end class OAI_Server
@@ -235,7 +244,7 @@ def run_test():
         namespaces = d_record['namespaces']
         node_record = d_record['node_record']
         node_identifier = node_record.find(".//{*}identifier")
-        identifier_text = '' if identifier is None else identifier.text
+        identifier_text = '' if node_identifier is None else node_identifier.text
         print("id count={}, id-{}".format(n_id,identifier_text))
 
 # RUN
