@@ -48,6 +48,8 @@ class OAI_Server(object):
 
         if (load_sets > 0):
             self.d_spec_name = self.get_d_spec_name();
+            if self.d_spec_name is None:
+                raise ValueError("None?")
             print("OAI_Server: loading sets, got {} sets".format(len(self.d_spec_name.items())))
 
         return
@@ -62,7 +64,6 @@ class OAI_Server(object):
             # constructer param flag, also metadata_prefix name
         else:
             self.set_spec = set_spec
-
         return(set_spec)
 
     def _get_metadata_prefix(self, metadata_prefix=None):
@@ -87,7 +88,7 @@ class OAI_Server(object):
 
     def get_url_list_records(self, set_spec=None, metadata_prefix=None):
       set_spec = self._get_set_spec(set_spec=set_spec)
-      metadata_format = self._get_set_metadata_prefix( metadata_prefix=metadata_prefix)
+      metadata_format = self._get_metadata_prefix( metadata_prefix=metadata_prefix)
       url = ("{}?verb=ListRecords&set={}&metadataPrefix={}"
         .format(self.oai_url, set_spec, metadata_prefix))
       return url
@@ -98,8 +99,11 @@ class OAI_Server(object):
     '''
     def get_url_list_sets(self, metadata_prefix=None):
       metadata_prefix = self._get_metadata_prefix(metadata_prefix=metadata_prefix)
+
       url = ("{}?verb=ListSets&metadataPrefix={}"
         .format(self.oai_url, metadata_prefix))
+      # try do NOT use metadataPrefix.. the OAI spec indicates that it is not used for ListSets
+      url = "{}?verb=ListSets".format(self.oai_url)
       return url
 
     def get_url_list_identifiers(self,  metadata_prefix=None):
@@ -109,6 +113,9 @@ class OAI_Server(object):
         .format(self.oai_url,self.metadata_prefix))
       return url
 
+    def get_url_list_metadata_formats(self):
+      url = ("{}?verb=ListMetadataFormats".format(self.oai_url))
+      return url
     '''
     <summary>list_oai_nodes is a generator function that accepts a url
     and a record xpath and expects a 'resumptiontoken', ala oai-pmh standards,
@@ -191,7 +198,7 @@ class OAI_Server(object):
               d_return['node_root'] = node_root
             except Exception as e:
               # give detailed diagnostic info
-              print("for batch {}, made url request ='{}'.\got batch with parse() exception='{}'"
+              print("For batch {}, made url request ='{}'.\Error exit for batch with parse() exception='{}'"
                     .format(n_batch, url_list, repr(e)))
               #  raise here - no point to continue because we cannot parse/discover the resumptiontoken
               raise
@@ -205,7 +212,10 @@ class OAI_Server(object):
                    .format(len(nodes_record),record_xpath))
 
             # for every input node/record, yield it to caller
+            count_rec=0
             for node_record in nodes_record:
+              count_rec += 1
+              d_return['node_record_count'] = count_rec
               d_return['node_record'] = node_record
               yield d_return
 
@@ -213,15 +223,21 @@ class OAI_Server(object):
             node_resumption = node_root.find('.//{*}resumptionToken', namespaces=d_namespaces)
             url_list = None
             if node_resumption is not None:
-              # This one says generic error message
+              # This one, usf server says generic error message
               url_list = ('{}?verb={}&resumptiontoken={}'
                   .format(self.oai_url,  verb, node_resumption.text))
-              # This one says generic error message which does say a verb is needed, so add md prefix?
+              # This one the USF server says generic error message which does say a verb is needed,
+              # but the manioc server rejects this type - so for USF we must add metadataPrefix
+              # Need more work specifying parameters that can be setup or 'driver-configs' or 'encodings'
+              # that work for individual servers in some subset of oai servers
               url_list = ('{}?resumptiontoken={}'
                   .format(self.oai_url, node_resumption.text))
-
+              # this one usf server likes OK, but manioc rejects for 2d ListRecords
               url_list = ('{}?verb={}&metadataPrefix=oai_dc&resumptiontoken={}'
                   .format(self.oai_url,  verb, node_resumption.text))
+              #manioc likes for verb=ListRecord (do NOT include metadataPrefix)
+              url_list = ('{}?verb={}&resumptionToken={}'
+                  .format(self.oai_url, verb, node_resumption.text))
             else:
                 print("No resumptionToken found in batch {}".format(n_batch))
             if verbosity > 0:
@@ -251,7 +267,7 @@ class OAI_Server(object):
         return None
 
     def list_metadata_formats(self, metadata_prefix=None):
-        url_list = self.get_url_list_identifiers(metadata_prefix=metadata_prefix)
+        url_list = self.get_url_list_metadata_formats()
         for d_record in self.list_nodes(url_list=url_list, verb='ListMetadataFormats'):
             yield d_record
         return None
@@ -275,7 +291,8 @@ class OAI_Server(object):
 
     #end class OAI_Server
 
-def run_test_reords():
+
+def run_test_identifiers():
     url_usf = 'http://scholarcommons.usf.edu/do/oai/'
     oai_server = OAI_Server(oai_url=url_usf,verbosity=1)
     metadata_prefix='oai_dc'
@@ -284,26 +301,24 @@ def run_test_reords():
     n_id = 0
     for d_record in oai_server.list_identifiers(metadata_prefix='oai_dc'):
         n_id += 1
+        if n_id > 250:
+            break;
         namespaces = d_record['namespaces']
         node_record = d_record['node_record']
         node_identifier = node_record.find(".//{*}identifier")
         identifier_text = '' if node_identifier is None else node_identifier.text
         print("id count={}, id-{}".format(n_id,identifier_text))
 
-def run_test_sets():
-    url_usf = 'http://scholarcommons.usf.edu/do/oai/'
-    oai_server = OAI_Server(oai_url=url_usf,load_sets=1,verbosity=1)
-
+def run_test_sets(oai_url):
+    oai_server = OAI_Server(oai_url=oai_url,load_sets=1,verbosity=1)
     n_id = 0
     for key, val in oai_server.d_spec_name.items():
         n_id += 1
         print("{}: set_spec={}, set_name={}".format(n_id,key,val))
     return
 
-
-def run_test_metadata_formats():
-    url_usf = 'http://scholarcommons.usf.edu/do/oai/'
-    oai_server = OAI_Server(oai_url=url_usf,verbosity=1)
+def run_test_metadata_formats(oai_url):
+    oai_server = OAI_Server(oai_url=oai_url,verbosity=1)
     n_id = 0;
     for d_record in oai_server.list_metadata_formats(metadata_prefix='oai_dc'):
         n_id += 1
@@ -318,7 +333,40 @@ def run_test_metadata_formats():
         print("count={}, prefix={}, schema={}, mdnamespace={}"
             .format(n_id,prefix,schema,ns))
 
+def run_test_records(oai_url,set_spec):
+    me = 'run_test_records'
+    oai_server = OAI_Server(oai_url=oai_url,set_spec=set_spec,verbosity=1)
+    metadata_prefix='oai_dc'
+    print("run_test using set_spec={},metadata_prefix={}"
+        .format(set_spec,metadata_prefix))
+
+    n_id = 0
+    for d_record in oai_server.list_records(set_spec=set_spec, metadata_prefix='oai_dc'):
+        n_id += 1
+        if n_id > 250:
+            break;
+        namespaces = d_record['namespaces']
+        node_record = d_record['node_record']
+        if n_id < 2:
+            print("Using namespaces={}".format(repr(namespaces)))
+        node_identifier = node_record.find(".//{*}dc/{*}identifier", namespaces)
+        identifier_text = '' if node_identifier is None else node_identifier.text
+        print("{}:id count={}, id-{}".format(me,n_id,identifier_text))
+
 # TEST RUNS
-#run_test_sets() #test...
-#run_test_records() #test...
+print('\n\n\n\n\n------------*******************************************************-----------------\n\n\n\n\n')
+oai_url = 'http://www.manioc.org/phpoai/oai2.php'
+set_spec = 'patrimon'
+print("OAI_Server test params: oai_url={},set_spec={}".format(oai_url,set_spec))
+print("Doing run_metadata_formats() ......")
+run_test_metadata_formats(oai_url) #test...
+
+print('\n\n\n\n\n------------*******************************************************-----------------\n\n\n\n\n')
+print("Doing run_test_sets() ......")
+run_test_sets(oai_url) #test...
 #run_test_metadata_formats()
+#run_test_records(oai_url)
+
+print('\n\n\n\n\n------------*******************************************************-----------------\n\n\n\n\n')
+print("Doing run_test_records() ......")
+run_test_records(oai_url, set_spec) #test...
