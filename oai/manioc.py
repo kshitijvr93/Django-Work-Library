@@ -143,7 +143,7 @@ mets_format_str = """<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 
 class OAI_Harvester():
 
-    def __init__(self, oai_url=None, bib_vid='XX00000000_00001', format_str=None
+    def __init__(self, oai_url=None, server_encoding=None, bib_vid='XX00000000_00001', format_str=None
             ,output_folder=None,verbosity=0):
 
         rparams = ['oai_url', 'bib_vid','format_str','output_folder']
@@ -156,7 +156,7 @@ class OAI_Harvester():
         self.format_str = format_str
         if verbosity > 0:
           print("OAI_Harvester: verbosity={}".format(verbosity))
-        self.oai_server = oai_server.OAI_Server(oai_url=oai_url, verbosity=verbosity)
+        self.oai_server = oai_server.OAI_Server(oai_url=oai_url, encoding=server_encoding, verbosity=verbosity)
         return
 
     def harvest_items(self, set_spec=None, bib_vid=None, metadata_prefix='oai_dc', load_sets=1
@@ -458,9 +458,10 @@ def run_test():
       data_relative_folder='data/outputs/oai/{}/{}/'.format(study,set_spec))
 
   print("STARTING: run_test: study={},oai_url={},output_folder={}".format(study,oai_url,output_folder))
-
-  harvester = OAI_Harvester(oai_url=oai_url, bib_vid='XX00000000_00001', format_str=mets_format_str
-    ,output_folder=output_folder,verbosity=1 )
+  encoding = 'iso-8559'
+  encoding = 'unicode'
+  harvester = OAI_Harvester(oai_url=oai_url, server_encoding=encoding, bib_vid='XX00000000_00001'
+    , format_str=mets_format_str,output_folder=output_folder, verbosity=1 )
 
   print("run_test: CREATED Harvester {}: Harvesting items now....".format(repr(harvester)))
   harvester.harvest_items(set_spec=set_spec,metadata_prefix=metadata_prefix,bib_vid=bib_vid,max_count=100)
