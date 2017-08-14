@@ -22,8 +22,6 @@ class OAI_Server(object):
             raise ValueError("oai_url must be given")
         self.oai_url = oai_url
         self.verbosity = verbosity
-        if verbosity > 0:
-            print("OAI_Server: verbosity={}".format(verbosity))
 
         self.d_verb_record_xpath = {
             "GetRecord" : ".//{*}record",
@@ -245,7 +243,7 @@ class OAI_Server(object):
         url_list = self.get_url_list_records(set_spec=set_spec, metadata_prefix=metadata_prefix)
         if self.verbosity:
             me = 'list_records'
-            print("{}:using url_list={}",me)
+            print("{}:using url_list={}".format(me,url_list)
         for d_record in self.list_nodes(url_list=url_list, verb='ListRecords'):
           yield d_record
         return None
