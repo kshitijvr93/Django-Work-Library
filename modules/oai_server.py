@@ -227,19 +227,6 @@ class OAI_Server(object):
             node_resumption = node_root.find('.//{*}resumptionToken', namespaces=d_namespaces)
             url_list = None
             if node_resumption is not None:
-              # This one, usf server says generic error message
-              url_list = ('{}?verb={}&resumptiontoken={}'
-                  .format(self.oai_url,  verb, node_resumption.text))
-              # This one the USF server says generic error message which does say a verb is needed,
-              # but the manioc server rejects this type - so for USF we must add metadataPrefix
-              # Need more work specifying parameters that can be setup or 'driver-configs' or 'encodings'
-              # that work for individual servers in some subset of oai servers
-              url_list = ('{}?resumptiontoken={}'
-                  .format(self.oai_url, node_resumption.text))
-              # this one usf server likes OK, but manioc rejects for 2d ListRecords
-              url_list = ('{}?verb={}&metadataPrefix=oai_dc&resumptiontoken={}'
-                  .format(self.oai_url,  verb, node_resumption.text))
-              #manioc likes for verb=ListRecord (do NOT include metadataPrefix)
               url_list = ('{}?verb={}&resumptionToken={}'
                   .format(self.oai_url, verb, node_resumption.text))
             else:
@@ -296,33 +283,35 @@ class OAI_Server(object):
     #end class OAI_Server
 
 
-def run_test_identifiers():
-    url_usf = 'http://scholarcommons.usf.edu/do/oai/'
-    oai_server = OAI_Server(oai_url=url_usf,verbosity=1)
+def run_test_identifiers(oai_url=None, verbosity=1):
+    oai_server = OAI_Server(oai_url=oai_url,verbosity=1)
     metadata_prefix='oai_dc'
-    print("run_test using metadata_prefix={}".format(metadata_prefix))
+    if verbosity > 0:
+        print("run_test_idetifiers using metadata_prefix={}".format(metadata_prefix))
 
     n_id = 0
     for d_record in oai_server.list_identifiers(metadata_prefix='oai_dc'):
         n_id += 1
-        if n_id > 250:
+        if n_id > 150:
             break;
         namespaces = d_record['namespaces']
         node_record = d_record['node_record']
         node_identifier = node_record.find(".//{*}identifier")
         identifier_text = '' if node_identifier is None else node_identifier.text
-        print("id count={}, id-{}".format(n_id,identifier_text))
+        if verbosity > 0:
+            print("id count={}, id={}".format(n_id,identifier_text))
 
-def run_test_sets(oai_url):
-    oai_server = OAI_Server(oai_url=oai_url,load_sets=1,verbosity=1)
+def run_test_sets(oai_url=None,verbosity=1):
+    oai_server = OAI_Server(oai_url=oai_url,load_sets=1,verbosity=verbosity)
     n_id = 0
     for key, val in oai_server.d_spec_name.items():
         n_id += 1
-        print("{}: set_spec={}, set_name={}".format(n_id,key,val))
+        if verbosity > 0:
+            print("{}: set_spec={}, set_name={}".format(n_id,key,val))
     return
 
-def run_test_metadata_formats(oai_url):
-    oai_server = OAI_Server(oai_url=oai_url,verbosity=1)
+def run_test_metadata_formats(oai_url=None, verbosity=1):
+    oai_server = OAI_Server(oai_url=oai_url,verbosity=verbosity)
     n_id = 0;
     for d_record in oai_server.list_metadata_formats(metadata_prefix='oai_dc'):
         n_id += 1
@@ -334,15 +323,17 @@ def run_test_metadata_formats(oai_url):
         prefix = '' if node_prefix is None else node_prefix.text
         schema = '' if node_schema is None else node_schema.text
         ns = '' if node_mdns is None else node_mdns.text
-        print("count={}, prefix={}, schema={}, mdnamespace={}"
-            .format(n_id,prefix,schema,ns))
+        if verbosity > 0:
+            print("count={}, prefix={}, schema={}, mdnamespace={}"
+                .format(n_id,prefix,schema,ns))
 
-def run_test_records(oai_url,set_spec):
+def run_test_records(oai_url=None, set_spec=None, verbosity=1):
     me = 'run_test_records'
     oai_server = OAI_Server(oai_url=oai_url,set_spec=set_spec,verbosity=1)
     metadata_prefix='oai_dc'
-    print("run_test using set_spec={},metadata_prefix={}"
-        .format(set_spec,metadata_prefix))
+    if verbosity > 0:
+        print("run_test using set_spec={},metadata_prefix={}"
+            .format(set_spec,metadata_prefix))
 
     n_id = 0
     for d_record in oai_server.list_records(set_spec=set_spec, metadata_prefix='oai_dc'):
@@ -355,7 +346,8 @@ def run_test_records(oai_url,set_spec):
             print("Using namespaces={}".format(repr(namespaces)))
         node_identifier = node_record.find(".//{*}dc/{*}identifier", namespaces)
         identifier_text = '' if node_identifier is None else node_identifier.text
-        print("{}:id count={}, id-{}".format(me,n_id,identifier_text))
+        if verbosity > 0:
+            print("{}:id count={}, id={}".format(me,n_id,identifier_text))
 
 # TEST RUNS
 print('\n\n\n\n\n------------*******************************************************-----------------\n\n\n\n\n')
@@ -363,14 +355,17 @@ oai_url = 'http://www.manioc.org/phpoai/oai2.php'
 set_spec = 'patrimon'
 print("OAI_Server test params: oai_url={},set_spec={}".format(oai_url,set_spec))
 print("Doing run_metadata_formats() ......")
-run_test_metadata_formats(oai_url) #test...
+run_test_metadata_formats(oai_url=oai_url) #test...
 
 print('\n\n\n\n\n------------*******************************************************-----------------\n\n\n\n\n')
 print("Doing run_test_sets() ......")
-run_test_sets(oai_url) #test...
+run_test_sets(oai_url=oai_url) #test...
 #run_test_metadata_formats()
 #run_test_records(oai_url)
 
 print('\n\n\n\n\n------------*******************************************************-----------------\n\n\n\n\n')
 print("Doing run_test_records() ......")
-run_test_records(oai_url, set_spec) #test...
+run_test_records(oai_url=oai_url, set_spec=set_spec) #test...
+
+print("Doing run_test_identifiers()")
+run_test_identifiers(oai_url=oai_url)
