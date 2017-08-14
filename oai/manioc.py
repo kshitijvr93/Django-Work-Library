@@ -17,21 +17,7 @@ import oai_server
 import datetime
 
 #Using this variable to keep d_mets_template definition a bit more readable
-rights = '''This item was contributed to the Digital Library
-of the Caribbean (dLOC) by the source institution listed in the metadata.
-This item may or may not be protected by copyright in the country
-where it was produced. Users of this work have responsibility for
-determining copyright status prior to reusing, publishing or
-reproducing this item for purposes other than what is allowed by
-applicable law, including any applicable international copyright
-treaty or fair use or fair dealing statutes, which dLOC partners
-have explicitly supported and endorsed. Any reuse of this item
-in excess of applicable copyright exceptions may require
-permission. dLOC would encourage users to contact the source
-institution directly or dloc@fiu.edu to request more information
-about copyright status or to provide additional information about
-the item.
-'''
+rights = "" # Rights statement from UF. Other rights statements in source will be appended to it.
 
 mets_format_str = """<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!--  METS/mods file designed to describe OAI-PMH (metadataPrefix oai_dc) extracted MetaData -->
@@ -212,11 +198,10 @@ class OAI_Harvester():
 
         d_mets_template = {
             "content_source_name" : "Manioc",
-            "genre_authority": "book",
+            "genre_authority": "Manioc",
             "physical_location_name":"Manioc",
             "physical_location_code":"MANIOC",
             "rights_text": rights,
-            "source_id_name":"manioc_OAI_header_identifier_2017",
             # List of extant SobekCM database wordmark codes to derive xml for mets template
             # eg for miami merrick it was ['UM','DLOC']
             "list_sobekcm_wordmarks" : [],
@@ -244,6 +229,7 @@ class OAI_Harvester():
             "related_url" : None,
             "sha1_mets_v1" : None,
             "sobekcm_thumbnail_src" : "", # Not used for Manioc...  yet...
+            "source_id_name":"manioc_OAI_header_identifier_2017",
             "vid" : None,
             "xml_dc_ids": "",
             "xml_sobekcm_aggregations" : "", # Just puts wrapping around list_sobekcm_aggregtions
