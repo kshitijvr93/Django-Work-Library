@@ -22,6 +22,8 @@ class OAI_Server(object):
             raise ValueError("oai_url must be given")
         self.oai_url = oai_url
         self.verbosity = verbosity
+        if verbosity > 0:
+            print("OAI_Server: verbosity={}".format(verbosity))
 
         self.d_verb_record_xpath = {
             "GetRecord" : ".//{*}record",
@@ -38,7 +40,6 @@ class OAI_Server(object):
         self.metadata_prefix = None if encoding is None else encoding
         self.set_spec = None if set_spec is None else set_spec
 
-        self.verbosity = verbosity # default verbosity
         # Potential todo - honor an init flag to populate all set names and/or all metadata
         # prefixes here... would take a few seconds,
         # but could then verify and catch errors in attempts to use invalid
@@ -240,7 +241,11 @@ class OAI_Server(object):
     ''' generator functions for specific oai lists
     '''
     def list_records(self, set_spec=None, metadata_prefix=None):
+
         url_list = self.get_url_list_records(set_spec=set_spec, metadata_prefix=metadata_prefix)
+        if self.verbosity:
+            me = 'list_records'
+            print("{}:using url_list={}",me)
         for d_record in self.list_nodes(url_list=url_list, verb='ListRecords'):
           yield d_record
         return None
@@ -287,7 +292,7 @@ def run_test_identifiers(oai_url=None, verbosity=1):
     oai_server = OAI_Server(oai_url=oai_url,verbosity=1)
     metadata_prefix='oai_dc'
     if verbosity > 0:
-        print("run_test_idetifiers using metadata_prefix={}".format(metadata_prefix))
+        print("run_test_identifiers using metadata_prefix={}".format(metadata_prefix))
 
     n_id = 0
     for d_record in oai_server.list_identifiers(metadata_prefix='oai_dc'):
@@ -303,11 +308,29 @@ def run_test_identifiers(oai_url=None, verbosity=1):
 
 def run_test_sets(oai_url=None,verbosity=1):
     oai_server = OAI_Server(oai_url=oai_url,load_sets=1,verbosity=verbosity)
+    # test of load_sets = 1 constructor option
     n_id = 0
     for key, val in oai_server.d_spec_name.items():
         n_id += 1
         if verbosity > 0:
             print("{}: set_spec={}, set_name={}".format(n_id,key,val))
+
+    # Second test, also get dc:description
+    n_id = 0;
+    for d_record in oai_server.list_sets(metadata_prefix='oai_dc'):
+        n_id += 1
+        namespaces = d_record['namespaces']
+        node_record = d_record['node_record']
+        node_spec = node_record.find(".//{*}setSpec")
+        node_name = node_record.find(".//{*}setName")
+        node_description = node_record.find(".//{*}dc/{*}description")
+        name = '' if node_name is None else node_name.text
+        spec = '' if node_spec is None else node_spec.text
+        description = '' if node_description is None else node_description.text
+        if verbosity > 0:
+            print("count={}, spec={}, name={}, description={}"
+                .format(n_id,spec,name,description))
+
     return
 
 def run_test_metadata_formats(oai_url=None, verbosity=1):
@@ -349,23 +372,25 @@ def run_test_records(oai_url=None, set_spec=None, verbosity=1):
         if verbosity > 0:
             print("{}:id count={}, id={}".format(me,n_id,identifier_text))
 
-# TEST RUNS
-print('\n\n\n\n\n------------*******************************************************-----------------\n\n\n\n\n')
-oai_url = 'http://www.manioc.org/phpoai/oai2.php'
-set_spec = 'patrimon'
-print("OAI_Server test params: oai_url={},set_spec={}".format(oai_url,set_spec))
-print("Doing run_metadata_formats() ......")
-run_test_metadata_formats(oai_url=oai_url) #test...
+if (1 == 2):
+    # TEST RUNS
+    print('\n\n\n\n\n------------*******************************************************-----------------\n\n\n\n\n')
+    oai_url = 'http://www.manioc.org/phpoai/oai2.php'
+    set_spec = 'patrimon'
+    print("OAI_Server test params: oai_url={},set_spec={}".format(oai_url,set_spec))
+    print("Doing run_metadata_formats() ......")
+    run_test_metadata_formats(oai_url=oai_url) #test...
 
-print('\n\n\n\n\n------------*******************************************************-----------------\n\n\n\n\n')
-print("Doing run_test_sets() ......")
-run_test_sets(oai_url=oai_url) #test...
-#run_test_metadata_formats()
-#run_test_records(oai_url)
+    print('\n\n\n\n\n------------*******************************************************-----------------\n\n\n\n\n')
+    print("Doing run_test_sets() ......")
+    run_test_sets(oai_url=oai_url) #test...
+    #run_test_metadata_formats()
+    #run_test_records(oai_url)
 
-print('\n\n\n\n\n------------*******************************************************-----------------\n\n\n\n\n')
-print("Doing run_test_records() ......")
-run_test_records(oai_url=oai_url, set_spec=set_spec) #test...
+    print('\n\n\n\n\n------------*******************************************************-----------------\n\n\n\n\n')
+    print("Doing run_test_records() ......")
+    run_test_records(oai_url=oai_url, set_spec=set_spec) #test...
 
-print("Doing run_test_identifiers()")
-run_test_identifiers(oai_url=oai_url)
+    print('\n\n\n\n\n------------*******************************************************-----------------\n\n\n\n\n')
+    print("Doing run_test_identifiers()")
+    run_test_identifiers(oai_url=oai_url)

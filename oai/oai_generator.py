@@ -75,7 +75,6 @@ zenodo_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no"
 <METS:xmlData>
 
 <mods:mods>
-<mods:abstract>
 {description}
 </mods:abstract>
 
@@ -422,8 +421,6 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
 
     dc_title = node_mdf.find(".//{*}title", namespaces=namespaces).text
     dc_title = etl.escape_xml_text(dc_title)
-    dc_type = node_mdf.find(".//{*}type", namespaces=namespaces).text
-    dc_type = etl.escape_xml_text(dc_type)
 
     sobekcm_aggregations = ['UFDATASETS']
     xml_sobekcm_aggregations = ''
@@ -453,7 +450,6 @@ def zenodo_node_writer(node_record=None, namespaces=None, output_folder=None,bib
         'creator' : dc_creator,
         'bibid': bibid,
         'vid': vid,
-        'type_of_resource' : dc_type,
         'sha1-mets-v1' : '',
         'genre' : 'dataset',
         'genre_authority': 'zenodo',
@@ -663,7 +659,6 @@ the item.'''
         'creator' : dc_creator,
         'bibid': bibid,
         'vid': vid,
-        'type_of_resource' : dc_type,
         'sha1-mets-v1' : '',
         'genre' : '',
         'genre_authority': '',
