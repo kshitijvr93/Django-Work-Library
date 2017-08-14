@@ -21,6 +21,7 @@ class OAI_Server(object):
         if oai_url is None:
             raise ValueError("oai_url must be given")
         self.oai_url = oai_url
+        self.verbosity = verbosity
 
         self.d_verb_record_xpath = {
             "GetRecord" : ".//{*}record",
@@ -50,11 +51,12 @@ class OAI_Server(object):
             self.d_spec_name = self.get_d_spec_name();
             if self.d_spec_name is None:
                 raise ValueError("None?")
-            print("OAI_Server: loading sets, got {} sets".format(len(self.d_spec_name.items())))
+            if self.verbosity > 0:
+                print("OAI_Server: loading sets, got {} sets".format(len(self.d_spec_name.items())))
 
         return
-
         # return the set_spec and metadata_prefix based on supplied args and default self.* values.
+
     def _get_set_spec(self, set_spec=None):
         if set_spec is None:
             set_spec = self.set_spec
@@ -177,7 +179,9 @@ class OAI_Server(object):
                 .format(url_list, response.apparent_encoding, response.encoding))
               for k,v in response.headers.items():
                   print("{}:{}".format(k,v))
-              print("encodings from unicode response_str {}='{}'".format(response_str,encodings))
+              # Note: in atom editor on win7 pc, next print fails with
+              # UnicodeEncodeError.. can't encode '\x8e'
+              #print("encodings from unicode response_str {}='{}'".format(response_str,repr(encodings)))
 
             # re: workaround for miami-merrick oai server - oddity
             # a fundamental python principle is 'explict is better than  implicit', so call encode() here
@@ -248,7 +252,7 @@ class OAI_Server(object):
 
     ''' generator functions for specific oai lists
     '''
-    def list_records(self, set_spec=None,metadata_prefix=None):
+    def list_records(self, set_spec=None, metadata_prefix=None):
         url_list = self.get_url_list_records(set_spec=set_spec, metadata_prefix=metadata_prefix)
         for d_record in self.list_nodes(url_list=url_list, verb='ListRecords'):
           yield d_record
@@ -287,7 +291,7 @@ class OAI_Server(object):
             set_name = '' if node_set_name is None else node_set_name.text
             d_set_name[set_spec]=set_name
             print("init: {}: got set_spec={}, set_name={}".format(n_id,set_spec,set_name))
-            return d_set_name
+        return d_set_name
 
     #end class OAI_Server
 
