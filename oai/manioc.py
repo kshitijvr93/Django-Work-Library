@@ -334,8 +334,8 @@ class OAI_Harvester():
         # For manioc, they encode the thumbnail in dc:relation
         node = node_mdp.find(".//{*}relation", namespaces=namespaces)
         node_text = '' if node is None else node.text
+
         # Skip over the beginning "vignette : " expected in this field
-        print("GOT ORIGINAL DC_RELATION='{}'".format(node_text))
         if len(node_text) >= 10:
           node_text = node_text[11:]
         d_mets_template['sobekcm_thumbnail_src'] = node_text
@@ -379,7 +379,7 @@ class OAI_Harvester():
         d_mets_template['related_url'] = related_url_text
 
         nodes = node_mdp.findall(".//{*}language",namespaces=namespaces)
-        lang_code = 'eng' if nodes is None else nodes[0].text
+        lang_code = 'eng' if nodes is None or len(nodes) < 1 else nodes[0].text.lower()
         iso639_2b_code = etl.d_language_639_2b[lang_code]
         d_mets_template['iso639_2b_code'] = iso639_2b_code
 
@@ -503,10 +503,10 @@ def run_test():
   encoding = None
   encoding='ISO_8859_1'
   harvester = OAI_Harvester(oai_url=oai_url, server_encoding=encoding, bib_vid='XX00000000_00001'
-    , format_str=mets_format_str,output_folder=output_folder, verbosity=2 )
+    , format_str=mets_format_str,output_folder=output_folder, verbosity=1 )
 
   print("run_test: CREATED Harvester {}: Harvesting items now....".format(repr(harvester)))
-  harvester.harvest_items(set_spec=set_spec,metadata_prefix=metadata_prefix,bib_vid=bib_vid,max_count=2)
+  harvester.harvest_items(set_spec=set_spec,metadata_prefix=metadata_prefix,bib_vid=bib_vid,max_count=0)
   print("run_test: DONE!")
 
 run_test()
