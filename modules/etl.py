@@ -296,11 +296,13 @@ def has_upper(inputString):
     return any(i.isupper() for i in inputString)
 ''' See https://www.loc.gov/standards/iso639-2/php/code_list.php
 Add more later...as needed. Just some basic ones here to start..
+value should be a iso639-2b language code.
+Key can be anything (codes mostly) in source data that might represent a spoken language
 '''
-d_language_639b = {
+d_language_639_2b = {
     'ang':'ang',
     'ara':'ara',
-    'ar': 'ar',
+    'ar': 'ara',
     'chi':'chi',
     'cs': 'cze',
     'cze':'cze',
@@ -322,8 +324,10 @@ d_language_639b = {
     'hai':'hai',
     'he':'heb',
     'heb':'heb',
+    'hat':'hat',
     'hi':'hin',
     'hin':'hin',
+    'ht':'hat',
     'is':'ice',
     'ice':'ice',
     'it':'ita',
@@ -343,13 +347,14 @@ d_language_639b = {
     'pa':'pan',
     'pan':'pan',
     'per':'per',
-    'pol':'po',
+    'po':'pol',
     'pol':'pol',
     'pt':'por',
     'por':'por',
     'ro':'rum',
     'ru':'rus',
     'rus':'rus',
+    'ru':'rum',
     'rum':'rum',
     'sa':'san',
     'san':'san',
@@ -367,4 +372,10 @@ d_language_639b = {
     'yi':'yid',
     'yid':'yid',
     'zh':'chi',
+}
+d_langcode_langtext = {
+    'eng':'English',
+    'fra':'French',
+    'hat':'Haitian',
+    'spa':'Spanish',
 }

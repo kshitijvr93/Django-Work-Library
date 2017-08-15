@@ -68,8 +68,8 @@ mets_format_str = """<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 {xml_dc_ids}
 <mods:genre authority="{genre_authority}">{genre}</mods:genre>
 <mods:language>
-<mods:languageTerm type="text">eng</mods:languageTerm>
-<mods:languageTerm type="code" authority="iso639-2b">{iso639-2b_code}</mods:languageTerm>
+<mods:languageTerm type="text">{iso639_2b_text}</mods:languageTerm>
+<mods:languageTerm type="code" authority="iso639_2b">{iso639_2b_code}</mods:languageTerm>
 </mods:language>
 
 <mods:location>
@@ -95,9 +95,13 @@ mets_format_str = """<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
   </mods:role>
 </mods:name>
 
+<mods:originInfo>
+<mods:publisher>{publisher}</mods:publisher>
+</mods:originInfo>
+
 <!-- subject topics: var mods_subjects may be phrases with no authority info -->
 {mods_subjects}
-<mods:note displayLabel="Harvest Date">{harvest_utc_secs_z}</mods:note>
+<mods:note displayLabel="Harvest Date">{utc_secs_z}</mods:note>
 
 <mods:recordInfo>
   <mods:recordIdentifier source="sobekcm">{bib_vid}</mods:recordIdentifier>
@@ -197,15 +201,15 @@ class OAI_Harvester():
             raise ValueError("Missing some required params from {}".format(repr(rparams)))
 
         # 20170815 NOTE
-        # cannot get shutil to remove files properly... so remember to do it by hand if needed
-        output_folder_xml = self.output_folder + 'xml/'
+        # cannot get shutil to remove older files properly on windows 7...
+        # so if needed must remember to remove them by hand before running this.
+        output_folder_xml = '{}{}/xml/'.format(self.output_folder,metadata_prefix)
         os.makedirs(output_folder_xml,exist_ok=True)
 
-        output_folder_mets = self.output_folder + 'mets/'
+        output_folder_mets = '{}{}/mets/'.format(self.output_folder,metadata_prefix)
         os.makedirs(output_folder_mets,exist_ok=True)
-
+        rights = 'Your rights: '
         d_mets_template = {
-            "content_source_name" : "Manioc",
             "genre_authority": "Manioc",
             "physical_location_name":"Manioc",
             "physical_location_code":"MANIOC",
@@ -262,6 +266,7 @@ class OAI_Harvester():
         node_type= node_record.find(".//{*}dc/{*}type", namespaces=namespaces)
         genre = '' if node_type is None else node_type.text
         genre = etl.escape_xml_text(genre)
+        d_mets_template['genre'] = genre
 
         node_identifier = node_record.find("./{*}header/{*}identifier", namespaces=namespaces)
         header_identifier_text = '' if node_identifier is None else node_identifier.text
@@ -273,6 +278,12 @@ class OAI_Harvester():
             print("using bib={}, vid={}, bib_vid={} to output item with "
                 "manioc header_identifier_normalized={}"
                 .format(bibid,vid,bib_vid, header_identifier_normalized))
+
+        nodes_source = node_record.findall(".//{*}dc/{*}publisher", namespaces=namespaces)
+        n = 0 if nodes_source is None else len(nodes_source)
+
+        node_source_text = '' if n == 0 else nodes_source[0].text
+        d_mets_template['content_source_name'] = node_source_text
 
         # From node_record,create the b_xml_record_output
         # Note: the encoding argument is needed to create unicode string from
@@ -288,33 +299,48 @@ class OAI_Harvester():
 
         #with open(filename_xml, mode='w', encoding='utf-8') as outfile:
         with open(filename_xml, mode='wb') as outfile:
-              if verbosity> 0:
+              if self.verbosity> 0:
                   print("{}:Writing filename_xml ='{}'".format(me, filename_xml))
               outfile.write(xml_record_str)
 
           # Set some variables to potentially output into the METS template
         utc_now = datetime.datetime.utcnow()
         utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        d_mets_template['utc_secs_z'] = utc_secs_z
 
-        node_mdf = node_record.find(".//{*}dc", namespaces=namespaces)
+        node_mdp = node_record.find(".//{*}dc", namespaces=namespaces)
 
-        if node_mdf is None:
+        if node_mdp is None:
               # This happens for received 'delete' records
               # Just return to ignore them pending requirements to process them
-              # print ("Cannot find node_mdf for xml tag/node: {*}dc")
+              # print ("Cannot find node_mdp for xml tag/node: {*}dc")
               return 0
         else:
-            #print("{}: Got node_mdf with tag='{}'",format(node_mdf.tag))
+            #print("{}: Got node_mdp with tag='{}'",format(node_mdp.tag))
             pass
 
         #print("{}:got namespaces='{}'".format(me,repr(namespaces)))
 
-        node_creator = node_mdf.find(".//{*}creator", namespaces=namespaces)
+        node_creator = node_mdp.find(".//{*}creator", namespaces=namespaces)
         dc_creator = '' if node_creator is None else node_creator.text
         dc_creator = etl.escape_xml_text(dc_creator)
         #print("{}:Got creator={}".format(me,dc_creator))
 
-        node_date = node_mdf.find("./{*}date", namespaces=namespaces)
+        node_publisher = node_mdp.find(".//{*}dc/{*}publisher", namespaces=namespaces)
+        publisher_text = '' if node_publisher is None else node_publisher.text
+        publisher_text = etl.escape_xml_text(publisher_text)
+        d_mets_template['publisher'] = publisher_text
+
+        # For manioc, they encode the thumbnail in dc:relation
+        node = node_mdp.find(".//{*}relation", namespaces=namespaces)
+        node_text = '' if node is None else node.text
+        # Skip over the beginning "vignette : " expected in this field
+        print("GOT ORIGINAL DC_RELATION='{}'".format(node_text))
+        if len(node_text) >= 10:
+          node_text = node_text[11:]
+        d_mets_template['sobekcm_thumbnail_src'] = node_text
+
+        node_date = node_mdp.find(".//{*}date", namespaces=namespaces)
         dc_date_orig='1969-01-01'
         if node_date is not None:
               dc_date_orig = node_date.text
@@ -332,7 +358,7 @@ class OAI_Harvester():
         # Make an element tree style tree to invoke pattern to remove inner xml
         # str_description = etree.tostring(node_description,encoding='unicode',method='text').strip().replace('\n','')
 
-        node_description = node_mdf.find(".//{*}description",namespaces=namespaces)
+        node_description = node_mdp.find(".//{*}description",namespaces=namespaces)
         str_description = ''
         if (node_description is not None):
               str_description = etl.escape_xml_text(node_description.text)
@@ -341,24 +367,26 @@ class OAI_Harvester():
               dc_description = str_description
               # avoid charmap codec windows errors:print("Using dc_description='{}'".format(dc_description))
 
-        nodes_dc_identifier = node_mdf.findall(
+        # Manioc has only one dc:identifier used for related url, so now keep it in the template
+        # incase the server response evolves, but for now just stick in a newline value for # the template
+        xml_dc_ids = '\n'
+
+        # For manioc, the first dc identifier is the related url of the item
+        nodes = node_mdp.findall(
             ".//{*}identifier", namespaces=namespaces)
 
-        xml_dc_ids = '\n'
-        related_url = ''
+        related_url_text = '' if nodes is None or len(nodes) == 0 else nodes[0].text
+        d_mets_template['related_url'] = related_url_text
 
-        # id type names based on data received in 2017
-        # I invented the id_types, based on the data harvested in 2017.
-        id_types = ['manioc_set_spec_index', 'manioc_url']
-        for i,nid in enumerate(nodes_dc_identifier):
-              xml_dc_ids = ('<mods:identifier type="{}">{}</mods:identifier>\n'
-                .format(id_types[i], nid.text))
-              if (i == 1):
-                # per agreement on phone
-                related_url = nid.text
+        nodes = node_mdp.findall(".//{*}language",namespaces=namespaces)
+        lang_code = 'eng' if nodes is None else nodes[0].text
+        iso639_2b_code = etl.d_language_639_2b[lang_code]
+        d_mets_template['iso639_2b_code'] = iso639_2b_code
 
-        nodes_rights = node_mdf.findall(".//{*}rights",namespaces=namespaces)
+        iso639_2b_text = etl.d_langcode_langtext[iso639_2b_code]
+        d_mets_template['iso639_2b_text'] = iso639_2b_text
 
+        nodes_rights = node_mdp.findall(".//{*}rights",namespaces=namespaces)
         # Some concatenate rights with our rights text
         rights_text = d_mets_template['rights_text']
         for node_rights in nodes_rights:
@@ -367,7 +395,7 @@ class OAI_Harvester():
         d_mets_template['rights_text'] = rights_text
 
         # Subjects
-        nodes_subject = node_mdf.findall(".//{*}subject", namespaces=namespaces)
+        nodes_subject = node_mdp.findall(".//{*}subject", namespaces=namespaces)
         mods_subjects = '<mods:subject>'
         for node_subject in nodes_subject:
               subjects = node_subject.text.split(';')
@@ -378,7 +406,7 @@ class OAI_Harvester():
                 mods_subjects += '<mods:topic>' + etl.escape_xml_text(subject) + '</mods:topic>\n'
         mods_subjects += ('</mods:subject>\n')
 
-        tnode = node_mdf.find(".//{*}title", namespaces=namespaces)
+        tnode = node_mdp.find(".//{*}title", namespaces=namespaces)
         dc_title = '(none)' if tnode is None else etl.escape_xml_text(tnode.text)
 
         sobekcm_aggregations = d_mets_template['list_sobekcm_aggregations']
@@ -413,9 +441,6 @@ class OAI_Harvester():
         v = d_mets_template['mods_title']
         d_mets_template['mods_title'] = dc_title
 
-        v = d_mets_template['related_url']
-        d_mets_template['related_url'] = related_url
-
         v = d_mets_template['xml_sobekcm_aggregations']
         d_mets_template['xml_sobekcm_aggregations'] = xml_sobekcm_aggregations
 
@@ -434,7 +459,6 @@ class OAI_Harvester():
         d_mets_template['bibid'] = bibid
         d_mets_template['vid'] = vid
         d_mets_template['sha1_mets_v1'] = ''
-        d_mets_template['genre'] = genre
 
         # Create mets_str and write it to mets.xml output file
         mets_str = mets_format_str.format(**d_mets_template)
@@ -442,9 +466,9 @@ class OAI_Harvester():
         # because loads in sobek bulder faster this way
         output_folder_mets_item = output_folder_mets  + bib_vid + '/'
 
-        os.makedirs(output_folder_mets_item)
+        os.makedirs(output_folder_mets_item,exist_ok=True)
         filename_mets = output_folder_mets_item  + bib_vid + '.mets.xml'
-        if verbosity > 0:
+        if self.verbosity > 0:
               print("{}:using output_filename_mets={}".format(me,filename_mets))
 
         fn = filename_mets
@@ -486,3 +510,5 @@ def run_test():
   print("run_test: DONE!")
 
 run_test()
+
+print("DONE!")
