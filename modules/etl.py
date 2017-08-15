@@ -12,6 +12,10 @@ from collections import OrderedDict
 from lxml import etree
 from lxml.etree import tostring
 from pathlib import Path
+import shutil
+import stat
+
+
 '''
 NOTE: for the morning of 20170810, my WIN7 'update' on my UF PC had a 'HOME'
 variable defined to U:, which changed the expanduser() return value unexpectedly
@@ -41,6 +45,25 @@ sys.path.append(get_path_modules())
 # the etl.py module resides under get_path_modules()
 import etl
 '''
+
+'''
+Method remove_readonly() is for windows -- may need to also detect platform and avoid using it
+on non-windows OSes
+
+See the rmtree code example at: https://docs.python.org/3/library/shutil.html#shutil.rmtree
+'''
+def remove_readonly(func, path, _):
+    "Clear the readonly bit and reattemt the removal"
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+def remake_dir(folder):
+    # REMOVE the xml output directory if extant and then recreate it.
+    os.makedirs(folder, exist_ok=True)
+    shutil.rmtree(folder)
+    # Get error on next line if do not set exist_ok to True?
+    # Seems inscrutable, but let it be.
+    os.makedirs(folder, exist_ok=True)
 
 def utc_now():
     return datetime.datetime.utcnow()
@@ -271,3 +294,77 @@ def has_digit(inputString):
     return bool(re.search(r'\d', inputString))
 def has_upper(inputString):
     return any(i.isupper() for i in inputString)
+''' See https://www.loc.gov/standards/iso639-2/php/code_list.php
+Add more later...as needed. Just some basic ones here to start..
+'''
+d_language_639b = {
+    'ang':'ang',
+    'ara':'ara',
+    'ar': 'ar',
+    'chi':'chi',
+    'cs': 'cze',
+    'cze':'cze',
+    'da': 'dan',
+    'dan':'dan',
+    'de':'ger',
+    'dut':'dut',
+    'en' : 'eng',
+    'eng': 'eng',
+    'es' : 'spa',
+    'fr' : 'fra',
+    'fra' : 'fra',
+    'ga':'gle',
+    'gle':'gle',
+    'el':'gre',
+    'fa':'per',
+    'gre':'gre',
+    'ht':'hai',
+    'hai':'hai',
+    'he':'heb',
+    'heb':'heb',
+    'hi':'hin',
+    'hin':'hin',
+    'is':'ice',
+    'ice':'ice',
+    'it':'ita',
+    'ita':'ita',
+    'ja':'jpn',
+    'jpn':'jpn',
+    'ko':'kor',
+    'kor':'kor',
+    'id':'ind',
+    'mn':'mon',
+    'mon':'mon',
+    'ne':'nep',
+    'nep':'nep',
+    'nl':'dut',
+    'no':'nor',
+    'nor':'nor',
+    'pa':'pan',
+    'pan':'pan',
+    'per':'per',
+    'pol':'po',
+    'pol':'pol',
+    'pt':'por',
+    'por':'por',
+    'ro':'rum',
+    'ru':'rus',
+    'rus':'rus',
+    'rum':'rum',
+    'sa':'san',
+    'san':'san',
+    'spa': 'spa',
+    'sv': 'swe',
+    'swe': 'swe',
+    'th': 'tha',
+    'tha': 'tha',
+    'tr':'tur',
+    'tur':'tur',
+    'vi':'vie',
+    'vie':'vie',
+    'cy':'wel',
+    'wel':'wel',
+    'yi':'yid',
+    'yid':'yid',
+    'zh':'chi',
+}

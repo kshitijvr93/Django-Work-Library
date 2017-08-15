@@ -21,6 +21,9 @@ class OAI_Server(object):
         if oai_url is None:
             raise ValueError("oai_url must be given")
         self.oai_url = oai_url
+        self.verbosity = verbosity # default verbosity
+        if self.verbosity > 0:
+            print("OAI_Server: using verbosity={}".format(verbosity))
 
         self.d_verb_record_xpath = {
             "GetRecord" : ".//{*}record",
@@ -37,7 +40,6 @@ class OAI_Server(object):
         self.metadata_prefix = metadata_prefix
         self.set_spec = set_spec
 
-        self.verbosity = verbosity # default verbosity
         # Potential todo - honor an init flag to populate all set names and/or all metadata
         # prefixes here... would take a few seconds,
         # but could then verify and catch errors in attempts to use invalid
@@ -169,32 +171,52 @@ class OAI_Server(object):
             n_batch += 1
             d_return['n_batch'] = n_batch
             response = requests.get(url_list)
+            original_response_encoding = response.encoding
+            override_response_encoding = '8559'
+            #response.encoding = override_response_encoding
+
+            # 20170815 -- rvp test
 
             if verbosity > 0:
               response_str = requests.utils.get_unicode_from_response(response)
-              encodings = requests.utils.get_encodings_from_content(response_str)
-              print("using url_list='{}'\nand got response with apparent_encoding='{}', encoding='{}',headers:"
-                .format(url_list, response.apparent_encoding, response.encoding))
+              content_encodings = requests.utils.get_encodings_from_content(response_str)
+              print("{}: Using url_list='{}'\nand got response.apparent_encoding='{}', "
+                "original_response_encoding='{}'\noverride_response_encoding={}\ncontent_encodings={}\n"
+                "... and headers..::"
+                .format(me,url_list, response.apparent_encoding
+                    , original_response_encoding,override_response_encoding,content_encodings))
               for k,v in response.headers.items():
                   print("{}:{}".format(k,v))
-              print("encodings from unicode response_str {}='{}'".format(response_str,encodings))
+              print("{}:content_encodings from unicode response_str='{}'"
+                    .format(me,repr(content_encodings)))
+
+              # windows atom error: cannot print some chars
+              #print("{}:using response_str='{}'" .format(me,response_str))
 
             # re: workaround for miami-merrick oai server - oddity
             # a fundamental python principle is 'explict is better than  implicit', so call encode() here
             # if encoding argument is set (need it for miami-merrick server, possibly others to come)
             # response.encoding = 'iso-8859-1' # that fails! but next call to encode() seems to work.
-            if encoding is not None or  1 == 1:
-              #xml_bytes = response.text.encode('iso-8859-1')
-              encoding = 'utf-8'
-              xml_bytes = response.text.encode(encoding)
+            #encoding = 'utf-8'
+            if encoding is not None or 1 == 1:
+              # response_text = response.text.encode('iso-8859-1')
+              encoding = 'ISO-8859-1'
+              if self.verbosity > 0:
+                  print("{}:Using response.text.encode({})".format(me,encoding))
+              response_text = response.text.encode(encoding)
             else:
-              xml_bytes = response.text
+              if self.verbosity > 0:
+                  print("{}:Using response.text without special encoding".format(me))
+              response_text = response.text
 
             if verbosity > 0:
-              print("xml_bytes len={}, response.encoding={}".format(len(xml_bytes), response.encoding))
+              print("{}:response_text len={}, response.encoding={}".format(me,len(response_text), response.encoding))
+              print("{}:response_text={}".format(me,response_text))
+              #print("{}:response_str len={} (unicode)".format(me,len(response_str)))
+              #print("{}:response_str{} (unicode)".format(me,(response_str)))
 
             try:
-              node_root = etree.fromstring(xml_bytes)
+              node_root = etree.fromstring(response_text)
               d_return['node_root'] = node_root
             except Exception as e:
               # give detailed diagnostic info

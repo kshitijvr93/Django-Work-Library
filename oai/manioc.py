@@ -15,6 +15,7 @@ from lxml.etree import tostring
 import xml.etree.ElementTree as ET
 import oai_server
 import datetime
+import shutil
 
 #Using this variable to keep d_mets_template definition a bit more readable
 rights = "" # Rights statement from UF. Other rights statements in source will be appended to it.
@@ -68,7 +69,7 @@ mets_format_str = """<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <mods:genre authority="{genre_authority}">{genre}</mods:genre>
 <mods:language>
 <mods:languageTerm type="text">eng</mods:languageTerm>
-<mods:languageTerm type="code" authority="iso639-2b">eng</mods:languageTerm>
+<mods:languageTerm type="code" authority="iso639-2b">{iso639-2b_code}</mods:languageTerm>
 </mods:language>
 
 <mods:location>
@@ -149,7 +150,7 @@ class OAI_Harvester():
         rparams = ['oai_url', 'bib_vid','format_str','output_folder']
         if not all(rparams):
           raise ValueError("Missing some required params from {}".format(repr(rparams)))
-
+        self.verbosity = verbosity
         self.bib_vid = bib_vid
         self.oai_url = oai_url
         self.output_folder = output_folder
@@ -191,10 +192,17 @@ class OAI_Harvester():
     def manioc_node_writer(self, bib_vid=None, d_record=None, metadata_prefix=None
             , mets_format_str=None, verbosity=0):
         me = 'manioc_node_writer'
-
         rparams = ['bib_vid', 'd_record', 'mets_format_str']
         if not all(rparams):
             raise ValueError("Missing some required params from {}".format(repr(rparams)))
+
+        # 20170815 NOTE
+        # cannot get shutil to remove files properly... so remember to do it by hand if needed
+        output_folder_xml = self.output_folder + 'xml/'
+        os.makedirs(output_folder_xml,exist_ok=True)
+
+        output_folder_mets = self.output_folder + 'mets/'
+        os.makedirs(output_folder_mets,exist_ok=True)
 
         d_mets_template = {
             "content_source_name" : "Manioc",
@@ -266,23 +274,23 @@ class OAI_Harvester():
                 "manioc header_identifier_normalized={}"
                 .format(bibid,vid,bib_vid, header_identifier_normalized))
 
-        # Parse the input record and save it to a string
-        record_str = etree.tostring(node_record, pretty_print=True, encoding='unicode')
-        # print("{}:Got record string={}".format(me,record_str))
-
-        output_folder_xml = self.output_folder + 'xml/'
-
-        # TO CONSIDER: maybe add an argument flag to delete all preexisting
-        # files in this directory? maybe dir for mets too?
-        os.makedirs(output_folder_xml, exist_ok=True)
-        if verbosity > 0:
-              print("{}:using output_folder_xml={}".format(me,output_folder_xml))
+        # From node_record,create the b_xml_record_output
+        # Note: the encoding argument is needed to create unicode string from
+        # lxml internal representation
+        xml_record_str = etree.tostring(node_record, pretty_print=True
+              , xml_declaration=True, encoding="utf-8")
+        if self.verbosity > 1:
+          print("{}:Got xml_record_str={}".format(me,xml_record_str))
 
         filename_xml = output_folder_xml + header_identifier_normalized + '.xml'
-        with open(filename_xml, mode='w', encoding='utf-8') as outfile:
+        if verbosity > 0:
+              print("{}:using output_filename_xml={}".format(me,filename_xml))
+
+        #with open(filename_xml, mode='w', encoding='utf-8') as outfile:
+        with open(filename_xml, mode='wb') as outfile:
               if verbosity> 0:
                   print("{}:Writing filename_xml ='{}'".format(me, filename_xml))
-              outfile.write(record_str)
+              outfile.write(xml_record_str)
 
           # Set some variables to potentially output into the METS template
         utc_now = datetime.datetime.utcnow()
@@ -432,10 +440,13 @@ class OAI_Harvester():
         mets_str = mets_format_str.format(**d_mets_template)
         # Nest filename in folder of the bib_vid,
         # because loads in sobek bulder faster this way
-        output_folder_mets = self.output_folder + 'mets/' + bib_vid + '/'
-        os.makedirs(output_folder_mets, exist_ok=True)
+        output_folder_mets_item = output_folder_mets  + bib_vid + '/'
 
-        filename_mets = output_folder_mets  + bib_vid + '.mets.xml'
+        os.makedirs(output_folder_mets_item)
+        filename_mets = output_folder_mets_item  + bib_vid + '.mets.xml'
+        if verbosity > 0:
+              print("{}:using output_filename_mets={}".format(me,filename_mets))
+
         fn = filename_mets
         with open(fn, mode='w', encoding='utf-8') as outfile:
               #print("{}:Writing METS filename='{}'".format(me,fn))
@@ -444,7 +455,6 @@ class OAI_Harvester():
         return 1
         #end def manioc_node_writer()
 #end class OAI_Harvester
-
 
 def run_test():
 
@@ -459,13 +469,20 @@ def run_test():
       data_relative_folder='data/outputs/oai/{}/{}/'.format(study,set_spec))
 
   print("STARTING: run_test: study={},oai_url={},output_folder={}".format(study,oai_url,output_folder))
-  encoding = 'iso-8559'
+  #encoding = 'iso-8559' #
+  #encoding = 'unicode' #
+  encoding = 'utf-8'
+  encoding = 'iso-8559' # cant encode character \x8e
   encoding = 'unicode'
+  encoding = 'unicode'
+  encoding = None
+  encoding = None
+  encoding='ISO_8859_1'
   harvester = OAI_Harvester(oai_url=oai_url, server_encoding=encoding, bib_vid='XX00000000_00001'
-    , format_str=mets_format_str,output_folder=output_folder, verbosity=1 )
+    , format_str=mets_format_str,output_folder=output_folder, verbosity=2 )
 
   print("run_test: CREATED Harvester {}: Harvesting items now....".format(repr(harvester)))
-  harvester.harvest_items(set_spec=set_spec,metadata_prefix=metadata_prefix,bib_vid=bib_vid,max_count=100)
+  harvester.harvest_items(set_spec=set_spec,metadata_prefix=metadata_prefix,bib_vid=bib_vid,max_count=2)
   print("run_test: DONE!")
 
 run_test()

@@ -2029,8 +2029,8 @@ def exoldmets_run():
     # to be loaded by the SobekCM Builder, or even if we forgot to try to load them.
     os.makedirs(output_base_folder, exist_ok=True)
     shutil.rmtree(output_base_folder)
-
     os.makedirs(output_base_folder, exist_ok=True)
+    
     os.makedirs(output_logs_folder, exist_ok=True)
 
     d_xslt = get_d_xslt()
