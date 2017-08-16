@@ -69,7 +69,7 @@ mets_format_str = """<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <mods:genre authority="{genre_authority}">{genre}</mods:genre>
 <mods:language>
 <mods:languageTerm type="text">{iso639_2b_text}</mods:languageTerm>
-<mods:languageTerm type="code" authority="iso639_2b">{iso639_2b_code}</mods:languageTerm>
+<mods:languageTerm type="code" authority="iso639-2b">{iso639_2b_code}</mods:languageTerm>
 </mods:language>
 
 <mods:location>
@@ -488,7 +488,7 @@ def run_test():
     , format_str=mets_format_str,output_folder=output_folder, verbosity=1 )
 
   print("run_test: CREATED Harvester {}: Harvesting items now....".format(repr(harvester)))
-  harvester.harvest_items(set_spec=set_spec,metadata_prefix=metadata_prefix,bib_vid=bib_vid,max_count=2)
+  harvester.harvest_items(set_spec=set_spec,metadata_prefix=metadata_prefix,bib_vid=bib_vid,max_count=0)
   print("run_test: DONE!")
 
 run_test()
