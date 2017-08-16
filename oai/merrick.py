@@ -391,7 +391,7 @@ def run_test():
   print("run_test: CREATED Harvester {}: Harvesting items now....".format(repr(harvester)))
   max_count = 0
   harvester.harvest_items(
-    set_spec=set_spec, metadata_prefix=metadata_prefix,;bib_vid=bib_vid, max_count=max_count)
+    set_spec=set_spec, metadata_prefix=metadata_prefix,bib_vid=bib_vid, max_count=max_count)
   print("run_test: DONE!")
 
 run_test()
