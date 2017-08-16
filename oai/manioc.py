@@ -135,7 +135,7 @@ mets_format_str = """<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
           </sobekcm:HierarchicalAffiliation>
         </sobekcm:Affiliation>
         <sobekcm:Source>
-        <sobekcm:statement code={physical_location_code}>{physical_location_name}</sobekcm:statement>
+        <sobekcm:statement code="{physical_location_code}">{physical_location_name}</sobekcm:statement>
         </sobekcm:Source>
     </sobekcm:bibDesc>
 </METS:xmlData>
@@ -148,14 +148,13 @@ mets_format_str = """<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 
 class OAI_Harvester():
 
-    def __init__(self, oai_url=None, server_encoding=None, bib_vid='XX00000000_00001', format_str=None
+    def __init__(self, oai_url=None, server_encoding=None,  format_str=None
             ,output_folder=None,verbosity=0):
 
-        rparams = ['oai_url', 'bib_vid','format_str','output_folder']
+        rparams = ['oai_url', 'format_str','output_folder']
         if not all(rparams):
           raise ValueError("Missing some required params from {}".format(repr(rparams)))
         self.verbosity = verbosity
-        self.bib_vid = bib_vid
         self.oai_url = oai_url
         self.output_folder = output_folder
         self.format_str = format_str
@@ -166,6 +165,7 @@ class OAI_Harvester():
 
     def harvest_items(self, set_spec=None, bib_vid=None, metadata_prefix='oai_dc', load_sets=1
           ,max_count=0,verbosity=0):
+        me = 'harvest_items'
         rparams = ['set_spec','bib_vid','metadata_prefix']
         if not all(rparams):
           raise ValueError("Missing some required params from {}".format(repr(rparams)))
@@ -190,8 +190,13 @@ class OAI_Harvester():
     '''
     The caller must avoid calling the node_writer for records that are error records or
     special records (like 'delete' records), which are not suitable for writing.
+    That is the caller must check for 'error' nodes or any characteristicof the node_record that
+    makes the record invalid for writing, or makes some of the values that the node_writer
+    expects from it to be invalid.
+    Consider: write a separate log of the bad input node_records, but just skip them when encountered,
+    or give a 'strict' option to raise an exception.
     The caller must also check whether the record is new or an update and caclulate and
-    provide the bib_vid for the node_writer to use.
+    provide the appropriate bib_vid for the node_writer to use.
     '''
     def manioc_node_writer(self, bib_vid=None, d_record=None, metadata_prefix=None
             , mets_format_str=None, verbosity=0):
@@ -199,7 +204,6 @@ class OAI_Harvester():
         rparams = ['bib_vid', 'd_record', 'mets_format_str']
         if not all(rparams):
             raise ValueError("Missing some required params from {}".format(repr(rparams)))
-
         # 20170815 NOTE
         # cannot get shutil to remove older files properly on windows 7...
         # so if needed must remember to remove them by hand before running this.
@@ -226,7 +230,6 @@ class OAI_Harvester():
 
             "agent_creator_individual_name" : None,
             "agent_creator_individual_note" : 'Creation via Manioc OAI  harvest',
-            "bib_vid" : None,
             "bibid" : None,
             "create_date" : None,
             "description" : None,
@@ -423,39 +426,18 @@ class OAI_Harvester():
                   .format(wordmark))
 
         # Set some template variable values
-        v = d_mets_template['bib_vid']
-        d_mets_template['bib_vid'] = bib_vid,
-        v = d_mets_template['create_date']
+        d_mets_template['bib_vid'] = bib_vid
         d_mets_template['create_date'] = dc_date
-        v = d_mets_template['last_mod_date']
         d_mets_template['last_mod_date'] = utc_secs_z
-
-        v = d_mets_template['agent_creator_individual_name']
         d_mets_template['agent_creator_individual_name'] = dc_creator
-
         d_mets_template['header_identifier_text'] = header_identifier_text
-
-        v = d_mets_template['mods_subjects']
         d_mets_template['mods_subjects'] = mods_subjects
-
-        v = d_mets_template['mods_title']
         d_mets_template['mods_title'] = dc_title
-
-        v = d_mets_template['xml_sobekcm_aggregations']
         d_mets_template['xml_sobekcm_aggregations'] = xml_sobekcm_aggregations
-
-        v = d_mets_template['xml_sobekcm_wordmarks']
         d_mets_template['xml_sobekcm_wordmarks'] = xml_sobekcm_wordmarks
-
-        v = d_mets_template['xml_dc_ids']
         d_mets_template['xml_dc_ids'] = xml_dc_ids
-
-        v = d_mets_template['description']
         d_mets_template['description'] = dc_description
-
-        v = d_mets_template['personal_creator_name']
         d_mets_template['personal_creator_name'] = dc_creator
-
         d_mets_template['bibid'] = bibid
         d_mets_template['vid'] = vid
         d_mets_template['sha1_mets_v1'] = ''
@@ -502,11 +484,11 @@ def run_test():
   encoding = None
   encoding = None
   encoding='ISO_8859_1'
-  harvester = OAI_Harvester(oai_url=oai_url, server_encoding=encoding, bib_vid='XX00000000_00001'
+  harvester = OAI_Harvester(oai_url=oai_url, server_encoding=encoding
     , format_str=mets_format_str,output_folder=output_folder, verbosity=1 )
 
   print("run_test: CREATED Harvester {}: Harvesting items now....".format(repr(harvester)))
-  harvester.harvest_items(set_spec=set_spec,metadata_prefix=metadata_prefix,bib_vid=bib_vid,max_count=0)
+  harvester.harvest_items(set_spec=set_spec,metadata_prefix=metadata_prefix,bib_vid=bib_vid,max_count=2)
   print("run_test: DONE!")
 
 run_test()
