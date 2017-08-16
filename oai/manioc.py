@@ -483,12 +483,12 @@ def run_test():
   encoding = 'unicode'
   encoding = None
   encoding = None
-  encoding='ISO_8859_1'
+  encoding='ISO_8859_1' # MUST USE FOR MANIOC
   harvester = OAI_Harvester(oai_url=oai_url, server_encoding=encoding
     , format_str=mets_format_str,output_folder=output_folder, verbosity=1 )
 
   print("run_test: CREATED Harvester {}: Harvesting items now....".format(repr(harvester)))
-  harvester.harvest_items(set_spec=set_spec,metadata_prefix=metadata_prefix,bib_vid=bib_vid,max_count=0)
+  harvester.harvest_items(set_spec=set_spec,metadata_prefix=metadata_prefix,bib_vid=bib_vid,max_count=2)
   print("run_test: DONE!")
 
 run_test()

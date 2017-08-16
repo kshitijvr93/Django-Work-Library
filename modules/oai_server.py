@@ -198,16 +198,20 @@ class OAI_Server(object):
             # if encoding argument is set (need it for miami-merrick server, possibly others to come)
             # response.encoding = 'iso-8859-1' # that fails! but next call to encode() seems to work.
             #encoding = 'utf-8'
-            if encoding is not None or 1 == 1:
+
+            print("{}:TYPE TYPE: Using response.text type={} without special encoding"
+                    .format(me, type(response.text)))
+            encoding = self.encoding
+            if encoding is not None:
               # response_text = response.text.encode('iso-8859-1')
-              encoding = 'ISO-8859-1'
               if self.verbosity > 0:
                   print("{}:Using response.text.encode({})".format(me,encoding))
               response_text = response.text.encode(encoding)
             else:
-              if self.verbosity > 0:
-                  print("{}:Using response.text without special encoding".format(me))
               response_text = response.text
+              if self.verbosity > 0 or 1 == 1:
+                  print("{}:TYPE TYPE: Using response.text type={} without special encoding"
+                        .format(me, type(response_text)))
 
             if verbosity > 0:
               print("{}:response_text len={}, response.encoding={}".format(me,len(response_text), response.encoding))
