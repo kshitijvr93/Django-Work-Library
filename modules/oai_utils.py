@@ -318,6 +318,69 @@ class OAI_Server(object):
 
 #end class OAI_Server
 
+class OAI_Harvester():
+
+    def __init__(self, oai_url=None, server_encoding=None,  format_str=None
+            ,output_folder=None,verbosity=0):
+
+        rparams = ['oai_url', 'format_str','output_folder']
+        if not all(rparams):
+          raise ValueError("Missing some required params from {}".format(repr(rparams)))
+        self.verbosity = verbosity
+        self.oai_url = oai_url
+        self.output_folder = output_folder
+        self.format_str = format_str
+        if verbosity > 0:
+          print("OAI_Harvester: verbosity={}".format(verbosity))
+        self.oai_server = OAI_Server(oai_url=oai_url, encoding=server_encoding, verbosity=verbosity)
+        return
+
+class OAI_Harvester():
+
+    def __init__(self, oai_url=None, server_encoding=None
+            ,output_folder=None,node_writer=None, verbosity=0):
+
+        rparams = ['oai_url', 'output_folder','node_writer']
+        if not all(rparams):
+          raise ValueError("Missing some required params from {}".format(repr(rparams)))
+        self.verbosity = verbosity
+        self.oai_url = oai_url
+        self.output_folder = output_folder
+        self.node_writer = node_writer
+        if verbosity > 0:
+          print("OAI_Harvester: verbosity={}".format(verbosity))
+        self.oai_server = OAI_Server(oai_url=oai_url, encoding=server_encoding, verbosity=verbosity)
+        return
+
+    def harvest_items(self, set_spec=None, bib_vid=None, metadata_prefix='oai_dc', load_sets=1
+          ,max_count=0,verbosity=0):
+        me = 'harvest_items'
+        rparams = ['set_spec','bib_vid','metadata_prefix']
+        if not all(rparams):
+          raise ValueError("Missing some required params from {}".format(repr(rparams)))
+        bib_int = int(bib_vid[2:10])
+        d_records = self.oai_server.list_records(set_spec=set_spec ,metadata_prefix=metadata_prefix)
+        if d_records is None:
+          return
+        count_records = 0
+        count_mets = 0
+        bib_int += 1
+
+        for d_record in d_records :
+            count_records += 1
+            if count_mets > max_count:
+              break
+            # TODO: add code here later to examine some node_record ID values and compare with
+            # destination system (eg SobekCM resources) to decide to return an
+            # extant bib_vid or a new one. For now just increment bib_int part.
+            bib_vid = bib_vid[0:2] + str(bib_int).zfill(8) + '_00001'
+            if (self.node_writer(bib_vid=bib_vid, d_record=d_record, metadata_prefix=metadata_prefix
+                , output_folder=self.output_folder) == 1):
+              bib_int += 1
+              count_mets += 1
+        return
+    # end def harvest_items
+#end class OAI_Harvester
 
 def run_test_identifiers():
     url_usf = 'http://scholarcommons.usf.edu/do/oai/'

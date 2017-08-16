@@ -17,7 +17,11 @@ from oai_utils import OAI_Server, OAI_Harvester
 import datetime
 import shutil
 
-manioc_mets_format_str = """<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+# usf.py is 1 minute old - so nothing much is done!
+# The contents of this file started off based on a duplicate of either merrick.py or maybe manioc.py... 
+# Nothing much has changed from the base code... leaving it here as a placeholder...
+#
+usf_mets_format_str = """<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!--  METS/mods file designed to describe OAI-PMH (metadataPrefix oai_dc) extracted MetaData -->
 
 <METS:mets OBJID="{bib_vid}"
