@@ -448,7 +448,8 @@ def harvest_manioc(study=None,set_spec=None,bib_vid=None,max_count=0):
 
   print("run_test: CREATED Harvester {} for oai_url={}, set_spec={}.\nHarvesting items now..."
         .format(repr(harvester),oai_url,set_spec))
-  harvester.harvest_items(set_spec=set_spec,metadata_prefix=metadata_prefix,bib_vid=bib_vid,max_count=max_count)
+  harvester.harvest_items(set_spec=set_spec,metadata_prefix=metadata_prefix
+                          ,bib_vid=bib_vid,max_count=max_count)
   print("run_test: DONE!")
 
 print("STARTING!")

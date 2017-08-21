@@ -8,7 +8,8 @@ def get_path_modules(verbosity=0):
     print("Assigned path_modules='{}'".format(path_modules))
   return path_modules
 sys.path.append(get_path_modules())
-
+print("Sys.path={}".format(sys.path))
+sys.stdout.flush()
 import etl
 from lxml import etree
 from lxml.etree import tostring
@@ -362,7 +363,8 @@ the item.'''
     os.makedirs(output_folder_mets, exist_ok=True)
 
     filename_mets = output_folder_mets  + bib_vid + '.mets.xml'
-    print("{}:Made mets_str with len={}, writing to {}".format(me,len(mets_str),filename_mets))
+    print("{}:Made mets_str with len={}, writing to {}"
+          .format(me,len(mets_str),filename_mets))
     fn = filename_mets
     with open(fn, mode='w', encoding='utf-8') as outfile:
         outfile.write(mets_str)
@@ -388,10 +390,11 @@ def run_test():
   harvester = OAI_Harvester(oai_url=oai_url, server_encoding=encoding
     , node_writer=node_writer , output_folder=output_folder, verbosity=1 )
 
-  print("run_test: CREATED Harvester {}: Harvesting items now....".format(repr(harvester)))
+  print("run_test: CREATED Harvester {}: Harvesting items now..."
+        .format(repr(harvester)))
   max_count = 0
-  harvester.harvest_items(
-    set_spec=set_spec, metadata_prefix=metadata_prefix,bib_vid=bib_vid, max_count=max_count)
+  harvester.harvest_items( set_spec=set_spec, metadata_prefix=metadata_prefix
+                            ,bib_vid=bib_vid, max_count=max_count)
   print("run_test: DONE!")
 
 run_test()

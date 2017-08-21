@@ -1,3 +1,5 @@
+import sys, os, os.path, platform
+print("Using sys.path={}".format(sys.path))
 import requests
 from lxml import etree
 from lxml.etree import tostring
@@ -270,7 +272,7 @@ class OAI_Server(object):
             if verbosity > 0:
               print("{}:next url='{}'".format(me,url_list))
         # end while url_list is not None
-        return d_return
+        return
     # end def list_oai_nodes()
 
     ''' generator functions for specific oai lists
@@ -279,25 +281,25 @@ class OAI_Server(object):
         url_list = self.get_url_list_records(set_spec=set_spec, metadata_prefix=metadata_prefix)
         for d_record in self.list_nodes(url_list=url_list, verb='ListRecords'):
           yield d_record
-        return None
+        return
 
     def list_sets(self, metadata_prefix=None):
         url_list = self.get_url_list_sets(metadata_prefix=metadata_prefix)
         for d_record in self.list_nodes(url_list=url_list, verb='ListSets'):
             yield d_record
-        return None
+        return
 
     def list_identifiers(self, metadata_prefix=None):
         url_list = self.get_url_list_identifiers(metadata_prefix=metadata_prefix)
         for d_record in self.list_nodes(url_list=url_list, verb='ListIdentifiers'):
             yield d_record
-        return None
+        return
 
     def list_metadata_formats(self, metadata_prefix=None):
         url_list = self.get_url_list_metadata_formats()
         for d_record in self.list_nodes(url_list=url_list, verb='ListMetadataFormats'):
             yield d_record
-        return None
+        return
 
     def get_d_spec_name(self):
         d_set_name = {}
@@ -352,8 +354,8 @@ class OAI_Harvester():
         self.oai_server = OAI_Server(oai_url=oai_url, encoding=server_encoding, verbosity=verbosity)
         return
 
-    def harvest_items(self, set_spec=None, bib_vid=None, metadata_prefix='oai_dc', load_sets=1
-          ,max_count=0,verbosity=0):
+    def harvest_items(self, set_spec=None, bib_vid=None, metadata_prefix='oai_dc'
+          , load_sets=1 ,max_count=0,verbosity=0):
         me = 'harvest_items'
         rparams = ['set_spec','bib_vid','metadata_prefix']
         if not all(rparams):
@@ -368,7 +370,7 @@ class OAI_Harvester():
 
         for d_record in d_records :
             count_records += 1
-            if count_mets > max_count:
+            if count_mets > max_count and max_count > 0:
               break
             # TODO: add code here later to examine some node_record ID values and compare with
             # destination system (eg SobekCM resources) to decide to return an
