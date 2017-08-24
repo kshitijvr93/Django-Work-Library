@@ -1990,19 +1990,16 @@ ORDER BY i.deleted, g.BibID, i.vid
 
 # end def get_pii_reservations()
 
-# SET RUN PARAMS AND RUN
+# SET more RUN PARAMS AND RUN
 def exoldmets_run(elsevier_data_folder=None, temporal_subfolders=None):
     import shutil
     me='exoldmets_run'
     d_log = OrderedDict()
     d_params = OrderedDict()
-    input_folders = []
     xslt_sources = ['full', 'entry', 'tested']
     bibvid_prefix = 'LS'
     #elsevier_base = 'c:/rvp/elsevier'
 
-    for temporal_subfolder in temporal_subfolders:
-        input_folders.append('{}/output_ealdxml/{}'.format(elsevier_data_folder,temporal_subfolder))
 
     print("Running for xml files under input_folders={}".format(repr(input_folders)))
 
@@ -2200,26 +2197,22 @@ def run():
 
   #Provide
 
+  data_elsevier_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
+        data_relative_folder='data/elsevier/')
+
   cymd_start = '20170209'
   cymd_end = '20170824'
 
   # Set up temporal folders to search for the given cymd_start and cymd_end values
-  temporal_subfolders = []
+  input_folders = []
   days = etl.list_days(cymd_start, cymd_end)
   for cymd,dt_cymd in days:
     subfolder = ('{}/{}/{}/'.format(cymd[0:4],cymd[4:6],cymd[6:8]))
     print("Subfolder = '{}'".format(subfolder))
-    temporal_subfolders.append(subfolder)
-
-
-  print("TEST EXIT")
-  return 1
-
-  data_elsevier_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
-        data_relative_folder='data/elsevier/')
+    input_folders.append('{}/output_ealdxml/{}'.format(elsevier_data_folder,subfolder))
 
   log_filename, used_input_file_paths, pii_reservations = exoldmets_run(
-      data_elsevier_folder=data_elsevier_folder, temporal_subfolders=temporal_subfolders
+      data_elsevier_folder=data_elsevier_folder, input_folders=input_folders
   )
   if used_input_file_paths:
       print("Done with run using {} input files."
