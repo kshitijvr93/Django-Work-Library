@@ -1,6 +1,17 @@
 # ealdxml
 # This is python 3.5.1 code
 #
+#Get local pythonpath of modules from 'citrus' main project directory
+import sys, os, os.path, platform
+def get_path_modules(verbosity=0):
+  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+  path_user = os.environ.get(env_var)
+  path_modules = '{}/git/citrus/modules'.format(path_user)
+  if verbosity > 1:
+    print("Assigned path_modules='{}'".format(path_modules))
+  return path_modules
+sys.path.append(get_path_modules())
+
 import sys
 #import requests
 import urllib, urllib.parse
@@ -141,7 +152,7 @@ api-key,
 host-output-directory,
 out-cymd,
 
-and also given and an article search results page's tree, loop over the \
+and also given and an article search results page's xml tree of metadata, loop over the \
 tree's entries (usually 25 in number), where each entry is for a result article,
 
 (SEARCH OUTPUT FILES)
@@ -373,8 +384,8 @@ which articles for which to return metadata.
 def ealdxml(d_params, verbosity=0):
     #
     # VALIDATE d_params
-    # dt_start is the first orig-load-date that we want to collect
-    # dt_end is the last orig-load dates that we want to collect
+    # key 'cymd-start' has value of the first orig-load-date that we want to collect
+    # key 'cymd-end' has value of the last orig-load dates that we want to collect
     me = 'ealdxml'
     dt_day = datetime.datetime.strptime(d_params['cymd-start'],'%Y%m%d')
     dt_end = datetime.datetime.strptime(d_params['cymd-end'], '%Y%m%d')
@@ -391,8 +402,8 @@ def ealdxml(d_params, verbosity=0):
     d_batches = dict()
     d_params.update({"batches": d_batches})
 
-    n_batch = 1;
     d_batch = dict()
+    n_batch = 1
 
     while dt_day <= dt_end:
         day = dt_day.strftime('%Y%m%d')
@@ -400,15 +411,15 @@ def ealdxml(d_params, verbosity=0):
         d_params['cymd-bef'] = dt_bef.strftime('%Y%m%d')
         d_params['cymd-aft'] = dt_aft.strftime('%Y%m%d')
 
-        url_initial_search = get_elsevier_api_uf_query_url_by_dates(d_params, verbosity)
+        url_search = get_elsevier_api_uf_query_url_by_dates(d_params, verbosity)
 
         # Get results tree directly from the parse() method that does its own API
         # request for url_search_results
-        #print ("***** Making l_tree from API search URL={}".format(url_initial_search))
+        #print ("***** Making l_tree from API search URL={}".format(url_search))
 
         try:
             # Note: Per lxml docs, tree is an ElementTree object, and 'root' is an element object.
-            results_tree = etree.parse(url_initial_search)
+            results_tree = etree.parse(url_search)
         except Exception as e:
             print("{}: cannot parse initial search results. e='{}'".format(me,repr(e)))
             continue
@@ -430,18 +441,21 @@ def ealdxml(d_params, verbosity=0):
         d_ns = {key:value for key,value in dict(results_root.nsmap).items() if key is not None}
 
         #print ("***** using namespaces in dict={}".format(d_ns))
+        day = dt_day.strftime('%Y%m%d')
+        print ("\n***** {}:For DAY={}, Starting with batch={}, making initial results_tree for url_search = {}"
+               .format(me,day,str(n_batch), url_search))
         n_results = int(results_tree.find('.//opensearch:totalResults', namespaces=d_ns).text)
+        print("This day's NUMBER OF SEARCH RESULT ENTRIES = {} *****" .format( n_results))
         total_results += n_results
-        print("\n***** For DAY={},search_url='{}',RESULT ENTRIES = {} *****"
-              .format(dt_day.strftime('%Y%m%d'), url_initial_search, n_results))
 
         if n_results > 0:
             while (1==1):
                 batch_key = 'b'+ str(n_batch).zfill(5)
                 d_batches[batch_key] = d_batch
+                print ("Batch={}, Processing results_tree from url_search = {}".format(str(n_batch), url_search))
 
                 # PROCESS THE SEARCH RESULTS ENTRY DATA GIVEN IN results_tree FOR THIS BATCH OF ARTICLES
-                url_next_search, n_collected, n_excepted, l_retrievals = result_entries_collect(
+                url_search, n_collected, n_excepted, l_retrievals = result_entries_collect(
                     d_params, results_tree, d_batch)
                 entries_collected += n_collected
                 entries_excepted += n_excepted
@@ -451,11 +465,16 @@ def ealdxml(d_params, verbosity=0):
 
                 print ("Total entries_collected so far = {}, exceptions = {}"
                        .format(str(entries_collected), str(entries_excepted)))
-                if (not url_next_search or url_next_search ==''):
+                if (not url_search or url_search ==''):
                     break
-                print ("Batch={}, GOT url_next_search = {}".format(str(n_batch), url_next_search))
-                results_tree = etree.parse(url_next_search)
                 n_batch += 1
+                print ("Batch={}, Making results_tree for url_search = {}".format(str(n_batch), url_search))
+                try:
+                  results_tree = etree.parse(url_search)
+                except ParseError:
+                  print("{}: ERROR: Cannot parse results tree from result of url_search={}"
+                        .format(me,url_search))
+                  raise
                 # end loop over batches of this day's query
             # end n_results > 0
         #set up for next day's query
@@ -479,12 +498,16 @@ def ealdxml(d_params, verbosity=0):
 
 # PARAMETERS -- set these manually per run for now... but only cymd_start
 # and cymd_end would normally change.
+# See the current output directory and identify missing date ranges of interest
+# that you want to collect. Otherwise if you want to re-collect, possibly to get updates from
+# elsevier, set cymd_start and cymd_end to already-extand dates in the output structure.
+# CAUTION: files of those dates will be overwritten, so save older ones if desired.
 #
 cymd_start = '20161212'
 # cymd_end = '20160206'
+cymd_start = '20170209'
 # EALDXML - Here, we do only one day at a time...
-cymd_end = '20170209'
-
+cymd_end = '20170824'
 
 worker_threads = 1 # TODO
 # WARNING: now hardcoded, and later we may condsider to get these by programmatic introspection

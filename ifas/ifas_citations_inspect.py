@@ -1,7 +1,7 @@
 '''
 20170530 - Robert V. Phillips
 Python3 code
-This file holds methods used to inspect and report problematics IFAS citations
+This file holds methods used to inspect and report problematic IFAS citations
 that are received from the 28 IFAS units
 
 TEST INPUT FILE NOTES:
@@ -37,7 +37,7 @@ a greek character that fails to be exported as utf-8, it seems.
 That detail needs to be resolved.
 '''
 import sys, os, os.path, platform
-sys.path.append('{}/github/citrus/modules'.format(os.path.expanduser('~')))
+sys.path.append('{}/git/citrus/modules'.format(os.path.expanduser('~')))
 from pathlib import Path
 from etl import html_escape, has_digit, has_upper, make_home_relative_folder
 import xlrd, xlwt
