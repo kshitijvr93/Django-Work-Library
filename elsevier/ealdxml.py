@@ -518,7 +518,9 @@ agent_creator_software = "ealdxml-0.1" #may add attributes programming-language,
 api_key = 'd91051fb976425e3b5f00750cbd33d8b'
 verbosity = 0
 
-out_base_dir = 'c:/rvp/elsevier/output_ealdxml'
+out_base_dir = etl.data_folder(linux='/home/robert/', windows='U:/',
+      data_relative_folder='data/elsevier/output_ealdxml/')
+#out_base_dir = 'c:/rvp/elsevier/output_ealdxml'
 
 # create output directory root if it does not exist
 os.makedirs(out_base_dir, exist_ok=True)
