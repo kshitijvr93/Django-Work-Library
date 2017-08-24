@@ -15,6 +15,15 @@ from pathlib import Path
 import shutil
 import stat
 
+def list_days(cymd_start=None, cymd_end=None,fmt='%Y%m%d'):
+    dt_day = datetime.datetime.strptime(cymd_start, fmt )
+    dt_end = datetime.datetime.strptime(cymd_end, fmt )
+    day_delta = datetime.timedelta(days=1)
+    while dt_day <= dt_end:
+        cymd_day = dt_day.strftime('%Y%m%d')
+        yield cymd_day, dt_day
+        dt_day += day_delta
+    return
 
 '''
 NOTE: for the morning of 20170810, my WIN7 'update' on my UF PC had a 'HOME'
@@ -388,3 +397,11 @@ d_langcode_langtext = {
     'por':'Portuguese',
     'spa':'Spanish',
 }
+
+# TEST
+def test():
+    days = list_days(cymd_start='20170715', cymd_end='20170825')
+    for day,dt_day in days:
+        print("Got day={}".format(day))
+
+#test()

@@ -1,6 +1,19 @@
 # EXOLDMETS- Elsevier Xml Orig-Load-Date to Mets
 # tranform Elsevier Xml files created by ealdxml (Elsevier API (Orig) Load Date to XML),
 # to METS files
+#Get local pythonpath of modules from 'citrus' main project directory
+import sys, os, os.path, platform
+
+def get_path_modules(verbosity=0):
+  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+  path_user = os.environ.get(env_var)
+  path_modules = '{}/git/citrus/modules'.format(path_user)
+  if verbosity > 1:
+    print("Assigned path_modules='{}'".format(path_modules))
+  return path_modules
+sys.path.append(get_path_modules())
+
+import etl
 
 # First we have some xslt strings used to transform Elsevier documents for submission
 # to SobekCM Builder as mets files.
@@ -435,40 +448,48 @@ def get_d_xslt():
     return d_xslt
 
 '''
-# This is originally python 3.5.1 code
-# This is a notebook to develop and test program 'exoldmets'.
-#
-# Required input parameter 'input_base_directory' is an input directory name that is
-# the output directory (a git repo, actually) that hosts output data from
-# one or more separate 'ealdxml' program runs there. See notebook ealdxml for more details.
-# We look into subfolder hierarchy of YYYY/MM/DD directories to find at the lowest level
-# files named as 'pii_{}.xml'.format(pii), where pii is the publisher item identifier use by
-# Elsevier to label articles.
-#
-# The pii file may contain the root tag 'failure' in which case we skip that file.
-# That means that an attempt to retrieve the full text for that pii failed by precursor program
-# ealdxml.
-# Otherwise, the pii file has Elsevier 'full-text' metadata for an article.
-# We always use the pii to compare it to a 'pii_bibid' table that is keyed by
-# the complete list of elsevier pii articles already contained in UFDC.
-# One of the column values is bibid, with string values like
-# 'LS00012345_0001' if the pii of an input pii file is already in that
-# pii_bibid table, we preserve and honor the bibid value for it.
-#---- rest of the doc is under revision---
-# Another requirement is to have either an input argument (1) 'commit_hash'
-# or (2) 'commit_message' for example a string with secsz_start, a UTC time with
-# a Z suffix, to the resolution of time unit 'seconds', used to query git and find
-# a single commit_hash for it (if not found or more than 1 is found, it would be a
-# fatal error)
-#
-# Once we have a good commit hash, we invoke a git command to find all contained files
-# that were changed by that commit
-# (see url http://stackoverflow.com/questions/424071/how-to-list-all-the-files-in-a-commit)
-#  $ git show --pretty="format:" --name-only bd61ad98
-# We use only the pii files in that list that are also under the 'full' sub-folder
-# that comprise the list of input pii fiiles
-# to for exoldmets to process.
-#
+This is originally python 3.5.1 code
+This is program 'exoldmets'.
+
+Required input parameter 'input_base_directory' is an input directory name that is
+the output directory (a git repo, actually) with output data from
+one or more prior separate 'ealdxml' program runs.
+See UF elseveir program ealdxml.py for more details.
+
+We look into subfolder hierarchy of YYYY/MM/DD directories to find at the lowest level
+files named as 'pii_{}.xml'.format(pii), where pii is the publisher item identifier use by
+Elsevier to label articles.
+
+The pii file may contain the root tag 'failure' in which case we skip that file.
+That means that an attempt to retrieve the full text for that pii failed by the
+precursor program ealdxml. Such a file is preserved in case we want to review the errors.
+
+Otherwise, the pii file has Elsevier 'full-text' metadata for an article.
+
+Ealdxml will always use the pii to compare it to a 'pii_bibid' table that is keyed by
+the complete list of elsevier pii articles already contained in UFDC or the target SobekCM system
+for the METS files that ealdxml.py produces.
+
+In the pii_bibid table, one of the column values is bibid, with string values like
+'LS00012345_0001' if the pii of an input pii file is already in that
+pii_bibid table, we preserve and honor the bibid value for it.
+
+--- rest of this docstring is under revision---
+
+Another requirement is to have either an input argument (1) 'commit_hash'
+or (2) 'commit_message' for example a string with secsz_start, a UTC time with
+a Z suffix, to the resolution of time unit 'seconds', used to query git and find
+a single commit_hash for it (if not found or more than 1 is found, it would be a
+fatal error)
+
+Once we have a good commit hash, we invoke a git command to find all contained files
+that were changed by that commit
+(see url http://stackoverflow.com/questions/424071/how-to-list-all-the-files-in-a-commit)
+ $ git show --pretty="format:" --name-only bd61ad98
+We use only the pii files in that list that are also under the 'full' sub-folder
+that comprise the list of input pii fiiles
+to for exoldmets to process.
+
 '''
 from collections import OrderedDict
 import subprocess
@@ -508,7 +529,8 @@ class DBConnection():
         except Exception as e:
             print("Connection attempt FAILED with connection string:\n'{}',\ngot exception:\n'{}'"
                  .format(self.cxs,repr(e)))
-            raise ValueError("{}: Error. Cannot open connection.".format(repr(self)))
+            raise ValueError("{}: Error. Cannot open connection for {}. Does your user account have permissions?"
+                    .format(repr(self), self.cxs))
 
         if self.conn is None:
             raise ValueError(
@@ -547,42 +569,38 @@ class DBConnection():
 '''
 Program exoldmets inputs information from xml files.
 These input xml files are created by program ealdxml.
-The program ealdxml's input is from the Elsevier
-Full-Text API based on Search API results for queries for UF-Authored articles.
+The program ealdxml's input is from the Elsevier Full-Text API based on Search API
+results for queries for UF-Authored articles.
 
 Exoldmets does, for each xml input file:
 -- checks its PII value to see if a UF BibID has been assigned for it, and if
    not, it assigns the next unusued UF BibID  that is not associated with
-   a PII value.
---It also transforms each input xml file using XSLT to a mets.xml file that is
+   a PII value, based on an input parameter. Whoever runs this must be certain
+   that the input paramter identifies the first bibid to use and that subsequent ones are available.
+
+-- Program exoldmets also transforms each input xml file in stages.
+    First, in stage 1 it uses XSLT to create a precursor mets.xml file that is
   -- also augmented with sobek mets section
   -- and with article metadata transformed for sobekcm consumption by its Builder
      process.
+ -- and ...?
+ to produce the final mets.xml output file for each article.
 
-The design of output mets files is derived from observing sobekcm example mets
-files that are saved in "the resources directory" (archived by FALCE as of year
-2016, formerly FLVC), combined with notions of Elsevier API Search results and
-possibly secondary Elsevier Full Text retrieval api results,
-to represent 'journal articles' for UF Smathers.
+Except for the first two lines, the design of output mets files is derived
+from observing sobekcm example mets files that are saved in "the resources directory"
+archived by FALCE ,formerly FLVC, as of year 2016.
 
-Except: the first 2 lines for an output mets.xml file are inserted by the
+The design is also combined with notions of Elsevier API Search results and
+possibly secondary Elsevier Full Text retrieval api results, to represent
+'journal articles' for UF Smathers.
+
+The first 2 lines for an output mets.xml file are inserted by the
 builder on top of the orignal input mets files picked up by the builder.
-These files are meant to be picked up by the Sobek builder.
+These files are meant to be picked up by the Sobek builder, that is, 'ingested'
+by the SobekCM builder into the SobekCM database used by the SobekCM Web Server
+Application.
 
 Also see: http://www.loc.gov/standards/mods/v3/mods-userguide-examples.html#journal_article
-'''
-
-'''
-Method format_xslt_entry_to_mets()
-returns our xslt "formatted" transform to assist in producing output mets files
-based on input from the Elsevier Search API result's 'entry' object.
-
-The xslt document is 'formatted' because it includes not only standard xslt
-references to xsl variables, but it is a string template in the sense it
-also has python variables embedded that are expanded with a python
-string.format() call to produce an actual xslt transform file which is
-used to produce each article's final output mets.xml file.
-
 '''
 
 '''
@@ -1973,20 +1991,19 @@ ORDER BY i.deleted, g.BibID, i.vid
 # end def get_pii_reservations()
 
 # SET RUN PARAMS AND RUN
-def exoldmets_run():
+def exoldmets_run(elsevier_data_folder=None, temporal_subfolders=None):
     import shutil
     me='exoldmets_run'
     d_log = OrderedDict()
     d_params = OrderedDict()
+    input_folders = []
     xslt_sources = ['full', 'entry', 'tested']
     bibvid_prefix = 'LS'
-    elsevier_base = 'c:/rvp/elsevier'
+    #elsevier_base = 'c:/rvp/elsevier'
 
-    #input_subfolders = ['2016','2015','2014','2015','2014','2013','2012']
-    input_subfolders = [ str(i) for i in range(2000,2008)]
-    input_folders = []
-    for input_subfolder in input_subfolders:
-        input_folders.append('{}/output_ealdxml/{}'.format(elsevier_base,input_subfolder))
+    for temporal_subfolder in temporal_subfolders:
+        input_folders.append('{}/output_ealdxml/{}'.format(elsevier_data_folder,temporal_subfolder))
+
     print("Running for xml files under input_folders={}".format(repr(input_folders)))
 
     skip_extant = False #skip creating new METS file if the PII is exant in the dict_pii
@@ -2030,7 +2047,7 @@ def exoldmets_run():
     os.makedirs(output_base_folder, exist_ok=True)
     shutil.rmtree(output_base_folder)
     os.makedirs(output_base_folder, exist_ok=True)
-    
+
     os.makedirs(output_logs_folder, exist_ok=True)
 
     d_xslt = get_d_xslt()
@@ -2165,19 +2182,53 @@ def exoldmets_run():
 
     # Finally, output the d_log's xml tree at e_root.
     log_filename = '{}/{}.xml'.format(output_logs_folder,secsz_str)
-    print("exoldmets_run: writing log_filename='{}".format(log_filename))
+    print("{}: writing log_filename='{}".format(me,log_filename))
     with open(log_filename, 'wb') as outfile:
         outfile.write(etree.tostring(e_root, pretty_print=True))
     print("{}: output_folder={}. Now returning...".format(me,output_base_folder))
     return log_filename, all_input_file_paths, pii_reservations
 #end def exoldmets_run()
+#segment start is a list of of integers, as is segment_end
+#both have equal number of integers
+#Segment_end must be numerically greater than segment_start
 
-# RUN - Create METS files from input...
-log_filename, input_file_paths, pii_reservations = exoldmets_run()
-if input_file_paths:
-    print("Done with run using {} input files."
-          .format(len(input_file_paths)))
 
-print("See logfile={}".format(log_filename))
-utc_now = datetime.datetime.utcnow()
-print ("\nDone at utc_now={}\n".format(utc_now))
+#MAIN  PARAMETER SETTINGS AND RUN
+def run():
+  #RUN - Create METS files from input...
+  #input_subfolders = ['2016','2015','2014','2015','2014','2013','2012']
+
+  #Provide
+
+  cymd_start = '20170209'
+  cymd_end = '20170824'
+
+  # Set up temporal folders to search for the given cymd_start and cymd_end values
+  temporal_subfolders = []
+  days = etl.list_days(cymd_start, cymd_end)
+  for cymd,dt_cymd in days:
+    subfolder = ('{}/{}/{}/'.format(cymd[0:4],cymd[4:6],cymd[6:8]))
+    print("Subfolder = '{}'".format(subfolder))
+    temporal_subfolders.append(subfolder)
+
+
+  print("TEST EXIT")
+  return 1
+
+  data_elsevier_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
+        data_relative_folder='data/elsevier/')
+
+  log_filename, used_input_file_paths, pii_reservations = exoldmets_run(
+      data_elsevier_folder=data_elsevier_folder, temporal_subfolders=temporal_subfolders
+  )
+  if used_input_file_paths:
+      print("Done with run using {} input files."
+            .format(len(input_file_paths)))
+
+  print("See logfile={}".format(log_filename))
+  utc_now = datetime.datetime.utcnow()
+  print ("\nDone at utc_now={}\n".format(utc_now))
+  return
+
+#run
+run()
