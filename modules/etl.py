@@ -15,7 +15,7 @@ from pathlib import Path
 import shutil
 import stat
 
-def list_days(cymd_start=None, cymd_end=None,fmt='%Y%m%d'):
+def sequence_days(cymd_start=None, cymd_end=None,fmt='%Y%m%d'):
     dt_day = datetime.datetime.strptime(cymd_start, fmt )
     dt_end = datetime.datetime.strptime(cymd_end, fmt )
     day_delta = datetime.timedelta(days=1)
@@ -400,7 +400,7 @@ d_langcode_langtext = {
 
 # TEST
 def test():
-    days = list_days(cymd_start='20170715', cymd_end='20170825')
+    days = sequence_days(cymd_start='20170715', cymd_end='20170825')
     for day,dt_day in days:
         print("Got day={}".format(day))
 

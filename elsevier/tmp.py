@@ -1126,9 +1126,7 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
 
     input_file_basename = input_file_name.split('\\')[-1]
 
-    print("{}:using input_file_basename={}".format(me,input_file_basename))
-    sys.stdout.flush
-
+    #print("\t*** using input_file_basename={},objid={}".format(input_file_basename,bibvid))
     uf_bibid = bibvid[0:10]
     #Skip the 10th character the '_'
     vid = bibvid[11:]
@@ -1148,11 +1146,8 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
     # return early if the input file had a <failure> sentinel value, planted
     # by precursor program ealdxml()
     if input_xml_str[0:9] == '<failure>':
-        msg =("Input_file_name={}, full API retrieval was a '<failure>', with bibid={}"
+        log_messages.append("Input_file_name={}, full API retrieval was a '<failure>', with bibid={}"
              .format(input_file_name,uf_bibid))
-        log_messages.append(msg)
-        print("{}:{}".format(me,msg))
-        sys.stdout.flush
         mets_failure = 1
         return log_messages, sha1_mets, mets_failure
 
@@ -1922,12 +1917,8 @@ use [silodb];
 '''
 
 def get_pii_reservations_from_silodb():
-    me = "get_pii_reservations_from_silodb"
-    print("{}: Connecting to SQLEXPRESS database 'silodb'".format(me))
-    sys.stdout.flush
-    db_conn = DBConnection(server=r'.\SQLEXPRESS', db='silodb')
-    if db_conn is None:
-      raise ValueError("db_conn is None")
+    me = "get_pii_reservations"
+    dict_conn = DBConnection(server=r'.\SQLEXPRESS', db='silodb')
 
     # if not prod_conn:
     #    raise ValueError("{}: no production connection given.".format(me))
@@ -2046,8 +2037,7 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
     xslt_sources = ['full', 'entry', 'tested']
     bibvid_prefix = 'LS'
 
-    print("{}:Running for xml files under {} input_folders".format(me,len(input_folders)))
-    sys.stdout.flush
+    print("{}:Running for xml files under input_folders={}".format(me,repr(input_folders)))
 
     skip_extant = False #skip creating new METS file if the PII is exant in the dict_pii
 
@@ -2102,14 +2092,12 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
     # NOTE: dict_conn is not used yet pending more testing.
     # Instead we use local sqlexpress, db silodb, rvp_bibinfo, hard coded now.
 
-    if env == 'prod' or 1 ==1 : # Later - only do this in PRODUCTION environment
+    if env == 'prod': # PRODUCTION environment
         input_files_low_index  = None
         input_files_high_index = None
         # Authoritative server to link PII values to BIBVIDs
         # dict_conn = DBConnection(server='lib-sobekdb\\sobekCM',db='SobekDB')
         # REVIEW: make sure this db has the most recent bibids before running env of prod
-        print("{}: Connecting to SQLEXPRESS database 'silodb'".format(me))
-        sys.stdout.flush
         dict_conn = DBConnection(server=r'.\SQLEXPRESS', db='silodb')
 
         #target_conn = dict_conn
@@ -2142,10 +2130,8 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
     # Call with arg prod conn later
     print("{}: Got env={}, dict_conn is {}. dict_conn.server={}, dict_conn.db={}, cxs='{}'. Done."
           .format(me,env, repr(dict_conn), dict_conn.server, dict_conn.db, dict_conn.cxs))
-    sys.stdout.flush
 
     print("{}: Getting pii reservations...".format(me))
-    sys.stdout.flush
     #pii_reservations = get_pii_reservations(dict_conn)
     pii_reservations = get_pii_reservations_from_silodb()
 
@@ -2187,14 +2173,9 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
         # slower than using a git  repo to store and detect file changes, though not terribly slow
 
         input_file_paths = list(input_folder_path.glob('**/pii_*.xml'))
-        print("{}: processing {} pii*xml input files under folder {}"
-              .format(me, len(input_file_paths), input_folder))
-        sys.stdout.flush
-
         # use ealdxml's filenames
         print("Processing input_folder={} with {} study files"
-             .format(repr(input_folder),len(input_file_paths)))
-        sys.stdout.flush
+             .format(input_folder,len(input_file_paths)))
         #if input_files_low_index is not None:
             # WE ARE TESTING: Use only a portion of the total input file list...
         #    lif = len(input_file_paths)
@@ -2204,7 +2185,6 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
 
         print("{}:calling articles_xml_to_mets for {} files in input folder={} with skip_extant='{}'"
               .format(me, len(input_file_paths), input_folder, repr(skip_extant)))
-        sys.stdout.flush
 
         # Process all input xml files in the input_file_paths
         year_log_source_xml_messages, bibvid = articles_xml_to_mets(
@@ -2258,22 +2238,13 @@ def run():
 
   cymd_start = '20170209'
   cymd_end = '20170824'
-  cymd_end = '20170210'
-
   input_folders = []
   input_folder_base = '{}/output_ealdxml/'.format(data_elsevier_folder)
   days = etl.sequence_days(cymd_start, cymd_end)
-
   for cymd, dt_cymd in days:
     subfolder = ('{}/{}/{}/'.format(cymd[0:4],cymd[4:6],cymd[6:8]))
-    print("One subfolder is = '{}'".format(subfolder))
+    print("Subfolder = '{}'".format(subfolder))
     input_folders.append('{}{}'.format(input_folder_base,subfolder))
-
-  print("Will process files among {} subfolders from {} to {}"
-        .format(len(input_folders),cymd_start,cymd_end))
-
-  sys.stdout.flush
-
 
     # Select a source of input xml, also a specific  xslt transform is implied
     # see def exoldmets_run and see comments on database info on bibvids.
@@ -2285,7 +2256,7 @@ def run():
 
   if used_input_file_paths:
       print("Done with exoldmets() run using {} input files from {} to {} under{}."
-        .format(len(used_input_file_paths),cymd_start,cymd_end,data_elsevier_folder))
+            .format(len(input_file_paths),cymd_start,cymd_end,data_elsevier_folder))
 
   print("See logfile={}".format(log_filename))
   utc_now = datetime.datetime.utcnow()
