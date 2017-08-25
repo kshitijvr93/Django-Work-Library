@@ -427,8 +427,8 @@ def ealdxml(d_params, verbosity=0):
         # print("RESULTS XML={}".format(etree.tostring(results_root, pretty_print=True)))
 
         # Below we just use the source document's namespace definitions (may take a bit more time
-        # than setting it as a constant here by copy-pasting a sample set of namespaces - but some xml files
-        # on input may vary, so why take a chance?)
+        # than setting it as a constant here by copy-pasting a sample set of namespaces -
+        # but some xml files on input may vary, so why take a chance?)
 
         # Note: The root element, though it may have attribute-looking xmlns map assignments, they are
         # xml qualifiers, and not attributes, so we must use root.nsmap to get them, rather than root.attrib.

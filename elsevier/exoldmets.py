@@ -1248,7 +1248,9 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
     # Create METS output directory root if it does not exist
     # The SobekCM Builder, which is meant to consume this output file, seems to prefer (works faster)
     # if you put the xml file into its own directory also named by the bib_vid.
-    out_dir_bib = '{}/{}_{}'.format(out_dir_root, uf_bibid, vid)
+    # Rather, just named by the bib is adequate.
+    # out_dir_bib = '{}/{}_{}'.format(out_dir_root, uf_bibid, vid)
+    out_dir_bib = '{}/{}'.format(out_dir_root, uf_bibid)
     ### OUTPUT THE bib's METS.XML FILE
     out_bib_fn = '{}/{}_{}.mets.xml'.format(out_dir_bib, uf_bibid, vid)
     os.makedirs(out_dir_bib, exist_ok=True)
@@ -2074,9 +2076,9 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
 
     #Reuse the 'source' name to also label output directory for results
     # Consider to rather make these relative paths into arguments
-    output_app_folder = '{}/output_exoldmets'.format(data_elsevier_folder)
-    output_base_folder = '{}/staging'.format(output_app_folder)
-    output_logs_folder = '{}/logs'.format(output_app_folder)
+    output_app_folder = '{}output_exoldmets/'.format(data_elsevier_folder)
+    output_base_folder = '{}staging/'.format(output_app_folder)
+    output_logs_folder = '{}logs/'.format(output_app_folder)
 
     # NOTE: The staging directory and contents must be completely removed
     # to preserve the integrity of new bibvids to be generated on this run.
@@ -2086,7 +2088,6 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
     # databse by the SobekCM Builder. Maybe they failed or we did not even try to load them.
     os.makedirs(output_base_folder, exist_ok=True)
     shutil.rmtree(output_base_folder)
-    os.makedirs(output_base_folder, exist_ok=True)
 
     os.makedirs(output_logs_folder, exist_ok=True)
 
@@ -2258,7 +2259,6 @@ def run():
 
   cymd_start = '20170209'
   cymd_end = '20170824'
-  cymd_end = '20170210'
 
   input_folders = []
   input_folder_base = '{}/output_ealdxml/'.format(data_elsevier_folder)

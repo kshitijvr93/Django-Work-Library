@@ -22,7 +22,6 @@ import hashlib
 from lxml import etree
 from lxml.etree import tostring
 from pathlib import Path
-import xml2rdb_configs.mappers
 import etl
 
 '''
@@ -190,12 +189,13 @@ dictionary, d_row, to return to the parent node for its use.
 
 def node_visit_output(node=None, node_index=None, d_namespaces=None,
     d_node_params=None, od_rel_datacolumns=None, od_parent_index=None,
-    od_relation=None, output_folder=None,d_xml_params=None):
+    od_relation=None, output_folder=None,d_xml_params=None,verbosity=0):
 
     me = 'node_visit_output()'
     verbose = 0
-    msg = ("{}:START: node.tag={}, node_index={}".format(me, node.tag, node_index))
-    if 1 == 1:
+    if verbosity > 0:
+        msg = ("{}:START: verbosity={},node.tag={}, node_index={}"
+               .format(me, verbosity, node.tag, node_index))
         print(msg)
     log_messages = []
 
@@ -308,7 +308,8 @@ def node_visit_output(node=None, node_index=None, d_namespaces=None,
         for xpath, d_child_node_params in d_child_xpaths.items():
             #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_node_params)))
             children = node.findall(xpath, d_namespaces )
-            print("{}:for xpath={} found {} children".format(me,xpath,len(children)))
+            if (verbosity > 0):
+                print("{}:for xpath={} found {} children".format(me,xpath,len(children)))
             # TODO:Future: may add a new argument for caller-object that child may use to accumulate, figure,
             # summary statistic
             d_child_row = None
@@ -321,7 +322,8 @@ def node_visit_output(node=None, node_index=None, d_namespaces=None,
                     , od_relation=od_relation
                     , od_parent_index=od_child_parent_index
                     , output_folder=output_folder
-                    , d_xml_params = d_xml_params)
+                    , d_xml_params = d_xml_params
+                    , verbosity=verbosity)
                 # Finished visiting a child
             # Finished one or more children with same xpath
             if d_child_row is not None and len(d_child_row) > 0:
@@ -554,6 +556,7 @@ def xml_doc_rdb(
         ,node_index=node_index
         ,node=doc_root
         ,d_xml_params=d_xml_params
+        ,verbosity=verbosity
         )
     return log_messages
 # end def xml_doc_rdb():
@@ -576,7 +579,7 @@ def xml_paths_rdb(
     , use_db=None
     , file_count_first=0
     , file_count_span=1
-    , verbosity=1
+    , verbosity=0
     , d_xml_params=None
     ):
     me = "xml_paths_rdb"
@@ -608,7 +611,8 @@ def xml_paths_rdb(
     log_messages = []
     msg = ("{}:START with file_count_first={} among total file count={}"
            .format(me, file_count_first, len(input_path_list)))
-    print(msg)
+    if (verbosity > 0):
+        print(msg)
 
     max_input_files = 0
     count_input_file_failures = 0
@@ -623,10 +627,10 @@ def xml_paths_rdb(
     # get the file_count among the input_path_list.
     for i, path in enumerate(input_path_list):
         if (max_input_files > 0) and ( i >= max_input_files):
-            # This clause used for testing only...
-            msg =  "Max number of {} files processed. Breaking.".format(i)
-            print('{}:msg'.format(me,msg))
-            log_messages.append(msg)
+            if verbosity > 0:
+              # This clause used for testing only...
+              msg =  "Max number of {} files processed. Breaking.".format(i)
+              log_messages.append(msg)
             break
 
         file_count = file_count_first + i + 1
@@ -672,8 +676,8 @@ def xml_paths_rdb(
         #Create an internal root document node to manage database outputs
         doc_root = etree.Element("doc")
         doc_root.attrib['file_name'] = input_file_name
-        msg = ("{}:calling xml_doc_rdb with doc_root.tag={}, file_count={},"
-          .format(me,doc_root.tag, file_count))
+        msg = ("{}:calling xml_doc_rdb with doc_root.tag={}, file_count={},verbosity={}"
+          .format(me,doc_root.tag, file_count,verbosity))
 
         print("{}:{}".format(me,msg))
 
@@ -808,37 +812,34 @@ import os
 from collections import OrderedDict
 '''
 xml2rdb is the main method.
+
 It accepts three main groups of input parameters:
 (1) to define the  group of input xml files to read
 (2) to define the SQL schema for tables and columns to be outputted
 (3) to define the mining map that associates table and column names with
     target nodes (designated by child xpath expressions) and their values in
     each inputted xml file.
+
+If folder_output_base is None, then
+the output folder is defined herein, but it may be promoted to a required argument soon.
+
 These parameters may be re-grouped later into fewer parameters to more plainly separate
 the three groups, each which contains sub-parameters for its group.
 '''
-def xml2rdb(folders_base=None, input_path_list=None,
+def xml2rdb( input_path_list=None,
             folder_output_base=None,
             doc_root_xpath=None, rel_prefix=None,
             doc_rel_name=None, use_db=None,
             d_node_params=None, od_rel_datacolumns=None,
             d_params=None, file_count_first=0, file_count_span=1,
-            d_xml_params=None):
+            d_xml_params=None,verbosity=0):
     me = "xml2rdb"
     utc_now = datetime.datetime.utcnow()
     utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
     print("{}: STARTING at {}".format(me, utc_secs_z))
 
-    if not ( 1 == 1
-        #and folders_base and input_path_list
-        #and doc_root_xpath and use_db and doc_rel_name
-            #and (rel_prefix or rel_prefix == '')
-            #and d_node_params and od_rel_datacolumns
-            #/and d_params
-            and d_xml_params is not None
-            ):
-            print ("bad args 1")
-    if not (folders_base and input_path_list
+    if not (input_path_list
             and (rel_prefix or rel_prefix == '')
             and doc_root_xpath and use_db and doc_rel_name
             and d_node_params and od_rel_datacolumns
@@ -851,10 +852,8 @@ def xml2rdb(folders_base=None, input_path_list=None,
 
     if folder_output_base is None:
         # folder_output_base = input_folders + me + '/'
-        folder_output_base = etl.data_folder(
-            linux = "/home/robert/data/",
-            windows = "U:/data/",
-            data_relative_folder='outputs/xml2rdb')
+        folder_output_base = etl.data_folder(linux="/home/robert/", windows="U:/",
+            data_relative_folder='data/outputs/xml2rdb')
 
     d_params['folder-output-base'] = folder_output_base
     os.makedirs(folder_output_base, exist_ok=True)
@@ -866,10 +865,12 @@ def xml2rdb(folders_base=None, input_path_list=None,
     # The output_folder encodes start time of run in its name.
     output_folder_secsz = '{}/{}'.format(folder_output_base, secsz_start)
     os.makedirs(output_folder_secsz, exist_ok=True)
-    lil = len(input_path_list)
+    print("Using output folder={}"
+          .format(output_folder_secsz))
 
-    print("Using output folder={} total real file count={}"
-          .format(output_folder_secsz, lil))
+    lil = len(input_path_list)
+    print("Using total real input file count={}"
+          .format(lil))
 
     if file_count_first is None:
         input_low_index = 0
@@ -883,12 +884,11 @@ def xml2rdb(folders_base=None, input_path_list=None,
         input_high_index = file_count_first + file_count_span
 
     # Use a slice of the total input file list, which may also be the full list.
-
     index_max = lil if input_high_index > lil else input_high_index
     sliced_input_path_list = input_path_list[input_low_index:index_max]
     #output_name_suffix="_{}_{}".format(input_low_index,index_max)
 
-    os.makedirs(output_folder_secsz, exist_ok=True)
+    #os.makedirs(output_folder_secsz, exist_ok=True)
     skip_extant = False
     d_params.update({
         'secsz-1-start': secsz_start
@@ -901,9 +901,9 @@ def xml2rdb(folders_base=None, input_path_list=None,
 
     #### Open all the output files for all the relations... ####
 
-    ################# READ THE INPUT, AND COLLECT AND OUPUT STATS ################
+    ################# READ THE INPUT, AND COLLECT AND OUTPUT STATS ################
 
-    count_input_file_failures = (xml_paths_rdb(
+    count_input_file_failures = xml_paths_rdb(
         input_path_list=sliced_input_path_list
       , doc_root_xpath=doc_root_xpath
       , rel_prefix = rel_prefix
@@ -915,10 +915,11 @@ def xml2rdb(folders_base=None, input_path_list=None,
       , file_count_first=file_count_first
       , file_count_span=file_count_span
       #, output_name_suffix=output_name_suffix
-      , verbosity=0
+      , verbosity=verbosity
       , d_xml_params=d_xml_params
-    ))
+    )
     d_log['run_parameters'].update({"count_input_file_failures": count_input_file_failures})
+
     # Put d_log, logfile dict info, into xml tree,  and then OUTPUT logfile info
     # as an xml tree.
     secsz_finish = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%SZ")
@@ -963,13 +964,15 @@ study = 'orcid'
 study = 'scopus'
 
 # KEEP ONLY ONE LINE NEXT: Study Selection
-study = 'merrick_oai_set'
+study = 'elsevier'
 
 file_count_first = 0
 file_count_span = 0
 use_db = 'silodb'
 
-folders_base = etl.home_folder_name() + '/'
+#folders_base = etl.home_folder_name() + '/'
+data_elsevier_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
+        data_relative_folder='data/elsevier/')
 
 d_xml_params = {}
 # Part of a deprecation... now only marcxml uses this and passes it to xml2rdb,
@@ -981,7 +984,7 @@ if study == 'crafa':
     # Note- input folder is/was populated via program crafatxml
     rel_prefix = 'y2016_'
     # All files under the input folder selected for input_path_list below will be used as input
-    input_folder = '{}/output_crafatxml/doi/2016'.format(folders_base)
+    input_folder = '{}/output_crafatxml/doi/2016'.format(input_folders_base)
     input_folder = etl.home_relative_folder('/output_crafatxml/doi/2016')
     doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns
     #doc_root_xpath = './crossref-api-filter-aff-UF' #this matches root node assignment in crafatxml program
@@ -998,11 +1001,13 @@ elif study in [ 'ccila' ] : #ccila is cuban collection i? latin america
     import xml2rdb_configs.marcxml as config
     rel_prefix = 'ccila_'
 
-    in_folder_name = etl.data_folder(linux='/home/robert/git/outputs/marcxml/',
-        windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
+    # This is where the precursor program marc2xml leaves its marcxml data for ccila UCRiverside
+    # items
+    in_folder_name = etl.data_folder(linux='/home/robert/',
+        windows='U:/', data_relative_folder='data/outputs/marcxml/UCRiverside/')
 
-    folder_output_base = etl.data_folder(linux='/home/robert/git/outputs/rdb/',
-        windows='c:/', data_relative_folder='test_sql')
+    folder_output_base = etl.data_folder(linux='/home/robert/',
+        windows='U:/', data_relative_folder='data/outputs/xml2rdb/UCRiverside')
 
     input_folder = in_folder_name
     input_folders = []
@@ -1026,7 +1031,7 @@ elif study == 'crawd': # CrossRefApi Works by Doi-list
     # Note- input folder is/was populated via program crawdxml- where crawdxml gets Works Dois MD
     # for 'new' uf articles as found by diffing a week to week SCOPUS harvest of UF-affiliated dois/articles
     rel_prefix = 'crawd_' # maybe try wd_ as a prefix sometime
-    input_folder = '{}/output_crawdxml/doi'.format(folders_base)
+    input_folder = '{}/output_crawdxml/doi'.format(data_elsevier_folder)
     doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns
     doc_root_xpath = './response/message'
     input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
@@ -1041,7 +1046,7 @@ elif study == 'crafd': # CrossRefApi filter by D for deposit date (and it select
     # Note- input folder is/was populated via program crafdtxml
     rel_prefix = 'crafd_'
     # NOTE LIMIT INPUT FOLDER TO YEAR 2016 for now...
-    input_folder = '{}/output_crafdtxml/doi/2016'.format(folders_base)
+    input_folder = '{}/output_crafdtxml/doi/2016'.format(data_elsevier_folder)
     doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns, set below.
     #Next doc_root_xpath is set by the harvester crafdtxml so see its code.
     doc_root_xpath = './crossref-api-filter-date-UF/message'
@@ -1055,26 +1060,18 @@ elif study == 'crafd': # CrossRefApi filter by D for deposit date (and it select
 
 elif study == 'elsevier':
     import xml2rdb_configs.elsevier as config
-    if env == 'uf':
-        #UF Machine
-        file_count_first = 0
-        # file_count_span of 0 means process all input files under input
-        # folder of file_count_first index or greater
-        file_count_span = 0
-    elif env == 'home':
-        #HOME - Linux machine - test run with span 1000
-        file_count_first=0
-        file_count_span=1000
-    else:
-         raise Exception("Invalid env={}".env)
+
+    file_count_first = 0
+    file_count_span = 0
     input_folders = []
     input_path_glob = '**/pii_*.xml'
 
-    # Set input folders to 'orig load date' years that might possibly have items showing
-    # cover_year 2016
     rel_prefix='e2016b_'
+    # Set input folders to 'orig load date' to capture recent years through 20170824,
+    # that is, the latest elsevier harvest to date.
+    rel_prefix='e2017a_'
     for year in ['2015','2016', '2017']:
-        input_folders.append('{}/output_ealdxml/{}/'.format(folders_base,year))
+        input_folders.append('{}/output_ealdxml/{}/'.format(data_elsevier_folder,year))
 
     doc_rel_name = 'doc'
     doc_root_xpath = './{*}full-text-retrieval-response'
@@ -1083,7 +1080,6 @@ elif study == 'elsevier':
     od_rel_datacolumns, d_node_params = config.sql_mining_params()
 elif study == 'scopus':
     import xml2rdb_configs.scopus as config
-    folders_base = 'c:/rvp/elsevier'
     rel_prefix = 'h5_' #h5 is harvest 5 of 20161202
     rel_prefix = 'h6_' #h6 is harvst 6 of 20161210 saturday
     rel_prefix = 'h7_' #h7 is 20161216 friday
@@ -1091,11 +1087,11 @@ elif study == 'scopus':
     rel_prefix = 'h9_' #h9 is 20161230 friday - not run
 
     # Year 2016 input
-    input_folder = '{}/output_satxml/2016/doi'.format(folders_base)
+    input_folder = '{}/output_satxml/2016/doi'.format(data_elsevier_folder)
     rel_prefix = 'h2016_10_' #h2016 is for query pubyear 2016, 10 is for harvest 10 done on 20170106 friday
 
     #Year 2017 input                                                   # Year 2016 input
-    #input_folder = '{}/output_satxml/2017/doi'.format(folders_base)
+    #input_folder = '{}/output_satxml/2017/doi'.format(data_elsevier_folder)
     #rel_prefix = 'h2017_10_' #2016 for query pubyear 2016 harvest h10 is 20170106 friday
 
     input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
@@ -1109,18 +1105,18 @@ elif study == 'oadoi':
     # for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
     # for 20170308 run using dois from crafd_crawd for UF year 2016
 
-    input_folder =  folders_base + "/outputs/oadoi/"
+    input_folder =  data_elsevier_folder + "/outputs/oadoi/"
     input_folders = [input_folder]
     input_path_glob = '**/oadoi_*.xml'
     input_path_list = list(Path(input_folder).glob(input_path_glob))
 
     print("Study oadoi, input folder={}, input path glob={}, N input files={},"
-          " folders_base = {}"
-          .format(input_folder,input_path_glob,len(input_path_list),folders_base))
+          " data_elsevier_folder = {}"
+          .format(input_folder,input_path_glob,len(input_path_list),data_elsevier_folder))
 
     # rel_prefix 'oa2016_' is used because the oaidoi precursor process to produce the dois input list
     # was run on scopus dois fo/der uf authors from year 2016... should probably change prefix to oa_scopus2016_
-    # input_folder = '{}/output_oadoi/2016-01-10T12-54-23Z'.format(folders_base)
+    # input_folder = '{}/output_oadoi/2016-01-10T12-54-23Z'.format(data_elsevier_folder)
     rel_prefix = 'oa_cruf2016_'
     doc_rel_name = 'oadoi'
     doc_root_xpath = './{*}entry'
@@ -1129,9 +1125,9 @@ elif study == 'oadoi':
 elif study == 'orcid':
     import xml2rdb_configs.orcid as config
     #for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
-    #input_folder = '{}/output_oadoi/2017-01-10T12-54-23Z'.format(folders_base)
+    #input_folder = '{}/output_oadoi/2017-01-10T12-54-23Z'.format(data_elsevier_folder)
     # for 20170308 run using dois from crafd_crawd for UF year 2016
-    input_folder = '{}/output_orpubtxml'.format(folders_base)
+    input_folder = '{}/output_orpubtxml'.format(data_elsevier_folder)
     input_folders = [ input_folder]
     input_path_glob = '**/orcid_*.xml'
     input_path_list = list(Path(input_folder).glob(input_path_glob))
@@ -1207,7 +1203,8 @@ if (input_folders is not None and input_path_glob is not None):
         print("Using input_folder='{}'\n".format(input_folder))
         input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
 
-# Put single input folder into this list so param 'input-folders' is logged properly.
+
+# If input_folders not defined in a study, define it by putting the single input folder into this list
 if input_folders is None:
     input_folders = []
     input_folders.append(input_folder)
@@ -1227,7 +1224,7 @@ d_params.update({
     ,'input-files-count': str(len(input_path_list))
     ,'file-count-first': file_count_first
     ,'file-count-span': file_count_span
-    ,'folders_base': folders_base
+    ,'folders_base': data_elsevier_folder
     ,'doc-rel-name': doc_rel_name
     ,'doc-root-xpath': doc_root_xpath
     ,'use-db': use_db
@@ -1237,7 +1234,7 @@ d_params.update({
 
 # RUN the analysis and collect stats
 log_filename, pretty_log = xml2rdb(
-    folders_base=folders_base,input_path_list=input_path_list,
+    folders_base=data_elsevier_folder,input_path_list=input_path_list,
     folder_output_base=folder_output_base,
     doc_root_xpath=doc_root_xpath, rel_prefix=rel_prefix,
     doc_rel_name=doc_rel_name, use_db=use_db,

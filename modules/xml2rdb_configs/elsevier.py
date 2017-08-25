@@ -1,4 +1,16 @@
 #
+import sys, os, os.path, platform
+def get_path_modules(verbosity=0):
+  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+  path_user = os.environ.get(env_var)
+  path_modules = '{}/git/citrus/modules'.format(path_user)
+  if verbosity > 1:
+    print("Assigned path_modules='{}'".format(path_modules))
+  return path_modules
+sys.path.append(get_path_modules())
+
+from collections import OrderedDict
+import mappers
 '''
 Method sql_mining_params_elsevier
 
@@ -14,7 +26,6 @@ The functionality of doing custom configuration can move to using configuration 
 assist users who are not familiar with Python.
 '''
 def sql_mining_params():
-
     '''
     d_nodeparams is a dictionary hierarchy of parameters for a call to node_visit_output().
 
@@ -197,7 +208,7 @@ def sql_mining_params():
             ".//ce:author":{
                 'db_name':'author', 'multiple':1,
                 'attrib_column' : {'id':'id', 'last_first_name':'last_first_name'},
-                'column_function' : {'last_first_name':last_first_name},
+                'column_function' : {'last_first_name':mappers.last_first_name},
 
                 'child_xpaths':{
                     './/ce:given-name':{
@@ -230,7 +241,7 @@ def sql_mining_params():
                     './/ce:textfn':{
                         'multiple':0,
                         'attrib_column':{'text':'name', 'uf':'uf'},
-                        'column_function' : {'uf':(uf_affiliation_by_colname,{'colname':'name'})},
+                        'column_function' : {'uf':(mappers.uf_affiliation_by_colname,{'colname':'name'})},
                     },
                     './/sa:affiliation':d_affiliation_sa_affiliation,
                 }
@@ -288,7 +299,7 @@ def sql_mining_params():
             ".//ce:author":{
                 'db_name':'author', 'multiple':1,
                 'attrib_column' : {'id':'id', 'last_first_name':'last_first_name'},
-                'column_function' : {'last_first_name':last_first_name},
+                'column_function' : {'last_first_name':mappers.last_first_name},
                 'child_xpaths':{
                     './/ce:given-name':{
                         'db_name':'given_name',
@@ -325,7 +336,7 @@ def sql_mining_params():
                         #'db_name':'name',
                         'multiple':0,
                         'attrib_column':{'text':'name', 'uf':'uf'},
-                        'column_function' : {'uf':uf_affiliation_value}
+                        'column_function' : {'uf':mappers.uf_affiliation_value}
                     },
                     './/sa:affiliation':d_affiliation_sa_affiliation,
                 }
@@ -358,7 +369,7 @@ def sql_mining_params():
             ".//{*}coredata/{*}pii": {
                 'multiple':0,
                 'attrib_column': { 'text':'fpii' }, # 'fpii' name need not be used in output relation.
-                'column_function': {'pii': pii_unformatted}
+                'column_function': {'pii': mappers.pii_unformatted}
             }
             ,".//{*}coredata/{*}eid": {
                 'multiple':0,
@@ -379,7 +390,7 @@ def sql_mining_params():
             ,".//prism:coverDate":{
                 'multiple':0,
                 'attrib_column':{'text':'cover_date', 'cover_year':'cover_year'},
-                'column_function': {'cover_year': cover_year}
+                'column_function': {'cover_year': mappers.cover_year}
             }
             ,".//dc:title":{
                 'multiple':0,
@@ -415,3 +426,4 @@ def sql_mining_params():
     } # end d_node_params
     return od_rel_datacolumns, d_node_params
 #end def s_elsevier(
+print("Done")
