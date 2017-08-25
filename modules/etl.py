@@ -15,7 +15,7 @@ from pathlib import Path
 import shutil
 import stat
 
-def sequence_days(cymd_start=None, cymd_end=None,fmt='%Y%m%d'):
+def seq_days(cymd_start=None, cymd_end=None,fmt='%Y%m%d'):
     dt_day = datetime.datetime.strptime(cymd_start, fmt )
     dt_end = datetime.datetime.strptime(cymd_end, fmt )
     day_delta = datetime.timedelta(days=1)
@@ -150,7 +150,7 @@ def user_folder_name():
 
 def home_folder_name():
     from os.path import expanduser
-    print("*** DEPRECATED ***: Use method user_folder_name instead")
+    print("*** home_folder_name() is DEPRECATED ***: Use method user_folder_name instead")
     return expanduser("~")
 
 def make_home_relative_folder(home_relative_folder='',exist_ok=True, verbosity=0):
