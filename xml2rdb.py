@@ -3,9 +3,11 @@
 # to use as a supplement document for IP examination
 
 '''
-Program xml2rdb inputs xml docs from saved xml files (for example from the Elsevier Publisher's
+Program xml2rdb inputs xml docs from saved xml files (for example from the
+Elsevier Publisher's
 full-text api).
-Each input xml file has xml-coded information pertaining to a single xml document.
+Each input xml file has xml-coded information pertaining to a single xml
+document.
 '''
 import sys, os, os.path, platform
 sys.path.append('{}/git/citrus/modules'.format(os.path.expanduser('~')))
@@ -25,27 +27,31 @@ from pathlib import Path
 import etl
 
 '''
-    Note: I also envision a revision of this program to do an initial walk-through of the
-    xml input files.
+    Note: I also envision a revision of this program to do an initial
+    walk-through of the xml input files.
     From that, it could:
-    * register the repeat vs non-repeat nature of every xml tag, and thus be able to derive a complete
-      set of SQL tables, or candidate tables
-    * Allow the user to select a subset of tables and columns within them as well
-    * register the mapping-converson functions that a user provides and make suggestions or derive
-      function candidates for translations from which the user may also choose.
+    * register the repeat vs non-repeat nature of every xml tag, and thus be
+      able to derive a complete set of SQL tables, or candidate tables
+    * Allow the user to select a subset of tables and columns within them as
+      well
+    * register the mapping-converson functions that a user provides and make
+      suggestions or derive function candidates for translations from which
+      the user may also choose.
 
     * derive a complete set of SQL tables, infer and define the entire
-    hierarchical structure, and glean all of the XML input into relational tables
-    for a consistent set of structured XML files.
+    hierarchical structure, and glean all of the XML input into relational
+    tables for a consistent set of structured XML files.
 
 
-    It will infer names for tables and columns from the xml tags and attribute names as well.
+    It will infer names for tables and columns from the xml tags and attribute
+    names as well.
 
-    However the user configuration will remain useful mainly to simplify and target creation
+    However the user configuration will remain useful mainly to simplify and
+    target creation
 
     of SQL data to simplify and abbreviate the outputted SQL database.
-    That would make some studies easier to follow and faster to create and run selected
-    sub-analyses of the entire pool of xml data.
+    That would make some studies easier to follow and faster to create and run
+    selected sub-analyses of the entire pool of xml data.
 '''
 
 '''
@@ -70,24 +76,29 @@ def new_od_relation(od_rel_datacolumns, verbosity=1):
 '''
 Method get_writable_db_file:
 
-This method is designed to be called while the mining map nodes are being visited from node_visit_output(),
-so that the od_parent_index dictionary is properly populated with the parent relaton name values that
-assign the composite primary key column names of the given db_name in the mining map's hierarchy.
+This method is designed to be called while the mining map nodes are being
+visited from node_visit_output(), so that the od_parent_index dictionary is
+properly populated with the parent relaton name values that assign the
+composite primary key column names of the given db_name in the mining map's
+hierarchy.
 This information is given in the argument od_parent_index.
 
-The actual index values are not important here, but the parent relation names are important
-so that the primary key column names for them can be assigned to the given db_name relation.
-This need only be done once, and coincidentally, the writable file handle for the relation need only
+The actual index values are not important here, but the parent relation
+names are important so that the primary key column names for them can be
+assigned to the given db_name relation.
+This need only be done once, and coincidentally, the writable file handle
+for the relation need only
 be created once, and so it is also done within this routine.
 
 Given a db_name of interest and od_relation of all relation names,
 we get od_rel_info as the ordered dictionary value of od_relation[db_name].
 
 We get or create od_column value for the od_rel_info key 'attrib_column' .
-od_column is the dictionary of xml attribute-name keys with their sql column-name values in the
-parent dictionary.
+od_column is the dictionary of xml attribute-name keys with their sql
+column-name values in the parent dictionary.
 
-Note: SQL Server 2008 cannot handle utf-8 encoding, but we can use it for most if not all other RDBs.
+Note: SQL Server 2008 cannot handle utf-8 encoding, but we can use it for
+most if not all other RDBs.
 
 '''
 def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
@@ -106,29 +117,35 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
 
     od_rel_info = od_relation.get(db_name, None)
     if od_rel_info is None:
-        raise Exception("{}:od_relation key (db_name) '{}' is undefined. ".format(me,repr(db_name)))
+        raise Exception("{}:od_relation key (db_name) '{}' is undefined. "
+            .format(me,repr(db_name)))
 
     od_column = od_rel_info.get('attrib_column', None)
     if od_column is None:
-        # When here, this is the first encounter of a node with this db_name in an input xml_file,
-        # and we assume the xml files are of consistent structure, with same xml tag lineage,
+        # When here, this is the first encounter of a node with this db_name in
+        # an input xml_file, and we assume the xml files are of consistent
+        # structure, with same xml tag lineage,
         # with regard to the mining map'a paths of interest.
-        # So we can use the first one found to set up the hierarchy/lineage of the
-        # primary key's composite columns.
+        # So we can use the first one found to set up the hierarchy/lineage of
+        # the primary key's composite columns.
         #
-        # We will create places to store info for this relation's attrib columns and
-        # other 'mining' info, including sql olumn names of data we will output for this relation
+        # We will create places to store info for this relation's attrib columns
+        # and other 'mining' info, including sql olumn names of data we will
+        # output for this relation
         od_column = OrderedDict()
         od_rel_info['attrib_column'] = od_column
 
-        # Create and open a writable output file for this relation, mode='w', encoding='utf-8'
+        # Create and open a writable output file for this relation, mode='w',
+        # encoding='utf-8'
         # If SQL server 2008 bulk insert chokes on utf-8, encode this to ascii
 
         filename = '{}/{}.txt'.format(output_folder,db_name)
         print('{}: opening output {}'.format(me, filename))
-        od_rel_info['db_file'] = open(filename, mode='w', encoding=output_encoding, errors=errors)
+        od_rel_info['db_file'] = open(filename, mode='w'
+            , encoding=output_encoding, errors=errors)
 
-        #This RDB Table's Primary key value will be output as a simple string of csv of column names
+        #This RDB Table's Primary key value will be output as a simple string
+        # of csv of column names
         od_pkey = OrderedDict()
 
         #Set up the primary key columns for this relation
@@ -136,7 +153,8 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
         sep = ''
 
         # First, for every parent of this relation, register a column name to
-        # hold its index value and concat each col name to list of primary key col names.
+        # hold its index value and concat each col name to list of primary key
+        # col names.
         if len(od_parent_index) > 0:
             for column_name in od_parent_index.keys():
                 od_column[column_name] = 'integer'
@@ -937,310 +955,314 @@ def xml2rdb( input_path_list=None,
     return log_filename, pretty_log
 # end def xml2rdb
 
-''' SET UP MAIN ENVIRONMENT PARAMETERS FOR A RUN OF XML2RDB
-Now all these parameters are 'hard-coded' here, but they could go into
-a configuration file later for common usage.
-Better still, this would all be managed by a web-interface with xml2rdb as a back end.
-This is where a web service comes in that
-(1) manages thousands of users accounts,
-(2) collects fees for
-  (a) configuration file storage,
-  (b) uploads and storage of the xml input files
-  (c) storage for versions of SQL output (paired with input files)
-  (d) paid user downloads of the SQL outputs.
-  (e) and more...
-'''
+def run():
+    ''' SET UP MAIN ENVIRONMENT PARAMETERS FOR A RUN OF XML2RDB
+    Now all these parameters are 'hard-coded' here, but they could go into
+    a configuration file later for common usage.
+    Better still, this would all be managed by a web-interface with xml2rdb as a back end.
+    This is where a web service comes in that
+    (1) manages thousands of users accounts,
+    (2) collects fees for
+      (a) configuration file storage,
+      (b) uploads and storage of the xml input files
+      (c) storage for versions of SQL output (paired with input files)
+      (d) paid user downloads of the SQL outputs.
+      (e) and more...
+    '''
+    me = 'run'
+    # Study choices
+    study = 'ccila'
+    study = 'citrus'
+    study = 'crafa'
+    study = 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
+    study = 'crawd' # Crossref filter where D is for doi
+    study = 'elsevier'
+    study = 'merrick_oai_set'
+    study = 'oadoi'
+    study = 'orcid'
+    study = 'scopus'
 
-# Study choices
-study = 'ccila'
-study = 'citrus'
-study = 'crafa'
-study = 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
-study = 'crawd' # Crossref filter where D is for doi
-study = 'elsevier'
-study = 'merrick_oai_set'
-study = 'oadoi'
-study = 'orcid'
-study = 'scopus'
-
-# KEEP ONLY ONE LINE NEXT: Study Selection
-study = 'elsevier'
-
-file_count_first = 0
-file_count_span = 0
-use_db = 'silodb'
-
-#folders_base = etl.home_folder_name() + '/'
-data_elsevier_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
-        data_relative_folder='data/elsevier/')
-
-d_xml_params = {}
-# Part of a deprecation... now only marcxml uses this and passes it to xml2rdb,
-# So value of None is signal to interpret arguments an 'older' way.
-folder_output_base = None
-
-if study == 'crafa':
-    import xml2rdb_configs.crossref as config
-    # Note- input folder is/was populated via program crafatxml
-    rel_prefix = 'y2016_'
-    # All files under the input folder selected for input_path_list below will be used as input
-    input_folder = '{}/output_crafatxml/doi/2016'.format(input_folders_base)
-    input_folder = etl.home_relative_folder('/output_crafatxml/doi/2016')
-    doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns
-    #doc_root_xpath = './crossref-api-filter-aff-UF' #this matches root node assignment in crafatxml program
-    doc_root_xpath = './crossref-api-filter-aff-UF/message'
-    input_path_list = list(Path(input_folder).glob(input_path_glob))
-    input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
-    print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
-    # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-    od_rel_datacolumns, d_node_params = config.sql_mining_params()
-    file_count_first = 0
-    file_count_span = 0
-
-elif study in [ 'ccila' ] : #ccila is cuban collection i? latin america
-    import xml2rdb_configs.marcxml as config
-    rel_prefix = 'ccila_'
-
-    # This is where the precursor program marc2xml leaves its marcxml data for ccila UCRiverside
-    # items
-    in_folder_name = etl.data_folder(linux='/home/robert/',
-        windows='U:/', data_relative_folder='data/outputs/marcxml/UCRiverside/')
-
-    folder_output_base = etl.data_folder(linux='/home/robert/',
-        windows='U:/', data_relative_folder='data/outputs/xml2rdb/UCRiverside')
-
-    input_folder = in_folder_name
-    input_folders = []
-    input_folders.append(input_folder)
-    input_path_glob = '**/marc*.xml'
-
-    doc_rel_name = 'record' # must match highest level table dbname in od_rel_datacolumns
-    doc_root_xpath = ".//{*}record"
-
-    input_path_list = list(Path(input_folder).glob(input_path_glob))
-    d_xml_params['attribute_text'] = 'text'
-
-    print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
-    # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-    od_rel_datacolumns, d_node_params = config.sql_mining_params()
-    file_count_first = 0
-    file_count_span = 0
-
-elif study == 'crawd': # CrossRefApi Works by Doi-list
-    import xml2rdb_configs.crossref as config
-    # Note- input folder is/was populated via program crawdxml- where crawdxml gets Works Dois MD
-    # for 'new' uf articles as found by diffing a week to week SCOPUS harvest of UF-affiliated dois/articles
-    rel_prefix = 'crawd_' # maybe try wd_ as a prefix sometime
-    input_folder = '{}/output_crawdxml/doi'.format(data_elsevier_folder)
-    doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns
-    doc_root_xpath = './response/message'
-    input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
-    print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
-    # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-    od_rel_datacolumns, d_node_params = config.sql_mining_params()
-    file_count_first = 0
-    file_count_span = 0
-
-elif study == 'crafd': # CrossRefApi filter by D for deposit date (and it selects only UF affiliations)
-    import xml2rdb_configs.crossref as config
-    # Note- input folder is/was populated via program crafdtxml
-    rel_prefix = 'crafd_'
-    # NOTE LIMIT INPUT FOLDER TO YEAR 2016 for now...
-    input_folder = '{}/output_crafdtxml/doi/2016'.format(data_elsevier_folder)
-    doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns, set below.
-    #Next doc_root_xpath is set by the harvester crafdtxml so see its code.
-    doc_root_xpath = './crossref-api-filter-date-UF/message'
-
-    input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
-    print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
-    # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-    od_rel_datacolumns, d_node_params = config.sql_mining_params()
-    file_count_first = 0
-    file_count_span = 0
-
-elif study == 'elsevier':
-    import xml2rdb_configs.elsevier as config
+    # KEEP ONLY ONE LINE NEXT: Study Selection
+    study = 'elsevier'
 
     file_count_first = 0
     file_count_span = 0
-    input_folders = []
-    input_path_glob = '**/pii_*.xml'
+    use_db = 'silodb'
 
-    rel_prefix='e2016b_'
-    # Set input folders to 'orig load date' to capture recent years through 20170824,
-    # that is, the latest elsevier harvest to date.
-    rel_prefix='e2017a_'
-    for year in ['2015','2016', '2017']:
-        input_folders.append('{}/output_ealdxml/{}/'.format(data_elsevier_folder,year))
+    #folders_base = etl.home_folder_name() + '/'
+    data_elsevier_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
+            data_relative_folder='data/elsevier/')
 
-    doc_rel_name = 'doc'
-    doc_root_xpath = './{*}full-text-retrieval-response'
+    d_xml_params = {}
+    # Part of a deprecation... now only marcxml uses this and passes it to xml2rdb,
+    # So value of None is signal to interpret arguments an 'older' way.
+    folder_output_base = None
 
-    # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-    od_rel_datacolumns, d_node_params = config.sql_mining_params()
-elif study == 'scopus':
-    import xml2rdb_configs.scopus as config
-    rel_prefix = 'h5_' #h5 is harvest 5 of 20161202
-    rel_prefix = 'h6_' #h6 is harvst 6 of 20161210 saturday
-    rel_prefix = 'h7_' #h7 is 20161216 friday
-    rel_prefix = 'h8_' #h8 is 20161223 friday - not run
-    rel_prefix = 'h9_' #h9 is 20161230 friday - not run
+    if study == 'crafa':
+        import xml2rdb_configs.crossref as config
+        # Note- input folder is/was populated via program crafatxml
+        rel_prefix = 'y2016_'
+        # All files under the input folder selected for input_path_list below will be used as input
+        input_folder = '{}/output_crafatxml/doi/2016'.format(input_folders_base)
+        input_folder = etl.home_relative_folder('/output_crafatxml/doi/2016')
+        doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns
+        #doc_root_xpath = './crossref-api-filter-aff-UF' #this matches root node assignment in crafatxml program
+        doc_root_xpath = './crossref-api-filter-aff-UF/message'
+        input_path_list = list(Path(input_folder).glob(input_path_glob))
+        input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
+        print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
+        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+        file_count_first = 0
+        file_count_span = 0
 
-    # Year 2016 input
-    input_folder = '{}/output_satxml/2016/doi'.format(data_elsevier_folder)
-    rel_prefix = 'h2016_10_' #h2016 is for query pubyear 2016, 10 is for harvest 10 done on 20170106 friday
+    elif study in [ 'ccila' ] : #ccila is cuban collection i? latin america
+        import xml2rdb_configs.marcxml as config
+        rel_prefix = 'ccila_'
 
-    #Year 2017 input                                                   # Year 2016 input
-    #input_folder = '{}/output_satxml/2017/doi'.format(data_elsevier_folder)
-    #rel_prefix = 'h2017_10_' #2016 for query pubyear 2016 harvest h10 is 20170106 friday
+        # This is where the precursor program marc2xml leaves its marcxml data for ccila UCRiverside
+        # items
+        in_folder_name = etl.data_folder(linux='/home/robert/',
+            windows='U:/', data_relative_folder='data/outputs/marcxml/UCRiverside/')
 
-    input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
+        folder_output_base = etl.data_folder(linux='/home/robert/',
+            windows='U:/', data_relative_folder='data/outputs/xml2rdb/UCRiverside')
 
-    doc_rel_name = 'scopus'
-    doc_root_xpath = './{*}entry'
-    od_rel_datacolumns, d_node_params = config.sql_mining_params()
+        input_folder = in_folder_name
+        input_folders = []
+        input_folders.append(input_folder)
+        input_path_glob = '**/marc*.xml'
 
-elif study == 'oadoi':
-    import xml2rdb_configs.oadoi as config
-    # for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
-    # for 20170308 run using dois from crafd_crawd for UF year 2016
+        doc_rel_name = 'record' # must match highest level table dbname in od_rel_datacolumns
+        doc_root_xpath = ".//{*}record"
 
-    input_folder =  data_elsevier_folder + "/outputs/oadoi/"
-    input_folders = [input_folder]
-    input_path_glob = '**/oadoi_*.xml'
-    input_path_list = list(Path(input_folder).glob(input_path_glob))
+        input_path_list = list(Path(input_folder).glob(input_path_glob))
+        d_xml_params['attribute_text'] = 'text'
 
-    print("Study oadoi, input folder={}, input path glob={}, N input files={},"
-          " data_elsevier_folder = {}"
-          .format(input_folder,input_path_glob,len(input_path_list),data_elsevier_folder))
+        print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
+        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+        file_count_first = 0
+        file_count_span = 0
 
-    # rel_prefix 'oa2016_' is used because the oaidoi precursor process to produce the dois input list
-    # was run on scopus dois fo/der uf authors from year 2016... should probably change prefix to oa_scopus2016_
-    # input_folder = '{}/output_oadoi/2016-01-10T12-54-23Z'.format(data_elsevier_folder)
-    rel_prefix = 'oa_cruf2016_'
-    doc_rel_name = 'oadoi'
-    doc_root_xpath = './{*}entry'
-    od_rel_datacolumns, d_node_params = config.sql_mining_params()
+    elif study == 'crawd': # CrossRefApi Works by Doi-list
+        import xml2rdb_configs.crossref as config
+        # Note- input folder is/was populated via program crawdxml- where crawdxml gets Works Dois MD
+        # for 'new' uf articles as found by diffing a week to week SCOPUS harvest of UF-affiliated dois/articles
+        rel_prefix = 'crawd_' # maybe try wd_ as a prefix sometime
+        input_folder = '{}/output_crawdxml/doi'.format(data_elsevier_folder)
+        doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns
+        doc_root_xpath = './response/message'
+        input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
+        print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
+        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+        file_count_first = 0
+        file_count_span = 0
 
-elif study == 'orcid':
-    import xml2rdb_configs.orcid as config
-    #for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
-    #input_folder = '{}/output_oadoi/2017-01-10T12-54-23Z'.format(data_elsevier_folder)
-    # for 20170308 run using dois from crafd_crawd for UF year 2016
-    input_folder = '{}/output_orpubtxml'.format(data_elsevier_folder)
-    input_folders = [ input_folder]
-    input_path_glob = '**/orcid_*.xml'
-    input_path_list = list(Path(input_folder).glob(input_path_glob))
+    elif study == 'crafd': # CrossRefApi filter by D for deposit date (and it selects only UF affiliations)
+        import xml2rdb_configs.crossref as config
+        # Note- input folder is/was populated via program crafdtxml
+        rel_prefix = 'crafd_'
+        # NOTE LIMIT INPUT FOLDER TO YEAR 2016 for now...
+        input_folder = '{}/output_crafdtxml/doi/2016'.format(data_elsevier_folder)
+        doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns, set below.
+        #Next doc_root_xpath is set by the harvester crafdtxml so see its code.
+        doc_root_xpath = './crossref-api-filter-date-UF/message'
 
-    print("Study {}, input folder={}, input path glob={}, input files={}"
-          .format(study, input_folder,input_path_glob,len(input_path_list)))
-    input_path_list = list(Path(input_folder).glob(input_path_glob))
-    rel_prefix = 'orcid_'
-    doc_rel_name = 'person'
-    #TODO: add batch id or dict column_constant to define column name and constant to insert in the
-    # doc_rel_name table to hold hash for external grouping studies, repeated/longitutinal studies
-    #raise Exception("Development EXIT")
+        input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
+        print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
+        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+        file_count_first = 0
+        file_count_span = 0
 
-    doc_root_xpath = './{*}record'
-    od_rel_datacolumns, d_node_params = config.sql_mining_params()
+    elif study == 'elsevier':
+        import xml2rdb_configs.elsevier as config
 
-elif study == 'citrus':
-    import xml2rdb_configs.citrus as config
+        file_count_first = 0
+        file_count_span = 0
+        input_folders = []
+        input_path_glob = '**/pii_*.xml'
+
+        rel_prefix='e2016b_'
+        # Set input folders to 'orig load date' to capture recent years through 20170824,
+        # that is, the latest elsevier harvest to date.
+        rel_prefix='e2017a_'
+        #for year in ['2015','2016', '2017']:
+        for year in ['2017']:
+            input_folders.append('{}/output_ealdxml/{}/'.format(data_elsevier_folder,year))
+
+        doc_rel_name = 'doc'
+        doc_root_xpath = './{*}full-text-retrieval-response'
+
+        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+    elif study == 'scopus':
+        import xml2rdb_configs.scopus as config
+        rel_prefix = 'h5_' #h5 is harvest 5 of 20161202
+        rel_prefix = 'h6_' #h6 is harvst 6 of 20161210 saturday
+        rel_prefix = 'h7_' #h7 is 20161216 friday
+        rel_prefix = 'h8_' #h8 is 20161223 friday - not run
+        rel_prefix = 'h9_' #h9 is 20161230 friday - not run
+
+        # Year 2016 input
+        input_folder = '{}/output_satxml/2016/doi'.format(data_elsevier_folder)
+        rel_prefix = 'h2016_10_' #h2016 is for query pubyear 2016, 10 is for harvest 10 done on 20170106 friday
+
+        #Year 2017 input                                                   # Year 2016 input
+        #input_folder = '{}/output_satxml/2017/doi'.format(data_elsevier_folder)
+        #rel_prefix = 'h2017_10_' #2016 for query pubyear 2016 harvest h10 is 20170106 friday
+
+        input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
+
+        doc_rel_name = 'scopus'
+        doc_root_xpath = './{*}entry'
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+
+    elif study == 'oadoi':
+        import xml2rdb_configs.oadoi as config
+        # for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
+        # for 20170308 run using dois from crafd_crawd for UF year 2016
+
+        input_folder =  data_elsevier_folder + "/outputs/oadoi/"
+        input_folders = [input_folder]
+        input_path_glob = '**/oadoi_*.xml'
+        input_path_list = list(Path(input_folder).glob(input_path_glob))
+
+        print("Study oadoi, input folder={}, input path glob={}, N input files={},"
+              " data_elsevier_folder = {}"
+              .format(input_folder,input_path_glob,len(input_path_list),data_elsevier_folder))
+
+        # rel_prefix 'oa2016_' is used because the oaidoi precursor process to produce the dois input list
+        # was run on scopus dois fo/der uf authors from year 2016... should probably change prefix to oa_scopus2016_
+        # input_folder = '{}/output_oadoi/2016-01-10T12-54-23Z'.format(data_elsevier_folder)
+        rel_prefix = 'oa_cruf2016_'
+        doc_rel_name = 'oadoi'
+        doc_root_xpath = './{*}entry'
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+
+    elif study == 'orcid':
+        import xml2rdb_configs.orcid as config
+        #for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
+        #input_folder = '{}/output_oadoi/2017-01-10T12-54-23Z'.format(data_elsevier_folder)
+        # for 20170308 run using dois from crafd_crawd for UF year 2016
+        input_folder = '{}/output_orpubtxml'.format(data_elsevier_folder)
+        input_folders = [ input_folder]
+        input_path_glob = '**/orcid_*.xml'
+        input_path_list = list(Path(input_folder).glob(input_path_glob))
+
+        print("Study {}, input folder={}, input path glob={}, input files={}"
+              .format(study, input_folder,input_path_glob,len(input_path_list)))
+        input_path_list = list(Path(input_folder).glob(input_path_glob))
+        rel_prefix = 'orcid_'
+        doc_rel_name = 'person'
+        #TODO: add batch id or dict column_constant to define column name and constant to insert in the
+        # doc_rel_name table to hold hash for external grouping studies, repeated/longitutinal studies
+        #raise Exception("Development EXIT")
+
+        doc_root_xpath = './{*}record'
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+
+    elif study == 'citrus':
+        import xml2rdb_configs.citrus as config
 
 
-    input_folder = etl.data_folder(linux='/home/robert/', windows='u:/',
-        data_relative_folder='data/citrus_mets_base')
-    input_folders = [ input_folder]
-    input_path_glob = '**/*mets.xml'
-    input_path_list = list(Path(input_folder).glob(input_path_glob))
+        input_folder = etl.data_folder(linux='/home/robert/', windows='u:/',
+            data_relative_folder='data/citrus_mets_base')
+        input_folders = [ input_folder]
+        input_path_glob = '**/*mets.xml'
+        input_path_list = list(Path(input_folder).glob(input_path_glob))
 
-    print("Study {}, input folder={}, input path glob={}, input files={}"
-          .format(study, input_folder,input_path_glob,len(input_path_list)))
-    input_path_list = list(Path(input_folder).glob(input_path_glob))
-    rel_prefix = 'citrus_'
-    doc_rel_name = 'mets'
-    #TODO: add batch id or dict column_constant to define column name and constant to insert in the
-    # doc_rel_name table to hold hash for external grouping studies, repeated/longitutinal studies
-    #raise Exception("Development EXIT")
+        print("Study {}, input folder={}, input path glob={}, input files={}"
+              .format(study, input_folder,input_path_glob,len(input_path_list)))
+        input_path_list = list(Path(input_folder).glob(input_path_glob))
+        rel_prefix = 'citrus_'
+        doc_rel_name = 'mets'
+        #TODO: add batch id or dict column_constant to define column name and constant to insert in the
+        # doc_rel_name table to hold hash for external grouping studies, repeated/longitutinal studies
+        #raise Exception("Development EXIT")
 
-    doc_root_xpath = './METS:mets'
-    d_xml_params['attribute_text'] = 'attribute_text'
-    d_xml_params['attribute_innerhtml'] =  'attribute_innerhtml'
+        doc_root_xpath = './METS:mets'
+        d_xml_params['attribute_text'] = 'attribute_text'
+        d_xml_params['attribute_innerhtml'] =  'attribute_innerhtml'
 
-    od_rel_datacolumns, d_node_params = config.sql_mining_params()
-elif study == 'merrick_oai_set':
-    import xml2rdb_configs.merrick_oai_sets as config
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+    elif study == 'merrick_oai_set':
+        import xml2rdb_configs.merrick_oai_sets as config
 
-    input_folder = etl.data_folder(linux='/home/robert/', windows='u:/',
-        data_relative_folder='data/merrick_oai_set')
-    input_folders = [ input_folder]
-    input_path_glob = '**/*listsetspecs.xml'
-    input_path_list = list(Path(input_folder).glob(input_path_glob))
+        input_folder = etl.data_folder(linux='/home/robert/', windows='u:/',
+            data_relative_folder='data/merrick_oai_set')
+        input_folders = [ input_folder]
+        input_path_glob = '**/*listsetspecs.xml'
+        input_path_list = list(Path(input_folder).glob(input_path_glob))
 
-    print("Study {}, input folder={}, input path glob={}, input files={}"
-          .format(study, input_folder,input_path_glob,len(input_path_list)))
-    input_path_list = list(Path(input_folder).glob(input_path_glob))
-    rel_prefix = 'merrick_oai_'
-    doc_rel_name = 'parent'
-    #TODO: add batch id or dict column_constant to define column name and constant to insert in the
-    # doc_rel_name table to hold hash for external grouping studies, repeated/longitutinal studies
-    #raise Exception("Development EXIT")
+        print("Study {}, input folder={}, input path glob={}, input files={}"
+              .format(study, input_folder,input_path_glob,len(input_path_list)))
+        input_path_list = list(Path(input_folder).glob(input_path_glob))
+        rel_prefix = 'merrick_oai_'
+        doc_rel_name = 'parent'
+        #TODO: add batch id or dict column_constant to define column name and constant to insert in the
+        # doc_rel_name table to hold hash for external grouping studies, repeated/longitutinal studies
+        #raise Exception("Development EXIT")
 
-    doc_root_xpath = './/{*}ListSets'
-    d_xml_params['attribute_text'] = 'attribute_text'
-    d_xml_params['attribute_innerhtml'] =  'attribute_innerhtml'
+        doc_root_xpath = './/{*}ListSets'
+        d_xml_params['attribute_text'] = 'attribute_text'
+        d_xml_params['attribute_innerhtml'] =  'attribute_innerhtml'
 
-    od_rel_datacolumns, d_node_params = config.sql_mining_params()
-else:
-    raise Exception("Study ={} is not valid.".format(repr(study)))
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+    else:
+        raise Exception("Study ={} is not valid.".format(repr(study)))
 
-# OPTIONAL - If a study specified multiple input folders and input_path_glob,
-# then honor them when constructing the input_path_list
-if (input_folders is not None and input_path_glob is not None):
-    # compose input_path_list over multiple input_folders
-    input_path_list = []
-    for input_folder in input_folders:
-        print("Using input_folder='{}'\n".format(input_folder))
-        input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
+    # OPTIONAL - If a study specified multiple input folders and input_path_glob,
+    # then honor them when constructing the input_path_list
+    if (input_folders is not None and input_path_glob is not None):
+        # compose input_path_list over multiple input_folders
+        input_path_list = []
+        for input_folder in input_folders:
+            print("{}:Study {}:Using input_folder='{}'\n"
+                .format(me,study,input_folder))
+            input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
 
+    # If input_folders not defined in a study, define it by putting the single input folder into this list
+    if input_folders is None:
+        input_folders = []
+        input_folders.append(input_folder)
 
-# If input_folders not defined in a study, define it by putting the single input folder into this list
-if input_folders is None:
-    input_folders = []
-    input_folders.append(input_folder)
+    lip = len(input_path_list)
+    if (lip < 1 ):
+        raise Exception(
+            "No input files in input_folder='{}'".format(input_folder))
+    d_params = OrderedDict()
+    #d_params = OrderedDict()
+    d_params.update({
+         'python-sys-version': sys.version
+        #,'input-files-xml-folder' : input_folder
+        ,'study': repr(study)
+        ,'input-folders': repr(input_folders)
+        ,'folder-output-base': repr(folder_output_base)
+        ,'input-files-count': str(len(input_path_list))
+        ,'file-count-first': file_count_first
+        ,'file-count-span': file_count_span
+        ,'folders_base': data_elsevier_folder
+        ,'doc-rel-name': doc_rel_name
+        ,'doc-root-xpath': doc_root_xpath
+        ,'use-db': use_db
+        ,'d-node-params': repr(d_node_params)
+        ,'od-rel-datacolumns': repr(od_rel_datacolumns)
+    })
 
-lip = len(input_path_list)
-if (lip < 1 ):
-    raise Exception(
-        "No input files in input_folder='{}'".format(input_folder))
-d_params = OrderedDict()
-#d_params = OrderedDict()
-d_params.update({
-     'python-sys-version': sys.version
-    #,'input-files-xml-folder' : input_folder
-    ,'study': repr(study)
-    ,'input-folders': repr(input_folders)
-    ,'folder-output-base': repr(folder_output_base)
-    ,'input-files-count': str(len(input_path_list))
-    ,'file-count-first': file_count_first
-    ,'file-count-span': file_count_span
-    ,'folders_base': data_elsevier_folder
-    ,'doc-rel-name': doc_rel_name
-    ,'doc-root-xpath': doc_root_xpath
-    ,'use-db': use_db
-    ,'d-node-params': repr(d_node_params)
-    ,'od-rel-datacolumns': repr(od_rel_datacolumns)
-})
+    # RUN the analysis and collect stats
+    log_filename, pretty_log = xml2rdb(
+        input_path_list=input_path_list,
+        folder_output_base=folder_output_base,
+        doc_root_xpath=doc_root_xpath, rel_prefix=rel_prefix,
+        doc_rel_name=doc_rel_name, use_db=use_db,
+        d_node_params=d_node_params, od_rel_datacolumns=od_rel_datacolumns,
+        d_params=d_params, file_count_first=file_count_first, file_count_span=file_count_span,
+        d_xml_params=d_xml_params)
 
-# RUN the analysis and collect stats
-log_filename, pretty_log = xml2rdb(
-    folders_base=data_elsevier_folder,input_path_list=input_path_list,
-    folder_output_base=folder_output_base,
-    doc_root_xpath=doc_root_xpath, rel_prefix=rel_prefix,
-    doc_rel_name=doc_rel_name, use_db=use_db,
-    d_node_params=d_node_params, od_rel_datacolumns=od_rel_datacolumns,
-    d_params=d_params, file_count_first=file_count_first, file_count_span=file_count_span,
-    d_xml_params=d_xml_params)
-
-print("Done.")
+    print("Done.")
+#end def run()
 #
+run()

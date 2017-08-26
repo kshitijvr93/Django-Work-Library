@@ -506,8 +506,11 @@ def ealdxml(d_params, verbosity=0):
 cymd_start = '20161212'
 # cymd_end = '20160206'
 cymd_start = '20170209'
+cymd_start = '20170817'
 # EALDXML - Here, we do only one day at a time...
 cymd_end = '20170824'
+print("TEST SETTING: cymd_start={},cymd_end={}"
+      .format(cymd_start,cymd_end))
 
 worker_threads = 1 # TODO
 # WARNING: now hardcoded, and later we may condsider to get these by programmatic introspection
