@@ -553,7 +553,8 @@ def xml_doc_rdb(
         'child_xpaths':{doc_root_xpath:d_node_params}
     }
 
-    print("xml2rdb: Using db_name='{}', doc_root_xpath='{}'"
+    if verbosity > 1:
+        print("xml2rdb: Using db_name='{}', doc_root_xpath='{}'"
           .format(doc_rel_name , doc_root_xpath))
 
     # OrderedDict with key of parent tag name and value is parent's index among its siblings.
@@ -655,7 +656,9 @@ def xml_paths_rdb(
 
         # Full absolute path of input file name is:
         input_file_name = "{}/{}".format(path.parents[0], path.name)
-        print("{}:Reading file {} with file_count={}".format(me,input_file_name,file_count))
+        if verbosity > 0:
+            print("{}:Reading file {} with file_count={}"
+                 .format(me,input_file_name,file_count))
         batch_size = 250
         if batch_size > 0  and (i % batch_size == 0):
             progress_report = 1
@@ -665,8 +668,8 @@ def xml_paths_rdb(
         if (progress_report):
             utc_now = datetime.datetime.utcnow()
             utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-            msg = ("{}: Processed through input file count = {} so far."
-                   .format(utc_secs_z, file_count))
+            msg = ("{}: At {}, processed through input file count = {} so far."
+                   .format(me,utc_secs_z, file_count))
             print(msg)
             #log_messages.append(msg)
             # Flush all the output files in od_relation
@@ -688,7 +691,9 @@ def xml_paths_rdb(
                     log_messages.append(msg)
                 count_input_file_failures += 1
                 continue
-        print("{}:Have read input file {} with length = {}".format(me,input_file_name,len(input_xml_str)))
+        if verbosity > 0:
+            print("{}:Have read input file {} with length = {}"
+                  .format(me,input_file_name,len(input_xml_str)))
         row_index += 1
 
         #Create an internal root document node to manage database outputs
@@ -697,7 +702,8 @@ def xml_paths_rdb(
         msg = ("{}:calling xml_doc_rdb with doc_root.tag={}, file_count={},verbosity={}"
           .format(me,doc_root.tag, file_count,verbosity))
 
-        print("{}:{}".format(me,msg))
+        if verbosity > 0:
+            print("{}:{}".format(me,msg))
 
         sub_messages = xml_doc_rdb(od_relation=od_relation
             , output_folder=output_folder
@@ -1047,14 +1053,16 @@ def run():
 
     elif study == 'crawd': # CrossRefApi Works by Doi-list
         import xml2rdb_configs.crossref as config
-        # Note- input folder is/was populated via program crawdxml- where crawdxml gets Works Dois MD
-        # for 'new' uf articles as found by diffing a week to week SCOPUS harvest of UF-affiliated dois/articles
+        # Note- input folder is/was populated via program crawdxml- where crawdxml
+        # gets Works Dois MD for 'new' uf articles as found by diffing a week to
+        # week SCOPUS harvest # of UF-affiliated dois/articles
         rel_prefix = 'crawd_' # maybe try wd_ as a prefix sometime
         input_folder = '{}/output_crawdxml/doi'.format(data_elsevier_folder)
         doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns
         doc_root_xpath = './response/message'
         input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
-        print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
+        print("STUDY={}, got {} input files under {}"
+            .format(study, len(input_path_list),input_folder))
         # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
         file_count_first = 0
@@ -1071,7 +1079,8 @@ def run():
         doc_root_xpath = './crossref-api-filter-date-UF/message'
 
         input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
-        print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
+        print("STUDY={}, got {} input files under {}"
+              .format(study, len(input_path_list),input_folder))
         # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
         file_count_first = 0
@@ -1082,15 +1091,15 @@ def run():
 
         file_count_first = 0
         file_count_span = 0
-        input_folders = []
         input_path_glob = '**/pii_*.xml'
 
         rel_prefix='e2016b_'
         # Set input folders to 'orig load date' to capture recent years through 20170824,
         # that is, the latest elsevier harvest to date.
-        rel_prefix='e2017a_'
-        #for year in ['2015','2016', '2017']:
-        for year in ['2017']:
+        rel_prefix='e2017b_'
+
+        input_folders = []
+        for year in range(2010, 2018):
             input_folders.append('{}/output_ealdxml/{}/'.format(data_elsevier_folder,year))
 
         doc_rel_name = 'doc'
