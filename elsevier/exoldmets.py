@@ -1126,7 +1126,8 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
 
     input_file_basename = input_file_name.split('\\')[-1]
 
-    print("{}:using input_file_basename={}".format(me,input_file_basename))
+    msg = "{}:using input_file_basename={}".format(me,input_file_basename))
+    print(msg)
     sys.stdout.flush
 
     uf_bibid = bibvid[0:10]
@@ -1176,7 +1177,6 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
     # the xml-based values
 
     # The mets file is suitable for input to the SobekCM builder's inbound folder
-    #
     # (STEP 3) and convert tree_input_doc to tree_result_doc using xslt transform
 
     # CHANGE -- NOW also try full xslt and source files
@@ -1206,6 +1206,7 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
     # so move this calculatonto be made withn xslt_transform after an xslt transform,
     # but before the d_sobek parameter substitution that includes timestamps
     #print("\nInput filename={}, calling xslt_transform_format...".format(input_file_name))
+
     sha1_hexdigest, result_mets_str, node_rawtext = xslt_transform_format(
         node_root_input, d_ns, xslt_format_str
         , d_sobek_track=d_sobek_track
@@ -1882,12 +1883,13 @@ Returns:
 PREREQUISITES:
 FIRST: run the following query on production db, save to file and then copy to silodb rvp_bibinfo
 
+use [sobekdb];
 SELECT
 i.itemid, i.groupid, g.bibid + '_00001' as bibid, i.vid, substring(i.link,50,99) as pii
 , m.Tickler, i.deleted as prod_deleted
 FROM SobekCM_Item i, SobekCM_Item_group g,SobekCM_Metadata_Basic_Search_Table m
 WITH(NOLOCK)
-WHERE i.groupid = g.groupid
+WHERE i.groupid = g.groupid$G
 AND g.bibid like 'LS%'
 AND i.ItemID = m.itemid
 ORDER BY i.deleted, g.BibID, i.vid
