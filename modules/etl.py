@@ -15,7 +15,7 @@ from pathlib import Path
 import shutil
 import stat
 
-def seq_days(cymd_start=None, cymd_end=None,fmt='%Y%m%d'):
+def sequence_days(cymd_start=None, cymd_end=None,fmt='%Y%m%d'):
     dt_day = datetime.datetime.strptime(cymd_start, fmt )
     dt_end = datetime.datetime.strptime(cymd_end, fmt )
     day_delta = datetime.timedelta(days=1)

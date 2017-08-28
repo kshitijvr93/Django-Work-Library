@@ -1126,7 +1126,7 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
 
     input_file_basename = input_file_name.split('\\')[-1]
 
-    msg = "{}:using input_file_basename={}".format(me,input_file_basename))
+    msg = "{}:using input_file_basename={}".format(me,input_file_basename)
     print(msg)
     sys.stdout.flush
 
@@ -1915,7 +1915,7 @@ use [silodb];
     );
   GO
   bulk insert rvp_bibinfo
-  from 'c:/rvp/data/sobekdb_prod_bibinfo_20170825.csv'
+  from 'c:/rvp/data/sobekdb_prod_bibinfo_20170828.txt.csv'
   with (fieldterminator = ',', rowterminator = '\n');
 
   GO
@@ -2256,10 +2256,10 @@ def run():
   data_elsevier_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
         data_relative_folder='data/elsevier/')
 
-  # Set up temporal folders to search for the input xml files, based on the
+  # Set up temporal folders to search for the ealdxml output, our input xml files, based on the
   # given cymd_start and cymd_end values
 
-  cymd_start = '20170209'
+  cymd_start = '20090101'
   cymd_end = '20170824'
 
   input_folders = []
