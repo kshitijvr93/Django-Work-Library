@@ -18,6 +18,20 @@ from oai_utils import OAI_Server, OAI_Harvester
 import datetime
 import shutil
 
+# merric_sets_201707 are sets for UF to use, identified by Elliot Williams in a 20170707 email
+# to Laura Perry at Digital Processsing Systems maybe AKA DSS in 201708?
+#
+merrick_sets_201707 = [
+  'asm0085', 'asm0304', 'asm0344', 'asm0570', 'chc0015', 'chc0111', 'chc0124', 'chc0126',
+  'chc0184', 'chc0189', 'chc0193', 'chc0218', 'chc0219', 'chc0336', 'chc0339', 'chc0347',
+  'chc0356', 'chc0359', 'chc0364', 'chc0380', 'chc0398', 'chc0400', 'chc0460', 'chc0468',
+  'chc0484', 'chc0487', 'chc5006', 'chc5010', 'chc5017', 'chc5047', 'chc5061O', 'chc5066',
+  'chc5122', 'chc5123', 'chc5143', 'chc5209', 'chc5212', 'chc5223', 'chc5252', 'chc5260',
+  'chc5277', 'chc5278', 'chc5298J', 'chc5299', 'chc5312H', 'chc5313', 'chc5324', 'chc5330',
+  'chc5352', 'chc5372', 'chc5376', 'chc9998', 'chc9999', 'cubanlaw', 'cubanphotos', 'ruston',
+  'theater', 'tobaccoart',
+]
+
 merrick_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!--  METS/mods file designed to describe OAI-PMH extracted MD from Miami-Merrick -->
 
@@ -37,10 +51,11 @@ merrick_mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no
 
 <METS:metsHdr CREATEDATE="{create_date}" ID="{bib_vid}"
   LASTMODDATE="{last_mod_date}" RECORDSTATUS="COMPLETE">
-
+<!--
 <METS:agent ROLE="CREATOR" TYPE="ORGANIZATION">
   <METS:name>IUF, University of Florida</METS:name>
 </METS:agent>
+-->
 
 <METS:agent ROLE="CREATOR" OTHERTYPE="SOFTWARE" TYPE="OTHER">
   <METS:name>UF Marshal API Harvester 0.2</METS:name>
@@ -334,7 +349,7 @@ the item.'''
         'create_date' : dc_date,
         'last_mod_date' : utc_secs_z,
         'agent_creator_individual_name': dc_creator,
-        'agent_creator_individual_note' : 'Creation via Miami-Merrick OAI  harvest',
+        'agent_creator_individual_note' : 'Univeristy of Miami-Merrick',
         'identifier' : header_identifier_text,
         'mods_subjects' : mods_subjects,
         'rights_text' : rights_text,
@@ -374,9 +389,9 @@ the item.'''
 def run_test():
 
   study = 'merrick'
-  set_spec = 'asm0085'
+  set_spec = 'tobaccoart'
   metadata_prefix = 'oai_dc'
-  bib_vid = 'XX00000000_00001'
+  bib_vid = 'TA00000000_00001'
   oai_url = 'http://merrick.library.miami.edu/oai/oai.php'
   node_writer = merrick_node_writer
   encoding='ISO_8859_1' #works OK
