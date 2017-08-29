@@ -798,9 +798,10 @@ RETURN VALUE: d_return()
 
    'node_rawtext': node's rawtext
    'failure_message': a message for the failure code or ''
+   'log_messages' : warning message
 '''
 
-def xslt_transform_format(node_root_input=None, d_ns=None, xslt_format_str=None,
+def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None, xslt_format_str=None,
     d_sobek_track=None, d_sobek_vary=None,verbosity=0):
 
     me="xslt_transform_format"
@@ -827,6 +828,7 @@ def xslt_transform_format(node_root_input=None, d_ns=None, xslt_format_str=None,
     # and if so, the author will be assigned the roleterm of (UF author), otherwise just (author)
     #
     xml_authors = ''
+    log_messages = []
 
     # Start by extracting from the article's xml input file, some input file nodes
     # and values.
@@ -839,18 +841,28 @@ def xslt_transform_format(node_root_input=None, d_ns=None, xslt_format_str=None,
     d_return['node_rawtext'] = node_fulltext
 
     node_pii = node_root_input.find('.//xocs:pii-unformatted', namespaces=d_ns)
-    if node_pii is not None:
+    if node_pii is not None and len(node_pii.text) > 10:  # 10 seems like a good check
         pii = node_pii.text
-        if verbosity > 0:
-            print("{}: got pii={}".format(me,pii))
+        if (pii != core_pii):
+            log_messages.append("xocs:pii is {}, but using core pii ='' next."
+              .format(me,pii,core_pii))
+            d_return['log_messages'] = log_messages
+            pii = core_pii
     else:
-        pii = ''
+        log_messages.append("{}:No xocs:pii found. Trying core pii ='{}' next."
+              .format(me,core_pii))
+        d_return['log_messages'] = log_messages
+        pii = core_pii
 
-    if pii == '':
+    if len(pii) < 10:
         # Note: pii is required for an Elsevier item's mets file, so we can use that to
         # apply future updates or deletions.
-        d_return['failure_message'] = 'No xocs:pii_unformatted pii value found in input xml file.'
+        msg = 'core_pii is also bad. No pii value found for input xml file.'
+        d_return['failure_message'] = msg
         return d_return
+
+    if verbosity > 0:
+        print("{}: using pii={}".format(me,pii))
 
     node_openaccess = node_root_input.find('.//{*}openaccess', namespaces=d_ns)
     openaccess_suffix = ''
@@ -1140,6 +1152,7 @@ Returns d_return{}, with keys and values:
 '''
 def article_xml_to_mets_file(source=None, xslt_format_str=None,
     input_file_name=None,
+    core_pii=None, #Caller-supplied PII value gleans from the input file's name
     out_dir_root=None, d_sobek_track=None, d_sobek_vary=None,
     only_oac=False, stored_sha1_hexdigest=None, bibvid=None, verbosity=0):
 
@@ -1254,8 +1267,8 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
 
     #sha1_hexdigest, result_mets_str, node_rawtext, mets_failure = xslt_transform_format(
     '''
-    d_results = xslt_transform_format(
-        node_root_input=node_root_input, d_ns=d_ns, xslt_format_str=xslt_format_str
+    d_results = xslt_transform_format(core_pii=core_pii
+        ,node_root_input=node_root_input, d_ns=d_ns, xslt_format_str=xslt_format_str
         , d_sobek_track=d_sobek_track, d_sobek_vary=d_sobek_vary)
 
     # Act on special return values
@@ -1524,6 +1537,7 @@ def articles_xml_to_mets(source=None
         # Try to create mets.xml output for the input article
         d_results = article_xml_to_mets_file(source=source
             , xslt_format_str=xslt_format_str
+            , core_pii=pii #pii in filename (orig from dublin core pii xml tag)
             , input_file_name=input_file_name
             , out_dir_root=output_folder
             , d_sobek_track=d_sobek_track
