@@ -15,6 +15,26 @@ from pathlib import Path
 import shutil
 import stat
 
+
+def get_json_result_by_url(url):
+    me = 'get_json_result_by_url'
+    if url is None or url=="":
+        raise Exception("Cannot send a request to an empty url.")
+    try:
+        get_request = urllib.request.Request(url, data=None)
+    except:
+        raise Exception("Cannot send a request to url={}".format(url))
+    try:
+        response = urllib.request.urlopen(get_request)
+    except Exception as e:
+        print("{}:get_json_result_by_url: Got exception instead of response for"
+              " url={}, get_request={} , exception={}"
+              .format(me,url, get_request, e))
+        raise
+    json_result = json.loads(response.read().decode('utf-8'))
+    return json_result
+#end get_json_result_by_url
+
 def sequence_days(cymd_start=None, cymd_end=None,fmt='%Y%m%d'):
     dt_day = datetime.datetime.strptime(cymd_start, fmt )
     dt_end = datetime.datetime.strptime(cymd_end, fmt )
