@@ -1,22 +1,43 @@
-# crafdtxml.py
-# new name crafdtxml (Cross Ref Api Filter Date to xml
-# Based on Crafatxml - so still may need to change occurrences of that name below in places too..
-#
-# API Documentation: https://github.com/CrossRef/rest-api-doc/blob/master/rest_api.md
-#
-# ALSO see the crawdxml notebook program that queries the cross ref "Works" api that allows selection
-# of a specific DOI, where those results do include the author and affiliation string,
-# with which we can do our own pattern matching on affiliation name to find variants of UF.
-# Note: the upshote is that crossref affiliation filter in 20161217 DOES find some DOIs metadata, but
-# only those that exactly match "University of Florida". Here we get all "filtered"
-# data (including DOI) that crossref shows for a given index date, and then we use that DOI to
-# do a more detailed query of the crossreff works DOI to get author-affiliation and much more detailed data
-# for each DOI of interest.
-# This is python 3.5.1 code
-# Use the Crossref API to (1) harvest metadata for articles of a certain day and (2) later, to
-# apply python filter to yield affiliations that match "University of Florida".
-#
-import sys
+''' crafdtxml.py
+
+Program crafdtxml - Cross Ref Api Filter Date to xml
+Based on Crafatxml - so still may need to change occurrences of that name
+below in places too..
+
+CrossRef API Documentation:
+https://github.com/CrossRef/rest-api-doc/blob/master/rest_api.md
+
+ALSO see the crawdxml notebook program that queries the cross ref "Works" api
+that allows selection of a specific DOI, where those results do include the
+author and affiliation string, with which we can do our own pattern matching
+on affiliation name to find variants of UF.
+
+Note: the upshot is that crossref affiliation filter in 20161217 DOES find
+some DOIs metadata, but only those that exactly match "University of Florida".
+
+Here we get all "filtered-by-index or issue date" data (including DOI) that
+crossref shows for a given index date, and then we use that DOI to do a
+more detailed query of the crossreff works DOI to get author-affiliation
+and much more detailed data for each DOI of interest.
+
+This is python 3.5.1 code
+Use the Crossref API to (1) harvest metadata for articles of a certain day
+and (2) later, to apply python filter to yield affiliations that match
+"University of Florida".
+'''
+import sys, os, os.path, platform
+def get_path_modules(verbosity=0):
+  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+  path_user = os.environ.get(env_var)
+  path_modules = '{}/git/citrus/modules'.format(path_user)
+  if verbosity > 1:
+    print("Assigned path_modules='{}'".format(path_modules))
+  return path_modules
+sys.path.append(get_path_modules())
+print("Sys.path={}".format(sys.path))
+sys.stdout.flush()
+import etl
+
 #import requests
 import urllib, urllib.parse
 import json
@@ -24,37 +45,25 @@ import pprint
 from collections import OrderedDict
 from io import StringIO, BytesIO
 import shutil
-import etl
 from datetime import datetime
 
-'''
-This notebook is meant to develop, test, house, and entomb crafatxml (CrossRef Api To Xml)
-It is initially based on ealdxml (Elsevier Api To Xml), and others (from oadoixml it borrows
-json conversion using my trusty log-authoring method add_subelements(). It writes out
-to ..output_crafatxml a file for each doi/item encountered by querying the crossref api for
-affiliation of the University of Florida
-
-Crafatxml reads information from CrossRef API as of 20161215, for
-UF-Authored articles and related metadata.
-'''
 from lxml import etree
 import xml.etree.ElementTree as ET
 from pathlib import Path
 import datetime
 import pytz
-import os
 import urllib.request
-from lxml import etree
 #Note: Official Python 3.5 docs use different library, ElementTree ET
 
-''' d_affiliation_names:
+''' od_affiliation_names OrderedDict
 key
     is local abbreviation (used as a step in output directory path)
     for a university or author affiliation,
 and value
     is a list of strings to check vs an affiliation name for a match.
 
-Initialize this dict to match CHORUS 'institution or affiliation partners' as of 20170313
+Initialize this dict to match CHORUS 'institution or affiliation partners'
+as of 20170313
 Note:
 '''
 od_affiliation_substrings = OrderedDict({
@@ -78,12 +87,13 @@ substring matches on the given name are sought.
 
 Return:
     A dictionary of affiliations where each key is the same as an input
-    od_affiliation_substring key where one of its substrings matched the given name.
+    od_affiliation_substring key where one of its substrings matched the given
+    name.
     The returned dictionary will have length of 0 of no matches were found.
 
-NOTES: If max_affiliation is not zero, it is the maximum number of matching affiliations
-to include in the returned dictionary. This allows the caller to set it to 1 to speed up
-the algorithm used in this method.
+NOTES: If max_affiliation is not zero, it is the maximum number of matching
+affiliations to include in the returned dictionary. This allows the caller
+to set it to 1 to speed up the algorithm used in this method.
 '''
 def get_affiliations_by_name_substrings(name, od_affiliation_substrings,
     max_affiliations = 0):
@@ -119,48 +129,6 @@ def uf_affiliation(name):
     #print("NO Match")
     return 0
 
-'''get_json_result_by_url
-Given a url, return the expected json response.
-
-Sample usage by caller who wants xml instead:
-
-        print("Using url_request='{}'".format(url_request))
-        d_result = get_json_result_by_url(url_request)
-
-        #print("Got d_result='{}'".format(repr(d_result)))
-        # Point into the interesting data root-depending on the url's API documents.
-        #d_entry = d_result['results'][0]
-        # or leave as is and examine json to see the location of desired data...
-        d_entry = d_result
-        #print("\n\nGot d_entry='{}'\n".format(d_entry))
-
-        # Save the xml as a string
-        node_root = etree.Element("entry")
-        elt.add_subelements(node_root, d_entry)
-
-'''
-def get_json_result_by_url(url):
-
-    if url is None or url=="":
-        raise Exception("Cannot send a request to an empty url.")
-    try:
-        #print("*** BULDING GET REQUEST FOR SCIDIR API RESULTS FOR URL='{}' ***".format(url))
-        get_request = urllib.request.Request(url, data=None)
-
-    except:
-        raise Exception("Cannot send a request to url={}".format(url))
-    try:
-        #print("*** GET REQUEST='{}' ***".format(repr(get_request)))
-        response = urllib.request.urlopen(get_request)
-    except Exception as e:
-        print("get_json_result_by_url: Got exception instead of response for"
-              " url={}, get_request={} , exception={}"
-              .format(url, get_request, e))
-        raise
-
-    json_result = json.loads(response.read().decode('utf-8'))
-    return json_result
-#end get_json_result_by_url
 '''
 NOTE: see nice url of results to examine while finishing this method:
 http://api.crossref.org/works?filter=affiliation:University%20of%20Florida,from-index-date:2016-12-01,until-index-date:2016-12-01
@@ -179,8 +147,13 @@ def crafdtxml(d_params, verbosity=0):
     # dt_start is the first orig-load-date that we want to collect
     # dt_end is the last orig-load dates that we want to collect
     me = 'crafddtxml'
-    dt_day = datetime.datetime.strptime(d_params['cymd_start'],'%Y%m%d')
-    dt_end = datetime.datetime.strptime(d_params['cymd_end'], '%Y%m%d')
+    day_start = d_params['cymd_start']
+    day_end = d_params['cymd_end']
+
+    dt_day = datetime.datetime.strptime(day_start,'%Y%m%d')
+    dt_end = datetime.datetime.strptime(day_end, '%Y%m%d')
+    days = sequence_days(day_start, day_end)
+
     day_delta = datetime.timedelta(days=1)
 
     dt_bef = dt_day - day_delta
@@ -200,7 +173,9 @@ def crafdtxml(d_params, verbosity=0):
     d_batch = dict()
     uf_articles = 0
     articles_todal = 0
-    while dt_day <= dt_end:
+    # while dt_day <= dt_end:
+
+    for day, dt_day in days():
         n_day += 1
         y4md = dt_day.strftime('%Y-%m-%d')
         d_params['cymd_day'] = y4md
@@ -209,7 +184,7 @@ def crafdtxml(d_params, verbosity=0):
 
         # Make an output directory for the doi results of the following query
         output_folder_ymd = '{}/doi/{}/{}/{}'.format(
-            output_folder_base,y4md[:4],y4md[5:7],y4md[8:10])
+            output_folder_base, y4md[:4],y4md[5:7],y4md[8:10])
 
         print("DELETING and RE-Making output_folder_ymd='{}'"
             .format(output_folder_ymd))
@@ -234,7 +209,8 @@ def crafdtxml(d_params, verbosity=0):
         n_batch = 0
         while(1):
             # Each loop returns 1000 articles.
-            # It was 230,000 articles on 9/30/2016, but usually 5-10,000
+            # The total was 230,000 articles on 9/30/2016, but in 2016 one day
+            # usually contains 5-10,000 articles
             n_batch += 1
 
             url_worklist_day = (
@@ -242,10 +218,9 @@ def crafdtxml(d_params, verbosity=0):
                 "has-affiliation:true,from-deposit-date:{},until-deposit-date:{}"
                 .format(cursor,y4md, y4md))
 
-
             print("{}: using url={}".format(me,url_worklist_day))
 
-            d_json = get_json_result_by_url(url_worklist_day)
+            d_json = etl.get_json_result_by_url(url_worklist_day)
             # Pretty-print json data
             # print(json.dumps(d_json, indent=4, sort_keys=True))
 
@@ -253,6 +228,7 @@ def crafdtxml(d_params, verbosity=0):
             node_response_root = etree.Element("response")
             # Create xml sub-nodes from the json result
             elt.add_subelements(node_response_root, d_json, item_ids=True)
+
             '''
             The root node 'response' from url_worklist_day has had/should
             have four child nodes:
@@ -282,6 +258,7 @@ def crafdtxml(d_params, verbosity=0):
                node contents and output one xml file per item-000* node with
                root element named <crossref-doi>.
             '''
+
             doi = 'Not in CrossRef Results'
 
             node_items = node_response_root.find('.//items')
@@ -289,6 +266,7 @@ def crafdtxml(d_params, verbosity=0):
             if n_batch == 1 and node_total_results is not None:
                 print("Processing total-results count = {}"
                     .format(node_total_results.text))
+
             if node_items is None or len(node_items) < 1:
                 print("CrossRef API Response shows no result items remain for this query.")
                 break;
@@ -397,7 +375,7 @@ def crafdtxml(d_params, verbosity=0):
                 print("Got node_cursor value={}. ".format(cursor))
             print("End batch {}\n".format(n_batch))
 
-        # End loop through potential multiple result batches
+        # End loop through potential multiple result batches for this day
         print (
             "\nEnd of batches for this day={} with {} articles and {} uf articles\n"
             "===========================\n\n"
@@ -410,7 +388,7 @@ def crafdtxml(d_params, verbosity=0):
         dt_day += day_delta
         dt_bef += day_delta
         dt_aft += day_delta
-    # end collection while dt_day <= dt_end
+    # end while loop over days - while dt_day <= dt_end
 
     return entries_collected, entries_excepted, uf_articles
 # end def crafdtxml
@@ -426,21 +404,25 @@ utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 verbosity = 0
 
-#NOTE: CrossRef query parameters provide FROM dates and UNTIL dates, inclusive of those days.
-# Compare: Elsevier api parameters provide BEF and AFT dates, exclusive of those days.
-# So here, since we are using CrossRef APIs, the cymd_start and cymd_end days are INCLUDED
-# in the API query results.
+# NOTE: CrossRef query parameters provide FROM dates and UNTIL dates,
+# inclusive of those days.
+# Compare: Elsevier api parameters provide BEF and AFT dates, exclusive of
+# those days.
+# So here, since we are using CrossRef APIs, the cymd_start and
+# cymd_end days are INCLUDED in the API query results.
+
 cymd_start = '20170306'
-#cymd_start = '20161213'
-# cymd_end = '20160206'
+
 # CRAFATXML - Here, we do only one day at a time...
 cymd_end = '20170306'
 
 utc_now = datetime.datetime.utcnow()
 # secsz_start: secz means seconds in utc(suffix 'z') when this run started
 secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
-output_folder_base = 'c:/rvp/elsevier/output_crafdtxml_chorus'
-output_folder_run = '{}/run/{}'.format(output_folder_base, secsz_start)
+
+output_folder_base = etl.data_folder(linux='/home/robert/', windows='U:/',
+    data_relative_folder='data/outputs/crafdtml/run/{}/'
+        .format(secsz_start))
 
 print ("START CRAFDTXML RUN at {}\n\twith:\ncymd_start='{}', cymd_end='{}'\n  "
        "output_folder_base={},verbosity={}"
@@ -448,9 +430,6 @@ print ("START CRAFDTXML RUN at {}\n\twith:\ncymd_start='{}', cymd_end='{}'\n  "
 
 if not os.path.isdir(output_folder_base):
     os.makedirs(output_folder_base)
-
-if not os.path.isdir(output_folder_run):
-    os.makedirs(output_folder_run)
 
 worker_threads = 1 # TODO
 # Dict of metadata run parameter info on this run
@@ -470,12 +449,12 @@ entries_excepted = 0
 ###### MAIN CALL TO CRAFDTXML() ########
 
 if (1 == 1): # test with or without call to eatxml
-    entries_collected, entries_excepted, uf_articles = crafdtxml(d_params, verbosity=verbosity)
+    entries_collected, entries_excepted, uf_articles = crafdtxml(
+        d_params, verbosity=verbosity)
 
 ############### WRAP-UP MISC OUTPUT ################
-
 # Also record some summary output results in d_params for saving as xml file
-#
+
 utc_now = datetime.datetime.utcnow()
 secsz_end = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
 
@@ -491,8 +470,8 @@ d_params.update({
 # Wrap up and write out the run parameters log file.
 e_root = etree.Element("uf_crossref_works_aff_uf_harvest")
 elt.add_subelements(e_root, d_params)
-out_filename = '{}/run_crafdxml_{}.xml'.format(output_folder_run, secsz_start)
-os.makedirs(output_folder_run, exist_ok=True)
+out_filename = '{}/run_crafdxml_{}.xml'.format(output_folder_base, secsz_start)
+os.makedirs(output_folder_base, exist_ok=True)
 
 with open(out_filename, 'wb') as outfile:
     outfile.write(etree.tostring(e_root, pretty_print=True))

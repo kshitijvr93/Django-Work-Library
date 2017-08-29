@@ -1,6 +1,9 @@
 # crafatxml.py
 # new name crafatxml (Cross Ref Api Filter Affiliation to xml AND
 # affiliation target "University of Florida" is used here.
+# NOTE: 20170828 - TODO: make sure this works after 201708 because I left this
+# code untested then, to pursue primping and running crafdtxml.py for an important analysis.
+#
 # NOTE: However, this afffiliation "University of Florida" argument in crossref has no wildcard
 # options and it will NOT find somewhat nonuniform decorated affiliation names like
 # "Univeristy of Florida, Gainesville", nor any with department names prefixed, with semicolon
@@ -15,7 +18,19 @@
 # Use the Crossref API to harvest metadata for affiliations that match "University of Florida" for
 # dates specified by Crossref params from-index-date and until-index-date.
 # ONLINE API DOCS: see https://github.com/CrossRef/rest-api-doc/blob/master/rest_api.md
-import sys
+import sys, os, os.path, platform
+def get_path_modules(verbosity=0):
+  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+  path_user = os.environ.get(env_var)
+  path_modules = '{}/git/citrus/modules'.format(path_user)
+  if verbosity > 1:
+    print("Assigned path_modules='{}'".format(path_modules))
+  return path_modules
+sys.path.append(get_path_modules())
+print("Sys.path={}".format(sys.path))
+sys.stdout.flush()
+import etl
+
 #import requests
 import urllib, urllib.parse
 import json
@@ -29,7 +44,7 @@ from datetime import datetime
 '''
 This notebook is meant to develop, test, house, and entomb crafatxml (CrossRef Api To Xml)
 It is initially based on ealdxml (Elsevier Api To Xml), and others (from oadoixml it borrows
-json conversion using my trusty log-authoring method add_subelements(). It writes out
+json conversion to xml method etl.add_subelements(). It writes out
 to ..output_crafatxml a file for each doi/item encountered by querying the crossref api for
 affiliation of the University of Florida
 
@@ -41,7 +56,6 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 import datetime
 import pytz
-import os
 import urllib.request
 from lxml import etree
 #Note: Official Python 3.5 docs use different library, ElementTree ET
@@ -49,12 +63,11 @@ from lxml import etree
 # update: lxml shows no troubless so far after months of use
 #import xml.etree.ElementTree as ET
 from pathlib import Path
-import etl
 
 '''
-Program crafatxml (Scopus Api To XML) reads information from Scopus Search API for
-UF-Authored (affiliated) articles and for each, it seeks it in the
-Scopus Full-text API.
+Program crafatxml (crossref api filter affiliations To XML) reads information
+from Scopus Search API for UF-Authored (affiliated) articles and for each,
+it seeks it in the Scopus Full-text API.
 
 If not found, it logs an error message, otherwise it outputs a file named
 scopus_{scopus_id}.xml in the given output directory for each article.
@@ -79,28 +92,7 @@ Sample usage by caller who wants xml instead:
         elt.add_subelements(node_root, d_entry)
 
 '''
-def get_json_result_by_url(url):
 
-    if url is None or url=="":
-        raise Exception("Cannot send a request to an empty url.")
-    try:
-        #print("*** BULDING GET REQUEST FOR SCIDIR API RESULTS FOR URL='{}' ***".format(url))
-        get_request = urllib.request.Request(url, data=None)
-
-    except:
-        raise Exception("Cannot send a request to url={}".format(url))
-    try:
-        #print("*** GET REQUEST='{}' ***".format(repr(get_request)))
-        response = urllib.request.urlopen(get_request)
-    except Exception as e:
-        print("get_json_result_by_url: Got exception instead of response for"
-              " url={}, get_request={} , exception={}"
-              .format(url, get_request, e))
-        raise
-
-    json_result = json.loads(response.read().decode('utf-8'))
-    return json_result
-#end get_json_result_by_url
 '''
 NOTE: see nice url of results to examine while finishing this method:
 http://api.crossref.org/works?filter=affiliation:University%20of%20Florida,from-index-date:2016-12-01,until-index-date:2016-12-01
@@ -121,6 +113,8 @@ def crafatxml(d_params, verbosity=0):
     me = 'crafatxml'
     dt_day = datetime.datetime.strptime(d_params['cymd_start'],'%Y%m%d')
     dt_end = datetime.datetime.strptime(d_params['cymd_end'], '%Y%m%d')
+
+
     day_delta = datetime.timedelta(days=1)
 
     total_results = 0
@@ -132,7 +126,7 @@ def crafatxml(d_params, verbosity=0):
     d_batches = dict()
     d_params.update({"batches": d_batches})
 
-    output_folder_base = d_params['output_folder_base']
+    output_folder_run = d_params['output_folder_run']
 
     n_batch = 1;
     d_batch = dict()
@@ -149,7 +143,7 @@ def crafatxml(d_params, verbosity=0):
 
         # Make an output directory for the doi results of the following query
         output_folder_ymd = '{}/doi/{}/{}/{}'.format(
-            output_folder_base,y4md[:4],y4md[5:7],y4md[8:10])
+            output_folder_run,y4md[:4],y4md[5:7],y4md[8:10])
 
         print("DELETING and RE-Making output_folder_ymd='{}'".format(output_folder_ymd))
         if os.path.isdir(output_folder_ymd):
@@ -170,7 +164,7 @@ def crafatxml(d_params, verbosity=0):
             "from-index-date:{},until-index-date:{}".format(y4md, y4md))
         print("{}: using url={}".format(me,url_worklist_day))
 
-        d_json = get_json_result_by_url(url_worklist_day)
+        d_json = etl.get_json_result_by_url(url_worklist_day)
         # Pretty-print json data
         # print(json.dumps(d_json, indent=4, sort_keys=True))
 
@@ -200,7 +194,7 @@ def crafatxml(d_params, verbosity=0):
            We will output parse the response to get individual item-000* node contents and
            output one xml file per item-000* node with root element named <crossref-doi>.
         '''
-        doi = 'Not in CrossRef Results'
+        #doi = 'Not in CrossRef Results'
         node_items = node_response_root.find('.//items')
         #print ("Len of node_items={}".format(len(node_items)))
 
@@ -223,7 +217,6 @@ def crafatxml(d_params, verbosity=0):
             if node_doi is None:
                 entries_excepted += 1
                 continue
-            # print("Got node_doi tag={},text={}".format(node_doi.tag,node_doi.text))
             # Replace pesky slash characters to create a filesysetm (fs) name for the doi to
             # put all xml output in one tidy output folder.
             # Later, one must look IN the file to get the real doi.
@@ -239,6 +232,7 @@ def crafatxml(d_params, verbosity=0):
             with open(output_filename, 'wb') as outfile:
                 outfile.write(out_str)
             entries_collected += 1
+
         # end loop through items in this query's response
         # NOTE: now we get up to 1000 nodes, which is suffienct 'per-day' for UF articles,
         # however, we need to use the offset or cursor features if more items appear in a response.
@@ -256,81 +250,85 @@ def crafatxml(d_params, verbosity=0):
     return entries_collected, entries_excepted
 # end def crafatxml
 
-####### RUN main CRAFATXML program
-# PARAMETERS -- set these manually per run for now... but only cymd_start
-# and cymd_end would normally change.
+def run():
+    ####### RUN main CRAFATXML program
+    # PARAMETERS -- set these manually per run for now... but only cymd_start
+    # and cymd_end would normally change.
+    #
+
+    me = 'main code to run crafatxml'
+    utc_now = datetime.datetime.utcnow()
+    utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    verbosity = 0
+    cymd_start = '20160206'
+    #cymd_start = '20161213'
+    # cymd_end = '20160206'
+    # CRAFATXML - Here, we do only one day at a time...
+    cymd_end = '20170308'
+
+    utc_now = datetime.datetime.utcnow()
+    # secsz_start: secz means seconds in utc(suffix 'z') when this run started
+    secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
+
+    output_folder_run = etl.data_folder(linux='/home/robert/', windows='U:/',
+        data_relative_folder='data/outputs/crafatxml/run/{}/'
+            .format(secsz_start))
+
+    print ("START CRAFATXML RUN at {}\n\twith:\ncymd_start='{}', cymd_end='{}'\n  "
+           "output_folder_run={},verbosity={}"
+           .format(secsz_start, cymd_start, cymd_end, output_folder_run, verbosity))
+
+    if not os.path.isdir(output_folder_run):
+        os.makedirs(output_folder_run)
+
+    worker_threads = 1 # TODO
+    # Dict of metadata run parameter info on this run
+    d_params={
+        "secsz_start": secsz_start,
+        "cymd_start" : cymd_start,
+        "cymd_end"   : cymd_end,
+        "output_folder_run" : output_folder_run,
+        "python_version" : sys.version,
+        "max-queries" : "0", # TODO
+        }
+
+    # Process the Elsevier Search and Full-Text APIs to create local xml files
+    entries_collected = 0
+    entries_excepted = 0
+
+    ###### MAIN CALL TO CRAFATXML() ########
+
+    if (1 == 1): # test with or without call to eatxml
+        entries_collected, entries_excepted = crafatxml(d_params, verbosity=verbosity)
+
+    ############### WRAP-UP MISC OUTPUT ################
+
+    # Also record some summary output results in d_params for saving as xml file
+    #
+    utc_now = datetime.datetime.utcnow()
+    secsz_end = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
+
+    d_params.update({
+        "total-entries-collected" : entries_collected,
+        "total-entries-excepted" : entries_excepted,
+        "secsz-end" : secsz_end,
+        # Prevent actual api-key value from being stored in the output
+        "api-key" : '*UF-Smathers Proprietary*'
+        })
+
+    # Wrap up and write out the run parameters log file.
+    e_root = etree.Element("uf_crossref_works_aff_uf_harvest")
+    elt.add_subelements(e_root, d_params)
+    out_filename = '{}/run_crafatxml_{}.xml'.format(output_folder_run, secsz_start)
+    os.makedirs(output_folder_run, exist_ok=True)
+
+    with open(out_filename, 'wb') as outfile:
+        outfile.write(etree.tostring(e_root, pretty_print=True))
+
+    print("Done!")
+#end def run():
+
+# RUN
 #
-
-me = 'main code to run crafatxml'
-utc_now = datetime.datetime.utcnow()
-utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-verbosity = 0
-cymd_start = '20160206'
-#cymd_start = '20161213'
-# cymd_end = '20160206'
-# CRAFATXML - Here, we do only one day at a time...
-cymd_end = '20170308'
-
-utc_now = datetime.datetime.utcnow()
-# secsz_start: secz means seconds in utc(suffix 'z') when this run started
-secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
-output_folder_base = 'c:/rvp/elsevier/output_crafatxml'
-output_folder_run = '{}/run/{}'.format(output_folder_base, secsz_start)
-
-print ("START CRAFATXML RUN at {}\n\twith:\ncymd_start='{}', cymd_end='{}'\n  "
-       "output_folder_base={},verbosity={}"
-       .format(secsz_start, cymd_start, cymd_end, output_folder_base, verbosity))
-
-if not os.path.isdir(output_folder_base):
-    os.makedirs(output_folder_base)
-
-if not os.path.isdir(output_folder_run):
-    os.makedirs(output_folder_run)
-
-worker_threads = 1 # TODO
-# Dict of metadata run parameter info on this run
-d_params={
-    "secsz_start": secsz_start,
-    "cymd_start" : cymd_start,
-    "cymd_end"   : cymd_end,
-    "output_folder_base" : output_folder_base,
-    "python_version" : sys.version,
-    "max-queries" : "0", # TODO
-    }
-
-# Process the Elsevier Search and Full-Text APIs to create local xml files
-entries_collected = 0
-entries_excepted = 0
-
-###### MAIN CALL TO CRAFATXML() ########
-
-if (1 == 1): # test with or without call to eatxml
-    entries_collected, entries_excepted = crafatxml(d_params, verbosity=verbosity)
-
-############### WRAP-UP MISC OUTPUT ################
-
-# Also record some summary output results in d_params for saving as xml file
-#
-utc_now = datetime.datetime.utcnow()
-secsz_end = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
-
-d_params.update({
-    "total-entries-collected" : entries_collected,
-    "total-entries-excepted" : entries_excepted,
-    "secsz-end" : secsz_end,
-    # Prevent actual api-key value from being stored in the output
-    "api-key" : '*UF-Smathers Proprietary*'
-    })
-
-# Wrap up and write out the run parameters log file.
-e_root = etree.Element("uf_crossref_works_aff_uf_harvest")
-elt.add_subelements(e_root, d_params)
-out_filename = '{}/run_crafatxml_{}.xml'.format(output_folder_run, secsz_start)
-os.makedirs(output_folder_run, exist_ok=True)
-
-with open(out_filename, 'wb') as outfile:
-    outfile.write(etree.tostring(e_root, pretty_print=True))
-
-print("Done!")
-#
+run()
