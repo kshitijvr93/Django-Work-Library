@@ -9,8 +9,9 @@ class OAI_Server(object):
     <synopsis name='OAI_Server'>
     <summary>OAI_Harvester encapsulates information required to make requests to a
     specific OAI server. It also contains
-    (1) a generator method named namespaces_node() to read the OAI server listRecords
-    and parse it into a node_record xml object that is returned
+    (1) a generator method named list_nodes() to read results from an OAI server
+    listRecords url request and parse each node in the results into a node_recor
+    d xml object that is yielded.
     </summary>
     <param name="oai_url">The base url for the target OAI Server API
     </param>

@@ -17,19 +17,22 @@ import stat
 
 
 def get_json_result_by_url(url):
+    import urllib
+    import json
+
     me = 'get_json_result_by_url'
     if url is None or url=="":
         raise Exception("Cannot send a request to an empty url.")
     try:
         get_request = urllib.request.Request(url, data=None)
-    except:
-        raise Exception("Cannot send a request to url={}".format(url))
+    except Exception as exc:
+        raise Exception("Cannot send a request to url={}. exc={}".format(url,exc))
     try:
         response = urllib.request.urlopen(get_request)
     except Exception as e:
         print("{}:get_json_result_by_url: Got exception instead of response for"
-              " url={}, get_request={} , exception={}"
-              .format(me,url, get_request, e))
+              "\n url='{}',\nget_request={}, exception={}"
+              .format(me,url, repr(get_request), repr(e)))
         raise
     json_result = json.loads(response.read().decode('utf-8'))
     return json_result
@@ -109,7 +112,8 @@ If json_loads is True, read the API result as a JSON result,
 so decode it to a Python result and return that.
 Otherwise just return the utf-8 result.
 '''
-def get_result_by_url(url, json_loads='True', verbosity=0):
+def get_result_by_url(url, json_loads=True, send_user_agent=True, verbosity=0):
+    import urllib2 as urllib
 
     if url is None or url=="":
         raise Exception("Cannot send a request to an empty url.")
@@ -117,20 +121,24 @@ def get_result_by_url(url, json_loads='True', verbosity=0):
         if verbosity > 0:
             print("*** BULDING GET REQUEST FOR API RESULTS FOR URL='{}' ***"
               .format(url))
-        get_request = urllib.request.Request(url, data=None, headers={
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) '
-            'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
-            })
-    except:
-        raise Exception("Cannot create a request for url={}".format(url))
+        if (send_user_agent):
+            get_request = urllib.request.Request(url, data=None, headers={
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) '
+                'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
+                })
+        else:
+            get_request = urllib.request.Request(url, data=None)
+
+    except Exception as exc:
+        raise Exception("Cannot create a request for \nurl='{}', exc={}".format(url,repr(exc)))
     try:
         print("*** GET REQUEST='{}' ***".format(repr(get_request)))
         response = urllib.request.urlopen(get_request)
     except Exception as e:
         if verbosity > 0:
             print("get_result_by_url: Got exception instead of response for"
-                " url={}, get_request={} , exception={}"
-                .format(url, get_request, e))
+                " \nurl='{}',\nget_request={} , exception={}"
+                .format(url, repr(get_request), e))
         raise
     result = response.read().decode('utf-8')
     if json_loads == True:

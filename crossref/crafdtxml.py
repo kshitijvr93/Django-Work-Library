@@ -57,10 +57,11 @@ import urllib.request
 
 ''' od_affiliation_names OrderedDict
 key
-    is local abbreviation (used as a step in output directory path)
-    for a university or author affiliation,
+    is local name abbreviation (used as a step in output directory path)
+    for a university or author affiliation, e.g.,'UF' or "University of Florida"
 and value
     is a list of strings to check vs an affiliation name for a match.
+    later may make this value a regular expression to check
 
 Initialize this dict to match CHORUS 'institution or affiliation partners'
 as of 20170313
@@ -142,27 +143,17 @@ Params cymd_lo and hi are load date ranges for the search API use to select
 which articles for which to return metadata.
 '''
 def crafdtxml(d_params, verbosity=0):
-    #
     # VALIDATE d_params
     # dt_start is the first orig-load-date that we want to collect
-    # dt_end is the last orig-load dates that we want to collect
-    me = 'crafddtxml'
-    day_start = d_params['cymd_start']
-    day_end = d_params['cymd_end']
+    me = 'crafdtxml'
 
-    dt_day = datetime.datetime.strptime(day_start,'%Y%m%d')
-    dt_end = datetime.datetime.strptime(day_end, '%Y%m%d')
-    days = sequence_days(day_start, day_end)
+    days = etl.sequence_days(d_params['cymd_start'], d_params['cymd_end'])
 
-    day_delta = datetime.timedelta(days=1)
-
-    dt_bef = dt_day - day_delta
-    dt_aft = dt_day + day_delta
     total_results = 0
-
     output_articles = 0
     entries_collected = 0
     entries_excepted = 0
+
     # Collect results for all entries in this search query result response
     d_batches = dict()
     d_params.update({"batches": d_batches})
@@ -173,21 +164,21 @@ def crafdtxml(d_params, verbosity=0):
     d_batch = dict()
     uf_articles = 0
     articles_todal = 0
-    # while dt_day <= dt_end:
 
-    for day, dt_day in days():
-        n_day += 1
-        y4md = dt_day.strftime('%Y-%m-%d')
-        d_params['cymd_day'] = y4md
-        d_params['cymd_bef'] = dt_bef.strftime('%Y%m%d')
-        d_params['cymd_aft'] = dt_aft.strftime('%Y%m%d')
+    for n_day, (y4md, dt_day) in enumerate(days):
+        y4 = y4md[0:4]
+        mm = y4md[4:6]
+        dd = y4md[6:8]
+
+        y4_m_d = y4 + '-' + mm + '-' + dd
 
         # Make an output directory for the doi results of the following query
-        output_folder_ymd = '{}/doi/{}/{}/{}'.format(
-            output_folder_base, y4md[:4],y4md[5:7],y4md[8:10])
+        output_folder_ymd = '{}doi/{}/{}/{}'.format(
+            output_folder_base, y4, mm, dd)
 
         print("DELETING and RE-Making output_folder_ymd='{}'"
             .format(output_folder_ymd))
+
         if os.path.isdir(output_folder_ymd):
             try:
                 shutil.rmtree(output_folder_ymd, ignore_errors=True)
@@ -207,6 +198,7 @@ def crafdtxml(d_params, verbosity=0):
         uf_articles_day = 0
         articles_day = 0
         n_batch = 0
+
         while(1):
             # Each loop returns 1000 articles.
             # The total was 230,000 articles on 9/30/2016, but in 2016 one day
@@ -216,7 +208,7 @@ def crafdtxml(d_params, verbosity=0):
             url_worklist_day = (
                 "http://api.crossref.org/works?rows=1000&cursor={}&filter="
                 "has-affiliation:true,from-deposit-date:{},until-deposit-date:{}"
-                .format(cursor,y4md, y4md))
+                .format(cursor,y4_m_d, y4_m_d))
 
             print("{}: using url={}".format(me,url_worklist_day))
 
@@ -227,23 +219,24 @@ def crafdtxml(d_params, verbosity=0):
             # Create a node root with name result
             node_response_root = etree.Element("response")
             # Create xml sub-nodes from the json result
-            elt.add_subelements(node_response_root, d_json, item_ids=True)
+            etl.add_subelements(node_response_root, d_json, item_ids=True)
 
             '''
-            The root node 'response' from url_worklist_day has had/should
-            have four child nodes:
+            We have a result xml tree with root 'node_response_root' our request
+            url_worklist_day and it should have four main child nodes and a structure like:
 
                1: message: with child nodes
                   1.1: facets:
                   1.2: items: with child nodes
-                         1.1.1-N: some individual item-000* nodes, one per DOI
-                  1.3: items-per-page: (IPP) with value normally 20f
+                         1.2.1-1.2.1.N: some individual item-000* nodes, one per DOI
+                  1.3: items-per-page: (IPP) with value normally 20
                   1.4: query: with child nodes
                        1.4.1: search-terms: with value for used search terms
-                       1.4.2: search-indix: with index about total results in
+                       1.4.2: search-index: with index about total results in
                                 result set (retrievable in multiple url-requested
                                 responses numbering IPP per response page)
-                  1.5: next-cursor: (present only if cursor parameter was given)
+                  1.5: next-cursor: (present only if cursor parameter was given, which
+                       we do in this program)
                        if more results exist, this is a hashy string to use as
                        the next cursor argument
                   1.6: total-results: with value N, which is the number of
@@ -279,11 +272,10 @@ def crafdtxml(d_params, verbosity=0):
                 entries_collected += 1
                 articles_day += 1
                 d_article_affiliations = {}
-                # RENAME this item's main node tag from item to message to match
+                # RENAME this item's main node tag from 'item' to 'message' to match
                 # crossref worklist
                 # single-doi REST topmost node name, to facilitate re-use of
-                # mining map (used
-                # in xml2rdb program) for cr* family of harvests...
+                # mining map (used in xml2rdb program) for cr* family of harvests...
                 node_item.tag = 'message'
                 # Adopt this item's XML subtree under this new output item root node
                 node_output_root.append(node_item)
@@ -303,7 +295,8 @@ def crafdtxml(d_params, verbosity=0):
                           './/author/*//affiliation/*//name')
                 if nodes_name is None:
                     # print("This doi has no affiliation names")
-                    continue # No affiliation names given, so skip it
+                    # No affiliation names given, so continue to skip it
+                    continue
                 # print("Found {} names in this article".format(len(nodes)))
 
                 for node_name in nodes_name:
@@ -352,7 +345,7 @@ def crafdtxml(d_params, verbosity=0):
                 output_filename = '{}/doi_{}.xml'.format(
                     output_folder_ymd,str(result_count).zfill(8))
                 result_count += 1
-                # print("Writing filename={}".format(output_filename))
+                print("{}:Writing filename={}".format(me,output_filename))
                 with open(output_filename, 'wb') as outfile:
                     outfile.write(out_str)
 
@@ -372,7 +365,7 @@ def crafdtxml(d_params, verbosity=0):
                 break;
             else:
                 cursor = node_cursor.text
-                print("Got node_cursor value={}. ".format(cursor))
+                print("{}:Got node_cursor value='{}'.".format(me,cursor))
             print("End batch {}\n".format(n_batch))
 
         # End loop through potential multiple result batches for this day
@@ -381,14 +374,7 @@ def crafdtxml(d_params, verbosity=0):
             "===========================\n\n"
             .format(y4md, articles_day, uf_articles_day))
 
-        #print("Got doi={}, node_root.tostring = '{}'"
-        #  .format(doi, str(etree.tostring(node_root, pretty_print=True, encoding='unicode'))))
-
-        #set up for next day's query
-        dt_day += day_delta
-        dt_bef += day_delta
-        dt_aft += day_delta
-    # end while loop over days - while dt_day <= dt_end
+    # end while loop over days
 
     return entries_collected, entries_excepted, uf_articles
 # end def crafdtxml
@@ -398,83 +384,88 @@ def crafdtxml(d_params, verbosity=0):
 # and cymd_end would normally change.
 #
 
-me = 'main code to run crafatxml'
-utc_now = datetime.datetime.utcnow()
-utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+def run():
+  me = 'main code to run crafatxml'
+  utc_now = datetime.datetime.utcnow()
+  utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-verbosity = 0
+  verbosity = 0
 
-# NOTE: CrossRef query parameters provide FROM dates and UNTIL dates,
-# inclusive of those days.
-# Compare: Elsevier api parameters provide BEF and AFT dates, exclusive of
-# those days.
-# So here, since we are using CrossRef APIs, the cymd_start and
-# cymd_end days are INCLUDED in the API query results.
+  # NOTE: CrossRef query parameters provide FROM dates and UNTIL dates,
+  # inclusive of those days.
+  # Compare: Elsevier api parameters provide BEF and AFT dates, exclusive of
+  # those days.
+  # So here, since we are using CrossRef APIs, the cymd_start and
+  # cymd_end days are INCLUDED in the API query results.
 
-cymd_start = '20170306'
+  cymd_start = '20170306'
 
-# CRAFATXML - Here, we do only one day at a time...
-cymd_end = '20170306'
+  # CRAFATXML - Here, we do only one day at a time...
+  cymd_end = '20170824'
 
-utc_now = datetime.datetime.utcnow()
-# secsz_start: secz means seconds in utc(suffix 'z') when this run started
-secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
+  utc_now = datetime.datetime.utcnow()
+  # secsz_start: secz means seconds in utc(suffix 'z') when this run started
+  secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
 
-output_folder_base = etl.data_folder(linux='/home/robert/', windows='U:/',
-    data_relative_folder='data/outputs/crafdtml/run/{}/'
-        .format(secsz_start))
+  output_folder_base = etl.data_folder(linux='/home/robert/', windows='U:/',
+      data_relative_folder='data/elsevier/output_crafdtxml/')
 
-print ("START CRAFDTXML RUN at {}\n\twith:\ncymd_start='{}', cymd_end='{}'\n  "
-       "output_folder_base={},verbosity={}"
-       .format(secsz_start, cymd_start, cymd_end, output_folder_base, verbosity))
+  print ("START CRAFDTXML RUN at {}\n\twith:\ncymd_start='{}', cymd_end='{}'\n  "
+         "output_folder_base={},verbosity={}"
+         .format(secsz_start, cymd_start, cymd_end, output_folder_base, verbosity))
 
-if not os.path.isdir(output_folder_base):
-    os.makedirs(output_folder_base)
+  if not os.path.isdir(output_folder_base):
+      os.makedirs(output_folder_base)
 
-worker_threads = 1 # TODO
-# Dict of metadata run parameter info on this run
-d_params={
-    "secsz_start": secsz_start,
-    "cymd_start" : cymd_start,
-    "cymd_end"   : cymd_end,
-    "output_folder_base" : output_folder_base,
-    "python_version" : sys.version,
-    "max-queries" : "0", # TODO
-    }
+  worker_threads = 1 # TODO
+  # Dict of metadata run parameter info on this run
+  d_params={
+      "secsz_start": secsz_start,
+      "cymd_start" : cymd_start,
+      "cymd_end"   : cymd_end,
+      "output_folder_base" : output_folder_base,
+      "python_version" : sys.version,
+      "max-queries" : "0", # TODO
+      }
 
-# Process the Elsevier Search and Full-Text APIs to create local xml files
-entries_collected = 0
-entries_excepted = 0
+  # Process the Elsevier Search and Full-Text APIs to create local xml files
+  entries_collected = 0
+  entries_excepted = 0
 
-###### MAIN CALL TO CRAFDTXML() ########
+  ###### MAIN CALL TO CRAFDTXML() ########
+  if (1 == 1): # test with or without call to eatxml
+      entries_collected, entries_excepted, uf_articles = crafdtxml(
+          d_params, verbosity=verbosity)
 
-if (1 == 1): # test with or without call to eatxml
-    entries_collected, entries_excepted, uf_articles = crafdtxml(
-        d_params, verbosity=verbosity)
+  ############### WRAP-UP MISC OUTPUT ################
+  # Also record some summary output results in d_params for saving as xml file
 
-############### WRAP-UP MISC OUTPUT ################
-# Also record some summary output results in d_params for saving as xml file
+  utc_now = datetime.datetime.utcnow()
+  secsz_end = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
 
-utc_now = datetime.datetime.utcnow()
-secsz_end = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
+  d_params.update({
+      "total-entries-collected" : entries_collected,
+      "total-entries-excepted" : entries_excepted,
+      "uf-articles-count" : uf_articles,
+      "secsz-end" : secsz_end,
+      # Prevent actual api-key value from being stored in the output
+      "api-key" : '*UF-Smathers Proprietary*'
+      })
 
-d_params.update({
-    "total-entries-collected" : entries_collected,
-    "total-entries-excepted" : entries_excepted,
-    "uf-articles-count" : uf_articles,
-    "secsz-end" : secsz_end,
-    # Prevent actual api-key value from being stored in the output
-    "api-key" : '*UF-Smathers Proprietary*'
-    })
+  # Wrap up and write out the run parameters log file.
+  e_root = etree.Element("uf_crossref_works_aff_uf_harvest")
+  etl.add_subelements(e_root, d_params)
 
-# Wrap up and write out the run parameters log file.
-e_root = etree.Element("uf_crossref_works_aff_uf_harvest")
-elt.add_subelements(e_root, d_params)
-out_filename = '{}/run_crafdxml_{}.xml'.format(output_folder_base, secsz_start)
-os.makedirs(output_folder_base, exist_ok=True)
+  out_filename = '{}/run_crafdxml_{}.xml'.format(output_folder_base, secsz_start)
+  os.makedirs(output_folder_base, exist_ok=True)
 
-with open(out_filename, 'wb') as outfile:
-    outfile.write(etree.tostring(e_root, pretty_print=True))
-print('Collected {} articles, excepted {}, and {} were uf articles'
-     .format(entries_collected, entries_excepted, uf_articles))
-print("Done!")
+  with open(out_filename, 'wb') as outfile:
+      outfile.write(etree.tostring(e_root, pretty_print=True))
+  print('Collected {} articles, excepted {}, and {} were uf articles'
+       .format(entries_collected, entries_excepted, uf_articles))
+  print("Done!")
+
+# end def run()
+
+# RUN
+run()
