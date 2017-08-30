@@ -1075,7 +1075,7 @@ def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None, xslt_form
     sha1_mets.update(result1_bytes)
     sha1_hexdigest = sha1_mets.hexdigest()
     d_return['sha1_hash'] = sha1_mets.hexdigest()
-    d_sobek_vary['sha1-mets-v1'] = sha1_hexdigest
+    d_sobek_vary['sha1-mets-v1'] = sha1_hexdigest.upper()
 
     # Decode the utf-8 bytes back to normal python3 string (default output
     # encoding after a decode() call is python3 string encoding( unicode),
@@ -1291,20 +1291,18 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
     if (stored_sha1_hexdigest):
         # SobekCM has a current pii-matching item with a PII, so see if this record's
         # hash matches. If so, no need to create a METS and reload it.
-        if (sha1_hash.lower() == stored_sha1_hexdigest.lower()):
+        if (sha1_hash.upper() == stored_sha1_hexdigest.upper()):
             # This is not new info for this bibvid METS file, so call it a
             # failure (to generate new METS file)
-            failure_message = ("No change in sha1 hash, so not making a METS file")
+            failure_message = ("No change in_sha1 hash, so not making a METS file")
             log_messages.append(failure_message)
             d_return['log_messages'] = log_messages
             d_return['failure_message'] = failure_message
             return d_return
 
     # Now PROCEED to output the new mets file for loading into SobekCM
-
     print("{}:Bibvid={}, Writing METS: Different new hexdigest='{}', old='{}'"
         .format(me,bibvid, sha1_hash, stored_sha1_hexdigest))
-    #4A63F1B2C6B59874C133B1B6730753B42EFD3737
 
     if node_rawtext is None:
         msg = ("{}: WARNING: Serial xml file '{}' has no FULL text"
@@ -1327,7 +1325,7 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
     # if you put the xml file into its own directory also named by the bib_vid.
     # Rather, just named by the bib is adequate.
     # out_dir_bib = '{}/{}_{}'.format(out_dir_root, uf_bibid, vid)
-    out_dir_bib = '{}/{}'.format(out_dir_root, uf_bibid)
+    out_dir_bib = '{}/{}_{}'.format(out_dir_root, uf_bibid,vid)
 
     out_bib_fn = '{}/{}_{}.mets.xml'.format(out_dir_bib, uf_bibid, vid)
     os.makedirs(out_dir_bib, exist_ok=True)
@@ -2060,7 +2058,7 @@ def get_pii_reservations_from_silodb():
             raise ValueError(msg)
 
         reservation['deleted'] = deleted
-        reservation['stored_sha1_hexdigest'] = tickler
+        reservation['stored_sha1_hexdigest'] = tickler.upper()
 
         # Raise errors: If pii and deleted == 0 combo value is duplicated it is an error to resolve
         # in the production database.
@@ -2277,7 +2275,7 @@ def run():
   # Set up temporal folders to search for the ealdxml output, our input xml files, based on the
   # given cymd_start and cymd_end values
 
-  cymd_start = '20170209'
+  cymd_start = '20090101'
   cymd_end = '20170824'
 
   input_folders = []
