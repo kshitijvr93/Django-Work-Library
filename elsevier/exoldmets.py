@@ -761,28 +761,11 @@ def uf_affiliation_value(name):
     #print("NO Match")
     return 0
 
-
 '''
-Method escape_xml_text(str)
-
-Replace text xml characters in given 'str' with their 'xml quotable' formats.
-Also replace tabs with space for easier conversion of multiple fields later
-to tab-separated values.
-
-Return the altered str
-'''
-def escape_xml_text(str):
-    str = str.replace("<", "&lt;")
-    str = str.replace(">", "&gt;")
-    str = str.replace("&", "&amp;")
-    str = str.replace("\"", "&quot;")
-    str = str.replace("\t", " ")
-    return str
-'''
-Method xslt_transform_format(tree_input_doc, d_ns, xslt_format_str,
+Method xslt_transform_format(node_root_input, d_ns, xslt_format_str,
     d_sobek_track=None, d_sobek_vary=None)
 
-Given xslt_format_str and tree_input_doc, d_sobek_track, d_sobek_vary
+Given xslt_format_str and node_root_input, d_sobek_track, d_sobek_vary
  (1) Harvest the author-groups from the xml file if it is the serial type.
      Create a list of values, one-for-one with authors in each author-group,
      where each value include the author name and a role of either (author)
@@ -793,7 +776,7 @@ Given xslt_format_str and tree_input_doc, d_sobek_track, d_sobek_vary
      which the xml_format info
      will be inserted in the first formatting phase of transformation.
 
- (2) transform the tree_input_doc per the xslt_format_str.
+ (2) transform the node_root_input per the xslt_format_str.
      Note: xslt_format_str does have {{xxx}}
      style inserted python formatting syntax, which should be conveyed to
      the output xslt doc.
@@ -804,27 +787,34 @@ Given xslt_format_str and tree_input_doc, d_sobek_track, d_sobek_vary
      harvesting run without triggering the code to actually upload the new
      Elsevier record.
 
-RETURN VALUE:
- Normal return value is a 2-tuple, with
- [0] being the sha1_mets hash value we save for the tracked
- values in mets file
- [1] being the resulting mets file suitable for saving and despositing in to the
- SobekCM Builder's inbound folder.
+RETURN VALUE: d_return()
+ d_return={} with key:values of:
+   'sha1_hash':
+       value is string with the sha1_mets hash value we save for the tracked
+       values in mets file
+   'str_mets':
+       the resulting mets file suitable for saving and despositing in to the
+       SobekCM Builder's inbound folder.
 
- Various error condtions are checked that disallow production of a METS file from the
- given xslt_format_str, in which case None is returned.
-
+   'node_rawtext': node's rawtext
+   'failure_message': a message for the failure code or ''
+   'log_messages' : warning message
 '''
-def xslt_transform_format(tree_input_doc, d_ns, xslt_format_str,
-    d_sobek_track=None, d_sobek_vary=None):
+
+def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None, xslt_format_str=None,
+    d_sobek_track=None, d_sobek_vary=None,verbosity=0):
 
     me="xslt_transform_format"
-    if not (d_sobek_track and d_sobek_vary and d_ns):
-        print("\n***** {}: Bad arguments!\n".format(me))
-        return None
-    d_ns = {k:v for k,v in dict(tree_input_doc.nsmap).items() if k is not None}
+    if not all(['node_root_input','d_sobek_track', 'd_sobek_vary', 'd_ns']):
+        msg = ("\n***** {}: Bad arguments!\n".format(me))
+        raise ValueError(msg)
 
-    # Extract author-group and author information from tree_input_doc.
+    d_return = {'sha1_hash':'', 'str_mets':'', 'node_rawtext':''
+                , 'failure_message':''};
+
+    if verbosity > 0:
+          print("\n\n{}: STARTING... with len(d_ns)='{}'".format(me,len(d_ns)))
+    # Extract author-group and author information from node_root_input.
 
     # If an author has a cross-ref attribute refid that starts with 'af',
     # we accept it as a cross-ref id key.
@@ -837,41 +827,64 @@ def xslt_transform_format(tree_input_doc, d_ns, xslt_format_str,
     # The affiliation name of an index is scanned to determine whether it is a UF affiliation,
     # and if so, the author will be assigned the roleterm of (UF author), otherwise just (author)
     #
-    #print('\nSTARTING AUTHOR GROUPS HARVESTING with root_tag={}'.format(tree_input_doc.tag))
     xml_authors = ''
+    log_messages = []
 
-
-    # Start by extracging some input file nodes and values via lxml find(), findall()
-
-    node_fulltext = tree_input_doc.find('.//xocs:rawtext', namespaces=d_ns)
+    # Start by extracting from the article's xml input file, some input file nodes
+    # and values.
+    node_fulltext = node_root_input.find('.//xocs:rawtext', namespaces=d_ns)
     if node_fulltext is None:
+        # fallback: try body tag for full text if xocs:rawtext was empty nothing
         xpath = ".//{*}body"
-        #print("Looking for FULLTEXT AT xpath='{}'".format(xpath))
-        node_fulltext = tree_input_doc.find(xpath, namespaces=d_ns)
+        node_fulltext = node_root_input.find(xpath, namespaces=d_ns)
 
-    node_pii = tree_input_doc.find('.//xocs:pii-unformatted', namespaces=d_ns)
-    if node_pii is not None:
+    d_return['node_rawtext'] = node_fulltext
+
+    node_pii = node_root_input.find('.//xocs:pii-unformatted', namespaces=d_ns)
+    if node_pii is not None and len(node_pii.text) > 10:  # 10 seems like a good check
         pii = node_pii.text
+        if (pii != core_pii):
+            log_messages.append("xocs:pii is {}, but using core pii ='' next."
+              .format(me,pii,core_pii))
+            d_return['log_messages'] = log_messages
+            pii = core_pii
     else:
-        pii = ''
+        log_messages.append("{}:No xocs:pii found. Trying core pii ='{}' next."
+              .format(me,core_pii))
+        d_return['log_messages'] = log_messages
+        pii = core_pii
 
-    node_openaccess = tree_input_doc.find('.//{*}openaccess', namespaces=d_ns)
+    if len(pii) < 10:
+        # Note: pii is required for an Elsevier item's mets file, so we can use that to
+        # apply future updates or deletions.
+        msg = 'core_pii is also bad. No pii value found for input xml file.'
+        d_return['failure_message'] = msg
+        return d_return
+
+    if verbosity > 0:
+        print("{}: using pii={}".format(me,pii))
+
+    node_openaccess = node_root_input.find('.//{*}openaccess', namespaces=d_ns)
     openaccess_suffix = ''
     if node_openaccess is not None:
         openaccess_text = node_openaccess.text
-        if openaccess_text == '1' and 1 == 2:
-            print("Openaccess article found. pii='{}'"
-                  .format(pii))
-            openaccess_suffix = '?oac=t;'
+        if verbosity > 1:
+            print("{}: Got openaccess='{}'"
+                  .format(me,openaccess_text))
 
-    # Start to use d_sobek_track {} to store some input values whose value changes we will want to track
+    # Start to use d_sobek_track {} to store some input values whose value
+    # changes we will want to track
 
     #Produce the location_url, the seed for the Builder to set the SobekCM_Item.link value
     d_sobek_track.update({ 'location_url' : (
         'http://www.sciencedirect.com/science/article/pii/{}'.format(pii))
         })
 
-    node_serial_item = tree_input_doc.find('.//xocs:serial-item', namespaces=d_ns)
+    node_serial_item = node_root_input.find('.//xocs:serial-item', namespaces=d_ns)
+    if verbosity > 1:
+        print("{}: Got node_serial_item='{}'"
+              .format(me,rep(node_serial_item)))
+
     if node_serial_item is not None:
         #We have a serial item. For this type of item we will find any UF Authors
         item_has_uf_author = 0
@@ -958,21 +971,26 @@ def xslt_transform_format(tree_input_doc, d_ns, xslt_format_str,
                     <mods:roleTerm type="text">{}</mods:roleTerm>
                   </mods:role>
                 </mods:name>
-                '''.format(escape_xml_text(surname), escape_xml_text(given_name), role)
+                '''.format(etl.escape_xml_text(surname), etl.escape_xml_text(given_name), role)
             # end author loop
         #end author-group loop
+
         if item_has_uf_author == 0:
-            #print("Serial Item has NO UF Authors.")
+            msg = ("Serial Item has NO UF Authors.")
+            #print(msg)
             # Reject/refuse to create UF METS file since no uf_author contributed to this article.
-            return None, '', node_fulltext
-    # end clause for serial articles
+            d_return['failure_message'] = msg
+            return d_return
+    # end clause if node_serial_item is not None - processing authors of serial articles
+    else:
+      # This is a non-serial, return failure, as we will not host these now
+      d_return['failure_message'] = "Non-serial item. Skipping."
+      return d_return
 
     # Note, we are admitting all non-serial articles for now regardless of any uf_authors.
-
     d_sobek_track['xml-authors'] = xml_authors
 
-    # Extract description text and remove common annoying starting text "Abstract" where it occurs
-    node_desc = tree_input_doc.find('.//dc:description', namespaces=d_ns)
+    node_desc = node_root_input.find('.//dc:description', namespaces=d_ns)
     if node_desc is None:
         description = ''
     else:
@@ -981,15 +999,18 @@ def xslt_transform_format(tree_input_doc, d_ns, xslt_format_str,
     if description.startswith('Abstract'):
         #print("Removing startswith 'abstract'")
         description = description[8:]
+    if description.startswith('Introduction'):
+        description = description[12:]
+
     # Analysis of sampling of 30K elsevier articles 20160925 show no spanish abstracts
     # so keep english for now. We can reload later if need a language change.
     # Also misc < and > etc in the description must be escaped because we create xml here.
+
     xml_description = ('<mods:abstract lang="en">'
-          + escape_xml_text(description) + '</mods:abstract>')
+          + etl.escape_xml_text(description) + '</mods:abstract>')
 
     #print("Got xml_description='{}'".format(xml_description))
     d_sobek_track['description'] = xml_description
-
 
     #--------------------------------------------------------------------------------------------#
     # Perform the first 'python format()-based' round of variable substitution with the xslt xml
@@ -998,20 +1019,22 @@ def xslt_transform_format(tree_input_doc, d_ns, xslt_format_str,
     # METS files updates with 'meaningful' changes:
     #--------------------------------------------------------------------------------------------#
 
-
-    # Create pass1 output xslt string of METS with the tracked variables
-
+    # Create xslt_str2, the pass1 output xslt string of METS with the tracked variables
     xslt_str2 = xslt_format_str.format(**d_sobek_track)
 
-    #print("Pass1 got formatted xslt_str='{}'".format(xslt_str))
+    if verbosity > 0:
+      print("{}:Pass1 got formatted xslt_str2, len='{}'".format(me,len(xslt_str2)))
 
     try:
         # Create tree_xslt from the xslt_str2
         tree_xslt = etree.fromstring(xslt_str2)
     except Exception as e:
-        print("Parse error='{}' with etree.fromsctring with description='{}',str='{}'. Skipping"
+        msg = ("Parse error='{}' etree.fromstring(xslt_str2), description='{}',xslt_str2='{}'. Skipping"
               .format(repr(e), description, xslt_str2))
-        return None, None, None
+        print(msg)
+        d_return['failure_message'] = msg
+        return d_return
+
     try:
         # Make this into an xsl_transform method designed to do an xslt transform for the tree_xslt
         xsl_transform = etree.XSLT(tree_xslt)
@@ -1020,51 +1043,64 @@ def xslt_transform_format(tree_input_doc, d_ns, xslt_format_str,
         print("Got exception={}".format(repr(e)))
         print("Using xslt_str='{}'".format(xslt_str))
         raise e
+
     #----------------------------------------------------------------------------------- #
     # Pass 2 or transformation 2 - to produce tree_result_doc
 
-    #Use the xsl_transform method to convert the given tree_input_doc to tree_result_doc
-    # here the xslt functionality is used to insert some scalar values into the tree_result_doc from the input doc.
-    tree_result_doc = xsl_transform(tree_input_doc)
+    # Use the xsl_transform method to convert the given node_root_input to
+    # tree_result_doc here the xslt functionality is used to insert some
+    # scalar values into the tree_result_doc from the input doc.
+    tree_result_doc = xsl_transform(node_root_input)
     #----------------------------------------------------------------------------------- #
 
-    # Translate tree_result_doc back to a string that should still contain the python formatted variable syntax
-    # and format it with d_sobek values to a result string for the article mets file.
-    # make a sha1 hash on the result_format_str (with the python variable names, not values in the text)
-    # so we will not get a 'false alarm' on a change for timestamps and other sobek values.
-    # NOTE: lxml etee.tostring is a MISNOMER, it returns bytes, not a string, unless encoding_method
-    # is set to 'UNICODE'. But only a string has
-    # the format() method, which we need a few code lines below.
-    result1_bytes = etree.tostring(tree_result_doc, pretty_print=True, xml_declaration=True)
+    # Translate tree_result_doc back to a string that should still contain the
+    # python formatted variable syntax and format it with d_sobek values to a
+    # result string for the article mets file.
+    # Make a sha1 hash on the result_format_str (with the python variable names,
+    # not values in the text)
+    # so we will not get a 'false alarm' on a change for timestamps and other
+    # sobek values.
+    # NOTE: lxml etee.tostring is a MISNOMER, it returns bytes, not a string,
+    # unless encoding_method is set to 'UNICODE'.
+    # But only a string has the format() method, which we need a few code
+    # lines below.
 
-    # Start setting up some d_sobek_vary values that may 'vary' freely (as opposed to track variables) from
-    # harvest to harvest for an item without our wanting to ingest the record again on account of their uninteresting
-    # changes.
+    result1_bytes = etree.tostring(
+        tree_result_doc, pretty_print=True, xml_declaration=True)
+
+    # Start setting up some d_sobek_vary values that may 'vary' freely (as
+    # opposed to track variables) from harvest to harvest for an item without
+    # our wanting to ingest the record again on account of their uninteresting changes.
     sha1_mets = hashlib.sha1()
     sha1_mets.update(result1_bytes)
     sha1_hexdigest = sha1_mets.hexdigest()
-    d_sobek_vary['sha1-mets-v1'] = sha1_hexdigest
+    d_return['sha1_hash'] = sha1_mets.hexdigest()
+    d_sobek_vary['sha1-mets-v1'] = sha1_hexdigest.upper()
 
-    # Decode the utf-8 bytes back to normal string (normal python3 string encoding is unicode) so can use format method
+    # Decode the utf-8 bytes back to normal python3 string (default output
+    # encoding after a decode() call is python3 string encoding( unicode),
+    # so we can later use format method
     result1_str = result1_bytes.decode("utf-8")
 
     # In results2_str , we will use format() to insert d_sobek_track variable values, so now before we do
     # that result1 str, if printed, will reveal the d_sobek_vary variable names appearing, as in: {last_mod_date}
-
     # print("Using format(**d_sobek_vary) on result1_str='{}'".format(result1_str))
-
     #-----------------------------------------------------------------------------------#
     # Now, do final 'pass3' to insert 'vary' variable values into the final rendition suitable
     # for outputting, in result2_str_formatted.
     #-----------------------------------------------------------------------------------#
 
     try:
-        result2_str_formatted = result1_str.format(**d_sobek_vary)
+        str_mets = result1_str.format(**d_sobek_vary)
     except Exception as e:
         print("result1_str='{}' produced a format error with **d_sobek_vary!".format(result1_str))
         raise e
 
-    return sha1_hexdigest, result2_str_formatted, node_fulltext
+    if verbosity > 0:
+      print("{}: returning str_mets with len={}".format(me,len(str_mets)))
+    d_return['str_mets'] = str_mets
+    return d_return
+
 #end def xslt_transform_format()
 
 '''
@@ -1073,42 +1109,50 @@ Method: def article_xml_to_mets_file(source=None, xslt_format_str=None,
     out_dir_root=None, d_sobek_track=None, d_sobek_vary=None,
     only_oac=False, verbosity=0):
 
+SYNOPSIS: Read an Elsevier input xml file, and if checks pass, create an output METS file.
+
 Arguments:
+---------------
 -source: the source key name of the xslt initial template in the template dictionary
 -input_file_name: used only to construct the METS output file name
 
-Read an elsevier input xml file and output a METS file for SobekCM Builder to process.
 (1) Read an elsevier input xml file into the variable input_xml_str
 (2) and convert it to a tree input_doc using etree.fromstring,
-(3) and convert tree_input_doc to tree_result_doc
+(3) and convert node_root_input to tree_result_doc
 (4) and convert tree_result_doc to result_xmlstr and output it to a new mets output file
     for SobekCM Builder to process.
 (5) and create a hash for the new METS file based on its content EXCEPT for values that may change
     like timestamps.
-    We don't really need to slow down loading just to update timestamps in METS files if non-tracked
-    (their changes are unimportant to track) field values are the only thing that changed.
 
-Returns tuple:
-- log_messages: misc messages
-- sha1_hash: calculated hash value for outputted METS file or None on failure
-    due to:
-- mets_failure: None if success, otherwise:
-    1 if the api fails to provide results
-    2 if api results cannot be parsed as xml
-    3 if article has no UF authors
-    If caller receives a mets_failure that is not NONE:
-      Then the caller should not call pii_reservations.reserve_by_pii
+    We don't really need to slow down loading just to update timestamps in METS files if no tracked
+    values changed because only their changes are important to track.
+
+Returns d_return{}, with keys and values:
+--------------------------------------
+* 'log_messages': misc messages
+
+* 'sha1_hash': calculated hash value for outputted METS file or None on failure
+
+* 'failure_message' keys and paraphrased values subject to tweaking:
+  '' : if success, otherwise see below
+  'api_results_none': if the api fails to provide results
+  'api_bad_syntax': if api results cannot be parsed as xml
+  'No UF authors':  if article has no UF authors
+  'No tracked changes' : if article results have no new Sobek-tracked important changes
+
+  IMPORTANT NOTE:
+    If caller receives a failure_message that is not NONE
+      No METS file has been created for the article, and no bibvid should be reserved for it.
+      SO - the caller should not call pii_reservations.reserve_by_pii() for the article
       for the pii after this method returns. Because we use SobekCM production as the authority of
       pii-bibvid associations, and we will not be trying to load this pii. Complying with this rule
       is not strictly necessary, but it will help to limit the number of 'gaps' in unused bibids in
       production until we change the pii_reservations method x to calculate the next candidate bib.
 
-Return the sha1_hash value for the outputted METS file.
-
-# 20160411 - experiment: set new arg only_oac and default to True to only output openaccess bibs/vids
 '''
 def article_xml_to_mets_file(source=None, xslt_format_str=None,
     input_file_name=None,
+    core_pii=None, #Caller-supplied PII value gleans from the input file's name
     out_dir_root=None, d_sobek_track=None, d_sobek_vary=None,
     only_oac=False, stored_sha1_hexdigest=None, bibvid=None, verbosity=0):
 
@@ -1119,6 +1163,8 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
     log_messages = []
     sha1_mets = None
     mets_failure = None
+    d_return = {}
+    d_return={'failure_message':'', 'log_messages':'', 'sha1_hash':'' }
 
     if not all([d_sobek_track, input_file_name, out_dir_root, xslt_format_str,
             d_sobek_vary, source, bibvid]):
@@ -1131,8 +1177,9 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
     sys.stdout.flush
 
     uf_bibid = bibvid[0:10]
-    #Skip the 10th character the '_'
+    # We ignore the 10th character, the '_'
     vid = bibvid[11:]
+
     d_sobek_track.update({
           'objid' : bibvid
         , 'bibid' : uf_bibid
@@ -1141,43 +1188,53 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
         # , 'tickler': 'sha1-mets-v1'
         })
 
-    # (1) Read an elsevier input xml file to variable input_xml_str
-    # correcting newlines and quadrupling up on curlies so format() works on them later.
+    # (1) Read an Elsevier article's input xml file to variable input_xml_str
+    # correcting newlines and quadrupling up on curlies so later when format()
+    # converts two to one, in two separate passes, each { and } will be properly
+    # preserved in the output.
+
     with open (str(input_file_name), "r") as input_file:
         input_xml_str = input_file.read().replace('\n','').replace('{', '{{{{').replace('}', '}}}}')
 
     # return early if the input file had a <failure> sentinel value, planted
     # by precursor program ealdxml()
+    #
+    # RETURN on (1) FAILURE to retrieve full text
     if input_xml_str[0:9] == '<failure>':
         msg =("Input_file_name={}, full API retrieval was a '<failure>', with bibid={}"
              .format(input_file_name,uf_bibid))
         log_messages.append(msg)
         print("{}:{}".format(me,msg))
         sys.stdout.flush
-        mets_failure = 1
-        return log_messages, sha1_mets, mets_failure
+        d_return['failure_message'] = ('{}:Input xml file {} shows Elsevier full-text '
+            'retrieval by ealdxml failed. Skipping.'.format(me,input_file_name))
+        d_return['log_messages'] = log_messages
+        return d_return
 
-    # (2) and convert input_xml_str to a tree input_doc using etree.fromstring,
-    #print("Using promising input_xml_str='{}'".format(input_xml_str))
+    # (2) and parse input_xml_str to an lxml tree with root node being node_root_input
 
     try:
-        tree_input_doc = etree.fromstring(input_xml_str)
-        #print("Got tree_input_doc with tag='{}'".format(tree_input_doc.tag))
+        node_root_input = etree.fromstring(input_xml_str)
+        #print("Got node_root_input with tag='{}'".format(node_root_input.tag))
     except Exception as e:
-        log_messages.append(
+        log_msg = (
             "Skipping exception='{}' in etree.fromstring failure for input_file_name={}"
             .format(repr(e),input_file_name))
-        mets_failure = 2
-        return log_messages, sha1_mets, mets_failure
+        log_messages.append(log_msg)
+        d_return['failure_message'] = ("{}:XML Parse failed for input_file '{}'"
+            .format(me,input_file_name))
+        d_return['log_messages'] = log_messages
+        return d_return
 
-    node_root_input = tree_input_doc
     # Create d_ns - dictionary of namespace key or abbreviation name to namespace 'long name' values.
     d_ns = {key:value for key,value in dict(node_root_input.nsmap).items() if key is not None}
+
+    '''
     # Call xslt_transform_format to generate a mets file and a sha1 hash for
     # the xml-based values
 
-    # The mets file is suitable for input to the SobekCM builder's inbound folder
-    # (STEP 3) and convert tree_input_doc to tree_result_doc using xslt transform
+    # Creation of a mets file still might be advisable for input to the SobekCM builder's inbound folder
+    # (STEP 3) and convert node_root_input to tree_result_doc using xslt transform
 
     # CHANGE -- NOW also try full xslt and source files
     #print('***** Getting xslt string augmented with default python print formatting variables')
@@ -1198,7 +1255,8 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
     # then the hash will be be re-computed even with same input from Elsevier on
     # a subsequent run of this program.
     #
-    # We want a change if we change a variable, eg to get title from a different input
+    # We want to register a change of article metadata if we change a variable,
+    # eg to get title from a different input
     # title element, but we do not want to change any constant output, not even insert
     # a comma or space anywhere, unless required by UFDC, else the hash will
     # change and be used to warrent a re-upload of the METS file to UFDC.
@@ -1207,56 +1265,73 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
     # but before the d_sobek parameter substitution that includes timestamps
     #print("\nInput filename={}, calling xslt_transform_format...".format(input_file_name))
 
-    sha1_hexdigest, result_mets_str, node_rawtext = xslt_transform_format(
-        node_root_input, d_ns, xslt_format_str
-        , d_sobek_track=d_sobek_track
-        , d_sobek_vary=d_sobek_vary)
+    #sha1_hexdigest, result_mets_str, node_rawtext, mets_failure = xslt_transform_format(
+    '''
+    d_results = xslt_transform_format(core_pii=core_pii
+        ,node_root_input=node_root_input, d_ns=d_ns, xslt_format_str=xslt_format_str
+        , d_sobek_track=d_sobek_track, d_sobek_vary=d_sobek_vary)
 
     # Act on special return values
-    if sha1_hexdigest is None:
+    sha1_hash =  d_results['sha1_hash']
+    result_mets_str = d_results['str_mets']
+    node_rawtext = d_results['node_rawtext']
+    failure_message = d_results['failure_message']
+
+    d_return['failure_message'] = failure_message
+    d_return['sha1_hash'] =  sha1_hash
+
+    if sha1_hash == '' or  failure_message != '':
         # This sentinel value means that this xml file had no uf authors
-        mets_failure = 3
-        return log_messages, sha1_mets, mets_failure
+        d_return['log_messages'] = log_messages
+        return d_return
+
     # 20161222- If argument of base_sha1_hexdigest is given, and the same as sha1_hexdigest,
     # we do not output a new mets file.
     #stored_sha1_hexdigest = pii_reservations['stored_sha1_hexdigest']
     if (stored_sha1_hexdigest):
-        if (sha1_hexdigest.lower() == stored_sha1_hexdigest.lower()):
+        # SobekCM has a current pii-matching item with a PII, so see if this record's
+        # hash matches. If so, no need to create a METS and reload it.
+        if (sha1_hash.upper() == stored_sha1_hexdigest.upper()):
             # This is not new info for this bibvid METS file, so call it a
             # failure (to generate new METS file)
-            mets_failure = 4
-            return log_messages, sha1_mets, mets_failure
-        else:
-            if (len(stored_sha1_hexdigest) == 40 or 1 ==1):
-                print("Bibvid={}, Writing METS: Different new hexdigest='{}', old='{}'"
-                    .format(bibvid, sha1_hexdigest, stored_sha1_hexdigest))
-    #4A63F1B2C6B59874C133B1B6730753B42EFD3737
+            failure_message = ("No change in_sha1 hash, so not making a METS file")
+            log_messages.append(failure_message)
+            d_return['log_messages'] = log_messages
+            d_return['failure_message'] = failure_message
+            return d_return
 
-    # Go ahead and output the new mets file
+    # Now PROCEED to output the new mets file for loading into SobekCM
+    print("{}:Bibvid={}, Writing METS: Different new hexdigest='{}', old='{}'"
+        .format(me,bibvid, sha1_hash, stored_sha1_hexdigest))
 
     if node_rawtext is None:
         msg = ("{}: WARNING: Serial xml file '{}' has no FULL text"
              .format(me,input_file_name))
+        print(msg)
         log_messages.append(msg)
         print(msg)
+    else:
+      if verbosity > 0:
+        print("{}: using node_rawtext={}".format(me,node_rawtext))
 
-    if verbosity > 2:
+    if verbosity > 0:
         # Report the article's hexdigest hash value
         log_messages.append(
           "INFO:Article bibid={} has sha1_hexdigest={}"
-          .format(str(uf_bibid),sha1_hexdigest))
+          .format(str(uf_bibid),sha1_hash))
 
     # Create METS output directory root if it does not exist
     # The SobekCM Builder, which is meant to consume this output file, seems to prefer (works faster)
     # if you put the xml file into its own directory also named by the bib_vid.
     # Rather, just named by the bib is adequate.
     # out_dir_bib = '{}/{}_{}'.format(out_dir_root, uf_bibid, vid)
-    out_dir_bib = '{}/{}'.format(out_dir_root, uf_bibid)
-    ### OUTPUT THE bib's METS.XML FILE
+    out_dir_bib = '{}/{}_{}'.format(out_dir_root, uf_bibid,vid)
+
     out_bib_fn = '{}/{}_{}.mets.xml'.format(out_dir_bib, uf_bibid, vid)
     os.makedirs(out_dir_bib, exist_ok=True)
     out_bib_txt = '{}/{}_{}.txt'.format(out_dir_bib, uf_bibid, vid)
 
+    ### OUTPUT THE bib's METS.XML FILE
     #log_message.append("Outputting bib's mets info to filename {}".format(out_bib_fn))
     with open(out_bib_fn, 'wb') as fwb_bib:
         # Write with bytes to encode to utf-8
@@ -1285,6 +1360,7 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
     if node_text is not None:
         text_bytes += '   ---   '.encode('UTF-8')
         text_bytes += b'BODY   ---   '
+        # RVP - next was node_rawtext...
         text_bytes += etree.tostring(node_rawtext, encoding='UTF-8', method='text')
 
     if text_bytes != b'' :
@@ -1295,11 +1371,14 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
             fwb_txt.write(text_bytes)
     # Confirm or reserve this pii to bibvid
 
-    return log_messages, sha1_hexdigest, mets_failure
+    d_return['log_message'] = log_messages
+    return d_return
+
 # end def article_xml_to_mets_file()
 
 '''
 Method articles_xml_to_mets() -
+
 Transform each article file named in input_file_paths to a new SobekCM-Inbound-Folder-friendly
 mets output file and write it to output_folder.
 
@@ -1323,9 +1402,6 @@ Given Arguments:
   - verbosity: used in development mostly to temporarily adjust outputting of misc print messages.
 
 Return Values:
-  -
-  -
-  -
 '''
 def articles_xml_to_mets(source=None
     , xslt_format_str=None
@@ -1334,7 +1410,7 @@ def articles_xml_to_mets(source=None
     , pii_reservations=None
     , skip_extant=False
     , skip_nonserial=True
-    , verbosity=1):
+    , verbosity=0):
     me = "articles_xml_to_mets"
 
     for i,arg in enumerate([source, output_folder, input_file_paths
@@ -1361,16 +1437,13 @@ def articles_xml_to_mets(source=None
 
     vid_int = 1 # Now a normal Elsevier-item new vid_int is 00001, but a stored one may be different.
     max_files_processed = 0
-    i = 0
+
     outputted = 0
     skip_reads = 0
     skip_mets = 0
     skip_dups = 0
     skip_nonserials = 0
     processing_messages = []
-    total_api_failures = 0
-    total_parse_failures = 0
-    total_uf_failures = 0
     total_mets_failures = 0
     debug_file = sys.stdout
     bibid_type=''
@@ -1390,7 +1463,7 @@ def articles_xml_to_mets(source=None
 
         #print(x_msg, file=debug_file)
 
-        if verbosity and (i % 100 == 0):
+        if verbosity and (i % 10 == 0 and i > 0):
             file_sample = 1
         else:
             file_sample = 0
@@ -1398,7 +1471,7 @@ def articles_xml_to_mets(source=None
             # print debug or simple progress-monitoring message to debug_file
             utc_now = datetime.datetime.utcnow()
             utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-            msg =("{}: Processed {} input files so far.\n".format(utc_secs_z,i))
+            msg =("{}: time {}: Processed {} input files so far.\n".format(me,utc_secs_z,i))
             print(msg, file=debug_file)
 
         #print ("exoldmets(): Using input filename='{}'".format(input_file_name))
@@ -1460,9 +1533,9 @@ def articles_xml_to_mets(source=None
                 continue
 
         # Try to create mets.xml output for the input article
-        article_xml_log_messages, sha1_hexdigest, mets_failure = (
-          article_xml_to_mets_file(source=source
+        d_results = article_xml_to_mets_file(source=source
             , xslt_format_str=xslt_format_str
+            , core_pii=pii #pii in filename (orig from dublin core pii xml tag)
             , input_file_name=input_file_name
             , out_dir_root=output_folder
             , d_sobek_track=d_sobek_track
@@ -1470,48 +1543,27 @@ def articles_xml_to_mets(source=None
             , stored_sha1_hexdigest=stored_sha1_hexdigest
             , bibvid=bibvid
             , verbosity=verbosity
-            ))
-
+            )
+        article_xml_log_messages = d_results['log_messages']
         if len(article_xml_log_messages)>0:
             log_messages.append({'article-xml-to-mets':article_xml_log_messages})
 
-        if mets_failure is not None:
-            # ISSUE: 20161222 maybe here add 'or sha1_hexdigest... some test whether this is new data cf
-            # current bibinfo.."
-            #
+        failure_message = d_results['failure_message']
+        if failure_message != '':
             # This is a FAILURE to build a METS file for this PII, so we will continue
             # to the top of this loop so that we do not reserve (a bibvid for) the PII.
             # No mets file could be generated this time.
-            msg = ("For this input file's PII {}, did not({}) make METS file. "
-                 "Bibvid {} is still unused.\n"
-                  .format(pii,repr(mets_failure),bibvid))
-            x_msg += msg
-            if mets_failure == 1:
-                total_api_failures += 1
-                msg=("Failed because, cannot read full xml api file.")
-                x_msg += msg
-            elif mets_failure == 2:
-                msg=("Failed because, cannot parse full xml api file.")
-                x_msg += msg
-                total_parse_failures += 1
-            elif mets_failure == 3:
-                msg=("ABSTAINED because full xml api file shows NO UF AUTHORS.")
-                x_msg += msg
-                total_uf_failures += 1
-            elif mets_failure == 4:
-                msg=("ABSTAINED because of no new tracked changes in full xml api file.")
-                x_msg += msg
-                total_uf_failures += 1
-            else:
-                msg=("Failed because mets_failure={}.".format(repr(mets_failure)))
-                x_msg += msg
-                total_uf_failures += 1
-
+            msg = ("For this input file's PII {}, did not make METS file. "
+                 "{}. Bibvid {} is still unused.\n"
+                  .format(pii,failure_message,bibvid))
+            x_msg += msg + failure_message
             skip_mets += 1
             log_messages.append(x_msg)
             continue
 
-        # Here, we succeeded to output a METS file for this pii, so check or set the reservation
+        # Here, we succeeded to output a hopefully good METS file for this pii,
+        # so check or set the reservation
+
         msg = ("Input file={}, trying reservation for{} pii = {} for bibvid={}"
               .format(input_file_name, bibid_type,pii,bibvid))
         pii_reservations.reserve_for_pii(pii=pii)
@@ -1522,9 +1574,10 @@ def articles_xml_to_mets(source=None
                 ,bibid_type ,bibvid, sha1_hexdigest))
             # log_messages.append(msg)
             print(msg)
+
+        msg = ("{}:SUCCEEDED to make new mets file {}...{} for pii={} with bibivid={}"
+               .format(me,output_folder,outputted,pii,bibvid))
         outputted += 1
-        msg = ("SUCCEEDED to make new mets file {} for pii={} with bibivid={}"
-               .format(outputted,pii,bibvid))
         x_msg += msg
         # Append to xml log the message(s) for processing this input file.
         log_messages.append(x_msg)
@@ -1536,9 +1589,6 @@ def articles_xml_to_mets(source=None
         , "skipped_reads" : skip_reads
         , "skipped_mets" : skip_mets
         , "output-mets-files-count": outputted
-        , "total-full-api-failures": total_api_failures
-        , "total-full-parse-failures" : total_parse_failures
-        , "total-missing-uf-failures" : total_uf_failures
     }
     log_messages.append({"statistics": d_statistics})
 
@@ -1554,7 +1604,6 @@ the UF production system, and confined to bibvids of Elsevier bibs (the bibroot 
 in SobekCM is 'LS' - per verbal agreement with UF DPS in 2015) because now only
 Elsevier loads maintain a hash hexdigest value in the SobekCM_Item.Tickler column,
 which is a critical requirement to operation of this object.
-
 '''
 class PiiReservations(object):
     '''
@@ -1985,7 +2034,8 @@ def get_pii_reservations_from_silodb():
 
         # Ticklers are packed into one large value with 'space-pipe-space' delimiters,
         # starting with the delimiter, so the first one is always a throwaway. Also the last one
-        # is always the current one to use. Historical ones are kept for some reason to be reviewed.
+        # is always the current one to use. Historical ones are traditionally kept in SobekCM
+        # for some reason that may be worth reconsidering.
         ticklers = tickler_pack.split('|')
         # Parse the most recent tickler value...still must discard the space characters
         # left over from the legacy delimiter convention.
@@ -1993,7 +2043,6 @@ def get_pii_reservations_from_silodb():
         tickler = ticklers[-1].replace(' ','')
 
         # Check validity of some column values
-
         if len(bibvid) > 16:
             msg = ("Error: OOPS got string value too long for a bibvid:'{}'. "
                 .format(bibvid))
@@ -2006,10 +2055,10 @@ def get_pii_reservations_from_silodb():
         if bibvid in reservation.keys():
             msg = ("Error: OOPS duplicate bibvid:'{}'. "
                 .format(bibvid))
-
             raise ValueError(msg)
+
         reservation['deleted'] = deleted
-        reservation['stored_sha1_hexdigest'] = tickler
+        reservation['stored_sha1_hexdigest'] = tickler.upper()
 
         # Raise errors: If pii and deleted == 0 combo value is duplicated it is an error to resolve
         # in the production database.
@@ -2026,7 +2075,6 @@ def get_pii_reservations_from_silodb():
         else:
             count_deleted += 1
         od_pii_reservation[pii] = reservation
-
     # end for line in pii_rows
 
     print(
@@ -2053,15 +2101,19 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
     print("{}:Running for xml files under {} input_folders".format(me,len(input_folders)))
     sys.stdout.flush
 
-    skip_extant = False #skip creating new METS file if the PII is exant in the dict_pii
+    # skip_extant=True means skip creating new METS file if the PII is exant in the dict_pii
+    skip_extant = False # True means skip creating new METS file if the PII is exant in the dict_pii
 
+    # skip_nonserial = True means skip making new METS file if the PII starts with 'B', meaning nonserial
     skip_nonserial = True #skip making new METS file if the PII starts with 'B', meaning nonserial
+
     # 'tested' is the current best xslt transform to apply.
     xslt_source_name='tested' # used to select the xslt transform template
 
     # if skip_pii_new, we only want to create METS files for PII values that have already
     # been assigned to bibids in the input dictionary od_pii_bibid*
     skip_pii_new = True
+
     utc_now = datetime.datetime.utcnow()
 
     # Make date formats with utc time aka Zulu time, hence Z suffix.
@@ -2069,25 +2121,27 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
     # http://www.loc.gov/standards/datetime/, on the download of the PowerPoint
     # Presentation link: http://www.loc.gov/standards/datetime/edtf.pptx
     utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
     # secsz_start = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
     # We also use secsz_start as part of a filename, and windows chokes on ':', so use
     # all hyphens for delimiters
     secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
     secsz_str = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
-    #'//ad.ufl.edu/uflib/DeptData/IT/WebDigitalUnit/Robert/Downloads/elsevier')
 
-    #Reuse the 'source' name to also label output directory for results
-    # Consider to rather make these relative paths into arguments
     output_app_folder = '{}output_exoldmets/'.format(data_elsevier_folder)
     output_base_folder = '{}staging/'.format(output_app_folder)
     output_logs_folder = '{}logs/'.format(output_app_folder)
 
-    # NOTE: The staging directory and contents must be completely removed
-    # to preserve the integrity of new bibvids to be generated on this run.
-    # Otherwise, it is possible that filenames linger with obsolete bibvids used,
-    # that, if these files are not all removed, then wrong PII values may exist
+    # NOTE: As we do below, the staging directory and contents must be
+    # completely removed to preserve the integrity of new bibvids to be
+    # generated on this run.
+
+    # Otherwise, it is possible that filenames linger with obsolete bibvids are
+    # used, if these files are not all removed, then wrong PII values may exist
     # in old bibvids that have not been, for any reason, successfully loaded into the sobekcm
-    # databse by the SobekCM Builder. Maybe they failed or we did not even try to load them.
+    # databse by the SobekCM Builder.
+    # Maybe they failed or we did not even try to load them.
+
     os.makedirs(output_base_folder, exist_ok=True)
     shutil.rmtree(output_base_folder)
 
@@ -2096,16 +2150,11 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
     d_xslt = get_d_xslt()
     xslt_format_str = d_xslt[xslt_source_name]
 
-    # production database connection is always needed to get the authoritative dict_bibvid_pii
-    # prod_conn = DBConnection(server='lib-sobekdb\\sobekCM',db='SobekDB')
-
-    #print("Succeded: prod_conn is {}. prod_conn.server={}, conn.db={}, cxs='{}'. Done."
-    #      .format(repr(prod_conn), prod_conn.server, prod_conn.db, prod_conn.cxs))
-
     # NOTE: dict_conn is not used yet pending more testing.
-    # Instead we use local sqlexpress, db silodb, rvp_bibinfo, hard coded now.
+    # Instead we use manual procedures to populate local sqlexpress, db silodb, rvp_bibinfo,
+    # with instructions to create in comments of this file.
 
-    if env == 'prod' or 1 ==1 : # Later - only do this in PRODUCTION environment
+    if 1 == 1:
         input_files_low_index  = None
         input_files_high_index = None
         # Authoritative server to link PII values to BIBVIDs
@@ -2117,32 +2166,10 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
 
         #target_conn = dict_conn
         load_selection = 'all_new_or_changed'
-    elif env == 'test': # TEST environment
-        # TESTING - If low_index is not None, we Limit input_file_paths to test only a few
-        # input files...
-        # DO NOT paste these files into production, as multiple runs will may re-use bibvids
-        # unless new processes are developed to re-new the bibvid dict each time.
-        # No need -- just create a new bibvid_pii dict and then a signle
-        # time you can run the prod env with that one bibvid-dict file. It takes 3 or 4 minutes via
-        # a ssms query to SobekCM production database, it is not too long.
-        input_files_low_index = 0
-        input_files_high_index = input_files_low_index + 200
-        # Do NOT use this now... just using silodb, code left here for posterity
-        # dict_conn = DBConnection(server='lib-sobekdb\\sobekCM',db='SobekDB')
-        dict_conn = None
-        #target_conn = DBConnection(server='lib-ufdc-cache\\ufdcprod,49352', db= 'SobekTest')
-        load_selection = 'only_new'
-
-    elif env == 'local':
-        input_files_low_index = 0
-        input_files_high_index = input_files_low_index + 12000
-        dict_conn = DBConnection(server=r'.\SQLEXPRESS', db='silodb')
-        load_selection = 'only_new'
-    else:
-        raise ValueError("env='{}' is unknown".format(env))
 
     # Object to manage pii to bibvid reserved pairings for METS file outputs.
     # Call with arg prod conn later
+
     print("{}: Got env={}, dict_conn is {}. dict_conn.server={}, dict_conn.db={}, cxs='{}'. Done."
           .format(me,env, repr(dict_conn), dict_conn.server, dict_conn.db, dict_conn.cxs))
     sys.stdout.flush
@@ -2176,41 +2203,29 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
     # Loop through the input_folders by year:
     for i, input_folder in enumerate(input_folders):
         # Get list of 'Elsevier FULL-API'-based input files, first few for testing,
-        # from output_eatxml/full
+        # from 'per-day' folders under output_ealdxml
         input_folder_path = Path(input_folder)
-        # CHANGE NEXT ASSIGNMENT TO INPUT_FILE_PATHS FOR PERIODIC API HARVESTER...
-        # TO GET FROM GIT REPO THE LIST OF INPUT XML FILES CHANGED IN THE MOST RECENT COMMIT
-        # REVIVE NEXT LINE AFTER TESTING...
 
-        # TODO: tack on a 'builder-feeder' routine that spoonfeeds the mets files to the builder,
-        # sort of slowly so as to not bog down other production work by DPS, Laura Perry and crew.
-        # We may not need a git repo for eatxml outputted files anymore because reading the files
-        # in exoldmets() program and finding changes in tickerl hexdigest hash value is simpler
-        # and vastly consumes required storage space for elsevier xml files, though a maybe a bit
-        # slower than using a git  repo to store and detect file changes, though not terribly slow
+        # TODO: implement a 'builder-feeder' routine that spoonfeeds the mets files to the builder,
+        # at a regulated pace so as to not bog down other production work by DPS, Laura Perry and crew.
 
         input_file_paths = list(input_folder_path.glob('**/pii_*.xml'))
+
         print("{}: processing {} pii*xml input files under folder {}"
               .format(me, len(input_file_paths), input_folder))
         sys.stdout.flush
 
         # use ealdxml's filenames
-        print("Processing input_folder={} with {} study files"
+        print("Processing input_folder={} with {} input files that were output by ealdxml."
              .format(repr(input_folder),len(input_file_paths)))
         sys.stdout.flush
-        #if input_files_low_index is not None:
-            # WE ARE TESTING: Use only a portion of the total input file list...
-        #    lif = len(input_file_paths)
-        #    index_max = lif if input_files_high_index > lif else input_files_high_index
-        #    input_file_paths = input_file_paths[input_files_low_index:index_max]
-        all_input_file_paths.extend(input_file_paths)
 
         print("{}:calling articles_xml_to_mets for {} files in input folder={} with skip_extant='{}'"
               .format(me, len(input_file_paths), input_folder, repr(skip_extant)))
         sys.stdout.flush
 
         # Process all input xml files in the input_file_paths
-        year_log_source_xml_messages, bibvid = articles_xml_to_mets(
+        log_source_xml_messages, bibvid = articles_xml_to_mets(
           source=xslt_source_name
           , xslt_format_str=xslt_format_str
           , input_file_paths=input_file_paths
@@ -2220,11 +2235,13 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
           , skip_nonserial=skip_nonserial
           , verbosity=2
         )
-        #log_source_xml_messages += year_log_source_xml_messages
-        ifm = ('input-folder-{}'.format(input_folder)
+        #log_source_xml_messages += log_source_xml_messages
+        input_folder_messages_key = ('input-folder-{}'.format(input_folder)
             .replace(':', '').replace('/','-').replace('\\','-'))
 
-        d_log[ifm ] = year_log_source_xml_messages
+        d_log[input_folder_messages_key ] = log_source_xml_messages
+        # Save all input file paths to be returned to caller
+        all_input_file_paths.extend(input_file_paths)
     # end loop through input folders
 
     secsz_finish = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%SZ")
@@ -2242,11 +2259,10 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
     print("{}: output_folder={}. Now returning...".format(me,output_base_folder))
     return log_filename, all_input_file_paths, pii_reservations
 #end def exoldmets_run()
-#segment start is a list of of integers, as is segment_end
-#both have equal number of integers
-#Segment_end must be numerically greater than segment_start
+
 
 #MAIN  PARAMETER SETTINGS AND RUN
+
 def run():
   #RUN - Create METS files from input...
   #input_subfolders = ['2016','2015','2014','2015','2014','2013','2012']
@@ -2273,9 +2289,7 @@ def run():
 
   print("Will process files among {} subfolders from {} to {}"
         .format(len(input_folders),cymd_start,cymd_end))
-
   sys.stdout.flush
-
 
     # Select a source of input xml, also a specific  xslt transform is implied
     # see def exoldmets_run and see comments on database info on bibvids.
@@ -2295,5 +2309,5 @@ def run():
   return
 #end def run()
 
-#run
+# RUN
 run()
