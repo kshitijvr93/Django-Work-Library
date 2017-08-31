@@ -5,7 +5,8 @@ Based on Crafatxml - so still may need to change occurrences of that name
 below in places too..
 
 CrossRef API Documentation:
-https://github.com/CrossRef/rest-api-doc/blob/master/rest_api.md
+Location of doc on 20170831:
+https://github.com/CrossRef/rest-api-doc
 
 ALSO see the crawdxml notebook program that queries the cross ref "Works" api
 that allows selection of a specific DOI, where those results do include the
@@ -37,6 +38,8 @@ sys.path.append(get_path_modules())
 print("Sys.path={}".format(sys.path))
 sys.stdout.flush()
 import etl
+import time
+import urllib.parse
 
 #import requests
 import urllib, urllib.parse
@@ -165,6 +168,7 @@ def crafdtxml(d_params, verbosity=0):
     uf_articles = 0
     articles_todal = 0
 
+    # { Loop through days to harvest
     for n_day, (y4md, dt_day) in enumerate(days):
         y4 = y4md[0:4]
         mm = y4md[4:6]
@@ -195,24 +199,28 @@ def crafdtxml(d_params, verbosity=0):
 
         cursor = '*'
         result_count = 1
-        uf_articles_day = 0
-        articles_day = 0
+        uf_articles_today = 0
+        articles_today = 0
         n_batch = 0
-
+        # { loop over result batches for today
         while(1):
-            # Each loop returns 1000 articles.
+            batch_rows = 1000
+            uf_articles_in_batch = 0
+            # Submit a crossref request for results for up to batch_rows articles
+            # Each batch-loop returns batch_row articles except possibly the last
             # The total was 230,000 articles on 9/30/2016, but in 2016 one day
             # usually contains 5-10,000 articles
             n_batch += 1
 
             url_worklist_day = (
-                "http://api.crossref.org/works?rows=1000&cursor={}&filter="
+                "http://api.crossref.org/works?rows={}&cursor={}&filter="
                 "has-affiliation:true,from-deposit-date:{},until-deposit-date:{}"
-                .format(cursor,y4_m_d, y4_m_d))
+                .format(batch_rows,cursor,y4_m_d, y4_m_d))
 
             print("{}: using url={}".format(me,url_worklist_day))
 
-            d_json = etl.get_json_result_by_url(url_worklist_day)
+            #d_json = etl.get_json_result_by_url(url_worklist_day)
+            d_json = etl.get_result_by_url(url=url_worklist_day)
             # Pretty-print json data
             # print(json.dumps(d_json, indent=4, sort_keys=True))
 
@@ -265,12 +273,13 @@ def crafdtxml(d_params, verbosity=0):
                 break;
 
             #print ("Len of node_items={}".format(len(node_items)))
-
+            uf_articles_in_batch = 0
+            # { Loop over node_item items in this response
             for i, node_item in enumerate(node_items):
                 # Create a root node for this item's xml output
                 node_output_root = etree.Element("crossref-api-filter-date-UF")
                 entries_collected += 1
-                articles_day += 1
+                articles_today += 1
                 d_article_affiliations = {}
                 # RENAME this item's main node tag from 'item' to 'message' to match
                 # crossref worklist
@@ -291,26 +300,26 @@ def crafdtxml(d_params, verbosity=0):
                 # If no author has an affiliation for University of Florida,
                 # Skip this article
                 uf_article = False
-                nodes_name = node_item.findall(
+                nodes_affil_name = node_item.findall(
                           './/author/*//affiliation/*//name')
-                if nodes_name is None:
+                if nodes_affil_name is None:
                     # print("This doi has no affiliation names")
                     # No affiliation names given, so continue to skip it
                     continue
                 # print("Found {} names in this article".format(len(nodes)))
 
-                for node_name in nodes_name:
-                    name = node_name.text
+                for node_affil_name in nodes_affil_name:
+                    affil_name = node_affil_name.text
                     #print("Trying affil name='{}'".format(name))
                     '''
-                    if uf_affiliation(node_name.text) == 1:
-                        print("For doi={}, found UF name={} "
-                              .format(node_doi.text, node_name.text ))
+                    if uf_affiliation(affil_name.text) == 1:
+                        print("For doi={}, found UF affil_name={} "
+                              .format(node_doi.text, node_affil_name.text ))
                         uf_article = True
                         break
                     '''
                     d_author_affiliations = get_affiliations_by_name_substrings(
-                        name, od_affiliation_substrings, max_affiliations = 1)
+                        affil_name, od_affiliation_substrings, max_affiliations = 1)
                     if len(d_author_affiliations) == 0:
                         continue
                     for affiliation in d_author_affiliations.keys():
@@ -318,7 +327,7 @@ def crafdtxml(d_params, verbosity=0):
                         # add affil_X tag to the author's child affiliation name
                         # EG (affil_uf for uf affil)
                         subelement = etree.Element("affil_{}".format(affiliation))
-                        node_name.append(subelement)
+                        node_affil_name.append(subelement)
 
                     # Bequeath this sought author-affiliation (if found)
                     # to this article
@@ -332,8 +341,9 @@ def crafdtxml(d_params, verbosity=0):
                 # This article has some sought affiliations as described in
                 # od_affiliation_substrings
 
-                uf_articles_day += 1
+                uf_articles_today += 1
                 uf_articles += 1
+                uf_articles_in_batch += 1
 
                 for affiliation in d_article_affiliations:
                     # Create an xml tag for a root child, eg 'affil_uf' with value 1,
@@ -355,26 +365,43 @@ def crafdtxml(d_params, verbosity=0):
                 #
                 #
                 entries_collected += 1
-            # end loop through article items in this query's response
+            # } end Loop over node_item items in this response
+            print ("Found index i={} at end of loop, uf_articles-in_batch={}."
+                   .format(i,uf_articles_in_batch))
+            if (i < (batch_rows -1)):
+                # Here, this must have been the end of the results because we did not find
+                # quantity the maximum requested batch_rows articles in the result.
+                # Crossref API client Code must check this now and avoid submitting
+                # a final query which returns nothing, else result is http server error 500.
+                break;
+
+            # Wrap up this response and if neeed, prepare cursor for another request
+            # Python - include sleep to keep clear of rate limiting
+            #print("Sleeping 5 seconds to avoid rate limits...")
+            #time.sleep(5)
+            #print("I awoke.")
+
+            print("Produced {} doi files for batch {}".format(uf_articles_in_batch, n_batch))
 
             node_cursor = node_response_root.find('.//next-cursor')
-            print("Produced doi files for batch {}".format(n_batch))
-
             if node_cursor is None or node_cursor.text == '':
                 print("Got nothing for NODE CURSOR -- end of batches")
                 break;
             else:
                 cursor = node_cursor.text
                 print("{}:Got node_cursor value='{}'.".format(me,cursor))
+                # NOTE: must use quote_plus because cursor value may have characters that require it.
+                cursor = urllib.parse.quote_plus(cursor)
+                print("{}:Got urlencoded node_cursor value='{}'.".format(me,cursor))
             print("End batch {}\n".format(n_batch))
+        # } loop over result batches for today
 
-        # End loop through potential multiple result batches for this day
         print (
-            "\nEnd of batches for this day={} with {} articles and {} uf articles\n"
+            "\nEnd of {} batches of results for this day={}: This day had {} articles and {} uf articles\n"
             "===========================\n\n"
-            .format(y4md, articles_day, uf_articles_day))
+            .format(n_batch, y4md, articles_today, uf_articles_today))
 
-    # end while loop over days
+    # } end while loop over days
 
     return entries_collected, entries_excepted, uf_articles
 # end def crafdtxml
@@ -398,10 +425,10 @@ def run():
   # So here, since we are using CrossRef APIs, the cymd_start and
   # cymd_end days are INCLUDED in the API query results.
 
-  cymd_start = '20170306'
+  cymd_start = '20170316'
 
   # CRAFATXML - Here, we do only one day at a time...
-  cymd_end = '20170824'
+  cymd_end = '20170331'
 
   utc_now = datetime.datetime.utcnow()
   # secsz_start: secz means seconds in utc(suffix 'z') when this run started

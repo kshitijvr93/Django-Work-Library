@@ -16,7 +16,7 @@ import shutil
 import stat
 
 
-def get_json_result_by_url(url):
+def get_json_result_by_url(url,verbosity=1):
     import urllib
     import json
 
@@ -24,13 +24,15 @@ def get_json_result_by_url(url):
     if url is None or url=="":
         raise Exception("Cannot send a request to an empty url.")
     try:
+        print("{}:starting with url={}".format(me,url))
         get_request = urllib.request.Request(url, data=None)
     except Exception as exc:
-        raise Exception("Cannot send a request to url={}. exc={}".format(url,exc))
+        raise Exception("{}:Cannot send a request to url={}. exc={}".format(me,url,exc))
+
     try:
         response = urllib.request.urlopen(get_request)
     except Exception as e:
-        print("{}:get_json_result_by_url: Got exception instead of response for"
+        print("{}: Got exception instead of response for"
               "\n url='{}',\nget_request={}, exception={}"
               .format(me,url, repr(get_request), repr(e)))
         raise
@@ -112,9 +114,9 @@ If json_loads is True, read the API result as a JSON result,
 so decode it to a Python result and return that.
 Otherwise just return the utf-8 result.
 '''
-def get_result_by_url(url, json_loads=True, send_user_agent=True, verbosity=0):
-    import urllib2 as urllib
-
+def get_result_by_url(url=None, json_loads=True, send_user_agent=True, verbosity=0):
+    import urllib, json
+    me = 'get_result_by_url'
     if url is None or url=="":
         raise Exception("Cannot send a request to an empty url.")
     try:
@@ -132,13 +134,13 @@ def get_result_by_url(url, json_loads=True, send_user_agent=True, verbosity=0):
     except Exception as exc:
         raise Exception("Cannot create a request for \nurl='{}', exc={}".format(url,repr(exc)))
     try:
-        print("*** GET REQUEST='{}' ***".format(repr(get_request)))
+        print("{}:*** GET REQUEST='{}' ***".format(me,repr(get_request)))
         response = urllib.request.urlopen(get_request)
     except Exception as e:
         if verbosity > 0:
-            print("get_result_by_url: Got exception instead of response for"
+            print("{}:get_result_by_url: Got exception instead of response for"
                 " \nurl='{}',\nget_request={} , exception={}"
-                .format(url, repr(get_request), e))
+                .format(me,url, repr(get_request), e))
         raise
     result = response.read().decode('utf-8')
     if json_loads == True:
