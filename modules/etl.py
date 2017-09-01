@@ -184,6 +184,7 @@ def home_folder_name():
     return expanduser("~")
 
 def make_home_relative_folder(home_relative_folder='',exist_ok=True, verbosity=0):
+    raise("*** make_home_relative_folder() is DEPRECATED ***: Use method data_folder() instead")
     if home_relative_folder.startswith('/'):
         home_relative_folder.replace('/','')
     folder = home_folder_name() + "/" + home_relative_folder

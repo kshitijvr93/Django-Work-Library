@@ -134,9 +134,7 @@ def uf_affiliation(name):
     return 0
 
 '''
-NOTE: see nice url of results to examine while finishing this method:
-http://api.crossref.org/works?filter=affiliation:University%20of%20Florida,from-index-date:2016-12-01,until-index-date:2016-12-01
---
+
 Method crafatxml: CrossRef API To XML - Read the CrossRef REST API github docs for details.
 
 Get XML Metadata for each DOI-identified article and save it to a file named
@@ -381,7 +379,8 @@ def crafdtxml(d_params, verbosity=0):
             #time.sleep(5)
             #print("I awoke.")
 
-            print("Produced {} doi files for batch {}".format(uf_articles_in_batch, n_batch))
+            print("Produced {} doi files for batch {}"
+                  .format(uf_articles_in_batch, n_batch))
 
             node_cursor = node_response_root.find('.//next-cursor')
             if node_cursor is None or node_cursor.text == '':
@@ -390,18 +389,19 @@ def crafdtxml(d_params, verbosity=0):
             else:
                 cursor = node_cursor.text
                 print("{}:Got node_cursor value='{}'.".format(me,cursor))
-                # NOTE: must use quote_plus because cursor value may have characters that require it.
+                # NOTE: must use quote_plus because cursor value may have characters
+                # that require it.
                 cursor = urllib.parse.quote_plus(cursor)
                 print("{}:Got urlencoded node_cursor value='{}'.".format(me,cursor))
             print("End batch {}\n".format(n_batch))
         # } loop over result batches for today
 
         print (
-            "\nEnd of {} batches of results for this day={}: This day had {} articles and {} uf articles\n"
+            "\nEnd of {} batches of results for this day={}: "
+            "This day had {} articles and {} uf articles\n"
             "===========================\n\n"
             .format(n_batch, y4md, articles_today, uf_articles_today))
-
-    # } end while loop over days
+    # } end for loop over days generator
 
     return entries_collected, entries_excepted, uf_articles
 # end def crafdtxml
@@ -425,10 +425,10 @@ def run():
   # So here, since we are using CrossRef APIs, the cymd_start and
   # cymd_end days are INCLUDED in the API query results.
 
-  cymd_start = '20170316'
+  cymd_start = '20170401'
 
   # CRAFATXML - Here, we do only one day at a time...
-  cymd_end = '20170331'
+  cymd_end = '20170824'
 
   utc_now = datetime.datetime.utcnow()
   # secsz_start: secz means seconds in utc(suffix 'z') when this run started
@@ -448,7 +448,7 @@ def run():
   # Dict of metadata run parameter info on this run
   d_params={
       "secsz_start": secsz_start,
-      "cymd_start" : cymd_start,
+      'cymd_start' : cymd_start,
       "cymd_end"   : cymd_end,
       "output_folder_base" : output_folder_base,
       "python_version" : sys.version,

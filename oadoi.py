@@ -91,6 +91,8 @@ doi_string = '''
 '''
 
 l_dois = doi_string.split('\n')
+doi_str = '10.1016/j.sse.2012.05.045'
+l_dois=[doi_str]
 print(len(l_dois))
 
 
@@ -642,4 +644,6 @@ dois_uf_els_not_open_access='''10.1016/j.jmaa.2016.07.011
 10.1016/j.watres.2017.02.013
 10.1016/j.jhydrol.2017.02.039'''
 
-run(dois_uf_els_not_open_access)
+l_dois = dois_uf_els_not_open_access
+l_dois='10.1016/j.sse.2012.05.045'
+run(l_dois)

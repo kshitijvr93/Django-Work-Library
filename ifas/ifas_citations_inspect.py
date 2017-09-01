@@ -1,3 +1,16 @@
+import sys, os, os.path, platform
+def get_path_modules(verbosity=0):
+  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+  path_user = os.environ.get(env_var)
+  path_modules = '{}/git/citrus/modules'.format(path_user)
+  if verbosity > 1:
+    print("Assigned path_modules='{}'".format(path_modules))
+  return path_modules
+sys.path.append(get_path_modules())
+print("Sys.path={}".format(sys.path))
+sys.stdout.flush()
+import etl
+
 '''
 20170530 - Robert V. Phillips
 Python3 code
@@ -5,7 +18,7 @@ This file holds methods used to inspect and report problematic IFAS citations
 that are received from the 28 IFAS units
 
 TEST INPUT FILE NOTES:
- FILENAME is 2015_master_base.txt, but original name left by MSL staff is
+Initial test FILENAME is 2015_master_base.txt, but original name left by MSL staff is
 "2015 Master List_dedup.docx", which I opened wth word and saved as a utf8 file
 and renamed to 2015_master_base.txt -
 
@@ -36,8 +49,6 @@ to a completely valid utf-8 file format. For example, of the first citations has
 a greek character that fails to be exported as utf-8, it seems.
 That detail needs to be resolved.
 '''
-import sys, os, os.path, platform
-sys.path.append('{}/git/citrus/modules'.format(os.path.expanduser('~')))
 from pathlib import Path
 from etl import html_escape, has_digit, has_upper, make_home_relative_folder
 import xlrd, xlwt
@@ -116,8 +127,15 @@ authored by their employees.
 Those files will comprise round2 orf input.
 </summary>
 
-<param> year_input_folder_name - main folder with a year of structured input files, with filenames and subfolder
-structure as expcted i routing __init__ and object methods, </param>
+<param> input_folder - main folder with a year of structured input
+files, with filenames and subfolder structure as expcted i routing __init__
+and object methods, </param>
+
+<param name='base_pubs_file_name'> The name of the file (assumed to be in
+the input_folder folder) containing the 'base' publications for
+the previous year's period, used to check for duplicates across new inputs
+this year and the previous year<./param>
+
 '''
 class CitationsInspector():
     '''
@@ -126,18 +144,27 @@ class CitationsInspector():
     d_base_doi entry keyed by the doi with value being the entire line's text.
     Also keep every line i the d_base dictionary, keyed by index line number zfilled to 10 positions.
     '''
-    def __init__(self, year_input_folder_name=None, unit_has_tab_sep=False,verbosity=0):
-        self.year_input_folder_name = year_input_folder_name
-        self.units_folder = '{}/units'.format(self.year_input_folder_name)
-        self.units_file_glob = 'IFAS*txt'
-        print("Units_folder-'{}', glob='{}'".format(self.units_folder, self.units_file_glob))
+    def __init__(self, input_folder=None, input_files_glob=None
+        , base_pubs_file_name=None, verbosity=1):
+        if not input_folder and base_pubs_file_name and input_file_glob:
+          raise ValueError(
+            "Missing input_folder or base_pubs_file_name or input_file_glob")
+        self.verbosity = verbosity
+        self.input_folder = input_folder
+        self.units_folder = '{}units/'.format(self.input_folder)
+        #self.input_files_glob = 'IFAS*txt'
+        self.input_files_glob = input_files_glob
+        if verbosity > 0:
+            print("Inputs_folder='{}', glob='{}'".format(self.input_folder, self.input_files_glob))
 
-        self.unit_paths = list(Path(self.units_folder).glob(self.units_file_glob))
-        self.base_folder = '{}/base_info'.format(self.year_input_folder_name)
-        print("Base folder-'{}'".format(self.base_folder))
-        self.base_pubs_file_name = '{}/IFAS-2015-pubs_by_topic-1.txt'.format(self.base_folder)
+        self.input_paths = list(Path(self.input_folder).glob(self.input_files_glob))
+        if len(self.input_paths) < 1:
+          raise ValueError("Found ZERO input files in input folder {} with glob {}"
+            .format(input_folder, input_files_glob))
+        self.base_pubs_file_name = base_pubs_file_name
+        if verbosity > 0:
+            print("Using base pubs file name ='{}'".format(self.base_pubs_file_name))
         self.base_skip_lines = 4 # Number of lines in last years citations file to skip from the start
-        self.unit_has_tab_sep = unit_has_tab_sep; #If true, unit citations files are tab-separated
         self.d_base_index = {}
         self.d_base_doi = {}
         self.d_current_doi = {}
@@ -196,7 +223,7 @@ class CitationsInspector():
     '''
     def inspect(self, output_folder=None):
         if output_folder is None:
-            output_folder = self.year_input_folder_name
+            output_folder = self.input_folder
         self.inspect_output_folder = output_folder
         me = 'inspect'
 
@@ -206,10 +233,10 @@ class CitationsInspector():
         n_dup_old = 0
         n_dup_cur = 0
         n_dup_unit = 0
-        print("{}: Found {} input files".format(me,len(self.unit_paths)))
-        for path in self.unit_paths:
+        print("{}: Found {} input files".format(me,len(self.input_paths)))
+        for i,path in enumerate(self.input_paths):
             input_file_name = "{}/{}".format(path.parents[0], path.name)
-            print("Processing file name={}".format(input_file_name))
+            print("Processing input file {}, name={}".format(i,input_file_name))
             n_input_files += 1
 
             dot_index = path.name.find('.')
@@ -347,6 +374,9 @@ class CitationsInspector():
 
                     #TITLE
                     index_found = line[index_base :].find('.')
+                    if index_found == -1:
+                      #take 2 - accept a question mark alternative to end a title
+                      index_found = line[index_base :].find('?')
                     if skip_remaining_parsing == 1:
                         title = 'Not found'
                     elif index_found < 1:
@@ -472,19 +502,49 @@ class CitationsInspector():
     # end inspect()
 # end class CitationsInspector
 
-print("Starting")
-year_input_folder_name = make_home_relative_folder(
-    "data/ifas_citations/2016/inputs_round1")
+'''
+method run() - run the ifas citations inspectior
+Param this_year is the integer 4 digit A.D. year
+'''
+def run(this_year=2016):
+    me = 'ifas_citations_inspect'
+    print("{}: Starting".format(me))
+    last_year = this_year - 1
 
-inspector = CitationsInspector(year_input_folder_name=year_input_folder_name)
+    base_pubs_folder = etl.data_folder(linux='/home/robert', windows='U:',
+    data_relative_folder='/data/ifas_citations/{}/base_info/'.format(this_year))
 
-inspector.inspect()
+    base_file_name = 'IFAS-{}-pubs_by_topic-1.txt'.format(last_year)
+    base_pubs_file_name = '{}{}'.format(base_pubs_folder, base_file_name)
 
-print("Got d_base_doi length='{}'".format(len(inspector.d_base_doi)))
+    study = 'normal'
+    study = 'year_end'
 
-n_dup_old = inspector.n_dup_old
-n_dup_cur = inspector.n_dup_cur
-n_dup_unit = inspector.n_dup_cur
+    if study == 'normal':
+        input_folder = etl.data_folder(linux='/home/robert', windows='U:',
+            data_relative_folder='/data/ifas_citations/{}/inputs_round1/units/'.format(this_year))
+        input_files_glob = 'IFAS*txt'
+    else:
+        input_folder = etl.data_folder(linux='/home/robert', windows='U:',
+          data_relative_folder='/data/ifas_citations/{}/base_info/'.format(this_year))
+        input_files_glob = '{}_Master_List_Final.txt'.format(this_year)
 
-print("Skipped {} dois of olders ones, {} of current.Done!"
-  .format(n_dup_old,n_dup_cur))
+    # example for params for a normal run comparing this years final list of pubs to previous year
+    # and checking for dups, etc...
+
+    inspector = CitationsInspector(base_pubs_file_name=base_pubs_file_name
+        ,input_folder=input_folder, input_files_glob=input_files_glob)
+
+    inspector.inspect()
+
+    print("Got d_base_doi length='{}'".format(len(inspector.d_base_doi)))
+
+    n_dup_old = inspector.n_dup_old
+    n_dup_cur = inspector.n_dup_cur
+    n_dup_unit = inspector.n_dup_cur
+
+    print("Skipped {} dois of olders ones, {} of current.Done!"
+      .format(n_dup_old,n_dup_cur))
+
+# RUN
+run()
