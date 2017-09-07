@@ -249,6 +249,7 @@ class CitationsInspector():
             d_type_style = self.out_book_sheet.d_type_style #convenient abbreviation
             n_file_citations = 0
             print("\nReading input file {}".format(path.name))
+            qmark_info = []
             # { NOTE: use encoding=utf-8-sig so on windows the BOM is properly ignored
             with open (str(input_file_name), encoding="utf-8-sig", errors='ignore', mode="r") as input_file:
                 input_lines = input_file.readlines()
@@ -373,10 +374,11 @@ class CitationsInspector():
                     d_output['pub_year'] = pub_year
 
                     #TITLE
+                    # Accept either the first period or the first question mark to end the title.
                     index_found = line[index_base :].find('.')
-                    if index_found == -1:
-                      #take 2 - accept a question mark alternative to end a title
-                      index_found = line[index_base :].find('?')
+                    index_found2 = line[index_base :].find('?')
+                    if (index_found2 < index_found and index_found2 != -1):
+                        index_found = index_found2
                     if skip_remaining_parsing == 1:
                         title = 'Not found'
                     elif index_found < 1:
@@ -483,11 +485,11 @@ class CitationsInspector():
                     self.out_book_sheet.writerow(d_output=d_output,
                         d_column_style=d_column_style)
                 # } end for line in input_lines
-
-                # Output this line's Excel row
             # } end with open input_file
-            print("Inspected input file={} with {} lines and {} dois."
-              .format(input_file_name, len(input_lines), n_unit_dois))
+            print("!!!!!!!!!!!!!!!!!!!! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            print("\n\n ====================================== Inspected input file={} with {} lines and {} dois and qmarks_info={}."
+              .format(input_file_name, len(input_lines), n_unit_dois, repr(qmark_info)),file=sys.stdout)
+            sys.stdout.flush()
 
             # Output excel workbook for this unit input file
             excel_file_name = "{}/{}.xls".format(path.parents[0], out_book_name)
