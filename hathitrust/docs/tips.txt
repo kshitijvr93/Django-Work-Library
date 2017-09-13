@@ -1,0 +1,6 @@
+TIP 1: If you are running on a windows machine with git bash you need to launch runserver by:
+winpty python.exe manage.py runserver # rather than python manage.py runserver
+See: https://stackoverflow.com/questions/32597209/python-not-working-in-the-command-line-of-git-bash
+Otherwise, the terminal that does the launch will just hang with no output ...
+
+TIP 2: tbd

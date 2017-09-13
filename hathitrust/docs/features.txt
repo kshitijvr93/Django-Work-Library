@@ -1,0 +1,50 @@
+This 'hathitrust' project was assigned to me in August 2017.
+An email from Alexis Charnas outlines the initial objectives she has (as
+does Judy Russell, per Chelsea Dinsmore indications at DPS meetings and emails).\,
+ with respect to Hathitrust.
+
+ Alexis sent the email via uf outlook email:
+
+ ===================================
+ ===================================
+ From: Charnas,Alexis K
+ Sent: Monday, July 31, 2017 10:05 AM
+ To: Richmond, Clifford; Looney,David Jackson; Stanley,Patrick Lee; Phillips,Robert V
+ Cc: Perry,Laura L; Dinsmore, Chelsea S; DeRoche,Shelia; Digby, Todd
+ Subject: Sending UFDC images to HathiTrust
+
+ Everyone,
+
+ As I understand, on Thursday (7/27) during the IT meeting you discussed the possible creation of a toolkit to help myself and others create packages of files to send to HathiTrust for ingest.
+
+ When we send content, they will be zipped folders that contain images (either TIFFs or JPEG2000), OCR files (.txt and maybe .pro), a meta.yaml file and a checksum.md5. We will then submit one or all of these packages to what HathiTrust calls a Cloud Validation and Packaging Service, verifies that the package meets HathiTrust specifications. A larger document that gives a general outline of what is needed and how it should be organized can be found in a GoogleDoc here: https://docs.google.com/document/d/1OQ0SKAiOH8Xi0HVVxg4TryBrPUPtdv4qA70d8ghRltU/edit
+
+ There are several links to different programs and examples for what they want, but to make it easier, I will provide some of them directly to you. I’ve also attached some images (jpegs) to this e-mail to give you a better idea of what I am describing and I’ll name the file name throughout.
+
+ To begin, I will not have any problem pulling the files from the archive and/or resources directory. I will have to rename them all, but this should not be a problem, as I have Bulk Rename Utility installed on my computer.
+
+ As mentioned in the document that I linked to above, we can submit TIFFS or JPEG2000. I believe that we are leaning towards sending .JP2s as even if we send TIFFs, we either have to compress them into bitmaps, or HathiTrust will compress them into JPEG2000 for us. The problem that I have run into is that  I am not sure that the images we have fit the specs that they are asking. I also am unable to add the XMP metadata that they require. HathiTrust offers what they call a Single Image Validator. You just send either a jp2 or TIFF as a sample file and then they determine if it fits the required parameters. When I’ve used on jp2s with the  I have a bunch of errors (ImageValidator.jpg)
+
+ I had thought that I could have embedded XMP metadata by using Photoshop and using File Info, but I get a different kind of error message when I use the Image Validator which looks like ImageValidatorTIFF.jpg. I am not sure what it is that causes the difference. I’m not sure how helpful this is, but I can make my own .xmp files though Photoshop, but this only works on RAW files. HathiTrust recommends using ExifTool, but this is a command-line tool, and my experience with command line applications is pretty basic. They have some others listed in the Cloud Validation Document.
+
+ One thing to note is that HathiTrust does allow some of the metadata that would be in the XMP files to be in the meta.yaml file. I have no software to my knowledge to create this. Some of the information that is needed in the meta.yaml can be found in the .mets files of each record, but HathiTrust does not accept .mets. HathiTrust links to a Python script here. I It seems to use information that you provide from a spreadsheet or .csv file but I am not sure.
+
+ Finally, they also require that each package should be zipped and contain a checksum.md5 file. Again, I do not software that I know of that can generate one and  HathiTrust recommends this. This is another command line tool.
+
+ I got this information from HathiTrust though links on this page.
+
+ In addition to the package, I will send separately all the marc.xml records of the items through FTP into HathiTrust’s processing system that they call Zephir. All the files need to meet their specifications which can be found here. I have done this before through this process. When I sent it before, I sent thousands of bib records in one giant .xml file that was generated from a macro based on database that was on Christy Shorey’s U drive. I do not remember who worked on it, but it was programmed on a 32-bt machine. For this batch, we are only sending about 40 some records so I can easily edit it into one file myself but I am not sure how easy it will be in the future.
+
+ Hopefully everything that I described and linked to is coherent and gives you an idea of what is needed to be done. If you need some more information or clarification please let me know and I will do my best to give what’s needed.
+
+ Thank you so much!
+
+ Alexis
+
+ Alexis Charnas
+ Content Management Assistant
+ Digital Support Services
+ George A. Smathers Libraries
+ (352) 273-2915
+ acharnas24@ufl.edu
+ ===================================

@@ -1,0 +1,6 @@
+This project is forming new files and  mind-share as of 20170913.
+Django 1.11.5 is selected as the webserver base to implement this, because I can get it to run under Windows and RedHat, I think.
+So Python 3.5.2 is the initial Python source language used, though it may advance to later versions over time.
+-
+-
+-

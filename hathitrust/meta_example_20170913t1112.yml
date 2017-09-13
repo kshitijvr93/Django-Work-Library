@@ -1,0 +1,179 @@
+# This is an example meta.yml file that provides additional metadata used for
+# ingesting material into HathiTrust. This file must be a well-formed YAML file.
+# See the YAML specification for more information:
+#
+# http://www.yaml.org/spec/1.2/spec.html
+#
+# Lines that start with a # character are comments.
+
+####### FOR MATERIAL SCANNED FROM PRINT ONLY ##########################################
+# Required - the date and approximate time the volume was scanned. This date
+# will be used for the PREMIS capture event. It will also be used to populate
+# the ModifyDate TIFF header and XMP tiff:DateTime image headers if they are
+# missing in the submitted images.
+#
+# This must be in the ISO8601 combined date format with time zone
+# (see https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations)
+#
+# Note: the -05:00 is a representation of a time zone offset from UTC, not
+# a representation of a time range.
+capture_date: 2013-11-01T12:31:00-05:00
+
+# If the submitted images are missing information about the scanner make and
+# model (XMP tiff:Make and tiff:Model header) it can be supplied here. It will
+# only be used if the submitted images do not have the scanner make.  This
+# element is optional.
+scanner_make: CopiBook
+scanner_model: HD
+
+# If the submitted images do not have the TIFF Artist or XMP tiff:Artist
+# header, this value must be supplied. It should reflect "who pushed the
+# button" to actually scan the item. This could be an organizational unit or an
+# outside vendor. It will only be used if the submitted images are missing the
+# TIFF Artist and XMP tiff:Artist headers.
+scanner_user: "University of Michigan: Digital Conversion Unit"
+
+############## END OF SECTION FOR MATERIAL SCANNED FROM PRINT #####################
+
+####### FOR BORN DIGITAL MATERIAL ONLY ##########################################
+
+# Required: date the digital file this submission was created from was created.
+# For example, suppose a university press provides a born-digital PDF file for ingest
+# into HathiTrust. Record the creation date of that PDF here.
+creation_date: 2013-10-01T12:23:42-05:00
+
+# Required: HathiTrust organization code of who created the digital file. This is
+# typically the organization-specific part of the domain name. If the organization code
+# is unknown, contact HathiTrust staff.
+creation_agent: knowledgeunlatched
+
+# Optional: If there is a "content provider" of the digital item that differs per
+# item in the submission batch, record the HathiTrust organization code here. For
+# example, if several different publishers provided digital files to Michigan that were
+# prepared for ingest into HathiTrust, the publisher would be recorded here. Most of
+# the time, this will be the same as the creation agent.
+digital_content_provider: dukeupress
+
+# If the submitted images do not have the TIFF Artist or XMP tiff:Artist header, this
+# value must be supplied. It should reflect who created the original born digital item.
+# Frequently this will be the author or publisher of the item. It will only be used if
+# the submitted images are missing the TIFF Artist and XMP tiff:Artist headers.
+tiff_artist: "Duke University Press"
+######## END OF SECTION FOR BORN DIGITAL MATERIAL     ###########################
+
+
+##############FOR ALL MATERIAL####################################################
+
+# If the submitted images are missing resolution information, the resolution must
+# be supplied here. It will only be used if the submitted images do not contain
+# resolution information.
+
+# Resolution for bitonal TIFFs
+bitonal_resolution_dpi: 600
+# Resolution for contone TIFFs or JPEG2000 images
+contone_resolution_dpi: 300
+
+# If the images were compressed, converted, or normalized before SIP
+# generation, these values should be supplied. The date must be in ISO8601
+# combined date format and the agent must be a HathiTrust organization code.
+# The tools should list the software tool names and versions.
+
+image_compression_date: 2013-11-01T12:15:00-05:00
+image_compression_agent: umich
+image_compression_tool: ["kdu_compress v7.2.3","ImageMagick 6.7.8"]
+
+# If this volume was scanned right-to-left and/or should read right-to-left,
+# put "right-to-left" for the scanning or reading order here. If this information
+# is not provided, volumes are assumed to be scanned left-to-right and read
+# left-to-right. For born digital material, "scanning order" really means
+# "rasterization order".
+
+# The possibilities are:
+#
+# Book reads left-to-right and 00000001.tif is the FRONT cover of the book:
+#   scanning_order: left_to_right; reading_order: left_to_right
+# Book reads left-to-right but 00000001.tif is the BACK cover of the book:
+#   scanning_order: right_to_left; reading_order: left_to_right
+# Book reads right-to-left and 00000001.tif is the FRONT cover of the book:
+#   scanning_order: right_to_left; reading_order: right_to_left
+# Book reads right-to-left but 00000001.tif is the BACK cover of the book:
+#   scanning_order: left_to_right; reading_order: right_to_left
+#
+# For more complicated cases (e.g. books that are half in English and half in Hebrew and # are read either left to right or right to left, or books that are in two left-to-right # languages and one language is printed upside-down from the other), pick the correct
+# scanning order and one of the correct reading orders. Users of the other language can
+# use the interface to adjust the view appropriately.
+scanning_order: left-to-right
+reading_order: left-to-right
+
+# Optionally, page numbers and page tag data can be supplied here.
+# The orderlabel is the page number and the label is the page tag.
+# Multiple page tags should be comma-separated.
+#
+# Allowable page tags include:
+#
+# BACK_COVER - Image of the back cover
+#
+# BLANK - An intentionally blank page.
+#
+# CHAPTER_PAGE - A sort of half title page for a chapter of grouping of
+# chapters -- that is, a page that gives the name of the chapter or section
+# that begins on the next page.
+#
+# CHAPTER_START - Subsequent chapters with regular page numbering after the
+# first. Also use this for the beginning of each appendix.
+#
+# COPYRIGHT - Title page verso (the back of the real title page)
+#
+# FIRST_CONTENT_CHAPTER_START - First page of the first chapter with regular
+# page numbering. If the first chapter with regular numbering is called the
+# introduction, that's okay.
+#
+# FOLDOUT - A page that folded out of the print original
+#
+# FRONT_COVER - Image of the front cover (if the cover of the book was scanned)
+#
+# IMAGE_ON_PAGE - Use for plates (pages with only images, which often do not
+# contain the regular page numbering)
+#
+# INDEX - The first page in a sequence containing an index
+#
+# MULTIWORK_BOUNDARY: for items with multiple volumes bound together
+#
+# PREFACE - First page of each section that appears between the title page
+# verso and the first regularly numbered page. For example, a one-page
+# dedication on page xvi would get this tag, and then the first page of a
+# three-page preface starting on page xviii would also get this.  However, if
+# the introduction of the text starts on page 1 (or on an unnumbered page
+# followed by page 2), do not use this tag. Use for components occurring before
+# and after the table of contents.
+#
+# REFERENCES - The first page in a sequence containing endnotes or a
+# bibliography
+#
+# TABLE_OF_CONTENTS - First page of the table of contents
+#
+# TITLE - Title page recto (the front of the real title page)
+#
+# TITLE_PARTS - Half title page (a sort of preliminary title page before the
+# real one)
+#
+# Please contact HathiTrust staff for additional guidance in mapping your page tags
+# to HathiTrust conventions.
+#
+# Note: the indentation here must use only spaces, never tabs: see
+# http://www.yaml.org/spec/1.2/spec.html#id2777534
+
+pagedata:
+  00000001.jp2: { label: "FRONT_COVER" }
+  00000007.jp2: { label: "TITLE" }
+  00000008.jp2: { label: "COPYRIGHT" }
+  00000009.jp2: { orderlabel: "i", label: "TABLE_OF_CONTENTS" }
+  00000010.jp2: { orderlabel: "ii", label: "PREFACE" }
+  00000011.jp2: { orderlabel: "iii" }
+  00000012.jp2: { orderlabel: "iv" }
+  00000013.jp2: { orderlabel: "v" }
+  00000014.jp2: { orderlabel: "vi" }
+  00000015.jp2: { orderlabel: "1", label: "FIRST_CONTENT_CHAPTER_START" }
+  00000016.jp2: { orderlabel: "2" }
+  00000017.jp2: { orderlabel: "3" }
+  00000018.jp2: { orderlabel: "4", label: "IMAGE_ON_PAGE" 

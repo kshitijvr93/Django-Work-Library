@@ -486,9 +486,8 @@ class CitationsInspector():
                         d_column_style=d_column_style)
                 # } end for line in input_lines
             # } end with open input_file
-            print("!!!!!!!!!!!!!!!!!!!! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            print("\n\n ====================================== Inspected input file={} with {} lines and {} dois and qmarks_info={}."
-              .format(input_file_name, len(input_lines), n_unit_dois, repr(qmark_info)),file=sys.stdout)
+            print("\n\n Inspected input file={} with {} lines and {} dois."
+              .format(input_file_name, len(input_lines), n_unit_dois ),file=sys.stdout)
             sys.stdout.flush()
 
             # Output excel workbook for this unit input file
