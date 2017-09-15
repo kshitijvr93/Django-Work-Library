@@ -58,30 +58,6 @@ import pytz
 import urllib.request
 #Note: Official Python 3.5 docs use different library, ElementTree ET
 
-''' od_affiliation_names OrderedDict
-key
-    is local name abbreviation (used as a step in output directory path)
-    for a university or author affiliation, e.g.,'UF' or "University of Florida"
-and value
-    is a list of strings to check vs an affiliation name for a match.
-    later may make this value a regular expression to check
-
-Initialize this dict to match CHORUS 'institution or affiliation partners'
-as of 20170313
-Note:
-'''
-od_affiliation_substrings = OrderedDict({
-    'university_of_florida': ['university of florida','univ.fl','univ. fl'
-        ,'univ fl' ,'univ of florida'
-        ,'u. of florida','u of florida']
-    #first cut - just seek denver, and filter/narrow local results later
-    ,'university_of_denver': [ 'university of denver']
-    # 'udenver': ['university of denver']
-    ,'chiba_university' : ['chiba university','university of chiba']
-
-    #'la trobe university': ['la trobe university', 'la trobe university']
-    ,'la_trobe_university': ['la trobe university', 'latrobe university']
-})
 
 '''
 Method get_affiliations_by_name_substrings:
@@ -146,8 +122,9 @@ which articles for which to return metadata.
 def crafdtxml(d_params, verbosity=0):
     # VALIDATE d_params
     # dt_start is the first orig-load-date that we want to collect
-    me = 'crafdtxml'
 
+    me = 'crafdtxml'
+    od_affiliation_substrings = d_params['od_affiliation_substrings']
     days = etl.sequence_days(d_params['cymd_start'], d_params['cymd_end'])
 
     total_results = 0
@@ -202,9 +179,9 @@ def crafdtxml(d_params, verbosity=0):
         n_batch = 0
         # { loop over result batches for today
         while(1):
-            batch_rows = 1000
+            n_batch_rows = 1000
             uf_articles_in_batch = 0
-            # Submit a crossref request for results for up to batch_rows articles
+            # Submit a crossref request for results for up to n_batch_rows articles
             # Each batch-loop returns batch_row articles except possibly the last
             # The total was 230,000 articles on 9/30/2016, but in 2016 one day
             # usually contains 5-10,000 articles
@@ -213,7 +190,7 @@ def crafdtxml(d_params, verbosity=0):
             url_worklist_day = (
                 "http://api.crossref.org/works?rows={}&cursor={}&filter="
                 "has-affiliation:true,from-deposit-date:{},until-deposit-date:{}"
-                .format(batch_rows,cursor,y4_m_d, y4_m_d))
+                .format(n_batch_rows,cursor,y4_m_d, y4_m_d))
 
             print("{}: using url={}".format(me,url_worklist_day))
 
@@ -263,8 +240,10 @@ def crafdtxml(d_params, verbosity=0):
             node_items = node_response_root.find('.//items')
             node_total_results = node_response_root.find('.//total-results')
             if n_batch == 1 and node_total_results is not None:
-                print("Processing total-results count = {}"
-                    .format(node_total_results.text))
+                total_results_count = int(node_total_results.text)
+                total_batch_count = int((total_results_count-1) / n_batch_rows) + 1
+                print("Processing total_results_count = {}, total_batch_count={}"
+                    .format(total_results_count,total_batch_count))
 
             if node_items is None or len(node_items) < 1:
                 print("CrossRef API Response shows no result items remain for this query.")
@@ -298,39 +277,47 @@ def crafdtxml(d_params, verbosity=0):
                 # If no author has an affiliation for University of Florida,
                 # Skip this article
                 uf_article = False
-                nodes_affil_name = node_item.findall(
-                          './/author/*//affiliation/*//name')
-                if nodes_affil_name is None:
-                    # print("This doi has no affiliation names")
-                    # No affiliation names given, so continue to skip it
-                    continue
-                # print("Found {} names in this article".format(len(nodes)))
+                nodes_author = node_item.findall( './/author')
+                for node_author in nodes_author:
+                  nodes_affil_name = node_author.findall(
+                            '.*//affiliation/*//name')
+                  if nodes_affil_name is None:
+                      # print("This doi has no affiliation names")
+                      # No affiliation names given, so continue to skip it
+                      continue
+                  # print("Found {} names in this article".format(len(nodes)))
 
-                for node_affil_name in nodes_affil_name:
-                    affil_name = node_affil_name.text
-                    #print("Trying affil name='{}'".format(name))
-                    '''
-                    if uf_affiliation(affil_name.text) == 1:
-                        print("For doi={}, found UF affil_name={} "
-                              .format(node_doi.text, node_affil_name.text ))
-                        uf_article = True
-                        break
-                    '''
-                    d_author_affiliations = get_affiliations_by_name_substrings(
-                        affil_name, od_affiliation_substrings, max_affiliations = 1)
-                    if len(d_author_affiliations) == 0:
-                        continue
-                    for affiliation in d_author_affiliations.keys():
-                        # For every found author's child affiliation,
-                        # add affil_X tag to the author's child affiliation name
-                        # EG (affil_uf for uf affil)
-                        subelement = etree.Element("affil_{}".format(affiliation))
-                        node_affil_name.append(subelement)
+                  for node_affil_name in nodes_affil_name:
+                      affil_name = node_affil_name.text
+                      #print("Trying affil name='{}'".format(name))
+                      '''
+                      if uf_affiliation(affil_name.text) == 1:
+                          print("For doi={}, found UF affil_name={} "
+                                .format(node_doi.text, node_affil_name.text ))
+                          uf_article = True
+                          break
+                      '''
+                      d_author_affiliations = get_affiliations_by_name_substrings(
+                          affil_name, od_affiliation_substrings, max_affiliations = 1)
+                      if len(d_author_affiliations) == 0:
+                          continue
+                      for affiliation in d_author_affiliations.keys():
+                          # For every found author's child affiliation,
+                          # add affil_X tag to the author's child affiliation name
+                          # EG (affil_uf for uf affil)
+                          subelement = etree.Element("affil_{}".format(affiliation))
+                          node_affil_name.append(subelement)
+                          # append a node to the author
+                          subelement = etree.Element("derived_affil")
+                          subelement.text = affiliation
+                          node_author.append(subelement)
 
-                    # Bequeath this sought author-affiliation (if found)
-                    # to this article
-                    d_article_affiliations.update(d_author_affiliations)
-                # Examined each given author affiliation name
+                      # Bequeath this sought author-affiliation (if found)
+                      # to this article
+                      d_article_affiliations.update(d_author_affiliations)
+                    # examined each affiliation name for this author
+                  # end for node_author
+                # For current node - Examined each given author affiliation name
 
                 # if count of found article affiliations is 0, skip it.
                 if len(d_article_affiliations) == 0:
@@ -366,9 +353,9 @@ def crafdtxml(d_params, verbosity=0):
             # } end Loop over node_item items in this response
             print ("Found index i={} at end of loop, uf_articles-in_batch={}."
                    .format(i,uf_articles_in_batch))
-            if (i < (batch_rows -1)):
+            if (i < (n_batch_rows -1)):
                 # Here, this must have been the end of the results because we did not find
-                # quantity the maximum requested batch_rows articles in the result.
+                # quantity the maximum requested n_batch_rows articles in the result.
                 # Crossref API client Code must check this now and avoid submitting
                 # a final query which returns nothing, else result is http server error 500.
                 break;
@@ -379,8 +366,8 @@ def crafdtxml(d_params, verbosity=0):
             #time.sleep(5)
             #print("I awoke.")
 
-            print("Produced {} doi files for batch {}"
-                  .format(uf_articles_in_batch, n_batch))
+            print("Produced {} doi files for batch {} of y4md {}"
+                  .format(uf_articles_in_batch, n_batch, y4md))
 
             node_cursor = node_response_root.find('.//next-cursor')
             if node_cursor is None or node_cursor.text == '':
@@ -393,14 +380,19 @@ def crafdtxml(d_params, verbosity=0):
                 # that require it.
                 cursor = urllib.parse.quote_plus(cursor)
                 print("{}:Got urlencoded node_cursor value='{}'.".format(me,cursor))
-            print("End batch {}\n".format(n_batch))
+
+            utc_now = datetime.datetime.utcnow()
+            print("End batch {} of {} for y4md {} at {}\n"
+                  .format(n_batch, total_batch_count, y4md, utc_now))
         # } loop over result batches for today
 
         print (
-            "\nEnd of {} batches of results for this day={}: "
-            "This day had {} articles and {} uf articles\n"
+            "\nFor day {}, initial_url={}, ended with batch {} of {}"
+            .format(y4md, url_worklist_day, n_batch, total_batch_count))
+
+        print ( "This day {} had {} articles and {} uf articles\n"
             "===========================\n\n"
-            .format(n_batch, y4md, articles_today, uf_articles_today))
+            .format( y4md, articles_today, uf_articles_today))
     # } end for loop over days generator
 
     return entries_collected, entries_excepted, uf_articles
@@ -411,7 +403,7 @@ def crafdtxml(d_params, verbosity=0):
 # and cymd_end would normally change.
 #
 
-def run():
+def run(od_affiliation_substrings):
   me = 'main code to run crafatxml'
   utc_now = datetime.datetime.utcnow()
   utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -421,14 +413,14 @@ def run():
   # NOTE: CrossRef query parameters provide FROM dates and UNTIL dates,
   # inclusive of those days.
   # Compare: Elsevier api parameters provide BEF and AFT dates, exclusive of
-  # those days.
+  # those days. Aka an 'open interval'
   # So here, since we are using CrossRef APIs, the cymd_start and
-  # cymd_end days are INCLUDED in the API query results.
+  # cymd_end days are INCLUDED in the API query results, aka closed interval
 
-  cymd_start = '20170401'
+  cymd_start = '20170622'
 
   # CRAFATXML - Here, we do only one day at a time...
-  cymd_end = '20170824'
+  cymd_end = '20170915'
 
   utc_now = datetime.datetime.utcnow()
   # secsz_start: secz means seconds in utc(suffix 'z') when this run started
@@ -453,6 +445,7 @@ def run():
       "output_folder_base" : output_folder_base,
       "python_version" : sys.version,
       "max-queries" : "0", # TODO
+      "od_affiliation_substrings" : od_affiliation_substrings
       }
 
   # Process the Elsevier Search and Full-Text APIs to create local xml files
@@ -495,4 +488,36 @@ def run():
 # end def run()
 
 # RUN
-run()
+
+''' od_affiliation_names OrderedDict
+key
+    is local name abbreviation (used as a step in output directory path)
+    for a university or author affiliation, e.g.,'UF' or "University of Florida"
+and value
+    is a list of strings to check vs an affiliation name for a match.
+    later may make this value a regular expression to check
+
+Initialize this dict to match CHORUS 'institution or affiliation partners'
+as of 20170313
+Note:
+'''
+od_affiliation_substrings = OrderedDict({
+    'university_of_florida': ['university of florida','univ.fl','univ. fl'
+        ,'univ fl' ,'univ of florida'
+        ,'u. of florida','u of florida']
+})
+
+'''
+    #first cut - just seek denver, and filter/narrow local results later
+    'university_of_denver': [ 'university of denver'],
+
+    'chiba_university' : ['chiba university','university of chiba'],
+
+    'la_trobe_university': ['la trobe university', 'latrobe university']
+
+    # todo: 1) also add australian universities...
+    #  while honoring the KEY as the name of the MAIN initial output folder directory
+'''
+
+run(od_affiliation_substrings=od_affiliation_substrings)
+print("Really done.")
