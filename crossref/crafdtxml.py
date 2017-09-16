@@ -384,12 +384,12 @@ def crafdtxml(d_params, verbosity=0):
                 print("{}:Got urlencoded node_cursor value='{}'.".format(me,cursor))
 
             utc_now = datetime.datetime.utcnow()
-            print("For day y4md {}, end final batch {} of {} at {}\n"
+            print("For day y4md {}, end batch {} of {} at {}\n"
                   .format(y4md,n_batch, total_batch_count, utc_now))
         # } loop over result batches for today
 
         print (
-            "\nFor day {}, initial_url={}, ended with batch {} of {}"
+            "\nFor day {}, initial_url={}, ended final batch {} of {}"
             .format(y4md, url_worklist_day, n_batch, total_batch_count))
 
         print ( "This day {} had {} articles and {} affilate articles\n"
@@ -419,7 +419,7 @@ def run(od_affiliation_info):
   # So here, since we are using CrossRef APIs, the cymd_start and
   # cymd_end days are INCLUDED in the API query results, aka closed interval
 
-  cymd_start = '20170915'
+  cymd_start = '20170622'
 
   # CRAFATXML - Here, we do only one day at a time...
   cymd_end = '20170915'
