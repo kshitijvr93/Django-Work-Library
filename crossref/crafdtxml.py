@@ -62,7 +62,7 @@ import urllib.request
 '''
 Method get_affiliations_by_name_substrings:
 
-We are given an affiliation name and od_affiliation_substrings for which
+We are given an affiliation name and od_affiliation_info for which
 substring matches on the given name are sought.
 
 Return:
@@ -75,11 +75,12 @@ NOTES: If max_affiliation is not zero, it is the maximum number of matching
 affiliations to include in the returned dictionary. This allows the caller
 to set it to 1 to speed up the algorithm used in this method.
 '''
-def get_affiliations_by_name_substrings(name, od_affiliation_substrings,
+def get_affiliations_by_name_substrings(name, od_affiliation_info,
     max_affiliations = 0):
     d_affiliations = {}
     n_affils = 0;
-    for affiliation, substrings in od_affiliation_substrings.items():
+    for affiliation, info in od_affiliation_info.items():
+        substrings = info['substrings']
         for substring in substrings:
             if name.lower().find(substring) != -1:
                 d_affiliations[affiliation] = '1'
@@ -124,7 +125,7 @@ def crafdtxml(d_params, verbosity=0):
     # dt_start is the first orig-load-date that we want to collect
 
     me = 'crafdtxml'
-    od_affiliation_substrings = d_params['od_affiliation_substrings']
+    od_affiliation_info = d_params['od_affiliation_info']
     days = etl.sequence_days(d_params['cymd_start'], d_params['cymd_end'])
 
     total_results = 0
@@ -140,7 +141,7 @@ def crafdtxml(d_params, verbosity=0):
 
     n_day = 0;
     d_batch = dict()
-    uf_articles = 0
+    affiliate_articles = 0
     articles_todal = 0
 
     # { Loop through days to harvest
@@ -174,13 +175,13 @@ def crafdtxml(d_params, verbosity=0):
 
         cursor = '*'
         result_count = 1
-        uf_articles_today = 0
+        affiliate_articles_today = 0
         articles_today = 0
         n_batch = 0
         # { loop over result batches for today
         while(1):
             n_batch_rows = 1000
-            uf_articles_in_batch = 0
+            affiliate_articles_in_batch = 0
             # Submit a crossref request for results for up to n_batch_rows articles
             # Each batch-loop returns batch_row articles except possibly the last
             # The total was 230,000 articles on 9/30/2016, but in 2016 one day
@@ -250,7 +251,7 @@ def crafdtxml(d_params, verbosity=0):
                 break;
 
             #print ("Len of node_items={}".format(len(node_items)))
-            uf_articles_in_batch = 0
+            affiliate_articles_in_batch = 0
             # { Loop over node_item items in this response
             for i, node_item in enumerate(node_items):
                 # Create a root node for this item's xml output
@@ -298,7 +299,7 @@ def crafdtxml(d_params, verbosity=0):
                           break
                       '''
                       d_author_affiliations = get_affiliations_by_name_substrings(
-                          affil_name, od_affiliation_substrings, max_affiliations = 1)
+                          affil_name, od_affiliation_info, max_affiliations = 1)
                       if len(d_author_affiliations) == 0:
                           continue
                       for affiliation in d_author_affiliations.keys():
@@ -308,8 +309,9 @@ def crafdtxml(d_params, verbosity=0):
                           subelement = etree.Element("affil_{}".format(affiliation))
                           node_affil_name.append(subelement)
                           # append a node to the author
-                          subelement = etree.Element("derived_affil")
-                          subelement.text = affiliation
+                          subelement = etree.Element("affil_key")
+                          subelement.set("authority", "usa_ufl")
+                          subelement.set("key", affiliation)
                           node_author.append(subelement)
 
                       # Bequeath this sought author-affiliation (if found)
@@ -324,11 +326,11 @@ def crafdtxml(d_params, verbosity=0):
                     continue #skip this article
 
                 # This article has some sought affiliations as described in
-                # od_affiliation_substrings
+                # od_affiliation_info
 
-                uf_articles_today += 1
-                uf_articles += 1
-                uf_articles_in_batch += 1
+                affiliate_articles_today += 1
+                affiliate_articles += 1
+                affiliate_articles_in_batch += 1
 
                 for affiliation in d_article_affiliations:
                     # Create an xml tag for a root child, eg 'affil_uf' with value 1,
@@ -351,8 +353,8 @@ def crafdtxml(d_params, verbosity=0):
                 #
                 entries_collected += 1
             # } end Loop over node_item items in this response
-            print ("Found index i={} at end of loop, uf_articles-in_batch={}."
-                   .format(i,uf_articles_in_batch))
+            print ("Found index i={} at end of loop, affiliate_articles-in_batch={}."
+                   .format(i,affiliate_articles_in_batch))
             if (i < (n_batch_rows -1)):
                 # Here, this must have been the end of the results because we did not find
                 # quantity the maximum requested n_batch_rows articles in the result.
@@ -367,7 +369,7 @@ def crafdtxml(d_params, verbosity=0):
             #print("I awoke.")
 
             print("Produced {} doi files for batch {} of y4md {}"
-                  .format(uf_articles_in_batch, n_batch, y4md))
+                  .format(affiliate_articles_in_batch, n_batch, y4md))
 
             node_cursor = node_response_root.find('.//next-cursor')
             if node_cursor is None or node_cursor.text == '':
@@ -382,20 +384,20 @@ def crafdtxml(d_params, verbosity=0):
                 print("{}:Got urlencoded node_cursor value='{}'.".format(me,cursor))
 
             utc_now = datetime.datetime.utcnow()
-            print("End batch {} of {} for y4md {} at {}\n"
-                  .format(n_batch, total_batch_count, y4md, utc_now))
+            print("For day y4md {}, end final batch {} of {} at {}\n"
+                  .format(y4md,n_batch, total_batch_count, utc_now))
         # } loop over result batches for today
 
         print (
             "\nFor day {}, initial_url={}, ended with batch {} of {}"
             .format(y4md, url_worklist_day, n_batch, total_batch_count))
 
-        print ( "This day {} had {} articles and {} uf articles\n"
+        print ( "This day {} had {} articles and {} affilate articles\n"
             "===========================\n\n"
-            .format( y4md, articles_today, uf_articles_today))
+            .format( y4md, articles_today, affiliate_articles_today))
     # } end for loop over days generator
 
-    return entries_collected, entries_excepted, uf_articles
+    return entries_collected, entries_excepted, affiliate_articles
 # end def crafdtxml
 
 ####### RUN main CRAFATXML program
@@ -403,7 +405,7 @@ def crafdtxml(d_params, verbosity=0):
 # and cymd_end would normally change.
 #
 
-def run(od_affiliation_substrings):
+def run(od_affiliation_info):
   me = 'main code to run crafatxml'
   utc_now = datetime.datetime.utcnow()
   utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -417,7 +419,7 @@ def run(od_affiliation_substrings):
   # So here, since we are using CrossRef APIs, the cymd_start and
   # cymd_end days are INCLUDED in the API query results, aka closed interval
 
-  cymd_start = '20170622'
+  cymd_start = '20170915'
 
   # CRAFATXML - Here, we do only one day at a time...
   cymd_end = '20170915'
@@ -445,7 +447,7 @@ def run(od_affiliation_substrings):
       "output_folder_base" : output_folder_base,
       "python_version" : sys.version,
       "max-queries" : "0", # TODO
-      "od_affiliation_substrings" : od_affiliation_substrings
+      "od_affiliation_info" : od_affiliation_info
       }
 
   # Process the Elsevier Search and Full-Text APIs to create local xml files
@@ -454,7 +456,7 @@ def run(od_affiliation_substrings):
 
   ###### MAIN CALL TO CRAFDTXML() ########
   if (1 == 1): # test with or without call to eatxml
-      entries_collected, entries_excepted, uf_articles = crafdtxml(
+      entries_collected, entries_excepted, affiliate_articles = crafdtxml(
           d_params, verbosity=verbosity)
 
   ############### WRAP-UP MISC OUTPUT ################
@@ -466,7 +468,7 @@ def run(od_affiliation_substrings):
   d_params.update({
       "total-entries-collected" : entries_collected,
       "total-entries-excepted" : entries_excepted,
-      "uf-articles-count" : uf_articles,
+      "affiliate-articles-count" : affiliate_articles,
       "secsz-end" : secsz_end,
       # Prevent actual api-key value from being stored in the output
       "api-key" : '*UF-Smathers Proprietary*'
@@ -481,8 +483,8 @@ def run(od_affiliation_substrings):
 
   with open(out_filename, 'wb') as outfile:
       outfile.write(etree.tostring(e_root, pretty_print=True))
-  print('Collected {} articles, excepted {}, and {} were uf articles'
-       .format(entries_collected, entries_excepted, uf_articles))
+  print('Collected {} articles, excepted {}, and {} were affilate articles'
+       .format(entries_collected, entries_excepted, affiliate_articles))
   print("Done!")
 
 # end def run()
@@ -499,25 +501,81 @@ and value
 
 Initialize this dict to match CHORUS 'institution or affiliation partners'
 as of 20170313
-Note:
+Note: first 3 letters of a key should be an iso03166-1 alapha-3 code,
+ followed by an underbar, followed by a university code .. which UFL created,
+ so we use authority code of  usa_ufl for all the affiliation keys
+ in od_affiliation_info
+
 '''
-od_affiliation_substrings = OrderedDict({
-    'university_of_florida': ['university of florida','univ.fl','univ. fl'
-        ,'univ fl' ,'univ of florida'
-        ,'u. of florida','u of florida']
+od_affiliation_info = OrderedDict({
+    'usa_ufl': {
+        'substrings': ['university of florida','univ.fl','univ. fl'
+            ,'univ fl' ,'univ of florida'
+            ,'u. of florida','u of florida']
+        ,'ringgold': 'tbd'
+    }
+    # australian universities as of 20170916 per
+    # list of australian universities taken 20170916 from:
+    # http://www.australianuniversities.com.au/list/
+    ,'aus_acu': { 'substrings': ['australian catholic university',]}
+    ,'aus_anu': { 'substrings': ['australian national university',]}
+    ,'aus_bond': { 'substrings': ['australian bond university',]}
+    ,'aus_cqu': { 'substrings': ['central queensland university',]}
+    ,'aus_cdu': { 'substrings': ['charles darwin university',]}
+    ,'aus_csu': { 'substrings': [ 'charles sturt university',]}
+    ,'aus_deakin': { 'substrings': ['deakin university',]}
+    ,'aus_feduni': { 'substrings': ['federation university',]}
+    ,'aus_flinders': { 'substrings': ['flinders university',]}
+    ,'aus_griffith': { 'substrings': ['griffith university',]}
+    ,'aus_jcu': { 'substrings': [ 'james cook university',]}
+    ,'aus_latrobe': { 'substrings': [ 'la trobe university'
+                                     ,'latrobe university']}
+    ,'aus_macquarie': { 'substrings': [ 'macquarie univeristy']}
+    ,'aus_monash': { 'substrings': [ 'monash univeristy']}
+    ,'aus_murdoch': { 'substrings': [ 'murdoch univeristy']}
+    ,'aus_qut': { 'substrings': [ 'queensland univeristy of technology']}
+    ,'aus_rmit': { 'substrings': [ 'rmit univeristy'
+                                  ,'royal melbourne institute of technology']}
+    ,'aus_scu': { 'substrings': [ 'southern cross univeristy of technology']}
+    ,'aus_swinburne': { 'substrings': [ 'swinburne univeristy of technology']}
+    ,'aus_torrens': { 'substrings': [ 'torrens university']}
+    ,'aus_adelaide': { 'substrings': [ 'adelaide university']}
+    ,'aus_canberra': { 'substrings': [ 'university of canberra']}
+    ,'aus_divinity': { 'substrings': [ 'university of divinity']}
+    ,'aus_melbourne': { 'substrings': [ 'university of melbourne']}
+    ,'aus_une': { 'substrings': [ 'university of new england']}
+    ,'aus_unsw': { 'substrings': [ 'university of new south wales']}
+    ,'aus_newcastle': { 'substrings': [ 'university of newcastle']}
+    ,'aus_unda': { 'substrings': [ 'university of notre dame']}
+    ,'aus_uq': { 'substrings': [ 'university of queensland']}
+    ,'aus_unisa': { 'substrings': [ 'university of south australia']}
+    ,'aus_usq': { 'substrings': [ 'university of southern queensland']}
+    ,'aus_sydney': { 'substrings': [ 'university of sydney']}
+    ,'aus_utas': { 'substrings': [ 'university of tasmania']}
+    ,'aus_uts': { 'substrings': [ 'university of technology sydney']}
+    ,'aus_usc': { 'substrings': [ 'university of the sunshine coast'
+                                 ,'university of sunshine coast'
+                                 ,'university of the sunshine'
+                                 ,'university of sunshine']}
+    ,'aus_uwa': { 'substrings': [ 'university of western australia']}
+    ,'aus_uow': { 'substrings': [ 'university of wollongong']}
+    ,'aus_vu': { 'substrings': [ 'victoria university']}
+    ,'aus_uws': { 'substrings': [ 'western sydney university']}
+
+    # more chorus members circus 2017 (usa_ufl and aus_latrobe are above)
+    ,'usa_udenver': { 'substrings' :[ 'university of denver']}
+    ,'chn_chiba_u' : { 'substrings' : ['chiba university','university of chiba']}
 })
 
 '''
     #first cut - just seek denver, and filter/narrow local results later
-    'university_of_denver': [ 'university of denver'],
+    'usa_udenver': [ 'university of denver'],
 
     'chiba_university' : ['chiba university','university of chiba'],
-
-    'la_trobe_university': ['la trobe university', 'latrobe university']
 
     # todo: 1) also add australian universities...
     #  while honoring the KEY as the name of the MAIN initial output folder directory
 '''
 
-run(od_affiliation_substrings=od_affiliation_substrings)
+run(od_affiliation_info=od_affiliation_info)
 print("Really done.")
