@@ -1,3 +1,16 @@
+import sys, os, os.path, platform
+def get_path_modules(verbosity=0):
+  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+  path_user = os.environ.get(env_var)
+  path_modules = '{}/git/citrus/modules'.format(path_user)
+  if verbosity > 1:
+    print("Assigned path_modules='{}'".format(path_modules))
+  return path_modules
+sys.path.append(get_path_modules())
+
+from collections import OrderedDict
+import mappers
+
 def sql_mining_params():
 
     od_rel_datacolumns = OrderedDict([
@@ -7,6 +20,8 @@ def sql_mining_params():
             ('url',''),
             ('archive',''),
             ('container_title',''),
+            ('print_date',''),
+            ('abstract', ''),
             ('restriction',''),
             ('created_date_time',''),
             ('deposited_date_time',''),
@@ -18,7 +33,6 @@ def sql_mining_params():
             ('page_range',''),
             ('prefix',''),
             ('online_date',''),
-            ('print_date',''),
             ('publisher',''),
             ('reference_count',''),
             ('score',''),
@@ -34,9 +48,7 @@ def sql_mining_params():
             ('name',''),
             ('family',''),
             ('given',''),
-            ('affiliation_name',''),
-            ('affiliation_code',''),
-            ('affiliation_uf',''),
+            ('authenticated_orcid',''),
             ('orcid',''),
         ])),
         ('cross_author_affiliation', OrderedDict([
@@ -47,7 +59,6 @@ def sql_mining_params():
             ('institution',''),
         ])),
         ('cross_affiliation', OrderedDict([
-            ('name',''),
             ('code',''),
             ('authority',''),
             ('country',''),
@@ -113,7 +124,7 @@ def sql_mining_params():
                                 'attrib_column' : { 'text':'day'},
                             },
                         },
-                        'column_function': {'start_date': make_date},
+                        'column_function': {'start_date': mappers.make_date},
                     },
                 },
             },
@@ -129,7 +140,7 @@ def sql_mining_params():
 
             "./subject" : {
                 'db_name': 'cross_subject', 'multiple': 1,
-                'child_xpaths': {
+                'child_xpaths': { # next:maybe specify "./item" instead
                     "./*" : {
                         'attrib_column': {'text':'term'},
                     },
@@ -139,12 +150,15 @@ def sql_mining_params():
             "./author/item" : {
                 'db_name': 'cross_author', 'multiple': 1,
                 'child_xpaths': {
-                    ".//affiliation" : {
+                    ".//affiliation/item" : {
                         'db_name': 'cross_author_affiliation', 'multiple': 1,
                         'child_xpaths' :{
                             './name' : {
-                                'attrib_column': {'text':'name'},
-                            # here insert new derivation method to go from
+                                'attrib_column': {
+                                    'text':'name'
+                                    },
+                            },
+                            # Here insert new derivation method to go from
                             # multiple  input values to multiple output values
                             # map function...
                             # 20170916 method is method name
@@ -155,14 +169,12 @@ def sql_mining_params():
                             #    'method_imap_outputs': {
                             #        'affil_coder':['code'},
                             './affil_code' : {
-                                'attrib_column' : { 'code' : 'code'},
-                            './affil_code' : {
-                                'attrib_column' : { 'authority' : 'authority'},
-                            }
+                                'attrib_column' : {
+                                    'code' : 'code'
+                                    ,'authority': 'authority'
+                                    },
+                                },
                         }
-                    },
-                    ".//affiliation//affil_code" : {
-                        'attrib_column': {'text':'affiliation_code'},
                     },
                     ".//family" : {
                         'attrib_column': {'text':'family'},
@@ -170,14 +182,13 @@ def sql_mining_params():
                     ".//given" : {
                         'attrib_column': {'text':'given'},
                     },
+                    ".//authenticated-orcid" : {
+                        'attrib_column': {'text':'authenticated-orcid'},
+                    },
                     ".//orcid" : {
                         'attrib_column': {'text':'orcid'},
                     },
                 },
-                'column_function': {
-                    'name': make_crossref_author_name,
-                    'affiliation_uf': (uf_affiliation_by_colname,{'colname':'affiliation_name'}),
-                    },
             },
             "./link" : {
                 'db_name': 'cross_link', 'multiple': 1,
@@ -201,7 +212,8 @@ def sql_mining_params():
                 'child_xpaths': {
                     "./DOI" : {
                         'attrib_column': {'text':'funder_doi'},
-                        'column_function': {'funder_id': funder_id_by_funder_doi},
+                        'column_function': {
+                            'funder_id': mappers.funder_id_by_funder_doi},
                     },
                     "./doi-asserted-by" : {
                         'attrib_column': {'text':'doi_asserted_by'},
@@ -223,6 +235,10 @@ def sql_mining_params():
             "./DOI": {
                 'multiple':0,
                 'attrib_column': { 'text':'doi' },
+            },
+            "./abstract": {
+                'multiple':0,
+                'attrib_column': { 'text':'abstract' },
             },
             "./ISSN": {
                 'multiple':0,
@@ -274,7 +290,7 @@ def sql_mining_params():
                     './{*}item[@id="00000003"]':{ 'multiple':0,
                         'attrib_column':{'text':'issued_day'}},
                     },
-                'column_function': {'issued_date': make_issued_date}
+                'column_function': {'issued_date': mappers.make_issued_date}
             },
             "./member": {
                 'multiple':0,
@@ -306,7 +322,7 @@ def sql_mining_params():
                     './{*}item[@id="00000003"]':{ 'multiple':0,
                         'attrib_column':{'text':'day'}},
                 },
-                'column_function': {'online_date': make_date }
+                'column_function': {'online_date': mappers.make_date }
             }
             ,"./published-print/date-parts/item[@id='00000001']" : {
                 'multiple':0,
@@ -318,7 +334,7 @@ def sql_mining_params():
                     './{*}item[@id="00000003"]':{ 'multiple':0,
                         'attrib_column':{'text':'day'}},
                 },
-                'column_function': {'print_date': make_date}
+                'column_function': {'print_date': mappers.make_date}
             }
             ,"./publisher": {
                 'multiple':0,
@@ -366,8 +382,12 @@ def sql_mining_params():
             }
             ,"./affil_code": {
                 'db_name': 'cross_affiliation', 'multiple':1,
-                'attrib_column': { 'code':'code' },
-                'attrib_column': { 'authority':'authority' },
+                'attrib_column': { 'code' : 'code',
+                                   'authority': 'authority',
+                },
+                # Caution: Do not use attrib_column twice for same node, as
+                # earlier ones are overwritten by last one
+                # 'attrib_column': { 'authority' : 'authority' },
             }
         } # end child_xpaths
 

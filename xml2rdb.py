@@ -989,7 +989,7 @@ def run():
     study = 'scopus'
 
     # KEEP ONLY ONE LINE NEXT: Study Selection
-    study = 'elsevier'
+    study = 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
 
     file_count_first = 0
     file_count_span = 0
@@ -1016,7 +1016,8 @@ def run():
         doc_root_xpath = './crossref-api-filter-aff-UF/message'
         input_path_list = list(Path(input_folder).glob(input_path_glob))
         input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
-        print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
+        print("STUDY={}, got {} input files under {}"
+              .format(study, len(input_path_list),input_folder))
         # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
         file_count_first = 0
@@ -1045,7 +1046,8 @@ def run():
         input_path_list = list(Path(input_folder).glob(input_path_glob))
         d_xml_params['attribute_text'] = 'text'
 
-        print("STUDY={}, got {} input files under {}".format(study, len(input_path_list),input_folder))
+        print("STUDY={}, got {} input files under {}"
+              .format(study, len(input_path_list),input_folder))
         # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
         file_count_first = 0
@@ -1071,9 +1073,11 @@ def run():
     elif study == 'crafd': # CrossRefApi filter by D for deposit date (and it selects only UF affiliations)
         import xml2rdb_configs.crossref as config
         # Note- input folder is/was populated via program crafdtxml
-        rel_prefix = 'crafd_'
-        # NOTE LIMIT INPUT FOLDER TO YEAR 2016 for now...
-        input_folder = '{}/output_crafdtxml/doi/2016'.format(data_elsevier_folder)
+        rel_prefix = 'crafd701'
+        # NOTE LIMIT INPUT FOLDER for now...
+        input_folder = '{}/output_crafdtxml/doi/2017/07/01'.format(data_elsevier_folder)
+        input_folders = [ input_folder ]
+        input_path_glob = 'doi_*.xml'
         doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns, set below.
         #Next doc_root_xpath is set by the harvester crafdtxml so see its code.
         doc_root_xpath = './crossref-api-filter-date-UF/message'
