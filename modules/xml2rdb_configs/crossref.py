@@ -35,8 +35,23 @@ def sql_mining_params():
             ('family',''),
             ('given',''),
             ('affiliation_name',''),
+            ('affiliation_code',''),
             ('affiliation_uf',''),
             ('orcid',''),
+        ])),
+        ('cross_author_affiliation', OrderedDict([
+            ('name',''),
+            ('code',''),
+            ('authority',''),
+            ('country',''),
+            ('institution',''),
+        ])),
+        ('cross_affiliation', OrderedDict([
+            ('name',''),
+            ('code',''),
+            ('authority',''),
+            ('country',''),
+            ('institution',''),
         ])),
         ('cross_link', OrderedDict([
             ('url',''),
@@ -112,11 +127,42 @@ def sql_mining_params():
                 },
             },
 
+            "./subject" : {
+                'db_name': 'cross_subject', 'multiple': 1,
+                'child_xpaths': {
+                    "./*" : {
+                        'attrib_column': {'text':'term'},
+                    },
+                },
+            },
+
             "./author/item" : {
                 'db_name': 'cross_author', 'multiple': 1,
                 'child_xpaths': {
-                    ".//affiliation//name" : {
-                        'attrib_column': {'text':'affiliation_name'},
+                    ".//affiliation" : {
+                        'db_name': 'cross_author_affiliation', 'multiple': 1,
+                        'child_xpaths' :{
+                            './name' : {
+                                'attrib_column': {'text':'name'},
+                            # here insert new derivation method to go from
+                            # multiple  input values to multiple output values
+                            # map function...
+                            # 20170916 method is method name
+                            # imap is dict of key args mapped to input column
+                            # names and ocolumns is the list of output column
+                            # names
+                            #'./affil_code' : {
+                            #    'method_imap_outputs': {
+                            #        'affil_coder':['code'},
+                            './affil_code' : {
+                                'attrib_column' : { 'code' : 'code'},
+                            './affil_code' : {
+                                'attrib_column' : { 'authority' : 'authority'},
+                            }
+                        }
+                    },
+                    ".//affiliation//affil_code" : {
+                        'attrib_column': {'text':'affiliation_code'},
                     },
                     ".//family" : {
                         'attrib_column': {'text':'family'},
@@ -198,8 +244,9 @@ def sql_mining_params():
                 'multiple':0,
                 'attrib_column': { 'text':'restriction' },
             },
-            # Note: some xml date-like tags do NOT have tag for date-time, but for these next
-            # three that do, just use them and disregard parts for year, month, day.
+            # Note: some xml date-like tags do NOT have tag for date-time,
+            # but for these next three that do, just use them and disregard
+            # parts for year, month, day.
             "./created/date-time": {
                 'multiple':0,
                 'attrib_column': { 'text':'created_date_time' },
@@ -316,6 +363,11 @@ def sql_mining_params():
             ,"./volume": {
                 'multiple':0,
                 'attrib_column': { 'text':'volume' },
+            }
+            ,"./affil_code": {
+                'db_name': 'cross_affiliation', 'multiple':1,
+                'attrib_column': { 'code':'code' },
+                'attrib_column': { 'authority':'authority' },
             }
         } # end child_xpaths
 

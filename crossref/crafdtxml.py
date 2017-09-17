@@ -151,7 +151,6 @@ def crafdtxml(d_params, verbosity=0):
         dd = y4md[6:8]
 
         y4_m_d = y4 + '-' + mm + '-' + dd
-
         # Make an output directory for the doi results of the following query
         output_folder_ymd = '{}doi/{}/{}/{}'.format(
             output_folder_base, y4, mm, dd)
@@ -266,6 +265,7 @@ def crafdtxml(d_params, verbosity=0):
                 node_item.tag = 'message'
                 # Adopt this item's XML subtree under this new output item root node
                 node_output_root.append(node_item)
+                node_output_message = node_output_root.find('./message')
 
                 # Get doi value because it is required by our use of the Metadata
                 node_doi = node_item.find('.//DOI')
@@ -278,48 +278,45 @@ def crafdtxml(d_params, verbosity=0):
                 # If no author has an affiliation for University of Florida,
                 # Skip this article
                 uf_article = False
-                nodes_author = node_item.findall( './/author')
+                nodes_author = node_item.findall( './/author/item')
                 for node_author in nodes_author:
-                  nodes_affil_name = node_author.findall(
-                            '.*//affiliation/*//name')
-                  if nodes_affil_name is None:
+                  nodes_affil_item = node_author.findall(
+                            './affiliation/item')
+                  if nodes_affil_item is None:
                       # print("This doi has no affiliation names")
                       # No affiliation names given, so continue to skip it
                       continue
                   # print("Found {} names in this article".format(len(nodes)))
 
-                  for node_affil_name in nodes_affil_name:
-                      affil_name = node_affil_name.text
-                      #print("Trying affil name='{}'".format(name))
-                      '''
-                      if uf_affiliation(affil_name.text) == 1:
-                          print("For doi={}, found UF affil_name={} "
-                                .format(node_doi.text, node_affil_name.text ))
-                          uf_article = True
-                          break
-                      '''
-                      d_author_affiliations = get_affiliations_by_name_substrings(
-                          affil_name, od_affiliation_info, max_affiliations = 1)
-                      if len(d_author_affiliations) == 0:
-                          continue
-                      for affiliation in d_author_affiliations.keys():
-                          # For every found author's child affiliation,
-                          # add affil_X tag to the author's child affiliation name
-                          # EG (affil_uf for uf affil)
-                          subelement = etree.Element("affil_{}".format(affiliation))
-                          node_affil_name.append(subelement)
-                          # append a node to the author
-                          subelement = etree.Element("affil_key")
-                          subelement.set("authority", "usa_ufl")
-                          subelement.set("key", affiliation)
-                          node_author.append(subelement)
+                  for node_affil_item in nodes_affil_item:
+                      nodes_affil_name = node_affil_item.findall('./name')
+                      for node_affil_name in nodes_affil_name:
+                          #print("Trying affil name='{}'".format(name))
+                          affil_name = node_affil_name.text
+                          d_author_affiliations = get_affiliations_by_name_substrings(
+                              affil_name, od_affiliation_info, max_affiliations = 1)
+                          if len(d_author_affiliations) == 0:
+                              continue
 
+                          for affiliation_code in d_author_affiliations.keys():
+                              # For every found author's child affiliation,
+                              # add affil_X tag to the author's child affiliation name
+                              # EG (affil_uf for uf affil)
+
+                              # append a node_affil_key to the affil item
+                              node_affil_key = etree.Element("affil_code")
+                              node_affil_key.set("authority", "usa_ufl")
+                              node_affil_key.set("code", affiliation_code)
+                              node_affil_item.append(node_affil_key)
+                          # end affiliation codes found for this affiliation name
+                        # end loop through names for this affiliation item
+                      # end loop through affiliation items for article
                       # Bequeath this sought author-affiliation (if found)
                       # to this article
                       d_article_affiliations.update(d_author_affiliations)
                     # examined each affiliation name for this author
                   # end for node_author
-                # For current node - Examined each given author affiliation name
+                # For current node_item - Examined each given author affiliation name
 
                 # if count of found article affiliations is 0, skip it.
                 if len(d_article_affiliations) == 0:
@@ -332,11 +329,18 @@ def crafdtxml(d_params, verbosity=0):
                 affiliate_articles += 1
                 affiliate_articles_in_batch += 1
 
-                for affiliation in d_article_affiliations:
+                for affiliation_code in d_article_affiliations:
                     # Create an xml tag for a root child, eg 'affil_uf' with value 1,
                     # if uf (or other abbrev) was found for this article
-                    subelement = etree.Element("affil_{}".format(affiliation))
-                    node_output_root.append(subelement)
+                    #subelement = etree.Element("affil_{}".format(affiliation))
+                    #node_output_root.append(subelement)
+                    # append a node_affil_key to the affil item
+                    node_affil_key = etree.Element("affil_code")
+                    node_affil_key.set("authority", "usa_ufl")
+                    node_affil_key.set("code", affiliation_code)
+                    # node_output_message is the highest level node used by
+                    # some xml2rdb conversion configs, so use that
+                    node_output_message.append(node_affil_key)
 
                 out_str = etree.tostring(node_output_root, pretty_print=True)
                 output_filename = '{}/doi_{}.xml'.format(
@@ -368,8 +372,8 @@ def crafdtxml(d_params, verbosity=0):
             #time.sleep(5)
             #print("I awoke.")
 
-            print("Produced {} doi files for batch {} of y4md {}"
-                  .format(affiliate_articles_in_batch, n_batch, y4md))
+            print("For ymd {} for batch {} of {}, produced {} doi files"
+                .format(y4md, n_batch, total_batch_count, affiliate_articles))
 
             node_cursor = node_response_root.find('.//next-cursor')
             if node_cursor is None or node_cursor.text == '':
@@ -392,7 +396,7 @@ def crafdtxml(d_params, verbosity=0):
             "\nFor day {}, initial_url={}, ended final batch {} of {}"
             .format(y4md, url_worklist_day, n_batch, total_batch_count))
 
-        print ( "This day {} had {} articles and {} affilate articles\n"
+        print ( "This day {} had {} articles and {} affiliate articles\n"
             "===========================\n\n"
             .format( y4md, articles_today, affiliate_articles_today))
     # } end for loop over days generator
@@ -419,10 +423,10 @@ def run(od_affiliation_info):
   # So here, since we are using CrossRef APIs, the cymd_start and
   # cymd_end days are INCLUDED in the API query results, aka closed interval
 
-  cymd_start = '20170622'
+  cymd_start = '20170701'
 
   # CRAFATXML - Here, we do only one day at a time...
-  cymd_end = '20170915'
+  cymd_end = '20170701'
 
   utc_now = datetime.datetime.utcnow()
   # secsz_start: secz means seconds in utc(suffix 'z') when this run started
