@@ -62,28 +62,37 @@ import urllib.request
 '''
 Method get_affiliations_by_name_substrings:
 
-We are given an affiliation name and od_affiliation_info for which
+We are given an affiliation name and od_target_affiliation_info for which
 substring matches on the given name are sought.
 
 Return:
-    A dictionary of affiliations where each key is the same as an input
-    od_affiliation_substring key where one of its substrings matched the given
-    name.
+    A dictionary d_affiliations, where
+    (1) each key is the same as an input od_target_affiliation_info key
+        code value for an insttitution, such as aus_sydney or usa_ufl,
+        where one of the od_target_affiliation_info's value's substrings matched
+        the given name, and
+    (2) the d_affiliations key value is the count of the key found in
+        od_target_affiliation_info substrings, that is the number of substrings
+        for the key that matched the affiliation name. The value is probably not
+        interesting data if > 1, except to rethink the set of substrings to
+        assign for the key.
+
     The returned dictionary will have length of 0 of no matches were found.
 
 NOTES: If max_affiliation is not zero, it is the maximum number of matching
 affiliations to include in the returned dictionary. This allows the caller
 to set it to 1 to speed up the algorithm used in this method.
 '''
-def get_affiliations_by_name_substrings(name, od_affiliation_info,
+
+def get_affiliations_by_name_substrings(name, od_target_affiliation_info,
     max_affiliations = 0):
     d_affiliations = {}
     n_affils = 0;
-    for affiliation, info in od_affiliation_info.items():
+    for affiliation_code, info in od_target_affiliation_info.items():
         substrings = info['substrings']
         for substring in substrings:
             if name.lower().find(substring) != -1:
-                d_affiliations[affiliation] = '1'
+                d_affiliations[affiliation_code] = '1'
                 n_affils += 1
                 if max_affiliations > 0 and n_affils >= max_affiliations:
                     return d_affiliations
@@ -111,6 +120,24 @@ def uf_affiliation(name):
     return 0
 
 '''
+Method all_article_affiliations_update:
+
+Returns a dictionary.
+It is given the original dictonary
+and given a dictionary of od_target_affiliation_info.
+
+It gleans from od_target_affiliation_info affiliation names, and it updates the count
+for each name in the return dictionary
+'''
+def  all_article_affilations_update(
+    d_all_article_affiliations, od_target_affiliation_info):
+
+    #for name in od_target_affiliation_info.keys():
+    #    pass
+
+    return d_all_article_affiliations
+
+'''
 
 Method crafatxml: CrossRef API To XML - Read the CrossRef REST API github docs for details.
 
@@ -125,7 +152,7 @@ def crafdtxml(d_params, verbosity=0):
     # dt_start is the first orig-load-date that we want to collect
 
     me = 'crafdtxml'
-    od_affiliation_info = d_params['od_affiliation_info']
+    od_target_affiliation_info = d_params['od_target_affiliation_info']
     days = etl.sequence_days(d_params['cymd_start'], d_params['cymd_end'])
 
     total_results = 0
@@ -237,7 +264,7 @@ def crafdtxml(d_params, verbosity=0):
 
             doi = 'Not in CrossRef Results'
 
-            node_items = node_response_root.find('.//items')
+            nodes_item = node_response_root.find('.//items')
             node_total_results = node_response_root.find('.//total-results')
             if n_batch == 1 and node_total_results is not None:
                 total_results_count = int(node_total_results.text)
@@ -245,14 +272,20 @@ def crafdtxml(d_params, verbosity=0):
                 print("Processing total_results_count = {}, total_batch_count={}"
                     .format(total_results_count,total_batch_count))
 
-            if node_items is None or len(node_items) < 1:
+            if nodes_item is None or len(nodes_item) < 1:
                 print("CrossRef API Response shows no result items remain for this query.")
                 break;
 
-            #print ("Len of node_items={}".format(len(node_items)))
+            #print ("Len of nodes_item={}".format(len(nodes_item)))
             affiliate_articles_in_batch = 0
-            # { Loop over node_item items in this response
-            for i, node_item in enumerate(node_items):
+            # { Loop over individual article 'node_item' nodes_item in this response
+            for i, node_item in enumerate(nodes_item):
+                # d_all_article_affiliations - key will be affiliation name
+                # value will be dict of key authority_code, with value count
+                # where count is total count of times that affil name was
+                # encountered among given author affiliations in the article
+                d_all_article_affiliations = {}
+
                 # Create a root node for this item's xml output
                 node_output_root = etree.Element("crossref-api-filter-date-UF")
                 entries_collected += 1
@@ -291,15 +324,29 @@ def crafdtxml(d_params, verbosity=0):
                   for node_affil_item in nodes_affil_item:
                       nodes_affil_name = node_affil_item.findall('./name')
                       for node_affil_name in nodes_affil_name:
-                          #print("Trying affil name='{}'".format(name))
+                          # print("Trying affil name='{}'".format(name))
+
                           affil_name = node_affil_name.text
                           d_author_affiliations = get_affiliations_by_name_substrings(
-                              affil_name, od_affiliation_info, max_affiliations = 1)
+                              affil_name, od_target_affiliation_info, max_affiliations = 1)
+
+                          # Update dict of all affilation names for this article,
+                          # maybe also updating counts...
+                          d_all_article_affiliations = all_article_affilations_update(
+                              d_all_article_affiliations, affil_name)
+
                           if len(d_author_affiliations) == 0:
+                              # This affil_name had no target matches, so continue
                               continue
 
+                          # Save the found affiliation codes for this article-item
                           for affiliation_code in d_author_affiliations.keys():
-                              # For every found author's child affiliation,
+                              if affiliation_code is None or affiliation_code == '':
+                                  continue
+                              # For every found author's affiliation code for
+                              # this, affil_name (should only be 1, unless some
+                              # affil name has both 'university of florida', say,
+                              # and 'notre dame' in it, which would be weird),
                               # add affil_X tag to the author's child affiliation name
                               # EG (affil_uf for uf affil)
 
@@ -323,12 +370,15 @@ def crafdtxml(d_params, verbosity=0):
                     continue #skip this article
 
                 # This article has some sought affiliations as described in
-                # od_affiliation_info
+                # od_target_affiliation_info
 
                 affiliate_articles_today += 1
                 affiliate_articles += 1
                 affiliate_articles_in_batch += 1
-
+                # 20170917 here consider to save all affiliation names, found
+                # codes for the article, and later can re-code the names not yet
+                # coded without using the api again. At least for first-degree
+                # relations between target affiliations and global ones
                 for affiliation_code in d_article_affiliations:
                     # Create an xml tag for a root child, eg 'affil_uf' with value 1,
                     # if uf (or other abbrev) was found for this article
@@ -339,7 +389,8 @@ def crafdtxml(d_params, verbosity=0):
                     node_affil_key.set("authority", "usa_ufl")
                     node_affil_key.set("code", affiliation_code)
                     # node_output_message is the highest level node used by
-                    # some xml2rdb conversion configs, so use that
+                    # some xml2rdb conversion configs, so use that as parent
+                    # instead of node_output_root
                     node_output_message.append(node_affil_key)
 
                 out_str = etree.tostring(node_output_root, pretty_print=True)
@@ -409,7 +460,7 @@ def crafdtxml(d_params, verbosity=0):
 # and cymd_end would normally change.
 #
 
-def run(od_affiliation_info):
+def run(od_target_affiliation_info):
   me = 'main code to run crafatxml'
   utc_now = datetime.datetime.utcnow()
   utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -423,10 +474,10 @@ def run(od_affiliation_info):
   # So here, since we are using CrossRef APIs, the cymd_start and
   # cymd_end days are INCLUDED in the API query results, aka closed interval
 
-  cymd_start = '20170701'
+  cymd_start = '20170615'
 
   # CRAFATXML - Here, we do only one day at a time...
-  cymd_end = '20170701'
+  cymd_end = '20170915'
 
   utc_now = datetime.datetime.utcnow()
   # secsz_start: secz means seconds in utc(suffix 'z') when this run started
@@ -451,7 +502,7 @@ def run(od_affiliation_info):
       "output_folder_base" : output_folder_base,
       "python_version" : sys.version,
       "max-queries" : "0", # TODO
-      "od_affiliation_info" : od_affiliation_info
+      "od_target_affiliation_info" : od_target_affiliation_info
       }
 
   # Process the Elsevier Search and Full-Text APIs to create local xml files
@@ -508,10 +559,10 @@ as of 20170313
 Note: first 3 letters of a key should be an iso03166-1 alapha-3 code,
  followed by an underbar, followed by a university code .. which UFL created,
  so we use authority code of  usa_ufl for all the affiliation keys
- in od_affiliation_info
+ in od_target_affiliation_info
 
 '''
-od_affiliation_info = OrderedDict({
+od_target_affiliation_info = OrderedDict({
     'usa_ufl': {
         'substrings': ['university of florida','univ.fl','univ. fl'
             ,'univ fl' ,'univ of florida'
@@ -581,5 +632,5 @@ od_affiliation_info = OrderedDict({
     #  while honoring the KEY as the name of the MAIN initial output folder directory
 '''
 
-run(od_affiliation_info=od_affiliation_info)
+run(od_target_affiliation_info=od_target_affiliation_info)
 print("Really done.")

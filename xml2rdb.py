@@ -1073,7 +1073,7 @@ def run():
     elif study == 'crafd': # CrossRefApi filter by D for deposit date (and it selects only UF affiliations)
         import xml2rdb_configs.crossref as config
         # Note- input folder is/was populated via program crafdtxml
-        rel_prefix = 'crafd701'
+        rel_prefix = 'crafd2017_'
         # NOTE LIMIT INPUT FOLDER for now...
         input_folder = '{}/output_crafdtxml/doi/2017/07/01'.format(data_elsevier_folder)
         input_folders = [ input_folder ]

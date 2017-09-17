@@ -52,11 +52,11 @@ def sql_mining_params():
             ('orcid',''),
         ])),
         ('cross_author_affiliation', OrderedDict([
-            ('name',''),
-            ('code',''),
             ('authority',''),
+            ('code',''),
             ('country',''),
             ('institution',''),
+            ('name',''),
         ])),
         ('cross_affiliation', OrderedDict([
             ('code',''),
@@ -170,8 +170,8 @@ def sql_mining_params():
                             #        'affil_coder':['code'},
                             './affil_code' : {
                                 'attrib_column' : {
-                                    'code' : 'code'
-                                    ,'authority': 'authority'
+                                    'authority': 'authority'
+                                    ,'code' : 'code'
                                     },
                                 },
                         }
