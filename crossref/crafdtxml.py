@@ -474,7 +474,7 @@ def run(od_target_affiliation_info):
   # So here, since we are using CrossRef APIs, the cymd_start and
   # cymd_end days are INCLUDED in the API query results, aka closed interval
 
-  cymd_start = '20170615'
+  cymd_start = '20170623'
 
   # CRAFATXML - Here, we do only one day at a time...
   cymd_end = '20170915'

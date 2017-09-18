@@ -801,8 +801,9 @@ RETURN VALUE: d_return()
    'log_messages' : warning message
 '''
 
-def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None, xslt_format_str=None,
-    d_sobek_track=None, d_sobek_vary=None,verbosity=0):
+def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None
+    ,xslt_format_str=None, d_sobek_track=None, d_sobek_vary=None
+    ,verbosity=0):
 
     me="xslt_transform_format"
     if not all(['node_root_input','d_sobek_track', 'd_sobek_vary', 'd_ns']):
