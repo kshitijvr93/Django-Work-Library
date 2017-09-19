@@ -887,7 +887,7 @@ def xml2rdb( input_path_list=None,
     secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
 
     # The output_folder encodes start time of run in its name.
-    output_folder_secsz = '{}/{}'.format(folder_output_base, secsz_start)
+    output_folder_secsz = '{}{}'.format(folder_output_base, secsz_start)
     os.makedirs(output_folder_secsz, exist_ok=True)
     print("Using output folder={}"
           .format(output_folder_secsz))
@@ -989,7 +989,7 @@ def run():
     study = 'scopus'
 
     # KEEP ONLY ONE LINE NEXT: Study Selection
-    study = 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
+    study = 'entitlement' # Elevier entitlment data.
 
     file_count_first = 0
     file_count_span = 0
@@ -1053,6 +1053,35 @@ def run():
         file_count_first = 0
         file_count_span = 0
 
+    elif study in [ 'entitlement' ] : #
+        import xml2rdb_configs.entitlement as config
+        rel_prefix = 'ccila_'
+
+        # This is where the precursor program marc2xml leaves its marcxml data for ccila UCRiverside
+        # items
+        in_folder_name = etl.data_folder(linux='/home/robert/', windows='U:/'
+            , data_relative_folder='data/elsevier/output_entitlement/')
+
+        folder_output_base = etl.data_folder(linux='/home/robert/', windows='U:/'
+            , data_relative_folder='data/outputs/xml2rdb/entitlement/')
+
+        input_folder = in_folder_name
+        input_folders = []
+        input_folders.append(input_folder)
+        input_path_glob = 'pii*.xml'
+
+        doc_rel_name = 'entitlement' # must match highest level table dbname in od_rel_datacolumns
+        doc_root_xpath = ".//{*}document-entitlement"
+
+        input_path_list = list(Path(input_folder).glob(input_path_glob))
+        d_xml_params['attribute_text'] = 'text'
+
+        print("STUDY={}, got {} input files under {}"
+              .format(study, len(input_path_list),input_folder))
+        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+        file_count_first = 0
+        file_count_span = 0
     elif study == 'crawd': # CrossRefApi Works by Doi-list
         import xml2rdb_configs.crossref as config
         # Note- input folder is/was populated via program crawdxml- where crawdxml
