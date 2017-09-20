@@ -887,7 +887,7 @@ def xml2rdb( input_path_list=None,
     secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
 
     # The output_folder encodes start time of run in its name.
-    output_folder_secsz = '{}{}'.format(folder_output_base, secsz_start)
+    output_folder_secsz = '{}/{}'.format(folder_output_base, secsz_start)
     os.makedirs(output_folder_secsz, exist_ok=True)
     print("Using output folder={}"
           .format(output_folder_secsz))
@@ -983,13 +983,14 @@ def run():
     study = 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
     study = 'crawd' # Crossref filter where D is for doi
     study = 'elsevier'
+    study = 'entitlement' # Elevier entitlment data.
     study = 'merrick_oai_set'
     study = 'oadoi'
     study = 'orcid'
     study = 'scopus'
 
     # KEEP ONLY ONE LINE NEXT: Study Selection
-    study = 'entitlement' # Elevier entitlment data.
+    study = 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
 
     file_count_first = 0
     file_count_span = 0
@@ -1104,7 +1105,7 @@ def run():
         # Note- input folder is/was populated via program crafdtxml
         rel_prefix = 'crafd2017_'
         # NOTE LIMIT INPUT FOLDER for now...
-        input_folder = '{}/output_crafdtxml/doi/2017/07/01'.format(data_elsevier_folder)
+        input_folder = '{}/output_crafdtxml/doi/2017/06/23'.format(data_elsevier_folder)
         input_folders = [ input_folder ]
         input_path_glob = 'doi_*.xml'
         doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns, set below.
