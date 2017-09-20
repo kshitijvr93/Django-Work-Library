@@ -961,7 +961,7 @@ def xml2rdb( input_path_list=None,
     return log_filename, pretty_log
 # end def xml2rdb
 
-def run():
+def run(study=None):
     ''' SET UP MAIN ENVIRONMENT PARAMETERS FOR A RUN OF XML2RDB
     Now all these parameters are 'hard-coded' here, but they could go into
     a configuration file later for common usage.
@@ -977,17 +977,22 @@ def run():
     '''
     me = 'run'
     # Study choices
-    study = 'ccila'
-    study = 'citrus'
-    study = 'crafa'
-    study = 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
-    study = 'crawd' # Crossref filter where D is for doi
-    study = 'elsevier'
-    study = 'entitlement' # Elevier entitlment data.
-    study = 'merrick_oai_set'
-    study = 'oadoi'
-    study = 'orcid'
-    study = 'scopus'
+    study_choices = [
+     'ccila'
+     , 'citrus'
+     , 'crafa'
+     , 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
+     , 'crawd' # Crossref filter where D is for doi
+     , 'elsevier'
+     , 'entitlement' # Elevier entitlment data.
+     , 'merrick_oai_set'
+     , 'oadoi'
+     , 'orcid'
+     , 'scopus'
+    ]
+
+    if study not in study_choices:
+        raise ValueError("Unknown study='{}'".format(repr(study)))
 
     # KEEP ONLY ONE LINE NEXT: Study Selection
     study = 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
@@ -1056,7 +1061,7 @@ def run():
 
     elif study in [ 'entitlement' ] : #
         import xml2rdb_configs.entitlement as config
-        rel_prefix = 'ccila_'
+        rel_prefix = 'enttl_'
 
         # This is where the precursor program marc2xml leaves its marcxml data for ccila UCRiverside
         # items
@@ -1148,10 +1153,12 @@ def run():
         rel_prefix = 'h7_' #h7 is 20161216 friday
         rel_prefix = 'h8_' #h8 is 20161223 friday - not run
         rel_prefix = 'h9_' #h9 is 20161230 friday - not run
+        rel_prefix = 'h2016_10_' #h2016 is for query pubyear 2016, 10 is for harvest 10 done on 20170106 friday
+
+        rel_prefix, year = ('h201709_', '2017')
 
         # Year 2016 input
-        input_folder = '{}/output_satxml/2016/doi'.format(data_elsevier_folder)
-        rel_prefix = 'h2016_10_' #h2016 is for query pubyear 2016, 10 is for harvest 10 done on 20170106 friday
+        input_folder = '{}/output_satxml/{}/doi'.format(data_elsevier_folder,year)
 
         #Year 2017 input                                                   # Year 2016 input
         #input_folder = '{}/output_satxml/2017/doi'.format(data_elsevier_folder)
@@ -1308,4 +1315,4 @@ def run():
     print("Done.")
 #end def run()
 #
-run()
+run('scopus')
