@@ -167,7 +167,7 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
         pkey_columns +="{}{}".format(sep, db_name)
         od_rel_info['pkey'] = pkey_columns
 
-        # For datacolumns, set the SQL datatypes. Set all to nvarchar(3550), which seems OK for now.
+        # For datacolumns, set the SQL datatypes. Set all to nvarchar(MAX), which seems OK for now.
         # Could also encode data types into user inputs for convenience by adding fields to the input
         # structure od_rel_datacolumns but may not be needed.
         # This is because fter xml2rdb is run, the end user can use standard SQL to change
@@ -181,7 +181,7 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
                 if column_name is None:
                     raise Exception("Relation '{}' has a null row key.".format(db_name))
                 print("{}:Relation={},adding column_name={}".format(me,db_name,column_name))
-                od_column[column_name] = 'nvarchar(3550)'
+                od_column[column_name] = 'nvarchar(MAX)'
     # end storing misc mining info for a newly encounterd relation in the input
     else:
         #print("{}:Dict for attribute_column already found for db_name={}".format(me,db_name))
@@ -806,7 +806,9 @@ def xml_paths_rdb(
 
             print("\nBULK INSERT {}".format(relation), file=sql_file)
             print("FROM '{}/{}.txt'".format(output_folder,rel_key), file=sql_file)
-            print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '\\n');\n", file=sql_file)
+            #print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '\\n');\n", file=sql_file)
+            # Next works better -- else may get bulk insert error # 4866
+            print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '0x0A');\n", file=sql_file)
             print("\nCOMMIT transaction;", file=sql_file)
             print('begin transaction;', file=sql_file)
 
@@ -1159,10 +1161,6 @@ def run(study=None):
 
         # Year 2016 input
         input_folder = '{}/output_satxml/{}/doi'.format(data_elsevier_folder,year)
-
-        #Year 2017 input                                                   # Year 2016 input
-        #input_folder = '{}/output_satxml/2017/doi'.format(data_elsevier_folder)
-        #rel_prefix = 'h2017_10_' #2016 for query pubyear 2016 harvest h10 is 20170106 friday
 
         input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
 

@@ -1,12 +1,28 @@
+import sys, os, os.path, platform
+
+def get_path_modules(verbosity=0):
+  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+  path_user = os.environ.get(env_var)
+  path_modules = '{}/git/citrus/modules'.format(path_user)
+  if verbosity > 1:
+    print("Assigned path_modules='{}'".format(path_modules))
+  return path_modules
+sys.path.append(get_path_modules())
+
+import etl
 
 from io import StringIO, BytesIO
 import shutil
 
 '''
 Program satxml (Scopus Api To XML) reads information from Scopus Search API for
-UF-Authored (affiliated) articles
-and for each, it seeks it in the
-Scopus Full-text API.
+UF-Authored (affiliated) articles and for each, it seeks it in the Scopus Full-text API.
+
+NOTE: Scopus has a 5000 article per request maximum. That is why each request is limited to
+a subject area, subj_area, and the UF affiliation, to make sure the 5K maximum is not exceeded, otherwise
+there would be no known way to get data after the 5000th article in any request. Currently for UF and
+subj area of medicine, for pub year 2016, is around 4000 at the end of the year, so if UF gets much more
+prolilfic, some UF med articles would be/may become inaccessible via this Scopus API/Policy.
 
 If not found, it logs an error message, otherwise it outputs a file named
 scopus_{scopus_id}.xml in the given output directory for each article.
@@ -343,7 +359,7 @@ def run_satxml_by_affil_pubyear(affil=None, pubyear=None,d_params=None):
         #if n_subjarea > 2:
         #    break
         n_batch = 1
-        url_next_search= sapi.initial_search_url_by_affil_pubyear_subjarea(affil, pubyear,subjarea)
+        url_next_searchi = sapi.initial_search_url_by_affil_pubyear_subjarea(affil, pubyear,subjarea)
         print("\n{}:Finding articles in SUBJECT AREA: {}\n".format(me, subjarea), file=stdout)
 
         while (url_next_search):
