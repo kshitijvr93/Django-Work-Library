@@ -806,7 +806,7 @@ def xml_paths_rdb(
 
             print("\nBULK INSERT {}".format(relation), file=sql_file)
             print("FROM '{}/{}.txt'".format(output_folder,rel_key), file=sql_file)
-            #print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '\\n');\n", file=sql_file)
+            # print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '\\n');\n", file=sql_file)
             # Next works better -- else may get bulk insert error # 4866
             print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '0x0A');\n", file=sql_file)
             print("\nCOMMIT transaction;", file=sql_file)
