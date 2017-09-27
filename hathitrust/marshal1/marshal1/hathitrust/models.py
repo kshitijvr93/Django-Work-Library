@@ -9,7 +9,6 @@ class HathiItemState(enum.Enum):
        FILES_EXAMINED = 2
        FILES_NEED_CHANGES = 3
        YAML_CREATED = 4
-       YAML_
 
 class Hathi_item(models.Model):
     id = models.UUIDField(Primary_key=True, default=uuid.uuid4, editable=False)
