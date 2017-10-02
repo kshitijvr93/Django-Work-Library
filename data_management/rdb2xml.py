@@ -188,23 +188,39 @@ Given parameters:
     nesting) into the following parameters for lists of node_names and uuids
     The 'current node' in this method represents a single row in a relation
     that match the hierarchy of node_names (relations) and uuids.
-(*) node_names (list of parent db_names (names of parent nested
-    relations or xml repeatable element names, where the last name is for the
-    row of the current relation), identified in uuids[]
-(*) uuids[], (the current node-represented by a path of hierarchical uuids
-    from a set of parent database tables, with the final one identifying a
-    unique row in the current node), and
+
+(*) node_names (names of outer parents in nested
+    relations where the first node name is the outermost nested relation and
+    the last name is for this row row of the current relation), identified in uuids[]
+
+(*) uuids[], (the parent nodes and current node is represented by this list
+    path of hierarchical uuids from a set of parent database tables, with the
+    final uuid identifying a unique row in the current node), and
+
+(*) opened_index: index into node_names indicating the highest level where an opening tag
+    has so far been outputted. This way, a recursive call that generates the first output for
+    a node can determine the greatest ancestor parent that has not yet output its opening tag,
+    and then output those tags in proper order, as needed.
+
 (*) d_node_params, the 'mining map' starting with the
    given node's entry in the mining map hierarchy, garner the input fields
    for this node from the mining map in d_col elt maps each rdb column name
    inputs that is to be outputted to a named xml element.
+
+ (*)od_row - ordered dictionary where each key is a column name and each value
+ is the value for the column.
+ This method reads that and uses it output the xml element values in the output.
+
 (Note) to-be-considered: od_rel_datacolumns - key is column name, value is
     found value in the relational-database.
     In xml2rdb it is used to store values to be composed, for example a first
     name and last name may be stored among siblings to same xml parent, and a
-    column_attribute function may be applied to derive a column with full '
-    last_name, comman, first_name' value.
-    Might be reversed-emulated somehow in future versios for use in rdb2xml direction
+    column_attribute function may be applied to derive a column with full
+    last_name, comma, first_name' value. It is used for the 'translation' functionality
+    of an ETL process, which may be of limited use since the data has already been
+    mapped into the relational database, usually in a nice format.
+    However, it might be reversed-emulated somehow in future versions for use
+    in the rdb2xml direction.
 
 Processing:
 
@@ -212,37 +228,29 @@ The node represents a 'current row', a specific data row in a table/db_name.
 (*) If the row has any data to be output (per the below processing), an xml element
 opening tag is outputted with the same name as the current row's table name.
 
-(*) The param d_node_params include a key 'rdb_xml' which is a dicrionary where
+(*) The param d_node_params may include a key 'd_rdb_xml' which is a dictionary where
 each key is a column name in the current row and the corresponding value is an xml
-element name to contain the columns value in a an xml element in an output
-file. For each entry in that dictionary, the apt enclosing xml element tags are
-output wrapped around the column value.
+element name to contain the columns value in an xml element in an output
+file. For each entry in that dictionary, (1) first check the 'opening_index'
+value and open all the parent tags (output their opening tag to the output stream)
+that have not been opened so far, (2) output the data value of the row, and
+(3) plus output this nodes' closing tag which is the key value in rdb_xml,
+(4) also update and return opening_index so the parent can determine whether its
+node was opened and needs to have a closing tag outputted.
 
 (*) If the param d_node_Params includes a key "child_names", then a loop
 processes each child_name key to do a recursive call to output any child
 elements and data.
+Within iterations of that loop, meaning a child_name is given, a new select
+cursor is created that selects all rows of the relation indicated in the child
+name, and an inner loop is entered to deliver each row (via parameter od_row)
+to a recursive call to rnode_visit_output for that row.
 
-(*) After the recursive looping code, and if any data was output from this node,
-a closing tag is output. 
-
-
- Before recursing to lower nodes, a
-cursor is opened to a select statement that selects all rows of this
-relation that match the uuids given for the parent relation-names and
-corresponding uuids.
-In the loop that selects each row of this db_name:
+(*) After the 'child_path' processing code, and if any data was output from this node,
+as inferred from the return values from the recursive calls (or the presence of a key in d_rdb_xml)
+a closing tag is output.
 
 
-has (per the mining map) a db_name (and/or a multiple=1 value,
-meaning multiple of this node type is allowed to exist under the same
-parent), the node represents a parent xml element,
-So after visiting its children nodes (using each given child_path),
-and getting their values via return value d_row, then we might later output
-summary statistic values for this node, based on od_row values.
-Finally, we output the closing tag which is this node's name(db table name, aka xml element name) for this node
-Else, this node is not a db_name node, rather only one node of this type is allowd under its parent
-node in the xml input document, so this node is mined to garner input values into a
-dictionary, d_row, to return to the parent node for its use.
 '''
 
 def node_visit_output(node=None, node_index=None, d_namespaces=None,

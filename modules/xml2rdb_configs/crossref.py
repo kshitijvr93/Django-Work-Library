@@ -386,7 +386,7 @@ def sql_mining_params():
                                    'authority': 'authority',
                 },
                 # Caution: Do not use attrib_column twice for same node, as
-                # earlier ones are overwritten by last one
+                # earlier ones are overwritten by last one -todo: add validation.
                 # 'attrib_column': { 'authority' : 'authority' },
             }
         } # end child_xpaths
