@@ -42,7 +42,7 @@ for the returned values.
 For the first implementation, consider to read each relational table from
 a file.... or instantiate a parent db object that indicates the type of
 dataset (mysql, postgres, sql server, tsv files etc) and a connection string if needed.
-
+'''
 
 '''
 Method new_od_relation
@@ -181,15 +181,65 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
 
 #end def get_writable_db_file
 '''
-Method node_visit_output
+Method rnode_visit_output
 
-Given node, the current node, and d_node_params, the 'mining map' starting with the
-given node's entry in the mining map hierarchy, garner the input fields for this node.
+Given parameters:
+(*) node_index - the index of the current node (it is the depth of
+    nesting) into the following parameters for lists of node_names and uuids
+    The 'current node' in this method represents a single row in a relation
+    that match the hierarchy of node_names (relations) and uuids.
+(*) node_names (list of parent db_names (names of parent nested
+    relations or xml repeatable element names, where the last name is for the
+    row of the current relation), identified in uuids[]
+(*) uuids[], (the current node-represented by a path of hierarchical uuids
+    from a set of parent database tables, with the final one identifying a
+    unique row in the current node), and
+(*) d_node_params, the 'mining map' starting with the
+   given node's entry in the mining map hierarchy, garner the input fields
+   for this node from the mining map in d_col elt maps each rdb column name
+   inputs that is to be outputted to a named xml element.
+(Note) to-be-considered: od_rel_datacolumns - key is column name, value is
+    found value in the relational-database.
+    In xml2rdb it is used to store values to be composed, for example a first
+    name and last name may be stored among siblings to same xml parent, and a
+    column_attribute function may be applied to derive a column with full '
+    last_name, comman, first_name' value.
+    Might be reversed-emulated somehow in future versios for use in rdb2xml direction
 
-If the node has a db_name (and/or a multiple=1 value, meaning multiple of this node type is
-allowed to exist under the same parent), the node represents a row in an sql relation,
-so after visiting its children nodes (using each given child_xpath),
-and getting their values via return value d_row, then we output a row for this node.
+Processing:
+
+The node represents a 'current row', a specific data row in a table/db_name.
+(*) If the row has any data to be output (per the below processing), an xml element
+opening tag is outputted with the same name as the current row's table name.
+
+(*) The param d_node_params include a key 'rdb_xml' which is a dicrionary where
+each key is a column name in the current row and the corresponding value is an xml
+element name to contain the columns value in a an xml element in an output
+file. For each entry in that dictionary, the apt enclosing xml element tags are
+output wrapped around the column value.
+
+(*) If the param d_node_Params includes a key "child_names", then a loop
+processes each child_name key to do a recursive call to output any child
+elements and data.
+
+(*) After the recursive looping code, and if any data was output from this node,
+a closing tag is output. 
+
+
+ Before recursing to lower nodes, a
+cursor is opened to a select statement that selects all rows of this
+relation that match the uuids given for the parent relation-names and
+corresponding uuids.
+In the loop that selects each row of this db_name:
+
+
+has (per the mining map) a db_name (and/or a multiple=1 value,
+meaning multiple of this node type is allowed to exist under the same
+parent), the node represents a parent xml element,
+So after visiting its children nodes (using each given child_path),
+and getting their values via return value d_row, then we might later output
+summary statistic values for this node, based on od_row values.
+Finally, we output the closing tag which is this node's name(db table name, aka xml element name) for this node
 Else, this node is not a db_name node, rather only one node of this type is allowd under its parent
 node in the xml input document, so this node is mined to garner input values into a
 dictionary, d_row, to return to the parent node for its use.
