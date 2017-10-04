@@ -1,35 +1,52 @@
 <ul>
-  <li>UFDC/SobekCM: in comparison, this project's web-based item editor will
+  <li>Compared to the SobekCM/UFDC metadata editor, the MAW metadata editor will
     incorporate much of the look and feel of the UFDC/SobekCM form-based
     metadata editor:
   <ul><li>
     Form fields provide labels that are more descriptive than the
     typically shorter xml tags alone.
   </li><li>
-    Forms with limited choices have drop-down lists to facilitate data entry.
+    Fields with limited choices have drop-down lists to facilitate data entry.
   </li><li>
-    Fields that are repeatable will feature a 'Plus sign' button that allows
-    the user to repeat the display field as many (or as few) times as needed.
+    Fields that are repeatable will also feature a 'Plus sign' button that allows
+    the user to repeat the display field as many times as needed.
   </li><li>
     A help button with help text is available for each field.
   </li><li>
-    Groups of fields, or fieldsets, may be accessed separately (employing
-    window tabs or expand/collapse regions for each independent field set.)
+    Groups of fields, or field sets, may be accessed separately (employing distinct
+    window tabs or expand/collapse regions for each field set.)
   </li></ul>
 
-</li><li>The MAW item metadata editor contrasts to UFDC/SobekCM item metadata editor:
+</li><li>The MAW metadata editor contrasts to UFDC/SobekCM metadata editor:
     <ul><li> New or revised MAW metadata templates will be uploadable via the website by
-    users with template uploading permission.
-  </li></li> Uploaded metadata templates will automatically
-  generate new metadata item editor interface forms that web users can select and use to edit item metadata.
-  </li><li> Bulk changes to user-specifiable item metadata fields will be supported.
-  </li><li> Because MAW is independent of UFDC/SobekCM, operating on its own
-    internal UF Library staff accessible open source website, MAW updates will be more agile
-    and easier to create.
-  </li></ul>
-    Edited item metadata can be output directly by MAW to downloadable files for sharing with
-    colleagues and exporting of data, for example to HathiTrust.
+    users with metadata template uploading permission.
+  </li><li> Uploaded metadata templates will automatically
+  generate new metadata item editor interface forms that web users can select
+  and use to edit metadata.
+</li><li> MAW will provide a bulk change editor interface, and more user-specifiable
+  metadata fields will be supported.
+</li><li> Independent of UFDC/SobekCM, MAW operates its own
+    internal UF Library website, so MAW updates will be more agile and easier to manage.
   </li><li>
-    Item metadata can transformed to METS format and be scheduled for upload to the SobekCM Builder when edited or done later at a time when the SobekCM builder is typically not bogged down with heavy traffic, to avoid slow downs during the day.
+    MAW will directly output or transform edited metadata for download or
+    transmission, for example, to HathiTrust.
+  </li><li>
+    MAW will be able transform metadata to METS format and load it to the SobekCM/UFDC
+    Builder at designated times, for example when the SobekCM
+    builder is typically not bogged down with heavy traffic, to avoid slowdowns
+    during the day.
+  </li></ul>
+</li><li>Many other capable database and metadata editors exist, such as Oxygen,
+  that run on standalone PCs, however since this metadata editor runs on the MAW,
+  it will take advantage of:
+  <ul><li>
+   internal UF Library web access by users (so no need for independent installations and updates of software packages on staff PCs)
+ </li><li>
+   existing UF-proprietary
+  xml2rdb technology with relational database functionality
+ </li><li>
+ metadata editor users can use forms and so do not have to think like programmers, and
+ </li><li>
+  Easy integration with xml2rdb technology and the MAW platform, which already has coding to prepare metadata METS loads into UFDC, based on prior work.
   </li></ul>
 </li></ul>
