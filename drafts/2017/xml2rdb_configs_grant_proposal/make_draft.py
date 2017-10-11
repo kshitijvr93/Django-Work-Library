@@ -34,19 +34,19 @@ import etl
 
 #Append to result_doc.html
 def make_draft():
+    cur_folder = os.path.dirname(os.path.abspath(__file__))
 
     doc_template = ''
-    #Append cover_sheet to result_doc
-    out_filename = 'SOP_MAW.html'
-
-    with open(out_filename,mode='w', encoding='utf-8') as out_file:
+    out_filename = '{}/SOP_MAW.html'.format(cur_folder)
+    with open(out_filename, mode='w', encoding='utf-8') as out_file:
         # Append cover sheet to result_doc
-        with open(in_filename,mode='r', "part01_cover_sheet/cover_sheet.html") as in_file:
+        in_filename="{}/part01_cover_sheet/cover_sheet.html".format(cur_folder)
+        with open(in_filename, mode='r', encoding='utf-8') as in_file:
             for line in in_file:
                 out_file.write(line)
 
         # Follow the template file for  the remainder of the document
-        with open(in_filename, mode='r', "part02_main/template.html") as in_file:
+        with open("{}/part02_main/template.html".format(cur_folder), mode='r', encoding='utf-8') as in_file:
             doc_remainder = ''
             for line in in_file:
                 doc_template += line
@@ -65,13 +65,16 @@ def make_draft():
         ,'budget_narrative'
         ,'budget_table'
         ,'references_cited'
+        ,'long_term_financial_implications'
+        ,'equipment_supplies_purchases'
         ]
 
         d_var_val = {var: '' for var in var_names}
         # if a filename var.html exists, use it for the value of that var
         for var in var_names:
             val = ''
-            with open(open(in_filename, mode='r', {part02_main/{}.html} as in_file):
+            in_filename = "{}/part02_main/{}.html".format(cur_folder,var)
+            with open(in_filename, mode='r', encoding='utf-8') as in_file:
                 val = ''
                 for line in in_file:
                     val += line
@@ -81,4 +84,7 @@ def make_draft():
         #write the rest of the output file
         out_file.write(doc_remainder)
     #end output
-    print("Wrote document fo file {}. Done!".format(out_filename))
+    print("Wrote document to file {}. Done!".format(out_filename))
+
+
+make_draft()
