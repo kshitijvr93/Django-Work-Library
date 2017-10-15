@@ -67,6 +67,7 @@ def make_draft():
         ,'references_cited'
         ,'long_term_financial_implications'
         ,'equipment_supplies_purchases'
+        ,'commitment_support_letters'
         ]
 
         d_var_val = {var: '' for var in var_names}
