@@ -54,9 +54,9 @@ def make_draft():
         # quick 'cheat', use knowledge of template vars and fill the
         # values first (could have parsed the template instead)
         var_names = ['project_description'
-        ,'project_significance'
+        ,'project_importance'
         ,'innovative_components'
-        ,'similar_projects'
+        ,'comparison_projects'
         ,'resources_plan_sustainability'
         ,'activity_timeline'
         ,'collections_benefitted'
