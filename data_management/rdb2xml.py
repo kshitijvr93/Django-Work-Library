@@ -1,4 +1,4 @@
-# xml2rdb-active
+# rdb2xml-active
 # Somewhat cleaned-up code with various debug statements and cruft removed
 # to use as a supplement document for IP examination
 
