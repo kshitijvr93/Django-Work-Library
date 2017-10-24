@@ -69,8 +69,11 @@ l_subfields = [
 , 'c856_3', 'c856_u', 'c856_x', 'c856_y', 'c856_z'
 ]
 '''
-Per 20170703 uf email from jesse english, read a certain mrc file and convert to a csv file
-for her.
+method ucr_mrc_to_csv():
+
+Per 20170703 uf email from jessie english, read a certain mrc file
+(from uc-riverside source, hence 'ucr' part of method name)
+and convert and output to a csv file for her.
 See what I can do... I copied the input to data/UCRiverside folder,
 file UCRdatabase_2015-12-04.mrc
 '''
@@ -102,6 +105,7 @@ def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,out
 
             for sf in l_subfields: #clear all the subfields for the record
                 od_recordField[sf] = None
+
             print(" [{}] ".format(i), end="")
             if i % 20 == 0:
                 print()
@@ -112,8 +116,9 @@ def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,out
             for nf,field in enumerate(record.fields):
                 tag = field.tag
                 outline += '\nFIELD {}, tag={}:'.format(nf+1, tag)
-                data = str(field.data)
                 if tag < '010' and tag.isdigit():
+                    # this is a controlfield that has member  '.data'
+                    data = str(field.data)
                     print('<controlfield tag="{}">{}'.format(tag,data)
                         , end='', file=output_file_xml)
                     outline += ("\ndata='{}'".format(data))
@@ -122,21 +127,25 @@ def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,out
                     if base_value is None:
                         od_recordField[f_sf] = str(field.data)
                     else:
+                        # concatenate data value with prior value for this control field
                         od_recordField = "{}|{}".format(base_value, str(field.data))
-                    print('</controlfield',file=ouptut_file_xml)
+                    print('</controlfield',file=output_file_xml)
                 else:
+                    # This is a field that has a list of 2, member '.indicators'
+                    # and a member which is a list, '.subfields'
                     outline += ('\nindicators={}:'
                         .format(tag,repr(field.indicators)))
                     # TODO: should also have to add to key the suffix _n to all field names to support diff indicators
                     # for diff field occurrences for both od_recordField and d_recordField
-                    d_recordField[tag] = field.indicators
+                    od_recordField[tag] = field.indicators
                     sfs = field.subfields
 
                     # outline += ("\nSUBFIELDS: count={},subfields={}"
                     #    .format(len(sfs),sfs))
-                    if (lens(sfs) > 0):
-                        # This tag has subfield values to reckon, whers sfs[]
-                        # even indexes are keys, odd are values, then zip to make an odict
+                    if (len(sfs) > 0):
+                        # This tag has subfield values to reckon, where sfs[]
+                        # even indexes are keys, odd indexs are for values,
+                        # then we zip to make an ordered dict, od.
                         od_sf = OrderedDict(zip(sfs[0:][::2],sfs[1:][::2]))
                         for key,value in od_sf.items():
                             value = str(value)
@@ -175,12 +184,13 @@ def ucr_mrc_to_csv(input_file_name=None,output_file=None,output_fields2=None,out
                 tag = parts[0][1:] #discard leading 'c' used for column names
                 if (tag != prev_tag):
                     if tag < '010': # controlfield
-                        print('<controlfield tag="{}">{}</controlfield'.format(tag,f_sf.value),file=output_file_xml)
-                    else: # data field
-                        print('<datafield tag="{}">ind1="{}" ind2="{}">'.format(tag,f_sf.value),file=output_file_xml)
+                        print('<controlfield tag="{}">{}</controlfield'.format(tag,value)
+                              ,file=output_file_xml)
+                    else: # field with indicators
+                        print('<datafield tag="{}">value="{}">'.format(tag,repr(value))
+                              ,file=output_file_xml)
                 prev_tag = tag
-                subfield = parts[1]
-                print("{}{}".format(sep,value), file=output_file,end="")
+                print("{}{}".format(sep,repr(value)), file=output_file,end="")
                 sep = '\t'
             print(file=output_file)
 
@@ -230,14 +240,13 @@ out_folder_name = etl.data_folder(linux='/home/robert/git/outputs/jessica_englis
 #os.makedirs(out_folder_name, exist_ok=True)
 
 input_file_name = '{}/UCRdatabase_2015-12-04.mrc'.format(in_folder_name)
-output_file_name = '{}/UCRdatabase_all_2015-12-04.txt'.format(out_folder_name)
-output_file_name2 = '{}/UCRdatabase_selected_2015-12-04.txt'.format(out_folder_name)
-output_file_xml_name = '{}/UCRdatabase_selected_2015-12-04.xml'.format(out_folder_name)
+output_file_name = '{}/UCRdatabase_all_2015-12-04b.txt'.format(out_folder_name)
+output_file_name2 = '{}/UCRdatabase_selected_2015-12-04b.txt'.format(out_folder_name)
+output_file_xml_name = '{}/UCRdatabase_selected_2015-12-04b.xml'.format(out_folder_name)
 
 with open(output_file_name, mode='w', encoding='utf-8') as output_file, \
-     open(output_file_name2, mode='w', encoding='utf-8') as output_file2 \
-     open(output_file_xml_name, mode='w', encoding='utf-8') as output_file_xml \
-     :
+     open(output_file_name2, mode='w', encoding='utf-8') as output_file2, \
+     open(output_file_xml_name, mode='w', encoding='utf-8') as output_file_xml :
 
         # Insert first row of key (marc subfield names to output file first)
         l_subfields2 = l_subfields_5000
