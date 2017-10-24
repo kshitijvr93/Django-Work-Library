@@ -74,7 +74,7 @@ l_subfields = [
 , 'c856_3', 'c856_u', 'c856_x', 'c856_y', 'c856_z'
 ]
 '''
-Per 20170703 uf email from jesse english, read a certain mrc file and convert to a csv file
+Per 20170703 uf email from jessie english, read a certain mrc file and convert to a csv file
 for her.
 See what I can do... I copied the input to data/UCRiverside folder,
 file UCRdatabase_2015-12-04.mrc
@@ -121,7 +121,7 @@ def ucr_mrc_to_csv(input_file_name=None
 
     # As of around year 2017, to get field 008 Material type value,
     # which is used to define the coding of field 008 positions 18-34,
-    # then if leader position 6 is a, seek key of positions6 and 7 concatenated
+    # then if leader position 6 is a, seek key of positions 6 and 7 concatenated
     # to find the value for material type in this dictionary
     # if leader position 6 is 'a', otherwise seek leader position 6 in
     # dictionary d_code_field008C18C34Definition

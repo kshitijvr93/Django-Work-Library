@@ -983,7 +983,7 @@ def run(study=None):
      'ccila'
      , 'citrus'
      , 'crafa'
-     , 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
+     , 'crafd' # Crossref affiliation filter where D here is for Deposit Date.
      , 'crawd' # Crossref filter where D is for doi
      , 'elsevier'
      , 'entitlement' # Elevier entitlment data.
@@ -1038,10 +1038,13 @@ def run(study=None):
         # This is where the precursor program marc2xml leaves its marcxml data for ccila UCRiverside
         # items
         in_folder_name = etl.data_folder(linux='/home/robert/',
-            windows='U:/', data_relative_folder='data/outputs/marcxml/UCRiverside/')
+            windows='C:/', data_relative_folder='users/podengo/git/outputs/marcxml/UCRiverside/')
 
-        folder_output_base = etl.data_folder(linux='/home/robert/',
-            windows='U:/', data_relative_folder='data/outputs/xml2rdb/UCRiverside')
+        #windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
+        folder_output_base = etl.data_folder(linux='/home/robert/', windows='C:/'
+            , data_relative_folder='users/podengo/git/outputs/xml2rdb/{}/UCRiverside'.format(study))
+
+        print("study {}, using folder_output_base={}".format(folde_output_base))
 
         input_folder = in_folder_name
         input_folders = []
@@ -1313,4 +1316,6 @@ def run(study=None):
     print("Done.")
 #end def run()
 #
-run('scopus')
+print("Starting!")
+run('ccila')
+print("Done!")
