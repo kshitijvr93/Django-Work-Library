@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!--  Aforismos de jurisprudencia criminal española. ( Mixed Material ) -->
+<METS:mets OBJID="AA00053892_00001"
+  xmlns:METS="http://www.loc.gov/METS/"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:mods="http://www.loc.gov/mods/v3"
+  xmlns:sobekcm="http://sobekrepository.org/schemas/sobekcm/"
+  xmlns:lom="http://sobekrepository.org/schemas/sobekcm_lom"
+  xsi:schemaLocation="http://www.loc.gov/METS/
+    http://www.loc.gov/standards/mets/mets.xsd
+    http://www.loc.gov/mods/v3
+    http://www.loc.gov/mods/v3/mods-3-4.xsd
+    http://sobekrepository.org/schemas/sobekcm/
+    http://sobekrepository.org/schemas/sobekcm.xsd">
+<METS:metsHdr CREATEDATE="2017-10-25T10:00:52Z" ID="AA00053892_00001" LASTMODDATE="2017-10-25T10:00:52Z" RECORDSTATUS="PARTIAL">
+<METS:agent ROLE="CREATOR" TYPE="ORGANIZATION"> 
+<METS:name>UF,University of Florida</METS:name>
+</METS:agent>
+<METS:agent OTHERTYPE="SOFTWARE" ROLE="CREATOR" TYPE="OTHER"> 
+<METS:name>Spreadsheet Importer</METS:name>
+</METS:agent>
+<METS:agent ROLE="CREATOR" TYPE="INDIVIDUAL"> 
+<METS:name>UFAD\podengo</METS:name>
+</METS:agent>
+</METS:metsHdr>
+<METS:dmdSec ID="DMD1">
+<METS:mdWrap MDTYPE="MODS"  MIMETYPE="text/xml" LABEL="MODS Metadata">
+<METS:xmlData>
+<mods:mods>
+<mods:identifier type="NOTIS">BSF-116</mods:identifier>
+<mods:identifier>BSF-11623</mods:identifier>
+<mods:language>
+<mods:languageTerm type="text">Spanish</mods:languageTerm>
+<mods:languageTerm type="code" authority="iso639-2b">spa</mods:languageTerm>
+</mods:language>
+<mods:name type="personal">
+<mods:namePart>Valdés, Ramón Francisco</mods:namePart>
+<mods:namePart type="given">Ramón Francisco</mods:namePart>
+<mods:namePart type="family">Valdés</mods:namePart>
+<mods:namePart type="date">1810-1866</mods:namePart>
+<mods:role>
+<mods:roleTerm>Main Entity</mods:roleTerm>
+</mods:role>
+</mods:name>
+<mods:note type="citation/reference">Lafragua 1821-1853,</mods:note>
+<mods:note type="citation/reference">Trelles, 19,</mods:note>
+<mods:note type="statement of responsibility">Por el Dr. don Ramon F. Valdés, abogado habanero.</mods:note>
+<mods:note>Lafragua copy is 19.5 cm. </mods:note>
+<mods:note>Fechado: Habana setiembre 8 de 1843. </mods:note>
+<mods:note>Guía de los delitos y penas que se consideran en las leyes españolas. </mods:note>
+<mods:note>Habana: 1843. Imprenta de Barcina.En 8À M, 110-(1) ps.  </mods:note>
+<mods:originInfo>
+<mods:publisher>1843. Imprenta de Barcina, Calzada de S Luis Gonzaga número 145, Estramuros.</mods:publisher>
+<mods:place>
+<mods:placeTerm type="code" authority="marccountry">cu </mods:placeTerm>
+</mods:place>
+<mods:dateIssued encoding="marc">[1843]</mods:dateIssued>
+<mods:dateIssued encoding="marc" point="start">1843</mods:dateIssued>
+</mods:originInfo>
+<mods:recordInfo>
+<mods:recordIdentifier source="sobekcm">AA00053892_00001</mods:recordIdentifier>
+<mods:recordCreationDate encoding="marc">140415</mods:recordCreationDate>
+<mods:recordOrigin>Imported from (NOTIS)BSF-116</mods:recordOrigin>
+<mods:recordContentSource>University of Florida</mods:recordContentSource>
+<mods:recordContentSource authority="marcorg">CaRivUCC</mods:recordContentSource>
+<mods:languageOfCataloging>
+<mods:languageTerm type="text">Spanish</mods:languageTerm>
+<mods:languageTerm type="code" authority="iso639-2b">spa</mods:languageTerm>
+</mods:languageOfCataloging>
+</mods:recordInfo>
+<mods:relatedItem type="original">
+<mods:physicalDescription>
+<mods:extent>[2], 5-58, [2] p. :  ; 4to.</mods:extent>
+</mods:physicalDescription>
+</mods:relatedItem>
+<mods:subject ID="SUBJ752_1">
+<mods:hierarchicalGeographic>
+<mods:country>Cuba</mods:country>
+<mods:city>Havana</mods:city>
+</mods:hierarchicalGeographic>
+</mods:subject>
+<mods:titleInfo>
+<mods:title>Aforismos de jurisprudencia criminal española.</mods:title>
+</mods:titleInfo>
+<mods:typeOfResource>mixed material</mods:typeOfResource>
+</mods:mods>
+</METS:xmlData>
+</METS:mdWrap>
+</METS:dmdSec>
+<METS:dmdSec ID="DMD2">
+<METS:mdWrap MDTYPE="OTHER"  OTHERMDTYPE="SOBEKCM" MIMETYPE="text/xml" LABEL="SobekCM Custom Metadata">
+<METS:xmlData>
+<sobekcm:procParam>
+<sobekcm:Aggregation>BIBLIOTECA NACIONAL DE MÉXICO, COLECCION LAFRAGUA</sobekcm:Aggregation>
+<sobekcm:Aggregation>UNKNOWN LIBRARY, TRELLES BIBLIOGRAPHY</sobekcm:Aggregation>
+<sobekcm:Aggregation>ALL</sobekcm:Aggregation>
+<sobekcm:Tickler>UCRDATABASE_2015-12-04</sobekcm:Tickler>
+</sobekcm:procParam>
+<sobekcm:bibDesc>
+<sobekcm:BibID>AA00053892</sobekcm:BibID>
+<sobekcm:VID>00001</sobekcm:VID>
+<sobekcm:EncodingLevel>#</sobekcm:EncodingLevel>
+<sobekcm:Publisher>
+<sobekcm:Name>1843. Imprenta de Barcina, Calzada de S Luis Gonzaga número 145, Estramuros.</sobekcm:Name>
+<sobekcm:PlaceTerm type="text">Habana</sobekcm:PlaceTerm>
+</sobekcm:Publisher>
+<sobekcm:Source>
+<sobekcm:statement code="UF">University of Florida</sobekcm:statement>
+</sobekcm:Source>
+<sobekcm:SortDate>672776</sobekcm:SortDate>
+</sobekcm:bibDesc>
+</METS:xmlData>
+</METS:mdWrap>
+</METS:dmdSec>
+<METS:structMap ID="STRUCT1" > <METS:div /> </METS:structMap>
+</METS:mets>
