@@ -55,31 +55,31 @@ Alt Batch - same idea as the column_function to implement the clock. Also use a 
 next bibid and invoke it for the record relation. fine.
 
 '''
-od_node_params = {
-    'tag_name': ''
-    ,'child_relations' : {
+d_node_params = {
+    'element_tag': '' # Empty tag name is never output.
+    ,'child_relation_nodes' : {
         'record': {
-            'tag_name':'record'
+            'element_tag':'record'
             'attribute_column': {
                 'text' : 'leader'
             }
-            ,'child_relations': {
+            ,'child_relation_nodes': {
                 'controlfield': {
-                    'tag_name' : 'controlfield'
+                    'element_tag' : 'controlfield'
                     'attribute_column':{
                         'tag':'tag', 'text':'value'
                     }
                 }
                 ,'datafield': {
-                    'tag_name': 'datafield',
+                    'element_tag': 'datafield',
                     'attribute_column': {
                         'tag' : 'tag'
                         ,'ind1': 'indicator1'
                         ,'ind2': 'indicator2'
                     }
-                    'child_relations' : {
+                    'child_relation_nodes' : {
                         'subfield': {
-                            'tag_name': 'subfield'
+                            'element_tag': 'subfield'
                             ,'attribute_column' : {
                                 'code':'code'
                                 ,'text':'value'
@@ -88,11 +88,6 @@ od_node_params = {
                     }
                 }
             }
-
         }
     }
-}
-'controlfield':
-
-
 }

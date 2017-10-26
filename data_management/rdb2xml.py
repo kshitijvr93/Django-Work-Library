@@ -279,31 +279,32 @@ Compare and contrast some features with established node_visit_output() in xml2r
 
 '''
 
-def rel_node_visit_output(node=None, node_index=None, d_namespaces=None,
-    d_node_params=None, od_rel_datacolumns=None, od_parent_index=None,
-    od_relation=None, output_folder=None,d_xml_params=None,verbosity=0):
+def rel_node_visit_output(
+    node=None
+    ,node_index=None
+    ,output_file_name=None
+    ,d_xml_params=None
+    ,verbosity=0
+    # , d_namespaces=None,
+    #,od_rel_datacolumns=None
+    # , od_parent_index=None,
+    # ,od_relation=None
+    ):
 
     me = 'rel_node_visit_output()'
-    verbose = 0
+    required_args = [node, node_index, output_file_name, d_xml_params]
+
+    if not all(required_args)
+        raise ValueError('Not all args {} were given.'.format(required_args))
+
     if verbosity > 0:
         msg = ("{}:START: verbosity={},node.tag={}, node_index={}"
                .format(me, verbosity, node.tag, node_index))
         print(msg)
-    log_messages = []
+
+    #log_messages = []
 
     # check arguments: later - revamp to check for this new rel_* method version...
-    if (node is None
-        or node_index is None or d_namespaces is None or od_parent_index is None
-        or od_relation is None or output_folder is None
-        or od_rel_datacolumns is None or d_xml_params is None):
-        msg = (
-          '''{}:BAD arg(s) within:od_parent_index={},\nnode={},
-          \noutput_folder={}, \nd_namespaces={}, \nod_relation={}'''
-          .format(me,repr(od_parent_index),repr(node)
-          ,repr(output_folder), repr(d_namespaces), repr(od_relation))
-        )
-        msg += "\n" + ("node_index={}".format(repr(node_index)))
-        raise RuntimeError(msg)
 
     # if there is a special mining map 'attribute' keyword defined to indicate
     # to use the xml inner_content rather than
@@ -417,29 +418,36 @@ def rel_node_visit_output(node=None, node_index=None, d_namespaces=None,
     ################# SECTION - RECURSE TO CHILD XPATH NODES ###############
 
     od_child_row = None
-    d_child_xpaths = d_node_params.get('child_xpaths',None)
-
-    if d_child_xpaths is not None:
-        for xpath, d_child_node_params in d_child_xpaths.items():
+    d_child_relation_nodes = d_node_params.get('child_relation_nodes', None)
+    made_output = 0
+    if d_child_relation_nodes is not None:
+        for relation_name, d_child_node in d_relation_nodes.items():
             #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_node_params)))
-            children = node.findall(xpath, d_namespaces )
+            #children = node.findall(xpath, d_namespaces )
+            # CRITICAL: make sure db.sequence() does select with order by the relation_namd_id
+            # else hard-to-debug errors may result
+            child_rows = db.sequence(relation_name, node_index)
             if (verbosity > 0):
                 print("{}:for xpath={} found {} children".format(me,xpath,len(children)))
             # TODO:Future: may add a new argument for caller-object that child may use to accumulate, figure,
             # summary statistic
             d_child_row = None
-            for i,child in enumerate(children):
-                d_child_row = node_visit_output(node=child
-                    , node_index=(i+1)
-                    , d_namespaces=d_namespaces
+            for index,row in enumerate(children):
+                # Asssume i always goes in counting order at first, later get it out of the row
+                # index = d_child_row['{}_id'.format(relation_name)
+                d_child_row, child_output = node_visit_output(node=child
+                    , node_index=(index + 1)
                     , d_node_params=d_child_node_params
-                    , od_rel_datacolumns=od_rel_datacolumns
-                    , od_relation=od_relation
-                    , od_parent_index=od_child_parent_index
-                    , output_folder=output_folder
+                    , output_file=output_file
                     , d_xml_params = d_xml_params
                     , verbosity=verbosity)
-                # Finished visiting a child
+                # Finished visiting a child relation
+                # Register whether any data was output: misc info or new retval should have that.
+                if child_output:
+                    made_output = True
+                # so that we can eventually discover whether any  data was output under this relation row
+                # and thus decide whether to output a closing xml tag.
+
             # Finished one or more children with same xpath
             if d_child_row is not None and len(d_child_row) > 0:
                 for column_name, value in d_child_row.items():
@@ -551,7 +559,6 @@ def rdb_to_xml(
     log_messages = []
 
     required_args = [tags, output_folder]
-
     if not all(required_args)
         raise ValueError('Not all args {} were given.'.format(required_args))
 
@@ -573,19 +580,34 @@ def rdb_to_xml(
     # 20171026 testing runs
 
     root_tag = 'docroot'
-    relation_name = 'record'
+    relation_name = node['relation_name']
 
     # final: row_selection = dataset.cursor_relation(relation_name='record', node_index=[])
     # testing:
 
     row_selection =  [{'a':'5', 'b':'6'}, { 'a':'8', 'b':'9' }]
     node_index = []
-    output_file = ""
+    output_file_name = output_folder + '/rdbtoxml.xml'
+
     tags = [root_tag]
     node = d_node_params['start'];
+
+    d_xml_params = dict({'attribute_text':'text'})
+
     # Above was emulation of some args - now star method code prototype
+    print("Using output_file={}".format(output_file))
 
     tag = tags[len(tags) - 1]
+    with open(output_file_name, mode='r', encoding='utf-8') as file_out:
+        retval = rel_node_visit_output(
+            node=od_node_params
+            ,tags=tags
+            ,node_index=node_index
+            ,d_xml_params=d_xml_params
+            ,output_file=output_file)
+
+    print ("Done!")
+
     for row_index, d_row in enumerate(row_selection):
         print("For row {}, using d_row={}".format(row_index,repr(d_row)))
         # set args for rel_node_visit_output()
