@@ -18,28 +18,77 @@ for example "ccila_" for my first runs.
 
 note: the global relation context is not in the database, but rather it has context information like the
 current date and time, person who is running the process, etc.
-For first draft purposes, its fields are considered to be in the 'record' relation, though the are not in the actual
-database. Since only record-level output is generated, we can do it this way... that is, there is no 'context' record
-that is supposed to be outputted, so the context info can be imputed to each record logically.
+For first draft purposes, its fields are considered to be in the 'record'
+relation, though the are not in the actual database.
+Since only record-level output is generated, we can do it this way... that
+is, there is no 'context' record that is supposed to be outputted, so the
+context info can be imputed to each record logically.
 
-Since this tree is not too deep, for clarity, and to avoid any column name collisions among tables, all column names will be prefixed by their ancestor relation names in order, separated
-by the '.' character
+Since this tree is not too deep, for clarity, and to avoid any column name
+collisions among tables, all column names will be prefixed by their
+ancestor relation names in order, separated by the '.' character
 
-Where an attribute or xml tag is linked to a data value, if the value or values do not exist then the tag is not
-going to be output either. Maybe a flag will be provided to indicate that empty output tags are desired.
+Where an attribute or xml tag is linked to a data value, if the value or
+values do not exist then the tag is not going to be output either.
+Maybe a flag will be provided to indicate that empty output tags are desired.
 
 Where some METS output value depends on a combination of other values, a method will be provided similar to xml2rdb
 column functions that can input various values and apply coding and logic to determine its output to be used
 in the xml output.
+
+Note: Maybe use 'batch_context' or 'batch' as opseudo-relationto hold context info
+It is a pseudo-relation  of just one row with batch/global variables like start time of the run, user who is running
+Here will be the batch variables,
+
+Also: phase N feature: consider: do allow it to 'tick' with a real-time clock, at least one current_time value?
+or implement that as yet another pseudo-relation that has its own cursor or that just gives the current time when 'incremented'
+and tie it somehow to co-yield (aka increment, aka iterate) only when a new record is incremented. Maybe just set it as a
+special 'column_name' that can be ascribed/referenced in any/every relation. If a relation has that value and it is incremented,
+the program will just set that constant value in this column name that can be used like any other column name (phase N feature).
+
+Phase N alt feature: for each relation name, allow a keyword that defines of a yield
+
+Alt Clock - best so far:  -- an ordinary xml2rdb style of column function can be/do a clock. It will simply not use any data input, but rather
+do a date call to the os and return that.
+
+Alt Batch - same idea as the column_function to implement the clock. Also use a column function to implement assignment of the
+next bibid and invoke it for the record relation. fine.
+
 '''
-od_relation_params = {
-'record': {
-    'child_records': {
-        'controlfield': {}
-        ,'datafield': {
-            'subfield': {
+od_node_params = {
+    'tag_name': ''
+    ,'child_relations' : {
+        'record': {
+            'tag_name':'record'
+            'attribute_column': {
+                'text' : 'leader'
+            }
+            ,'child_relations': {
+                'controlfield': {
+                    'tag_name' : 'controlfield'
+                    'attribute_column':{
+                        'tag':'tag', 'text':'value'
+                    }
+                }
+                ,'datafield': {
+                    'tag_name': 'datafield',
+                    'attribute_column': {
+                        'tag' : 'tag'
+                        ,'ind1': 'indicator1'
+                        ,'ind2': 'indicator2'
+                    }
+                    'child_relations' : {
+                        'subfield': {
+                            'tag_name': 'subfield'
+                            ,'attribute_column' : {
+                                'code':'code'
+                                ,'text':'value'
+                            }
+                        }
+                    }
                 }
             }
+
         }
     }
 }

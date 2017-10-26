@@ -1,4 +1,7 @@
 '''
+20171025 - discarding this approach. rather using relation names as the embedded paths
+in another prototpye, marcxml_mets2.py... as of 20171025
+
 marcxml_mets.py
 rdb2xml configuration to transform marcxml to sobekcm-loadable mets file
 '''

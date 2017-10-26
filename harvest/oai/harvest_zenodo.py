@@ -255,7 +255,6 @@ class OAI_Harvester(object):
          , 'ListIdentifiers', 'ListMetaDataFormats', 'ListRecords' , 'ListSets'
     ]
 
-
     pass
 
   def url_list_records(self, set_spec=None, metadata_format=None):
