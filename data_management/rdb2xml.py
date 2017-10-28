@@ -419,7 +419,6 @@ class RelationMiner:
         ,lineage_ids=None
         ,d_row=None
         ):
-
         me = 'node_visit_output()'
         required_args = [node, lineage_ids, d_row]
         if not all(required_args):
