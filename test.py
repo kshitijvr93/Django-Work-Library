@@ -1,14 +1,9 @@
 
-def newfunct(noarg):
-    pass
-    return
-
-#y = product(a, b)
-def test():
-        data_elsevier_folder='abc/'
-        input_folders = []
-        for year in range(2000, 2018):
-            input_folders.append('{}/output_ealdxml/{}/'.format(data_elsevier_folder,year))
-        print("input_folders={}".format(input_folders))
-
-test()
+file_name= '/home/robert/testfile.txt'
+f = open(file_name, 'w')
+print("I am file {}".format(file_name),file=f)
+print("Closing")
+f.close()
+print("Closing")
+f.close()
+print ("done")
