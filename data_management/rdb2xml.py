@@ -364,6 +364,7 @@ class RelationMiner:
         , primary_relation_name=None
         , output_folder=None
         , output_file_name=None
+        , zfill_id_count=8
         ,verbosity=0):
         # Register input and output style options
         # and visit all the selected relational nodes in the
@@ -378,6 +379,7 @@ class RelationMiner:
 
         self.primary_relation_name = primary_relation_name
         self.output_folder = output_folder
+        self.zfill_id_count = zfill_id_count
         # Make sure output folder exists
 
         self.output_file_name = '' if output_file_name is None else output_file_name
@@ -450,7 +452,7 @@ class RelationMiner:
 
             file_path_name = (
               '{}{}_{}'.format(self.output_folder,self.primary_relation_name
-              , str(sibling_id)))
+              , str(sibling_id).zfill(self.zfill_id_count)))
             output_file = open('file_path_name','w')
             raise ValueError('Not all args {} were given.'.format(required_args))
 
@@ -459,6 +461,9 @@ class RelationMiner:
             'attribute_innerhtml' ,'attribute_innerhtml')
 
         d_row = {}
+        d_attribute_value = {}
+        content_value = ''
+
         d_attribute_column = d_mining_map.get('attribute_column', None)
         if d_attr_column is not None:
             # We have some node attributes with associated relational columns
@@ -472,41 +477,46 @@ class RelationMiner:
                     .format(repr(d_attribute_column
                     ,repr(type(d_attribute_column)),stack_tags))
 
-            node_text = etree.tostring(node, encoding='unicode', method='text')
+            #node_text = etree.tostring(node, encoding='unicode', method='text')
             # Must discard tabs, used as bulk load delimiter, else sql server 2008 bulk insert error
             # messages appear, numbered 4832 and 7399, and inserts fail.
-            node_text = node_text.replace('\t',' ').replace('\n',' ').strip()
+            #node_text = node_text.replace('\t',' ').replace('\n',' ').strip()
             #node_text = "" if stringify is None else stringify.strip()
 
-            for attr_name, column_name in d_attr_column.items():
+            for attribute_name, column_name in d_attribute_column.items():
                 # For every key in attr_column, if it is reserved name in attribute_text,
                 # use the node's text value, else seek the key in node.attrib
                 # and use its value.
 
-                # probably ill-thought 'shortcut' on next line. May deprecate/delete it,
-                # as it invites non-explicit, easy to puzzle-over, None values in mining map.
-                column_name = attr_name if column_name is None else column_name
-
                 column_value = ''
-                if attr_name == attribute_text:
+                content_value = ''
+                if attribute_name == attribute_text:
                     # Special reserved name in attribute_text: it is not really an attribute name,
                     # but this indicates that we shall use the node's content/text for
                     # this attribute
-                    column_value = node_text
-                elif attr_name == attribute_innerhtml:
-                    # Special reserved name in attribute_text: it is not really an attribute name,
-                    # but this indicates that we shall use the node's inner 'html' value for
-                    # this attribute
-                    column_value = etree.tostring(node, encoding='unicode')
+                    content_value = d_row[column_name]
                 else:
-                    if attr_name in node.attrib:
-                        column_value = node.attrib[attr_name]
-                #print("setting d_row for column_name={} to value={}".format(column_name,column_value))
-                d_row[column_name] = column_value
+                    column_value = d_row[column_name]
 
-        # When multiple is 1 we always stack a node index
-        if multiple == 1:
-            # Where multiple is 1, db_name is name of an output relation.
+                #print("setting d_row for column_name={} to value={}".format(column_name,column_value))
+                d_attribute_value[column_name] = column_value
+        # All attribute values and content for this xml element, if any was found,
+        # is ready to be output and stored in d_attribute_value, so output it.
+
+        # First cut, always output the element tag name even if no values found
+        # yet for it.
+        # Later we might provide an option defer xml tag  output until/unless
+        # a value is found in dataset source that belongs within the element.
+        print('<{}'.format(node['element_tag_name']))
+        # for every attribute value, insert a setting for it
+        for attribute, value in d_attribute_value:
+            print(' {}={}'.format(attribute, value), file=self.output_file)
+        print(' >', file=self.outputfile)
+
+        # When multiple is 1 ...  from xml2rdb...
+        # if multiple == 1:
+
+        if 1 == 1:
             db_name = d_mining_map.get('db_name', None)
             if db_name is None:
                 raise RuntimeError(

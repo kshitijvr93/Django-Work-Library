@@ -752,6 +752,12 @@ def xml_paths_rdb(
 
         for rel_key, d_relinfo in od_relation.items():
             relation = '{}{}'.format(rel_prefix,rel_key)
+
+            # The csf_filename is one line of comma-separated field names
+            # which are useful to csv DictReader follow-on processes
+            csf_filename = "{}/{}.csf".format(output_folder,rel_key)
+            csf_file = open(csf_filename, mode='w', encoding='utf-8')
+
             #print("{}: Table {}, od_relation has key={}, value of d_relinfo with its keys={}"
             #      .format(me, relation, rel_key, repr(d_relinfo.keys())))
             if 'attrib_column' not in d_relinfo:
@@ -768,6 +774,7 @@ def xml_paths_rdb(
             sep = ''
             #print("{}:Getting columns for relation '{}'".format(me,relation))
             if d_column_type is None:
+                csf_file.close()
                 raise Exception("Table {}, d_column_type is None".format(relation))
             for i,(column, ctype) in enumerate(d_column_type.items()):
                 #print("Column index {}".format(i))
@@ -782,8 +789,12 @@ def xml_paths_rdb(
 
                 print('{}{} {}'.format(sep,column.replace('-','_'),ctype)
                     ,file=sql_file)
+                #Build the csv fieldnames file, hence extension csf
+                print('{}{}'.format(sep,column.replace('-','_'))
+                      ,file=csf_file, end='')
                 sep = ','
-
+            print('', file=csf_file)
+            csf_file.close()
             #PRIMARY KEY eg: CONSTRAINT pk_PersonID PRIMARY KEY (P_Id,LastName)
             print('CONSTRAINT pk_{} PRIMARY KEY({})'.format(relation, d_relinfo['pkey'])
                  , file=sql_file)
@@ -854,6 +865,7 @@ the three groups, each which contains sub-parameters for its group.
 '''
 def xml2rdb( input_path_list=None,
             folder_output_base=None,
+            output_folder_include_secsz=True,
             doc_root_xpath=None, rel_prefix=None,
             doc_rel_name=None, use_db=None,
             d_node_params=None, od_rel_datacolumns=None,
@@ -889,10 +901,15 @@ def xml2rdb( input_path_list=None,
     secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
 
     # The output_folder encodes start time of run in its name.
-    output_folder_secsz = '{}/{}'.format(folder_output_base, secsz_start)
-    os.makedirs(output_folder_secsz, exist_ok=True)
+    # later
+    if output_folder_include_secsz:
+        output_folder_final = '{}/{}'.format(folder_output_base, secsz_start)
+    else:
+        output_folder_final = folder_output_base
+
+    os.makedirs(output_folder_final, exist_ok=True)
     print("Using output folder={}"
-          .format(output_folder_secsz))
+          .format(output_folder_final))
 
     lil = len(input_path_list)
     print("Using total real input file count={}"
@@ -914,11 +931,11 @@ def xml2rdb( input_path_list=None,
     sliced_input_path_list = input_path_list[input_low_index:index_max]
     #output_name_suffix="_{}_{}".format(input_low_index,index_max)
 
-    #os.makedirs(output_folder_secsz, exist_ok=True)
+    #os.makedirs(output_folder_final, exist_ok=True)
     skip_extant = False
     d_params.update({
         'secsz-1-start': secsz_start
-        ,'output-folder': output_folder_secsz
+        ,'output-folder': output_folder_final
         ,'input-files-index-limit-1-low': repr(input_low_index)
         ,'input-files-index-limit-2-high': repr(input_high_index)
     })
@@ -934,7 +951,7 @@ def xml2rdb( input_path_list=None,
       , doc_root_xpath=doc_root_xpath
       , rel_prefix = rel_prefix
       , doc_rel_name = doc_rel_name
-      , output_folder=output_folder_secsz
+      , output_folder=output_folder_final
       , d_node_params=d_node_params
       , od_rel_datacolumns=od_rel_datacolumns
       , use_db=use_db
@@ -956,7 +973,7 @@ def xml2rdb( input_path_list=None,
     etl.add_subelements(e_root, d_log)
 
     # log file output
-    log_filename = '{}/log_xml2rdb.xml'.format(output_folder_secsz)
+    log_filename = '{}/log_xml2rdb.xml'.format(output_folder_final)
     with open(log_filename, mode='w', encoding='utf-8') as outfile:
         pretty_log = etree.tostring(e_root, pretty_print=True)
         outfile.write(pretty_log.decode('utf-8'))
@@ -993,11 +1010,11 @@ def run(study=None):
      , 'scopus'
     ]
 
+
+    # Study selection KEEP ONLY ONE LINE next
+    study = 'ccila'
     if study not in study_choices:
         raise ValueError("Unknown study='{}'".format(repr(study)))
-
-    # KEEP ONLY ONE LINE NEXT: Study Selection
-    study = 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
 
     file_count_first = 0
     file_count_span = 0
@@ -1011,6 +1028,7 @@ def run(study=None):
     # Part of a deprecation... now only marcxml uses this and passes it to xml2rdb,
     # So value of None is signal to interpret arguments an 'older' way.
     folder_output_base = None
+    output_folder_include_secsz = False
 
     if study == 'crafa':
         import xml2rdb_configs.crossref as config
@@ -1034,17 +1052,20 @@ def run(study=None):
     elif study in [ 'ccila' ] : #ccila is cuban collection i? latin america
         import xml2rdb_configs.marcxml as config
         rel_prefix = 'ccila_'
+        output_folder_include_secsz = False
 
-        # This is where the precursor program marc2xml leaves its marcxml data for ccila UCRiverside
-        # items
+        # This is where the precursor program marc2xml leaves its marcxml data
+        # for ccila UCRiverside # items
         in_folder_name = etl.data_folder(linux='/home/robert/',
-            windows='C:/', data_relative_folder='users/podengo/git/outputs/marcxml/UCRiverside/')
+            windows='C:/users/podengo/', data_relative_folder='git/outputs/marcxml/UCRiverside/')
 
         #windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
-        folder_output_base = etl.data_folder(linux='/home/robert/', windows='C:/'
-            , data_relative_folder='users/podengo/git/outputs/xml2rdb/{}/UCRiverside'.format(study))
+        folder_output_base = etl.data_folder(linux='/home/robert/'
+            , windows='C:/users/podengo/'
+            , data_relative_folder=(
+            'git/outputs/xml2rdb/{}/'.format(study)))
 
-        print("study {}, using folder_output_base={}".format(folde_output_base))
+        print("study {}, using folder_output_base={}".format(study,folder_output_base))
 
         input_folder = in_folder_name
         input_folders = []
@@ -1307,6 +1328,7 @@ def run(study=None):
     log_filename, pretty_log = xml2rdb(
         input_path_list=input_path_list,
         folder_output_base=folder_output_base,
+        output_folder_include_secsz=output_folder_include_secsz,
         doc_root_xpath=doc_root_xpath, rel_prefix=rel_prefix,
         doc_rel_name=doc_rel_name, use_db=use_db,
         d_node_params=d_node_params, od_rel_datacolumns=od_rel_datacolumns,
