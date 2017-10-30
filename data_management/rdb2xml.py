@@ -415,10 +415,32 @@ class RelationMiner:
     </param><param name=''>
     </param><param name=''>
     </param>
+    <notes>
+    The db object was initialized with the same mining_map, and upon init,
+    it set up a row-generator for each relation in the map.
+
+    It is implemented as a two-level generator, where a main one cycles
+    through a 2d or inner one for the same relation, but the inner one
+    has a one-row cache option (not used on first call).
+    The inner generator for a relation is also initialized to store the
+    parent composite id (the lineage of parent ids for any relation row,
+    plus the lineage/sibling id of that relation itself, among rows withthe
+    same parent row, forms a rows' composite id).
+    The inner generator may use a db-curor for that relation that selects
+    all rows of the relation, ordered by the hierarchical composite ids.
+    The inner generator simply examines the parent id of each row returned
+    by the db-cursor and when the parent id for a cursor-returned row
+    returns a value different from the parent_id, it stores the row in a
+    one-row cache and returns None and changes that inner generators
+    parent id now to the new value so it can return the next set of
+    rows with that parent id.
+    A relation-row generator is initialized when
+    
+    </notes>
     '''
     def node_visit_output(self
         ,node=None
-        ,lineage_ids=None
+        ,composite_ids=None
         ,d_row=None
         ):
         me = 'node_visit_output()'
@@ -460,9 +482,7 @@ class RelationMiner:
         attribute_innerhtml = d_map_params.get(
             'attribute_innerhtml' ,'attribute_innerhtml')
 
-        d_row = {}
-        d_attribute_value = {}
-        content_value = ''
+        d_row = {}; d_attribute_value = {}; content_value = ''
 
         d_attribute_column = d_mining_map.get('attribute_column', None)
         if d_attr_column is not None:
@@ -513,46 +533,14 @@ class RelationMiner:
             print(' {}={}'.format(attribute, value), file=self.output_file)
         print(' >', file=self.outputfile)
 
-        # When multiple is 1 ...  from xml2rdb...
-        # if multiple == 1:
-
-        if 1 == 1:
-            db_name = d_mining_map.get('db_name', None)
-            if db_name is None:
-                raise RuntimeError(
-                  "{}: db_name={},Mandatory db_name is not a key in d_mining_map={}"
-                  .format(me, db_name, repr(d_mining_map)))
-
-            # This node has an output, in the sense that is is mulitple/repeatable and so will have
-            # as assigned node_index to track that is the count of this node as it is encountered in
-            # the xml input file among the list also containing its siblings.
-            # So we must make a copy of od_child_parent_index to an ordered dict by the same name,
-            # as we do not need the original one.
-            # Now to od_child_parent_index we will append this dbname with this node's index.
-            # We will pass then pass our new od_child_parent_index to calls for child visits.
-            od_child_parent_index = OrderedDict(od_parent_index)
-
-            # Note: this next dup db_name check could be done once in get_d_mining_map(), but
-            # easy to put here for now
-            if db_name in od_child_parent_index:
-                raise Exception("{}:db_name={} is a duplicate in this path.".format(me,db_name))
-
-            od_child_parent_index[db_name] = node_index
-
         ################# SECTION - For each child relation recurse to its child nodes ###############
 
-        node_level_count = len(node_index)
+        d_relation_child_nodes = d_mining_map.get('relation_child_nodes', None)
 
-        local_filename = False
-        if output_file_name is None:
-            local_filename=
-
-        od_child_row = None
-        d_child_relation_nodes = d_mining_map.get('child_relation_nodes', None)
         wrote_some_output = 0
 
-        if d_child_relation_nodes is not None:
-            for relation_name, d_child_node in d_relation_nodes.items():
+        if d_relation_child_nodes is not None:
+            for relation_name, d_child_node in d_relation_child_nodes.items():
                 #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_mining_map)))
                 #children = node.findall(xpath, d_namespaces )
                 # CRITICAL: make sure db.sequence() does select with order by the relation_namd_id
@@ -563,13 +551,13 @@ class RelationMiner:
                 # TODO:Future: may add a new argument for caller-object that child may use to accumulate, figure,
                 # summary statistic
                 d_child_row = None
-                for row in enumerate(child_rows):
+                for d_row in db.select_contained_rows(
+                    relation_name, lineage_ids=lineage_ids):
                     # Asssume i always goes in counting order at first, later get it out of the row
                     # index = d_child_row['{}_id'.format(relation_name)
-                    node_index
-                    d_child_row, child_output = node_visit_output(node=child
-                        , lineage_ids=(index + 1)
-                        , d_mining_map=d_child_mining_map
+                    d_child_row, child_output = node_visit_output(node=d_child_node
+                        , lineage_ids=lineage_ids
+                        , d_row=d_row
                         , output_file=output_file
                         , d_map_params = d_map_params
                         , verbosity=verbosity)

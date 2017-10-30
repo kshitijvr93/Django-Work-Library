@@ -78,13 +78,13 @@ d_node_params: {
 
     ,'element_tag':'record'
     ,'attribute_column': {
-        'text' : 'leader'
+        'element_text' : 'leader'
     }
     ,'relation_child_nodes': {
         'controlfield': {
             'element_tag' : 'controlfield'
             'attribute_column':{
-                'tag':'tag', 'text':'value'
+                'tag':'tag', 'element_text':'value'
             }
         }
         ,'datafield': {
@@ -99,10 +99,37 @@ d_node_params: {
                     'element_tag': 'subfield'
                     ,'attribute_column' : {
                         'code':'code'
-                        ,'text':'value'
+                        ,'element_text':'value'
                     }
                 }
             }
         }
     }
 }
+xml_mining_map = '''
+<document>
+<params><keyword element_text='text'</params>
+<tranform>
+  <node relation_name='record' element_name='record'>
+    <copy to_attribute='text' from_column='leader' />
+
+    <node relation_name='controlfield' element_name='record'>
+      <copy to_attribute='text' from_column='value' />
+      <copy to_attribute='tag' from_column='tag' />
+    </node>
+
+    <node relation_name='datafield' element_name='datafield'>
+      <copy to_attribute='tag' from_column='tag' />
+      <copy to_attribute='ind1' from_column='indicator1' />
+      <copy to_attribute='ind2' from_column='indicator2' />
+
+      <node relation_name='subfield'>
+        <copy to_attribute='text' from_column='value' />
+        <copy to_attribute='code' from_column='code' />
+      </node>
+
+    </node>
+  </node>
+</transform>
+</document>
+'''
