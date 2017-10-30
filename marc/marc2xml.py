@@ -322,7 +322,7 @@ def ucr_mrc_to_csv(input_file_name=None
     return
 
 in_folder_name = etl.data_folder(linux='/home/robert/git/citrus/data/',
-    windows='c:/users/podengo/git/citrus/data/', data_relative_folder='UCRiverside')
+    windows='c:/users/podengo/git/citrus/data/marc', data_relative_folder='UCRiverside')
 
 out_folder_name = etl.data_folder(linux='/home/robert/git/outputs/marcxml/',
     windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')

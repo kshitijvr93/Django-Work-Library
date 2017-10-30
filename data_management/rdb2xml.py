@@ -419,9 +419,12 @@ class RelationMiner:
     The db object was initialized with the same mining_map, and upon init,
     it set up a row-generator for each relation in the map.
 
-    It is implemented as a two-level generator, where a main one cycles
-    through a 2d or inner one for the same relation, but the inner one
-    has a one-row cache option (not used on first call).
+    It is implemented as a two-level generator, three-levels if counting the basic
+    file row-at-a-time generator, but that is called by the file_db object
+    (derived class from the persisitent-data-hierarchy-object)
+
+    where a main generator cycles through a 2d or inner one for the same relation,
+    but the inner one has a one-row cache option (not used on first call).
     The inner generator for a relation is also initialized to store the
     parent composite id (the lineage of parent ids for any relation row,
     plus the lineage/sibling id of that relation itself, among rows withthe
@@ -435,7 +438,7 @@ class RelationMiner:
     parent id now to the new value so it can return the next set of
     rows with that parent id.
     A relation-row generator is initialized when
-    
+
     </notes>
     '''
     def node_visit_output(self
