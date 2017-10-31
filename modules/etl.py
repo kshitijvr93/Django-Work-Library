@@ -40,6 +40,10 @@ def get_json_result_by_url(url,verbosity=1):
     return json_result
 #end get_json_result_by_url
 
+# return name of current python method
+def i_am():
+    me = inspect.stack()[0][3]
+
 def sequence_days(cymd_start=None, cymd_end=None,fmt='%Y%m%d'):
     dt_day = datetime.datetime.strptime(cymd_start, fmt )
     dt_end = datetime.datetime.strptime(cymd_end, fmt )

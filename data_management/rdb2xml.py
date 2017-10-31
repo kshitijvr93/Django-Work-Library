@@ -395,6 +395,7 @@ class RelationMiner:
         return
 
     '''
+    <summary>Method node_visit_output:
     To support one-big xml file of output vs one per output record,
     node_visit_output always checks output_file, and if None, it will output
     one xml file per primary relation row.
@@ -402,9 +403,10 @@ class RelationMiner:
     If none, it constructs the output file name and opens a separate
     output file for each output record/object.
 
+    </summary>
     <param name='node'>
-    Either the root node in the self.d_mining map or the dictonary value of a
-    relation_child_node in the self.d_mining map.
+    Either the root value (a dictionary) for the self.d_mining map or the
+    dictonary value of a child node in the self.d_mining map.
 
     </param><param name='lineage_ids'>
     The stack of lineage_ids (relation_id values) of all parent rows and the
@@ -447,10 +449,20 @@ class RelationMiner:
         ,d_row=None
         ):
         me = 'node_visit_output()'
-        required_args = [node, lineage_ids, d_row]
+
+
+        required_args = [node, composite_ids, d_row]
+
         if not all(required_args):
             raise ValueError("{}:Missing some required_args values in {}"
                 .format(me,repr(required_args)))
+
+        node_depth = len(composite_ids)
+        # Note: special checks are made whether node_depth is 0, in which case
+        # this is the root or top level call, and when it returns, the recursive
+        # mining process has completed.
+
+        node1_name = node['node1_name'] # eg a relation name
 
         if verbosity > 0:
             msg = ("{}:START: verbosity={},node.relation_name={}, lineage_ids={}"
@@ -468,7 +480,7 @@ class RelationMiner:
         # perhaps as an additional argument to this mehod
 
         sibling_id = d_row['{}_id'.format(node.relation_name)]
-        lineage_ids.append(sibling_id)
+        composite_ids.append(sibling_id)
 
         if len(lineage_ids == 1) and self.output_file is None:
             #This node is a row for the primary relation, and

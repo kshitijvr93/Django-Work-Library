@@ -176,8 +176,24 @@ class PHD():
 
 #end class PHD
 
-def testme():
+def testme(d_mining_map=None):
+    required_args = []
+    if len(required_args) != 0 and not all(required_args):
+        raise ValueError("{}:Missing some required_args values in {}"
+            .format(repr(me,required_args)))
+    # This is configured to produce xml output files based on a set of approx
+    # 16k marc input records, represented in a set of .txt files, each with its
+    # per-line tab-delimited field name order represented in a .tsf file with
+    # the same prefix. Thos prefixes are node or relation names, and they
+    # are referenced in d_mining_map
+
     phd = PHD()
+
+    # Folder with relational .txt files and .tsf files describing marc xml
+    # data for ccila project circa 20170707
+    input_folder = etl.data_folder(linux="/home/robert/", windows="U:/",
+        data_relative_folder='data/outputs/xml2rdb/ccila')
+
     phd.h_relations[0] = HierarchicalRelation()
 
     i = 0
