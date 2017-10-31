@@ -124,7 +124,7 @@ class HierarchicalRelation:
                     self.d_row_previous = d_row
                     yield None
                 yield d_row
-                    
+
         return
 
 
@@ -138,12 +138,13 @@ class HierarchicalRelation:
 ''' PHD - Persistent Hierarchical Data
 <params name=xml_mining_map_root>
 This is an lxml root node of a mining map configuration.
-Method __init__ uses this to create the linkages between the indicated data node hierarchy.
+Method __init__ uses this to create the linkages between the indicated data node
+hierarchy.
 
-For derived objects with relational database-based stores, where it is possible to pre-check,
-the derived version of this method may also raise an Exception if the mining map claims a child
-relation that is not really a child relation, as can be inferred by relational database primary
-key constraints.
+For derived objects with relational database-based stores, where it is possible
+to pre-check, the derived version of this method may also raise an Exception
+if the mining map claims a child relation that is not really a child
+relation, as can be inferred by relational database primary key constraints.
 
 For the generic 'tsf' type file based object stores,
 this basic __init__ assumes the first N data columns
@@ -168,3 +169,21 @@ class PHD():
 
         # Get mining parameters from xml string
         pass
+
+    def add_relation(relatnion_name=relation_name)
+        pass
+
+
+#end class PHD
+
+def testme():
+    phd = PHD()
+    phd.h_relations[0] = HierarchicalRelation()
+
+    i = 0
+    while (1):
+        i += 1
+        if i > 3 :
+            break
+        while d_row = phd.h_relation.sequence_all_rows():
+            print("d_row={}".format(repr(d_row)))

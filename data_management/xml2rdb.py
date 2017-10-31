@@ -731,7 +731,7 @@ def xml_paths_rdb(
     #### CREATE THE RDB INSERT COMMANDS - HERE USING SQL THAT WORKS WITH MSOFT SQL
     # SERVER 2008, maybe 2008+
 
-    sql_filename = "{}sql_server_creates.sql".format(output_folder)
+    sql_filename = "{}/sql_server_creates.sql".format(output_folder)
     use_setting = 'use [{}];\n'.format(use_db)
     msg = ("Database sql create statements file name: {}".format(sql_filename))
     log_messages.append(msg)
@@ -753,10 +753,10 @@ def xml_paths_rdb(
         for rel_key, d_relinfo in od_relation.items():
             relation = '{}{}'.format(rel_prefix,rel_key)
 
-            # The tsf_filename is one line of comma-separated field names
+            # The csf_filename is one line of comma-separated field names
             # which are useful to csv DictReader follow-on processes
-            tsf_filename = "{}/{}.tsf".format(output_folder,rel_key)
-            tsf_file = open(tsf_filename, mode='w', encoding='utf-8')
+            csf_filename = "{}/{}.csf".format(output_folder,rel_key)
+            csf_file = open(csf_filename, mode='w', encoding='utf-8')
 
             #print("{}: Table {}, od_relation has key={}, value of d_relinfo with its keys={}"
             #      .format(me, relation, rel_key, repr(d_relinfo.keys())))
@@ -774,7 +774,7 @@ def xml_paths_rdb(
             sep = ''
             #print("{}:Getting columns for relation '{}'".format(me,relation))
             if d_column_type is None:
-                tsf_file.close()
+                csf_file.close()
                 raise Exception("Table {}, d_column_type is None".format(relation))
             for i,(column, ctype) in enumerate(d_column_type.items()):
                 #print("Column index {}".format(i))
@@ -789,12 +789,12 @@ def xml_paths_rdb(
 
                 print('{}{} {}'.format(sep,column.replace('-','_'),ctype)
                     ,file=sql_file)
-                #Build the csv fieldnames file, hence extension tsf
+                #Build the csv fieldnames file, hence extension csf
                 print('{}{}'.format(sep,column.replace('-','_'))
-                      ,file=tsf_file, end='')
+                      ,file=csf_file, end='')
                 sep = ','
-            print('', file=tsf_file)
-            tsf_file.close()
+            print('', file=csf_file)
+            csf_file.close()
             #PRIMARY KEY eg: CONSTRAINT pk_PersonID PRIMARY KEY (P_Id,LastName)
             print('CONSTRAINT pk_{} PRIMARY KEY({})'.format(relation, d_relinfo['pkey'])
                  , file=sql_file)
@@ -1060,10 +1060,9 @@ def run(study=None):
             windows='C:/users/podengo/', data_relative_folder='git/outputs/marcxml/UCRiverside/')
 
         #windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
-        folder_output_base = etl.data_folder(linux='/home/robert/'
-            , windows='C:/users/podengo/'
-            , data_relative_folder=(
-            'git/outputs/xml2rdb/{}/'.format(study)))
+        folder_output_base = etl.data_folder(linux='/home/robert/git/outputs/'
+            , windows='C:/users/podengo/git/outputs/'
+            , data_relative_folder=('xml2rdb/{}/'.format(study)))
 
         print("study {}, using folder_output_base={}".format(study,folder_output_base))
 
@@ -1094,8 +1093,9 @@ def run(study=None):
         in_folder_name = etl.data_folder(linux='/home/robert/', windows='U:/'
             , data_relative_folder='data/elsevier/output_entitlement/')
 
-        folder_output_base = etl.data_folder(linux='/home/robert/', windows='U:/'
-            , data_relative_folder='data/outputs/xml2rdb/entitlement/')
+        folder_output_base = etl.data_folder(linux='/home/robert/git/outputs'
+            , windows='U:/data/outputs'
+            , data_relative_folder='outputs/xml2rdb/entitlement/')
 
         input_folder = in_folder_name
         input_folders = []
@@ -1332,7 +1332,8 @@ def run(study=None):
         doc_root_xpath=doc_root_xpath, rel_prefix=rel_prefix,
         doc_rel_name=doc_rel_name, use_db=use_db,
         d_node_params=d_node_params, od_rel_datacolumns=od_rel_datacolumns,
-        d_params=d_params, file_count_first=file_count_first, file_count_span=file_count_span,
+        d_params=d_params, file_count_first=file_count_first,
+        file_count_span=file_count_span,
         d_xml_params=d_xml_params)
 
     print("Done.")
