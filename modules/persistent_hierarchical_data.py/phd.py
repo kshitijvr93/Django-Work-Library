@@ -15,55 +15,65 @@ sys.path.append(get_path_modules())
 import etl
 from rdb2xml_configs.marctsf2xml import d_nodes_map
 
-
 from collections import OrderedDict
 import lxml
 
 '''
-A HierarchicalRelation object (HRO) must have a container Persistent
-Hierarchical Data object.242
+A PosetRelation object (PRO) represents a datastore of one or multiple named relations.
 
-Notes:
-A container PHD object should create all of its HierarchicalRelation objects
-into a self.some_collection (eg a list) and pass its self as the phd
-argument to the creation of each HRO, to guarantee all objects in its list
-use the same phd.
-That way, the phd object can easlily store some common data that is
-accessed by each HRO object (wihtout having to pass various parameters when
-a HRO is created), for example a folder for input or outputs that is used by
-individual HROs.
+Each relation is represented by an ordered set of rows of column values where the first part
+(of depth-quantity columns) of the column values are ordered indexes into the parent hierarchy of
+nested containing relations. The rows are ordered within a relation/file by the asending integer values
+of the ordered indexes, with last index varying fastest throughout a sequence of the relation's rows.
+The first index of a set would represent the index into the root relation of a hierarchical
+set of relations.
 
-The phd must also assure that each hierarchical relation is  created with
-its correct container relation and relation name.
+Each relation may have a sequential row generator (here, a simple file reader) to generate the
+sequence of ordered rows.
+This simplest implementation simply cycles through a static file of rows/lines, each with tab
+separated text values that represent a row, where the rows have been pre-ordered correctly by
+its index columns, for example, through a pre-sort process.
+
+Other versions of this object, not really much more complex versions, would have generators to
+deliver a sequence of ordered rows that are stored in a database.
+Internally, they could construct an sql query with the
+appropriate order-by clauses and let the datase do the sorting in real-time at time of invocation.
+Perhaps separate versions would be created for separate databases that use different language to
+represent queries, or which have different ways to connect to them or retrieve data from queries.
+
+In the first implementation of the simple file-reader object, assuming the rows have already been
+sorted, this object is extremely simple, but it separates a chunk of functionality from calling
+applications, so different versions of this can be implemented cleanly to handle different
+data sources.
 
 '''
 
-class HierarchicalRelation:
+class PosetRelation:
 
-    def __init__(self, phd=None, container_relation=None, relation_name=None
+    def __init__(self, folder=None,  relation_name=None
         ,verbosity=0):
-        me = inspect.stack()[0][3]
-        required_args = [phd, relation_name]
+
+        me= 'PosetRelation.__init__()'
+        required_args = [folder, relation_name]
         if not all(required_args):
             raise ValueError("{}:Missing some required_args values in {}"
-                .format(repr(me,required_args)))
-        if (phd is not None):
-            pass
-        self.phd = phd
+                .format(me,repr(required_args)))
+
+        self.folder = folder
         self.verbosity = verbosity
-        self.container_relation = container_relation
+        #self.parent_relation = parent_relation
         self.relation_name = relation_name
         self.d_row_previous = None
-        self.d_row = {} #Dictionary of values for a row of this relation
+        self.d_row = {} #Dictionary of column name-value pairs for a row of this relation
         self.verbosity = 0 if verbosity is None else int(verbosity)
 
         # Retrieve the field names (used for ordered_siblings() to create d_row generators)
         # Note: in future, may change to let phd provide d_rows as an argument to
         # facilitate expanding to new types of data sources
         # Note: it is required that all rows in a relation data file are pre-ordered by
-        # the hierarchical ids.
+        # the partially ordered (poset) ids.
 
-        input_file_name = '{}{}.tsf'.format(phd.folder, relation_name)
+        input_file_name = '{}{}.tsf'.format(self.folder, relation_name)
         if verbosity > 0:
           print("{}: using input_file_name='{}'".format(me,input_file_name))
         with open(input_file_name) as input_tsf:
@@ -79,18 +89,24 @@ class HierarchicalRelation:
     '''
     method sequence_rows():
 
-	FUTURE todo: will probably pass to __init__ a new argument, dsr, a data source reader object and replace all calls
-	in this object all calls to this method to rather call dsr.read() and remove this method.
-	This generates a generator for a sequence of rows in this relation.
+    FUTURE todo: will probably pass to __init__ a new argument, dsr, a data
+    source reader object and replace all calls
+    in this object all calls to this method to rather call dsr.read() and remove this method.
+    This generates a generator for a sequence of rows in this relation.
     '''
 
     def sequence_all_rows(self):
-	    data_file_name =  '{}{}.txt'.format(self.phd.folder, self.relation_name)
-	    with open(data_file_name, 'r') as input_file:
-	        for line in input_file:
-	            d_rows = line.split('\t')
-	            yield d_rows
-	    return
+      data_file_name = '{}{}.txt'.format(self.folder, self.relation_name)
+      line_count = 0
+      with open(data_file_name, 'r') as input_file:
+          for line in input_file:
+            print(line)
+            line_count += 1
+            if line_count > 10:
+              return
+            d_rows = line.split('\t')
+            yield d_rows
+      return
 
     '''
     Method ordered_siblings():
@@ -130,8 +146,10 @@ class HierarchicalRelation:
             yield d_row_temp
         else:
             #Get relation rows from sequence_all_rows
+            nrows = 0
             for d_row in self.sequence_all_rows():
-                if d_row is None:
+                nrows += 1
+                if d_row is None or nrows > 5:
                     break
                 # If any container sibling_ids changed, we have a new container
                 if ( self.container_ids is not None
@@ -142,14 +160,11 @@ class HierarchicalRelation:
                     self.d_row_previous = d_row
                     yield None
                 yield d_row
+# end def sequence_ordered_siblings : this returns a generator x,
+# and caller does for my_row in x: do something...
 
-        return
 
-
-
-        pass
-
-#end class HierarchicalRelation
+#end class PosetRelation
 
 
 ''' PHD - Persistent Hierarchical Data
@@ -165,12 +180,11 @@ relation, as can be inferred by relational database primary key constraints.
 
 For the generic 'tsf' type file based object stores,
 this basic __init__ assumes the first N data columns
-define the hierarchical lineage ids, in sorted order, for any given row,
+define the partially ordered (poset) lineage ids, in sorted order, for any given row,
 where N is the nesting depth of the relation given in the mining map.
 </params>
 
 '''
-
 
 class PHD():
 
@@ -180,25 +194,54 @@ class PHD():
         required_args = [input_folder, output_folder]
         if len(required_args) != 0 and not all(required_args):
             raise ValueError("{}:Missing some required_args values in {}"
-                .format(repr(me,required_args)))
-        self.h_relations = []
+                .format(me,repr(required_args)))
         # test a marc txt file
         self.folder = input_folder
         self.relations = []
+        self.d_name_relation = {}
+        self.d_name_relation[''] = 'Root relation'
         self.verbosity = verbosity
 
         # Get mining parameters from xml string
         pass
+    '''
+    Method add_relation:
+    The first relation added is the root relation by definiton. It's parent_name should be '' or None.
 
-    def add_relation(self, relation_name=None):
-        me = 'PHD.add_relation()'
-        relation = HierarchicalRelation(phd=self, relation_name=relation_name,
-                   verbosity=self.verbosity)
+    '''
+    def add_relation(self, parent_name=None, relation_name=None):
+        me = 'PHD().add_relation()'
+        required_args = [relation_name]
+        if len(required_args) != 0 and not all(required_args):
+            raise ValueError("{}:Missing some required_args values in {}"
+                .format(me,repr(required_args)))
+        parent_relation = None
+
+        if len(self.d_name_relation) == 0:
+          pass
+          # The first-added relation, this one, is defined to be the root of the hierarchy, and
+          # no parent check is used. A warning may issue if it not None and not ''
+        else:
+          # Check that this parent_name is already added. It must be present.
+          parent_relation = self.d_name_relation.get(parent_name, '')
+          if parent_name not in self.d_name_relation.keys():
+             raise ValueError('relation_name={}, has unknown parent_name={}.'
+              .format(relation_name,parent_name))
+
+        # check that the relation name is not a duplicate
+        if relation_name in self.d_name_relation.keys():
+             raise ValueError('relation_name={}, is duplicated.'
+              .format(relation_name))
+
+        #Create the relation as a partially-ordered set and store it with its parent indicated
+        relation = PosetRelation(folder=self.folder, relation_name=relation_name,verbosity=self.verbosity)
+
         if self.verbosity > 0:
-          print("{}:Registered relation_name='{}'".format(me,relation.relation_name))
-        self.relations.append(relation)
+          print("{}:Created and Registered root relation_name='{}'"
+            .format(me, relation.relation_name))
+
+        self.d_name_relation[relation_name] = relation
         return
-        pass
 
 #end class PHD
 
@@ -206,7 +249,7 @@ def testme(d_nodes_map=None):
     required_args = [d_nodes_map]
     if len(required_args) != 0 and not all(required_args):
         raise ValueError("{}:Missing some required_args values in {}"
-            .format(repr(me,required_args)))
+            .format(me,repr(required_args)))
     me="testme"
     # This is configured to produce xml output files based on a set of approx
     # 16k marc input records, represented in a set of .txt files, each with its
@@ -232,27 +275,42 @@ def testme(d_nodes_map=None):
 
     # node_visit_output(d_nodes_map,composite_ids)
 
+    print('{}:Constructing phd = PHD(...)'.format(me))
     phd = PHD(input_folder, output_folder,verbosity=1)
-    phd.add_relation(relation_name='record')
+    relation_name='record'
+    # NOTE: IMPOSE a requirement to use '' as the parent of the root relation. It should facilitate
+    # some diagnostic and error reporting
 
+    parent_child_tuples = [
+      ('','record'), ('record','controlfield'),('record','datafield'),('datafield','subfield')
+    ]
 
+    for (parent_name,relation_name)  in parent_child_tuples:
+      print('{}:calling phd.add_relation(parent_name={},relation_name={})'
+            .format(me,parent_name,relation_name))
+      phd.add_relation(parent_name, relation_name=relation_name)
 
-    # phd.h_relations[0] = HierarchicalRelation(d_mining_map)
+    datafield = phd.d_name_relation['datafield']
 
-    i = 3
+    i = 0
     while (1):
         i += 1
         if i > 3 :
             break
-
-        while (1):
-            d_row = phd.h_relation.sequence_all_rows()
-            print("d_row={}".format(repr(d_row)))
+        sequence = datafield.sequence_ordered_siblings()
+        nrow = 0
+        for d_row in sequence:
+            print("Yes, d_row={}".format(repr(d_row)))
+            nrow += 1;
+            if (nrow > 10):
+              print("Hit nrow limit in testme()")
+              break;
 
     print("Done!")
     print("Done!")
 
     return
 #####################
+print ("YO!")
 print("Calling testme()")
 testme(d_nodes_map=d_nodes_map)
