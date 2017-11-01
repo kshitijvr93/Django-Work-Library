@@ -1,6 +1,19 @@
 '''
 phd.py - Persistent Hierarchical Data
 '''
+import sys, os, os.path, platform
+def get_path_modules(verbosity=0):
+  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
+  path_user = os.environ.get(env_var)
+  path_modules = '{}/git/citrus/modules'.format(path_user)
+  if verbosity > 1:
+    print("Assigned path_modules='{}'".format(path_modules))
+  return path_modules
+sys.path.append(get_path_modules())
+
+import etl
+
+from collections import OrderedDict
 import lxml
 
 '''
@@ -58,15 +71,15 @@ class HierarchicalRelation:
         return
     # end method __init__
 
-	'''
+    '''
     method sequence_rows():
 
 	FUTURE todo: will probably pass to __init__ a new argument, dsr, a data source reader object and replace all calls
 	in this object all calls to this method to rather call dsr.read() and remove this method.
 	This generates a generator for a sequence of rows in this relation.
-	'''
+    '''
 
-	def sequence_all_rows(self):
+    def sequence_all_rows(self):
 	    data_file_name =  '{}{}.txt'.format(self.phd.folder, self.relation_name)
 	    with open(data_file_name, 'r') as input_file:
 	        for line in input_file:
@@ -120,7 +133,7 @@ class HierarchicalRelation:
                     and d_row[:self.depth] != self.container_ids[:self.depth] ):
                     if self.verbosity > 0:
                         print("New ancestors: old {} vs new {}"
-                          .format(self.container_ids, d_row[:self.depth])))
+                          .format(self.container_ids, d_row[:self.depth]))
                     self.d_row_previous = d_row
                     yield None
                 yield d_row
@@ -170,36 +183,59 @@ class PHD():
         # Get mining parameters from xml string
         pass
 
-    def add_relation(relatnion_name=relation_name)
+    def add_relation(relation_name=None):
         pass
-
 
 #end class PHD
 
 def testme(d_mining_map=None):
-    required_args = []
+    required_args = [d_mining_map]
     if len(required_args) != 0 and not all(required_args):
         raise ValueError("{}:Missing some required_args values in {}"
             .format(repr(me,required_args)))
+    me="testme"
     # This is configured to produce xml output files based on a set of approx
     # 16k marc input records, represented in a set of .txt files, each with its
     # per-line tab-delimited field name order represented in a .tsf file with
     # the same prefix. Thos prefixes are node or relation names, and they
     # are referenced in d_mining_map
 
-    phd = PHD()
 
     # Folder with relational .txt files and .tsf files describing marc xml
     # data for ccila project circa 20170707
-    input_folder = etl.data_folder(linux="/home/robert/", windows="U:/",
-        data_relative_folder='data/outputs/xml2rdb/ccila')
+    input_folder = etl.data_folder(
+        linux="/home/robert/git/outputs/xml2rdb/ccila",
+        windows="U:/data/outputs/xml2rdb/ccila",
+        data_relative_folder='')
+    output_folder = etl.data_folder(
+        linux="/home/robert/git/outputs/marcxml/tsf/UCRiverside",
+        windows="U:/data/outputs/rdb2xml/marcxml/ccila",
+        data_relative_folder='')
+    composite_ids = []
 
-    phd.h_relations[0] = HierarchicalRelation()
+    print('{}: using input_folder={}, output_folder={}'
+          .format(me, input_folder, output_folder))
 
-    i = 0
+    # node_visit_output(d_mining_map,composite_ids)
+
+    phd = PHD()
+    # phd.h_relations[0] = HierarchicalRelation(d_mining_map)
+
+    relation_name = 'record'
+    i = 3
     while (1):
         i += 1
         if i > 3 :
             break
-        while d_row = phd.h_relation.sequence_all_rows():
+
+        while (1):
+            d_row = phd.h_relation.sequence_all_rows()
             print("d_row={}".format(repr(d_row)))
+
+    print("Done!")
+    print("Done!")
+
+    return
+#####################
+print("Calling testme()")
+testme(d_mining_map)

@@ -753,10 +753,10 @@ def xml_paths_rdb(
         for rel_key, d_relinfo in od_relation.items():
             relation = '{}{}'.format(rel_prefix,rel_key)
 
-            # The csf_filename is one line of comma-separated field names
+            # The tsf_filename is one line of comma-separated field names
             # which are useful to csv DictReader follow-on processes
-            csf_filename = "{}/{}.csf".format(output_folder,rel_key)
-            csf_file = open(csf_filename, mode='w', encoding='utf-8')
+            tsf_filename = "{}/{}.tsf".format(output_folder,rel_key)
+            tsf_file = open(tsf_filename, mode='w', encoding='utf-8')
 
             #print("{}: Table {}, od_relation has key={}, value of d_relinfo with its keys={}"
             #      .format(me, relation, rel_key, repr(d_relinfo.keys())))
@@ -774,7 +774,7 @@ def xml_paths_rdb(
             sep = ''
             #print("{}:Getting columns for relation '{}'".format(me,relation))
             if d_column_type is None:
-                csf_file.close()
+                tsf_file.close()
                 raise Exception("Table {}, d_column_type is None".format(relation))
             for i,(column, ctype) in enumerate(d_column_type.items()):
                 #print("Column index {}".format(i))
@@ -789,12 +789,12 @@ def xml_paths_rdb(
 
                 print('{}{} {}'.format(sep,column.replace('-','_'),ctype)
                     ,file=sql_file)
-                #Build the csv fieldnames file, hence extension csf
+                #Build the csv fieldnames file, hence extension tsf
                 print('{}{}'.format(sep,column.replace('-','_'))
-                      ,file=csf_file, end='')
+                      ,file=tsf_file, end='')
                 sep = ','
-            print('', file=csf_file)
-            csf_file.close()
+            print('', file=tsf_file)
+            tsf_file.close()
             #PRIMARY KEY eg: CONSTRAINT pk_PersonID PRIMARY KEY (P_Id,LastName)
             print('CONSTRAINT pk_{} PRIMARY KEY({})'.format(relation, d_relinfo['pkey'])
                  , file=sql_file)

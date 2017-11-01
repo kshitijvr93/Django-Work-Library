@@ -1,14 +1,4 @@
-import sys, os, os.path, platform
-def get_path_modules(verbosity=0):
-  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
-  path_user = os.environ.get(env_var)
-  path_modules = '{}/git/citrus/modules'.format(path_user)
-  if verbosity > 1:
-    print("Assigned path_modules='{}'".format(path_modules))
-  return path_modules
-sys.path.append(get_path_modules())
 
-from collections import OrderedDict
 import mappers
 
 def sql_mining_params():
