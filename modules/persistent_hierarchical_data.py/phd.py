@@ -23,8 +23,9 @@ A PosetRelation object (PRO) represents a datastore of one or multiple named rel
 
 Each relation is represented by an ordered set of rows of column values where the first part
 (of depth-quantity columns) of the column values are ordered indexes into the parent hierarchy of
-nested containing relations. The rows are ordered within a relation/file by the asending integer values
-of the ordered indexes, with last index varying fastest throughout a sequence of the relation's rows.
+nested containing relations. The rows are ordered within a relation/file by
+the asending integer values of the ordered indexes, with last index varying
+fastest throughout a sequence of the relation's rows.
 The first index of a set would represent the index into the root relation of a hierarchical
 set of relations.
 
@@ -50,19 +51,19 @@ data sources.
 
 class PosetRelation:
 
-    def __init__(self, folder=None,  relation_name=None
+    def __init__(self, relation_depth=None,  relation_name=None, folder=None
         ,verbosity=0):
 
         me= 'PosetRelation.__init__()'
-        required_args = [folder, relation_name]
+        required_args = [relation_depth, folder, relation_name]
         if not all(required_args):
             raise ValueError("{}:Missing some required_args values in {}"
                 .format(me,repr(required_args)))
 
         self.folder = folder
-        self.verbosity = verbosity
-        #self.parent_relation = parent_relation
+        self.relation_depth = relation_depth
         self.relation_name = relation_name
+        self.verbosity = verbosity
         self.d_row_previous = None
         self.d_row = {} #Dictionary of column name-value pairs for a row of this relation
         self.verbosity = 0 if verbosity is None else int(verbosity)
@@ -139,7 +140,7 @@ class PosetRelation:
             d_row_temp = self.d_row_previous
             self.d_row_previous = None
             # reset the container ids
-            self.container_ids = d_row_temp[:self.depth]
+            self.container_ids = d_row_temp[:self.relation_depth]
             if self.verbosity > 0:
                 print('{}: Relation {} first of new set of sibling rows: {}'
                       .format(me,self.relation_name,repr(d_row_temp)))
@@ -151,12 +152,14 @@ class PosetRelation:
                 nrows += 1
                 if d_row is None or nrows > 5:
                     break
-                # If any container sibling_ids changed, we have a new container
-                if ( self.container_ids is not None
-                    and d_row[:self.depth] != self.container_ids[:self.depth] ):
+                # If any order indexes except this one (ie, containing ancestor ids)
+                # changed, we have a new set of siblings
+                ancestor_count = self.relation_depth -1
+                if ( self.d_row_previous is not None
+                    and d_row[:ancestor_count] != self.d_row_previous[:ancestor_count] ):
                     if self.verbosity > 0:
-                        print("New ancestors: old {} vs new {}"
-                          .format(self.container_ids, d_row[:self.depth]))
+                        print("New ancestors: old {} vs new {}".format(
+                          self.d_row_previous[:ancestor_count] , d_row[:ancestor_count]))
                     self.d_row_previous = d_row
                     yield None
                 yield d_row
@@ -199,14 +202,15 @@ class PHD():
         self.folder = input_folder
         self.relations = []
         self.d_name_relation = {}
-        self.d_name_relation[''] = 'Root relation'
+        self.d_name_relation =  {}
         self.verbosity = verbosity
 
         # Get mining parameters from xml string
         pass
     '''
     Method add_relation:
-    The first relation added is the root relation by definiton. It's parent_name should be '' or None.
+    The first relation added is the root relation by definiton.
+    It's parent_name should be '' or None.
 
     '''
     def add_relation(self, parent_name=None, relation_name=None):
@@ -215,15 +219,21 @@ class PHD():
         if len(required_args) != 0 and not all(required_args):
             raise ValueError("{}:Missing some required_args values in {}"
                 .format(me,repr(required_args)))
-        parent_relation = None
+
+        rlen = len(self.d_name_relation)
+        print("{}:Starting with len of d_name_relation={}".format(me,rlen))
+        sys.stdout.flush()
 
         if len(self.d_name_relation) == 0:
+          relation_depth = 1
+          parent_relation = None
           pass
           # The first-added relation, this one, is defined to be the root of the hierarchy, and
           # no parent check is used. A warning may issue if it not None and not ''
         else:
           # Check that this parent_name is already added. It must be present.
-          parent_relation = self.d_name_relation.get(parent_name, '')
+          parent_relation = self.d_name_relation[parent_name]
+          relation_depth = parent_relation.relation_depth + 1
           if parent_name not in self.d_name_relation.keys():
              raise ValueError('relation_name={}, has unknown parent_name={}.'
               .format(relation_name,parent_name))
@@ -234,11 +244,13 @@ class PHD():
               .format(relation_name))
 
         #Create the relation as a partially-ordered set and store it with its parent indicated
-        relation = PosetRelation(folder=self.folder, relation_name=relation_name,verbosity=self.verbosity)
+        relation = PosetRelation(
+          folder=self.folder, relation_depth=relation_depth, relation_name=relation_name,
+          verbosity=self.verbosity)
 
         if self.verbosity > 0:
-          print("{}:Created and Registered root relation_name='{}'"
-            .format(me, relation.relation_name))
+          print("{}:Created and Registered root relation={}, relation_name='{}', relation_depth={}"
+            .format(me, repr(relation), relation.relation_name, relation_depth))
 
         self.d_name_relation[relation_name] = relation
         return
@@ -291,15 +303,16 @@ def testme(d_nodes_map=None):
       phd.add_relation(parent_name, relation_name=relation_name)
 
     datafield = phd.d_name_relation['datafield']
+    subfield = phd.d_name_relation['subfield']
 
     i = 0
     while (1):
         i += 1
         if i > 3 :
             break
-        sequence = datafield.sequence_ordered_siblings()
+        sibling_rows = subfield.sequence_ordered_siblings()
         nrow = 0
-        for d_row in sequence:
+        for d_row in sibling_rows:
             print("Yes, d_row={}".format(repr(d_row)))
             nrow += 1;
             if (nrow > 10):

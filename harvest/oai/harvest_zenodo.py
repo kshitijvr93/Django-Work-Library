@@ -310,7 +310,7 @@ class OAI_Harvester(object):
           print("{}:Next url='{}'".format(me,url_list))
     # end while url_list is not None
     return None
-  # end def reader_list_records()
+  # end def generator_list_records()
 
 # end class OAI_Harvester
 
