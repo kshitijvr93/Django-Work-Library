@@ -65,6 +65,7 @@ class PosetRelation:
         self.relation_name = relation_name
         self.verbosity = verbosity
         self.d_row_previous = None
+        self.was_previous_cached = False
         self.d_row = {} #Dictionary of column name-value pairs for a row of this relation
         self.verbosity = 0 if verbosity is None else int(verbosity)
 
@@ -99,6 +100,9 @@ class PosetRelation:
     def sequence_all_rows(self):
       data_file_name = '{}{}.txt'.format(self.folder, self.relation_name)
       line_count = 0
+      #set some variables for use by method to write sibling groups
+      self.was_previous_cached = False
+      self.d_row_previous = None
       with open(data_file_name, 'r') as input_file:
           for line in input_file:
             print(line)
@@ -131,38 +135,68 @@ class PosetRelation:
     gets the next d_row from data_source
     If the retrieved d_row
 
+    NOTE: we need 2 temporary row objects
+
+    1 is d_row_prev
+    1 is d_row_cache
+
+    notes:20171101 t1510
+
+
+    however, within the main loop, clauses may trigger that hav their own internal yield statements
+    for example, ...
+
+    How do we foresee shifts in the ancestry? ... well, then we may wait and make the yield of the
+    current row the LAST statement in the loop, so within the loop we can see whether the ancestry
+    changed, and then, before yielding the current row from our data source, we first yield our special 'None' extra value to alert the caller to an upcoming new
+    sibling group... that sounds ok, so we can do multiple yields within the outer loop.
+
     '''
     def sequence_ordered_siblings(self):
         me = 'sequence_ordered_siblings'
-        if self.d_row_previous is not None:
-            # Here, in the previous call, we cached a previous row that will start a
-            # new set of sibling rows contained by a new lineage, so return it.
-            d_row_temp = self.d_row_previous
+        nrows = 0
+
+        for d_row in self.sequence_all_rows():
+          yield d_row;
+          if self.was_previous_cached:
+            # We will yield the previously cached row
+            d_row_tmp = self.d_row_previous
             self.d_row_previous = None
-            # reset the container ids
-            self.container_ids = d_row_temp[:self.relation_depth]
-            if self.verbosity > 0:
-                print('{}: Relation {} first of new set of sibling rows: {}'
-                      .format(me,self.relation_name,repr(d_row_temp)))
-            yield d_row_temp
-        else:
-            #Get relation rows from sequence_all_rows
-            nrows = 0
-            for d_row in self.sequence_all_rows():
-                nrows += 1
-                if d_row is None or nrows > 5:
-                    break
-                # If any order indexes except this one (ie, containing ancestor ids)
-                # changed, we have a new set of siblings
-                ancestor_count = self.relation_depth -1
-                if ( self.d_row_previous is not None
-                    and d_row[:ancestor_count] != self.d_row_previous[:ancestor_count] ):
-                    if self.verbosity > 0:
-                        print("New ancestors: old {} vs new {}".format(
-                          self.d_row_previous[:ancestor_count] , d_row[:ancestor_count]))
+            self.was_previous_cached =False
+            yield d_row_tmp
+          #
+          else: # previous was not cached
+            if self.d_row_previous is not None:
+                # In the previous call, we saved a previous row that will start a
+                # new set of sibling rows contained by a new lineage, so return it.
+                d_row_temp = self.d_row_previous
+                self.d_row_previous = None
+                # reset the container ids
+                self.container_ids = d_row_temp[:self.relation_depth]
+                if self.verbosity > 0:
+                    print('{}: Relation {} first of new set of sibling rows: {}'
+                          .format(me,self.relation_name,repr(d_row_temp)))
+                yield d_row_temp
+            else:
+                #Get relation rows from sequence_all_rows
+                nrows = 0
+                for d_row in self.sequence_all_rows():
+                    # If any order indexes except this one (ie, containing ancestor ids)
+                    # changed, we have a new set of siblings
+                    ancestor_count = self.relation_depth -1
+                    ancestors = d_row[:ancestor_count]
+                    if ( self.d_row_previous is not None
+                        and ancestors != self.d_row_previous[:ancestor_count]):
+                    prev_ancestors = self.d_row_previous[:ancestor_count]
+                        print("{}:Prev ancestors={}, current ancestors={}".format(me,prev_ancestors, ancestors))
+                        if self.verbosity > 0:
+                            print("New ancestors: old {} vs new {}".format(
+                              prev_ancestors, ancestors))
+                        yield None
                     self.d_row_previous = d_row
-                    yield None
-                yield d_row
+                    yield d_row
+        # end else (not was_previous_cached)
+    #end for d_row in sequence_all_rows()
 # end def sequence_ordered_siblings : this returns a generator x,
 # and caller does for my_row in x: do something...
 
@@ -312,8 +346,12 @@ def testme(d_nodes_map=None):
             break
         sibling_rows = subfield.sequence_ordered_siblings()
         nrow = 0
+
+        print("{}: About to start printing new set of sibling rows:".format(me))
         for d_row in sibling_rows:
-            print("Yes, d_row={}".format(repr(d_row)))
+            print("{}: got d_row={}".format(me,repr(d_row)))
+            if d_row is None:
+              break;
             nrow += 1;
             if (nrow > 10):
               print("Hit nrow limit in testme()")
