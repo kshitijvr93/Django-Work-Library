@@ -771,7 +771,7 @@ def xml_paths_rdb(
             d_column_type = d_relinfo['attrib_column']
             # Create serial number, sn column for every table
             # print('sn int not null identity(1,1)', file=sql_file)
-            sep = ''
+            tsep = sep = ''
             #print("{}:Getting columns for relation '{}'".format(me,relation))
             if d_column_type is None:
                 tsf_file.close()
@@ -790,8 +790,9 @@ def xml_paths_rdb(
                 print('{}{} {}'.format(sep,column.replace('-','_'),ctype)
                     ,file=sql_file)
                 #Build the csv fieldnames file, hence extension tsf
-                print('{}{}'.format(sep,column.replace('-','_'))
+                print('{}{}'.format(tsep,column.replace('-','_'))
                       ,file=tsf_file, end='')
+                tsep = '\t'
                 sep = ','
             print('', file=tsf_file)
             tsf_file.close()

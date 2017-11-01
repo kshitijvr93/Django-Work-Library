@@ -1,7 +1,8 @@
 '''
 phd.py - Persistent Hierarchical Data
 '''
-import sys, os, os.path, platform
+import sys, os, os.path, platform,inspect
+
 def get_path_modules(verbosity=0):
   env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
   path_user = os.environ.get(env_var)
@@ -12,13 +13,15 @@ def get_path_modules(verbosity=0):
 sys.path.append(get_path_modules())
 
 import etl
+from rdb2xml_configs.marctsf2xml import d_nodes_map
+
 
 from collections import OrderedDict
 import lxml
 
 '''
 A HierarchicalRelation object (HRO) must have a container Persistent
-Hierarchical Data object.
+Hierarchical Data object.242
 
 Notes:
 A container PHD object should create all of its HierarchicalRelation objects
@@ -40,7 +43,7 @@ class HierarchicalRelation:
     def __init__(self, phd=None, container_relation=None, relation_name=None
         ,verbosity=0):
         me = inspect.stack()[0][3]
-        required_args = [container_relation, relation_name]
+        required_args = [phd, relation_name]
         if not all(required_args):
             raise ValueError("{}:Missing some required_args values in {}"
                 .format(repr(me,required_args)))
@@ -52,6 +55,7 @@ class HierarchicalRelation:
         self.relation_name = relation_name
         self.d_row_previous = None
         self.d_row = {} #Dictionary of values for a row of this relation
+        self.verbosity = 0 if verbosity is None else int(verbosity)
 
         # Retrieve the field names (used for ordered_siblings() to create d_row generators)
         # Note: in future, may change to let phd provide d_rows as an argument to
@@ -60,14 +64,15 @@ class HierarchicalRelation:
         # the hierarchical ids.
 
         input_file_name = '{}{}.tsf'.format(phd.folder, relation_name)
+        if verbosity > 0:
+          print("{}: using input_file_name='{}'".format(me,input_file_name))
         with open(input_file_name) as input_tsf:
             for line in input_tsf:
-                self.fields = line.split('\t')
-                if (phd.verbosity > 0):
+                self.fields = line.strip().split('\t')
+                if (self.verbosity > 0):
                     print("{}:Relation {} has {} fields={}."
                         .format(me,relation_name,len(self.fields),repr(self.fields)))
                 break #ignore 'extra' lines rather than concatenate them or report error
-
         return
     # end method __init__
 
@@ -147,7 +152,6 @@ class HierarchicalRelation:
 #end class HierarchicalRelation
 
 
-
 ''' PHD - Persistent Hierarchical Data
 <params name=xml_mining_map_root>
 This is an lxml root node of a mining map configuration.
@@ -170,26 +174,36 @@ where N is the nesting depth of the relation given in the mining map.
 
 class PHD():
 
-    def __init__(self, folder=None, xml_mining_map_root=None):
+    def __init__(self, input_folder=None, output_folder=None, xml_mining_map_root=None
+        ,verbosity=0 ):
         me = '__init__'
-        required_args = []
+        required_args = [input_folder, output_folder]
         if len(required_args) != 0 and not all(required_args):
             raise ValueError("{}:Missing some required_args values in {}"
                 .format(repr(me,required_args)))
         self.h_relations = []
         # test a marc txt file
-        self.folder = 'hard coded folder to relations .txt files...'
+        self.folder = input_folder
+        self.relations = []
+        self.verbosity = verbosity
 
         # Get mining parameters from xml string
         pass
 
-    def add_relation(relation_name=None):
+    def add_relation(self, relation_name=None):
+        me = 'PHD.add_relation()'
+        relation = HierarchicalRelation(phd=self, relation_name=relation_name,
+                   verbosity=self.verbosity)
+        if self.verbosity > 0:
+          print("{}:Registered relation_name='{}'".format(me,relation.relation_name))
+        self.relations.append(relation)
+        return
         pass
 
 #end class PHD
 
-def testme(d_mining_map=None):
-    required_args = [d_mining_map]
+def testme(d_nodes_map=None):
+    required_args = [d_nodes_map]
     if len(required_args) != 0 and not all(required_args):
         raise ValueError("{}:Missing some required_args values in {}"
             .format(repr(me,required_args)))
@@ -204,24 +218,27 @@ def testme(d_mining_map=None):
     # Folder with relational .txt files and .tsf files describing marc xml
     # data for ccila project circa 20170707
     input_folder = etl.data_folder(
-        linux="/home/robert/git/outputs/xml2rdb/ccila",
-        windows="U:/data/outputs/xml2rdb/ccila",
-        data_relative_folder='')
+        linux="/home/robert/", windows="C:/users/podengo/",
+        data_relative_folder='git/outputs/xml2rdb/ccila/')
+
     output_folder = etl.data_folder(
-        linux="/home/robert/git/outputs/marcxml/tsf/UCRiverside",
-        windows="U:/data/outputs/rdb2xml/marcxml/ccila",
-        data_relative_folder='')
+        # See xml2rdb.py study 'ccila' definition of folder_output_base
+        linux="/home/robert/", windows="C:/users/podengo/",
+        data_relative_folder='git/outputs/rdb2xml/ccila/')
     composite_ids = []
 
     print('{}: using input_folder={}, output_folder={}'
           .format(me, input_folder, output_folder))
 
-    # node_visit_output(d_mining_map,composite_ids)
+    # node_visit_output(d_nodes_map,composite_ids)
 
-    phd = PHD()
+    phd = PHD(input_folder, output_folder,verbosity=1)
+    phd.add_relation(relation_name='record')
+
+
+
     # phd.h_relations[0] = HierarchicalRelation(d_mining_map)
 
-    relation_name = 'record'
     i = 3
     while (1):
         i += 1
@@ -238,4 +255,4 @@ def testme(d_mining_map=None):
     return
 #####################
 print("Calling testme()")
-testme(d_mining_map)
+testme(d_nodes_map=d_nodes_map)

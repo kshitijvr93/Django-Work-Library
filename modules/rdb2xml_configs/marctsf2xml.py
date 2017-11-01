@@ -55,7 +55,7 @@ Alt Batch - same idea as the column_function to implement the clock. Also use a 
 next bibid and invoke it for the record relation. fine.
 
 '''
-d_mining_map =  {
+d_nodes_map =  {
     '''
     This node is for the highest level marc rdb relation named 'record'
     or some configuration pre-defined relation name for the main_relation.
@@ -83,7 +83,7 @@ d_mining_map =  {
     ,'children': [
         {
             'node1_name': 'controlfield',
-            'node2_name' : 'controlfield'
+            'node2_name' : 'controlfield',
             'd_node2_node1':{
                 'tag':'tag', 'element_text':'value'
             },
@@ -109,57 +109,8 @@ d_mining_map =  {
         }
     ]
 }
+# end d_nodes_map
 
-d_node_params = {
-    '''
-    This node is for the highest level marc rdb relation named 'record'
-    or some configuration pre-defined relation name for the main_relation.
-    Each record will be reprented by its own xml file in an output directory,
-    with files named like:
-
-    element_tag_00000000.xml
-
-    where element_tag is the value for the key of element_tag
-    given below (here that value is also 'record') in the main dictionary
-    and 00000000 is a zero padded 8 digit consecutive integer.
-
-    Future feature: can add a check to NOT produce a record or xml tagged section in the
-    output file if all  the mined column values for attributes for the xml element_tag
-    are found to be null or empty.
-    For now, each child xml open/close tag is written to the output file for
-    each encountered db record.
-    '''
-
-    ,'element_tag':'record'
-    ,'attribute_column': {
-        'element_text' : 'leader'
-    }
-    ,'relation_child_nodes': {
-        'controlfield': {
-            'element_tag' : 'controlfield'
-            'attribute_column':{
-                'tag':'tag', 'element_text':'value'
-            }
-        }
-        ,'datafield': {
-            'element_tag': 'datafield',
-            'attribute_column': {
-                'tag' : 'tag'
-                ,'ind1': 'indicator1'
-                ,'ind2': 'indicator2'
-            }
-            'relation_child_nodes' : {
-                'subfield': {
-                    'element_tag': 'subfield'
-                    ,'attribute_column' : {
-                        'code':'code'
-                        ,'element_text':'value'
-                    }
-                }
-            }
-        }
-    }
-}
 xml_mining_map = '''
 <document>
 <params><keyword element_text='text'</params>
