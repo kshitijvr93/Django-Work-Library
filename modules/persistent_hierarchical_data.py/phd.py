@@ -101,8 +101,6 @@ class PosetRelation:
       data_file_name = '{}{}.txt'.format(self.folder, self.relation_name)
       line_count = 0
       #set some variables for use by method to write sibling groups
-      self.was_previous_cached = False
-      self.d_row_previous = None
       with open(data_file_name, 'r') as input_file:
           for line in input_file:
             print(line)
@@ -154,47 +152,60 @@ class PosetRelation:
     '''
     def sequence_ordered_siblings(self):
         me = 'sequence_ordered_siblings'
-        nrows = 0
+        n_sibling_rows = 0
+        ancestor_count = self.relation_depth -1
+        d_row_previous = None
+        was_previous_cached = False
 
         for d_row in self.sequence_all_rows():
-          yield d_row;
-          if self.was_previous_cached:
+
+          if d_row_previous:
             # We will yield the previously cached row
-            d_row_tmp = self.d_row_previous
-            self.d_row_previous = None
-            self.was_previous_cached =False
+            d_row_tmp = d_row_previous
+            d_row_previous = None
+            prev_ancestors = None
             yield d_row_tmp
-          #
-          else: # previous was not cached
-            if self.d_row_previous is not None:
-                # In the previous call, we saved a previous row that will start a
-                # new set of sibling rows contained by a new lineage, so return it.
-                d_row_temp = self.d_row_previous
-                self.d_row_previous = None
-                # reset the container ids
-                self.container_ids = d_row_temp[:self.relation_depth]
-                if self.verbosity > 0:
-                    print('{}: Relation {} first of new set of sibling rows: {}'
-                          .format(me,self.relation_name,repr(d_row_temp)))
-                yield d_row_temp
-            else:
-                #Get relation rows from sequence_all_rows
-                nrows = 0
-                for d_row in self.sequence_all_rows():
-                    # If any order indexes except this one (ie, containing ancestor ids)
-                    # changed, we have a new set of siblings
-                    ancestor_count = self.relation_depth -1
-                    ancestors = d_row[:ancestor_count]
-                    if ( self.d_row_previous is not None
-                        and ancestors != self.d_row_previous[:ancestor_count]):
-                    prev_ancestors = self.d_row_previous[:ancestor_count]
-                        print("{}:Prev ancestors={}, current ancestors={}".format(me,prev_ancestors, ancestors))
-                        if self.verbosity > 0:
-                            print("New ancestors: old {} vs new {}".format(
-                              prev_ancestors, ancestors))
-                        yield None
-                    self.d_row_previous = d_row
-                    yield d_row
+
+        # Continue to yield the current d_row
+
+        if self.d_row_previous is None:
+            # This d_row begins a new set of sibling rows
+            if self.verbosity > 1:
+                print('{}: Relation {} first of new set of sibling rows: {}'
+                  .format(me,self.relation_name,repr(d_row)))
+        else:
+            #There was a previous row in a sibling group, so check whether  this
+            #row belongs in the same sibling group (has the same ancestors)
+            prev_ancestors = d_row_previous[:ancestor_count]
+            ancestors = d_row[:ancestor_count]
+            if ancestors != prev_ancestors:
+                # we start a new group of siblings, cache the row to show
+                # the next run through this loop, so we can now yield None
+                # to inform the caller that this sibling group has ended
+
+        self.d_row_previous = d_row
+        self.composite_ids = d_row_temp[:self.relation_depth]
+
+
+        if ( self.d_row_previous is not None
+            and ancestors != self.d_row_previous[:ancestor_count]):
+        prev_ancestors = self.d_row_previous[:ancestor_count]
+            print("{}:Prev ancestors={}, current ancestors={}".format(me,prev_ancestors, ancestors))
+            if self.verbosity > 0:
+                print("New ancestors: old {} vs new {}".format(
+                  prev_ancestors, ancestors))
+            yield None
+        self.d_row_previous = d_row
+        yield d_row
+
+      if was_previous_cached:
+        # We will yield the previously cached row
+        d_row_tmp = d_row_previous
+        d_row_previous = None
+        was_previous_cached = False
+        yield d_row_tmp
+
+
         # end else (not was_previous_cached)
     #end for d_row in sequence_all_rows()
 # end def sequence_ordered_siblings : this returns a generator x,
