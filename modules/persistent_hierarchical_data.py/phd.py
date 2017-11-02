@@ -19,7 +19,7 @@ from collections import OrderedDict
 import lxml
 
 '''
-A PosetRelation object (PRO) represents a datastore of one or multiple named relations.
+A OrderedRelation object (PRO) represents a datastore of one or multiple named relations.
 
 Each relation is represented by an ordered set of rows of column values where the first part
 (of depth-quantity columns) of the column values are ordered indexes into the parent hierarchy of
@@ -49,31 +49,31 @@ data sources.
 
 '''
 
-class PosetRelation:
+class OrderedRelation:
 
-    def __init__(self, relation_depth=None,  relation_name=None, folder=None
+    def __init__(self, order_depth=None,  relation_name=None, folder=None
         ,verbosity=0):
 
-        me= 'PosetRelation.__init__()'
-        required_args = [relation_depth, folder, relation_name]
+        me= 'OrderedRelation.__init__()'
+        required_args = [order_depth, folder, relation_name]
         if not all(required_args):
             raise ValueError("{}:Missing some required_args values in {}"
                 .format(me,repr(required_args)))
 
         self.folder = folder
-        self.relation_depth = relation_depth
+        self.order_depth = order_depth
         self.relation_name = relation_name
         self.verbosity = verbosity
-        self.d_row_previous = None
-        self.was_previous_cached = False
-        self.d_row = {} #Dictionary of column name-value pairs for a row of this relation
         self.verbosity = 0 if verbosity is None else int(verbosity)
 
         # Retrieve the field names (used for ordered_siblings() to create d_row generators)
-        # Note: in future, may change to let phd provide d_rows as an argument to
-        # facilitate expanding to new types of data sources
-        # Note: it is required that all rows in a relation data file are pre-ordered by
-        # the partially ordered (poset) ids.
+        # Note: it is required that all rows in a referenced tab-separated valued
+        # relation data file are pre-ordered by the first 'order_depth' quantity of columns,
+        # which are the ordered ids or composite ids (because their composite
+        # value is a unique key for the rows of the relation).
+        # In comments about this object, the list of ids of  all but the last
+        # composite id is called ancestor_ids, and the last id of a composite is
+        # called the sibling_id for a row.
 
         input_file_name = '{}{}.tsf'.format(self.folder, relation_name)
         if verbosity > 0:
@@ -84,31 +84,38 @@ class PosetRelation:
                 if (self.verbosity > 0):
                     print("{}:Relation {} has {} fields={}."
                         .format(me,relation_name,len(self.fields),repr(self.fields)))
-                break #ignore 'extra' lines rather than concatenate them or report error
+                break #ignore 'extra' lines in tsf file. We need only the first one.
         return
     # end method __init__
 
     '''
-    method sequence_rows():
+    method sequence_all_rows():
+
+    This returns a sequence (via a generator) of all rows in the relation.
 
     FUTURE todo: will probably pass to __init__ a new argument, dsr, a data
     source reader object and replace all calls
-    in this object all calls to this method to rather call dsr.read() and remove this method.
+    in this object to this method to not call open() but to rather call dsr.read() and remove this method.
     This generates a generator for a sequence of rows in this relation.
     '''
 
     def sequence_all_rows(self):
+      me = 'OrderedRelation.sequence_all_rows()'
       data_file_name = '{}{}.txt'.format(self.folder, self.relation_name)
-      line_count = 0
+      row_count = 0
+
       #set some variables for use by method to write sibling groups
       with open(data_file_name, 'r') as input_file:
           for line in input_file:
-            print(line)
-            line_count += 1
-            if line_count > 10:
+            row_count += 1
+            if self.verbosity > 0:
+              print("(TESTMAX10):{}:Relation={},row_count={},line='{}'"
+                .format(me,self.relation_name,row_count,line))
+            if row_count > 10:
               return
-            d_rows = line.split('\t')
-            yield d_rows
+            # Remove last newline and split out field/colum values by tab delimiter.
+            column_values = line.replace('\n','').split('\t')
+            yield row_count, column_values
       return
 
     '''
@@ -119,100 +126,87 @@ class PosetRelation:
     belong to the the current lineage of ancestors in a depth-first mining
     process.
 
-    It uses the main sequence_all_rows generated sequence for the relation.
-    It yields None when all the siblings of the current ancestors have been
-    yielded. Otherwise, it yields d_row, which is next current sibling row
-    for the current ancestor relations.
+    It punctuates the generated sequence of rows of sibling rows with a yield of the
+    immediate_group_sentinel value, which defaults to None.
+    We can add a parameter if needed to use another inter-sibling-group sentinel group
+    other than None.
 
-    if self.d_row_previous is not None:
-         # save d_row_previous to d_row, setsd_row_previous to None and return d_row
-    else: #self.d_row_previous is None
-         # Summon the the next row from the sequence_all_rows
-         if return_value is None:
-             #
-    gets the next d_row from data_source
-    If the retrieved d_row
-
-    NOTE: we need 2 temporary row objects
-
-    1 is d_row_prev
-    1 is d_row_cache
-
-    notes:20171101 t1510
-
-
-    however, within the main loop, clauses may trigger that hav their own internal yield statements
-    for example, ...
-
-    How do we foresee shifts in the ancestry? ... well, then we may wait and make the yield of the
-    current row the LAST statement in the loop, so within the loop we can see whether the ancestry
-    changed, and then, before yielding the current row from our data source, we first yield our special 'None' extra value to alert the caller to an upcoming new
-    sibling group... that sounds ok, so we can do multiple yields within the outer loop.
-
+    When the immediate_group_sentinal defaults to None, this implies that
+    only when two successive None values are returned has the generated sequence really
+    ended.
     '''
-    def sequence_ordered_siblings(self):
+    def sequence_ordered_siblings(self, immediate_group_sentinel=None, all_rows=None):
         me = 'sequence_ordered_siblings'
+        required_args = [all_rows]
+        if not all(required_args):
+            raise ValueError("{}:Missing some required_args values in {}"
+                .format(me,repr(required_args)))
+
         n_sibling_rows = 0
-        ancestor_count = self.relation_depth -1
-        d_row_previous = None
-        was_previous_cached = False
 
-        for d_row in self.sequence_all_rows():
+        ancestor_end = self.order_depth 
 
-          if d_row_previous:
+        column_values_previous = None
+        column_values_are_cached = False
+        previous_ancestors = None
+
+        for row_count, column_values in all_rows:
+          if column_values_are_cached:
             # We will yield the previously cached row
-            d_row_tmp = d_row_previous
-            d_row_previous = None
-            prev_ancestors = None
-            yield d_row_tmp
-
-        # Continue to yield the current d_row
-
-        if self.d_row_previous is None:
-            # This d_row begins a new set of sibling rows
-            if self.verbosity > 1:
-                print('{}: Relation {} first of new set of sibling rows: {}'
-                  .format(me,self.relation_name,repr(d_row)))
-        else:
-            #There was a previous row in a sibling group, so check whether  this
-            #row belongs in the same sibling group (has the same ancestors)
-            prev_ancestors = d_row_previous[:ancestor_count]
-            ancestors = d_row[:ancestor_count]
-            if ancestors != prev_ancestors:
-                # we start a new group of siblings, cache the row to show
-                # the next run through this loop, so we can now yield None
-                # to inform the caller that this sibling group has ended
-
-        self.d_row_previous = d_row
-        self.composite_ids = d_row_temp[:self.relation_depth]
-
-
-        if ( self.d_row_previous is not None
-            and ancestors != self.d_row_previous[:ancestor_count]):
-        prev_ancestors = self.d_row_previous[:ancestor_count]
-            print("{}:Prev ancestors={}, current ancestors={}".format(me,prev_ancestors, ancestors))
+            column_values_are_cached = False
+            #previous_ancestors = column_values_previous[:ancestor_end]
+            n_sibling_rows += 1 #handy counter setting for diagnostics, perhaps...
             if self.verbosity > 0:
-                print("New ancestors: old {} vs new {}".format(
-                  prev_ancestors, ancestors))
-            yield None
-        self.d_row_previous = d_row
-        yield d_row
+              print("{}: yielding cached columns={}".format(me,repr(column_values_previous)))
+            yield column_values_previous
 
-      if was_previous_cached:
-        # We will yield the previously cached row
-        d_row_tmp = d_row_previous
-        d_row_previous = None
-        was_previous_cached = False
-        yield d_row_tmp
+          # Continue to yield (within this loop or the next) current row's column values.
+          n_sibling_rows += 1 #handy counter setting for diagnostics, perhaps...
+          current_ancestors = column_values[:ancestor_end]
+
+          if not previous_ancestors or current_ancestors != previous_ancestors:
+            # This is the start of a new sibling group. We will cache the values to use
+            # in the next loop iteration and reset some housekeeping variables.
+
+            if self.verbosity > 0:
+              print("{}: ancestors changed: old={}, new={}"
+                    .format(me,repr(previous_ancestors),current_ancestors))
+
+            column_values_previous = column_values
+            column_values_are_cached = True
+            if self.verbosity > 1:
+                print('{}: Relation {}, line {} had first of new set of sibling rows: {}'
+                  .format(me,self.relation_name,row_count,repr(column_values)))
+
+            # Check for proper ordering of rows
+            if previous_ancestors and current_ancestors < previous_ancestors:
+              raise ValueError(
+                "{}:Relation={},line {}, bad order. current_ancestors={}, previous_ancestors={}"
+                .format(me,self.relation_name,row_count,
+                repr(current_ancestors), repr(previous_ancestors)))
+            # We yield now to signal the caller that the prior group of siblings has ended
+            previous_ancestors = current_ancestors
+            if self.verbosity > 0:
+              print("{}: SAVED previous_ancestors={}".format(me,repr(previous_ancestors)))
+            yield immediate_group_sentinel
+          else:
+            # Current ancestors are same as previous, so
+            # these current values belong to the current sibling group of rows
+            if self.verbosity > 0:
+              print("{}: yielding current group columns={}".format(me,repr(column_values_previous)))
+            yield column_values
+        # end for row_count, column_values in self.sequence_all_rows()
+
+        # Send a final immediate_group_sentinel so the caller can easily detect the end of
+        # the last group of immediate relatives or siblings
+        yield immediate_group_sentinel
+      # Note the python generator service will send a final None upon returning to let the
+      # caller know the sequence has ended.
+  # end def sequence_ordered_siblings : this returns a generator x,
+  # and caller does for my_row in x: do something...
 
 
-        # end else (not was_previous_cached)
-    #end for d_row in sequence_all_rows()
-# end def sequence_ordered_siblings : this returns a generator x,
-# and caller does for my_row in x: do something...
-
-
-#end class PosetRelation
+#end class OrderedRelation
 
 
 ''' PHD - Persistent Hierarchical Data
@@ -270,7 +264,7 @@ class PHD():
         sys.stdout.flush()
 
         if len(self.d_name_relation) == 0:
-          relation_depth = 1
+          order_depth = 1
           parent_relation = None
           pass
           # The first-added relation, this one, is defined to be the root of the hierarchy, and
@@ -278,7 +272,7 @@ class PHD():
         else:
           # Check that this parent_name is already added. It must be present.
           parent_relation = self.d_name_relation[parent_name]
-          relation_depth = parent_relation.relation_depth + 1
+          order_depth = parent_relation.order_depth + 1
           if parent_name not in self.d_name_relation.keys():
              raise ValueError('relation_name={}, has unknown parent_name={}.'
               .format(relation_name,parent_name))
@@ -289,13 +283,13 @@ class PHD():
               .format(relation_name))
 
         #Create the relation as a partially-ordered set and store it with its parent indicated
-        relation = PosetRelation(
-          folder=self.folder, relation_depth=relation_depth, relation_name=relation_name,
+        relation = OrderedRelation(
+          folder=self.folder, order_depth=order_depth, relation_name=relation_name,
           verbosity=self.verbosity)
 
         if self.verbosity > 0:
-          print("{}:Created and Registered root relation={}, relation_name='{}', relation_depth={}"
-            .format(me, repr(relation), relation.relation_name, relation_depth))
+          print("{}:Created and Registered root relation={}, relation_name='{}', order_depth={}"
+            .format(me, repr(relation), relation.relation_name, order_depth))
 
         self.d_name_relation[relation_name] = relation
         return
@@ -342,27 +336,34 @@ def testme(d_nodes_map=None):
       ('','record'), ('record','controlfield'),('record','datafield'),('datafield','subfield')
     ]
 
-    for (parent_name,relation_name)  in parent_child_tuples:
+    for (parent_name, relation_name)  in parent_child_tuples:
       print('{}:calling phd.add_relation(parent_name={},relation_name={})'
             .format(me,parent_name,relation_name))
       phd.add_relation(parent_name, relation_name=relation_name)
 
     datafield = phd.d_name_relation['datafield']
     subfield = phd.d_name_relation['subfield']
+    all_rows = subfield.sequence_all_rows()
+    for row in all_rows:
+      print("{}: row from all_rows='{}'".format(me,row))
 
+    all_rows = subfield.sequence_all_rows()
+    sibling_rows = subfield.sequence_ordered_siblings(all_rows=all_rows)
+    nrow = 0
     i = 0
     while (1):
         i += 1
         if i > 3 :
             break
-        sibling_rows = subfield.sequence_ordered_siblings()
-        nrow = 0
 
         print("{}: About to start printing new set of sibling rows:".format(me))
-        for d_row in sibling_rows:
-            print("{}: got d_row={}".format(me,repr(d_row)))
-            if d_row is None:
+        for row_tuple in sibling_rows:
+            if row_tuple is None:
               break;
+            row_count = row_tuple[0]
+            column_values = row_tuple[1]
+            print("{}: got row_count={}, column values={}"
+                  .format(me,row_count,repr(column_values)))
             nrow += 1;
             if (nrow > 10):
               print("Hit nrow limit in testme()")

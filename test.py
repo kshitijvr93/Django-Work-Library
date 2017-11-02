@@ -1,9 +1,8 @@
 
-file_name= '/home/robert/testfile.txt'
-f = open(file_name, 'w')
-print("I am file {}".format(file_name),file=f)
-print("Closing")
-f.close()
-print("Closing")
-f.close()
+a= [1,2,3,4]
+b = [1,2,5,1]
+
+if b > a:
+    print("b > a")
+
 print ("done")
