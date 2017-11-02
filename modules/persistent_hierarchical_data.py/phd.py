@@ -104,15 +104,9 @@ class OrderedRelation:
       data_file_name = '{}{}.txt'.format(self.folder, self.relation_name)
       row_count = 0
 
-      #set some variables for use by method to write sibling groups
       with open(data_file_name, 'r') as input_file:
           for line in input_file:
             row_count += 1
-            if self.verbosity > 0:
-              print("(TESTMAX10):{}:Relation={},row_count={},line='{}'"
-                .format(me,self.relation_name,row_count,line))
-            if row_count > 10:
-              return
             # Remove last newline and split out field/colum values by tab delimiter.
             column_values = line.replace('\n','').split('\t')
             yield row_count, column_values
@@ -135,42 +129,42 @@ class OrderedRelation:
     only when two successive None values are returned has the generated sequence really
     ended.
     '''
-    def sequence_ordered_siblings(self, immediate_group_sentinel=None, all_rows=None):
+    def sequence_ordered_siblings(self, immediate_group_sentinel=None, all_rows=None, integer_indexes=True):
         me = 'sequence_ordered_siblings'
         required_args = [all_rows]
         if not all(required_args):
             raise ValueError("{}:Missing some required_args values in {}"
                 .format(me,repr(required_args)))
 
-        n_sibling_rows = 0
-
-        ancestor_end = self.order_depth 
-
+        ancestor_end_slice = self.order_depth - 1
         column_values_previous = None
         column_values_are_cached = False
         previous_ancestors = None
 
         for row_count, column_values in all_rows:
+          if self.verbosity > 0:
+            print("{}: From all_rows, got row_count={}, column_values={}".format(me,row_count,column_values))
           if column_values_are_cached:
             # We will yield the previously cached row
             column_values_are_cached = False
-            #previous_ancestors = column_values_previous[:ancestor_end]
-            n_sibling_rows += 1 #handy counter setting for diagnostics, perhaps...
             if self.verbosity > 0:
               print("{}: yielding cached columns={}".format(me,repr(column_values_previous)))
-            yield column_values_previous
+            yield row_count - 1, column_values_previous
 
           # Continue to yield (within this loop or the next) current row's column values.
-          n_sibling_rows += 1 #handy counter setting for diagnostics, perhaps...
-          current_ancestors = column_values[:ancestor_end]
+          # Save ancestor ordered indexes, used to detect change in sibling group
+          if integer_indexes is True:
+            current_ancestors = [int(i) for i in column_values[:ancestor_end_slice]]
+          else:
+            current_ancestors = column_values[:ancestor_end_slice]
 
-          if not previous_ancestors or current_ancestors != previous_ancestors:
+          if previous_ancestors is not None and current_ancestors != previous_ancestors:
             # This is the start of a new sibling group. We will cache the values to use
             # in the next loop iteration and reset some housekeeping variables.
 
             if self.verbosity > 0:
               print("{}: ancestors changed: old={}, new={}"
-                    .format(me,repr(previous_ancestors),current_ancestors))
+                    .format(me,previous_ancestors,current_ancestors))
 
             column_values_previous = column_values
             column_values_are_cached = True
@@ -179,7 +173,7 @@ class OrderedRelation:
                   .format(me,self.relation_name,row_count,repr(column_values)))
 
             # Check for proper ordering of rows
-            if previous_ancestors and current_ancestors < previous_ancestors:
+            if current_ancestors < previous_ancestors:
               raise ValueError(
                 "{}:Relation={},line {}, bad order. current_ancestors={}, previous_ancestors={}"
                 .format(me,self.relation_name,row_count,
@@ -190,11 +184,13 @@ class OrderedRelation:
               print("{}: SAVED previous_ancestors={}".format(me,repr(previous_ancestors)))
             yield immediate_group_sentinel
           else:
+            if previous_ancestors is None:
+              previous_ancestors = current_ancestors
             # Current ancestors are same as previous, so
             # these current values belong to the current sibling group of rows
             if self.verbosity > 0:
               print("{}: yielding current group columns={}".format(me,repr(column_values_previous)))
-            yield column_values
+            yield row_count, column_values
         # end for row_count, column_values in self.sequence_all_rows()
 
         # Send a final immediate_group_sentinel so the caller can easily detect the end of
@@ -202,8 +198,7 @@ class OrderedRelation:
         yield immediate_group_sentinel
       # Note the python generator service will send a final None upon returning to let the
       # caller know the sequence has ended.
-  # end def sequence_ordered_siblings : this returns a generator x,
-  # and caller does for my_row in x: do something...
+  # end def sequence_ordered_siblings : this returns a generator object
 
 
 #end class OrderedRelation
@@ -252,12 +247,14 @@ class PHD():
     It's parent_name should be '' or None.
 
     '''
-    def add_relation(self, parent_name=None, relation_name=None):
+    def add_relation(self, parent_name=None, relation_name=None,verbosity=None):
         me = 'PHD().add_relation()'
         required_args = [relation_name]
         if len(required_args) != 0 and not all(required_args):
             raise ValueError("{}:Missing some required_args values in {}"
                 .format(me,repr(required_args)))
+        if verbosity is None:
+          verbosity = self.verbosity
 
         rlen = len(self.d_name_relation)
         print("{}:Starting with len of d_name_relation={}".format(me,rlen))
@@ -285,7 +282,7 @@ class PHD():
         #Create the relation as a partially-ordered set and store it with its parent indicated
         relation = OrderedRelation(
           folder=self.folder, order_depth=order_depth, relation_name=relation_name,
-          verbosity=self.verbosity)
+          verbosity=verbosity)
 
         if self.verbosity > 0:
           print("{}:Created and Registered root relation={}, relation_name='{}', order_depth={}"
@@ -339,41 +336,29 @@ def testme(d_nodes_map=None):
     for (parent_name, relation_name)  in parent_child_tuples:
       print('{}:calling phd.add_relation(parent_name={},relation_name={})'
             .format(me,parent_name,relation_name))
-      phd.add_relation(parent_name, relation_name=relation_name)
+      phd.add_relation(parent_name, relation_name=relation_name,verbosity=1)
 
     datafield = phd.d_name_relation['datafield']
     subfield = phd.d_name_relation['subfield']
-    all_rows = subfield.sequence_all_rows()
-    for row in all_rows:
-      print("{}: row from all_rows='{}'".format(me,row))
 
     all_rows = subfield.sequence_all_rows()
     sibling_rows = subfield.sequence_ordered_siblings(all_rows=all_rows)
+
     nrow = 0
-    i = 0
-    while (1):
-        i += 1
-        if i > 3 :
-            break
+    for group_count in range(10):
+      print("{}: Getting new set {} of sibling rows:".format(me, group_count))
+      for row_tuple in sibling_rows:
+          if row_tuple is None:
+            print("Got row_tuple of None".format(me))
+            break;
+          row_count = row_tuple[0]
+          column_values = row_tuple[1]
+          print("{}: got row_count={}, column values={}"
+                .format(me,row_count,repr(column_values)))
 
-        print("{}: About to start printing new set of sibling rows:".format(me))
-        for row_tuple in sibling_rows:
-            if row_tuple is None:
-              break;
-            row_count = row_tuple[0]
-            column_values = row_tuple[1]
-            print("{}: got row_count={}, column values={}"
-                  .format(me,row_count,repr(column_values)))
-            nrow += 1;
-            if (nrow > 10):
-              print("Hit nrow limit in testme()")
-              break;
-
-    print("Done!")
-    print("Done!")
-
+    print("{}:Done.".format(me))
     return
 #####################
-print ("YO!")
 print("Calling testme()")
 testme(d_nodes_map=d_nodes_map)
+print ("Done!")
