@@ -3,7 +3,7 @@ NOTE: this was copied from within file phd.py on 2011101 -- if further testing c
 then it should probably be recopied here,, along with some test cases.
 
 
-A OrderedRelation object (PRO) represents a datastore of one or multiple named relations.
+A OrderedRelation object (ORO) represents a datastore of one or multiple named relations.
 
 Each relation is represented by an ordered set of rows of column values where the first part
 (of depth-quantity columns) of the column values are ordered indexes into the parent hierarchy of
@@ -136,6 +136,7 @@ class OrderedRelation:
             column_values_are_cached = False
             if self.verbosity > 0:
               print("{}: yielding cached columns={}".format(me,repr(column_values_previous)))
+
             yield row_count - 1, column_values_previous
 
           # Continue to yield (within this loop or the next) current row's column values.

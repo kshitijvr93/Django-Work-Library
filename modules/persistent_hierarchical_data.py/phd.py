@@ -17,6 +17,7 @@ from rdb2xml_configs.marctsf2xml import d_nodes_map
 
 from collections import OrderedDict
 import lxml
+from dataset.ordered_relation import OrderedRelation
 
 '''
 A OrderedRelation object (PRO) represents a datastore of one or multiple named relations.
@@ -49,7 +50,7 @@ data sources.
 
 '''
 
-class OrderedRelation:
+class xOrderedRelation:
 
     def __init__(self, order_depth=None,  relation_name=None, folder=None
         ,verbosity=0):
