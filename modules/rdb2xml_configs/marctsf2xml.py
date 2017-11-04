@@ -80,7 +80,7 @@ d_nodes_map =  {
     ,'d_dest_source': {
         'element_text' : 'leader'
     }
-    ,'children': [
+    ,'child_nodes': [
         {
             'node1_name': 'controlfield',
             'node2_name' : 'controlfield',
@@ -96,7 +96,7 @@ d_nodes_map =  {
                 'ind1': 'indicator1',
                 'ind2': 'indicator2',
             },
-            'children' : [
+            'child_nodes' : [
                 {
                     'node1_name': 'subfield',
                     'node2_name': 'subfield',

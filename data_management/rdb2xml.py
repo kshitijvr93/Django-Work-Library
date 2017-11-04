@@ -296,13 +296,15 @@ class RelationMiner:
     '''
     def node_visit_output(self
         ,node=None
+        ,d_name_relation=None
         ,composite_ids=None
         ,d_row=None
+        ,verbosity=0
         ):
         me = 'node_visit_output()'
 
 
-        required_args = [node, composite_ids, d_row]
+        required_args = [node, d_name_relation]
 
         if not all(required_args):
             raise ValueError("{}:Missing some required_args values in {}"
@@ -361,7 +363,7 @@ class RelationMiner:
                 raise Exception(
                     "d_attribute_column {}, type={} is not dict. stack_tags={}"
                     .format(repr(d_attribute_column
-                    ,repr(type(d_attribute_column)),stack_tags))
+                    ,repr(type(d_attribute_column)),stack_tags)))
 
             #node_text = etree.tostring(node, encoding='unicode', method='text')
             # Must discard tabs, used as bulk load delimiter, else sql server 2008 bulk insert error
@@ -546,7 +548,7 @@ def rdb_to_xml(
     log_messages = []
 
     required_args = [tags, output_folder]
-    if not all(required_args)
+    if not all(required_args):
         raise ValueError('Not all args {} were given.'.format(required_args))
 
 
@@ -601,7 +603,7 @@ def rdb_to_xml(
         node_index.append(row_index)
 
         #MAKE RECURSIVE CALL
-        tags = rel_node_doc_visit(node=node, tags=tags, node_index,)
+        tags = rel_node_doc_visit(node=node, tags=tags)
 
         if len(tags) == 0:
             # The tag at this level was opened and outputted, so now close it
@@ -673,9 +675,9 @@ def rdb_to_xml(
     # Also, this program requires that it be included in the relational output files.
     multiple = 1
 
-    with open(output_file_name, "w", encoding="utf-8") as output_file
+    with open(output_file_name, "w", encoding="utf-8") as output_file:
 
-    d_return = rel_node_visit_output(
+      d_return = rel_node_visit_output(
         tags=['document_root']
         ,od_relation=od_relation
         ,d_namespaces=d_namespaces
@@ -1076,7 +1078,7 @@ def xml2rdb( input_path_list=None,
     return log_filename, pretty_log
 # end def xml2rdb
 
-def run(study=None):
+def run_study(study=None):
     ''' SET UP MAIN ENVIRONMENT PARAMETERS FOR A RUN OF XML2RDB
     Now all these parameters are 'hard-coded' here, but they could go into
     a configuration file later for common usage.
@@ -1424,6 +1426,74 @@ def run(study=None):
         d_map_params=d_map_params)
 
     print("Done.")
-#end def run()
+#end def run_study()
 #
-run('scopus')
+
+def rdb2xml_test():
+  me = rdb2xml_test
+
+  import rdb2xml_configs.marctsf2xml as config
+
+  from dataset.ordered_relation import OrderedRelation
+  from dataset.phd import PHD
+  import dataset.phd
+
+  d_map_params = {'attribute_text':'text'}
+  input_folder = etl.data_folder(
+      linux="/home/robert/", windows="C:/users/podengo/",
+      data_relative_folder='git/outputs/xml2rdb/ccila/')
+
+  output_folder = etl.data_folder(
+  # See xml2rdb.py study 'ccila' definition of folder_output_base
+      linux="/home/robert/", windows="C:/users/podengo/",
+      data_relative_folder='git/outputs/rdb2xml/ccila/')
+  composite_ids = []
+
+  relation_miner = RelationMiner(d_mining_map=config.d_nodes_map,
+    d_map_params=d_map_params)
+
+  # create test set of relations to mine with rudimentary manual instantiations.
+  print('{}:Constructing phd = PHD(...)'.format(me))
+  phd = PHD(input_folder, output_folder,verbosity=1)
+
+  relation_name='record'
+  # NOTE: IMPOSE a requirement to use '' as the parent of the root relation.
+  # It should facilitate
+  # some diagnostic and error reporting
+
+  parent_child_tuples = [
+      ('','record'),
+      ('record','controlfield'),
+      ('record','datafield'),
+      ('datafield','subfield')
+  ]
+  d_name_relation = {}
+
+  for (parent_name, relation_name) in parent_child_tuples:
+    relation = phd.add_relation(parent_name, relation_name=relation_name,
+            verbosity=0)
+    d_name_relation[relation_name] = relation
+    print('{}:Added relation named {} with parent named {}'
+          .format(me,relation_name,parent_name))
+
+  composite_ids = []
+  d_row = {'test':'test',}
+
+  #Mine this config - visit all nodes and create outputs
+  #note todo: add argument for d_name_relation for node_visit_output to use to
+  #invoke correct sequence generator
+
+  relation_miner.node_visit_output(node=config.d_nodes_map
+        ,d_name_relation=d_name_relation
+        ,composite_ids=composite_ids
+        ,d_row=d_row
+        ,verbosity=1
+        )
+
+  # Set up and perform  a test run.
+  # First we test with
+  return
+#end run_test
+
+
+rdb2xml_test()

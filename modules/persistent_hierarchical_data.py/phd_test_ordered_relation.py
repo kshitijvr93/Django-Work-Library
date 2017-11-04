@@ -291,7 +291,7 @@ class PHD():
             .format(me, repr(relation), relation.relation_name, order_depth))
 
         self.d_name_relation[relation_name] = relation
-        return
+        return relation
 
 #end class PHD
 
