@@ -55,8 +55,7 @@ Alt Batch - same idea as the column_function to implement the clock. Also use a 
 next bibid and invoke it for the record relation. fine.
 
 '''
-d_nodes_map =  {
-    '''
+'''
     This node is for the highest level marc rdb relation named 'record'
     or some configuration pre-defined relation name for the main_relation.
     Each record will be reprented by its own xml file in an output directory,
@@ -74,17 +73,18 @@ d_nodes_map =  {
     For now, each child xml open/close tag is written to the output file for
     each encountered db record.
 
-    '''
+'''
+d_nodes_map =  {
     'node1_name':'record'
     ,'node2_name':'record'
-    ,'d_dest_source': {
+    ,'d_field1_field2': {
         'element_text' : 'leader'
     }
     ,'child_nodes': [
         {
             'node1_name': 'controlfield',
             'node2_name' : 'controlfield',
-            'd_node2_node1':{
+            'd_field2_field1':{
                 'tag':'tag', 'element_text':'value'
             },
         },

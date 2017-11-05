@@ -36,22 +36,22 @@ Method rnode_visit_output
 
 Given parameters:
 (*) node_index - the index of the current node (it is the depth of
-    nesting) into the following parameters for lists of node_names and uuids
-    The 'current node' in this method represents a single row in a relation
-    that match the hierarchy of node_names (relations) and uuids.
+  nesting) into the following parameters for lists of node_names and uuids
+  The 'current node' in this method represents a single row in a relation
+  that match the hierarchy of node_names (relations) and uuids.
 
 (*) node_names (names of outer parents in nested
-    relations where the first node name is the outermost nested relation and
-    the last name is for this row row of the current relation), identified in uuids[]
+  relations where the first node name is the outermost nested relation and
+  the last name is for this row row of the current relation), identified in uuids[]
 
 (*) uuids[], (the parent nodes and current node is represented by this list
-    path of hierarchical uuids from a set of parent database tables, with the
-    final uuid identifying a unique row in the current node), and
+  path of hierarchical uuids from a set of parent database tables, with the
+  final uuid identifying a unique row in the current node), and
 
 (*) opened_index: index into node_names indicating the highest level where an opening tag
-    has so far been outputted. This way, a recursive call that generates the first output for
-    a node can determine the greatest ancestor parent that has not yet output its opening tag,
-    and then output those tags in proper order, as needed.
+  has so far been outputted. This way, a recursive call that generates the first output for
+  a node can determine the greatest ancestor parent that has not yet output its opening tag,
+  and then output those tags in proper order, as needed.
 
 (*) d_mining_map, the 'mining map' starting with the
    given node's entry in the mining map hierarchy, garner the input fields
@@ -63,15 +63,15 @@ Given parameters:
  This method reads that and uses it output the xml element values in the output.
 
 (Note) to-be-considered: od_rel_datacolumns - key is column name, value is
-    found value in the relational-database.
-    In xml2rdb it is used to store values to be composed, for example a first
-    name and last name may be stored among siblings to same xml parent, and a
-    column_attribute function may be applied to derive a column with full
-    last_name, comma, first_name' value. It is used for the 'translation' functionality
-    of an ETL process, which may be of limited use since the data has already been
-    mapped into the relational database, usually in a nice format.
-    However, it might be reversed-emulated somehow in future versions for use
-    in the rdb2xml direction.
+  found value in the relational-database.
+  In xml2rdb it is used to store values to be composed, for example a first
+  name and last name may be stored among siblings to same xml parent, and a
+  column_attribute function may be applied to derive a column with full
+  last_name, comma, first_name' value. It is used for the 'translation' functionality
+  of an ETL process, which may be of limited use since the data has already been
+  mapped into the relational database, usually in a nice format.
+  However, it might be reversed-emulated somehow in future versions for use
+  in the rdb2xml direction.
 
 Processing:
 
@@ -138,10 +138,10 @@ node - In the mining map, where a dictionary key is a relation name,
    its value is a dictionary called a node.
 
 stack_tags: the list or stack of all parent tags to this one in the context
-    of this call in a DAG tree of recursive calls.
+  of this call in a DAG tree of recursive calls.
 
 lineage_ids: the array or ordered indexes into this relations ancestor
-    relations.
+  relations.
 
 open_level - the index into stack_tags that identifies the closest ancestor
 whose opening tag has been outputted so far. If this call causes any output
@@ -164,91 +164,58 @@ column data to convert to produce each output attribute value.
 
 '''
 class RelationMiner:
-    def __init__(self, d_mining_map=None
-         ,d_map_params=None, verbosity=0):
 
-        required_args = [d_mining_map, d_map_params]
-        if not all(required_args):
-            raise ValueError("Missing some required_args values in {}"
-                .format(repr(required_args)))
+  def __init__(self, d_mining_map=None ,d_map_params=None, verbosity=0):
+    required_args = [d_mining_map, d_map_params]
+    if not all(required_args):
+      raise ValueError("Missing some required_args values in {}"
+      .format(repr(required_args)))
 
-        self.d_mining_map = d_mining_map
+    self.d_mining_map = d_mining_map
 
-        self.d_map_params = (
-            d_map_params if d_map_params is not None else {})
+    self.d_map_params = d_map_params if d_map_params is not None else {}
 
-        self.verbosity = verbosity
+    self.verbosity = verbosity
 
-    '''
-    <param name='dataset_source'>
-    This is a dataset_source object that has method
-      select_contained_rows(relation_name, lineage_ids).
-    See there for more details.
+  def mine(self, dataset_source=None
+      , relation_name_prefix=''
+      , primary_relation_name=None
+      , output_folder=None
+      , output_file_name=None
+      , zfill_id_count=8
+      , verbosity=0):
 
-    </param><param name='relation_name_prefix'>
-      This is a prefix string to prepend to the primary_relation_name argument
-      and to every relation name in self.d_mining_map to identify a relation name
-      known by the dataset_source
+    # Register input and output style options
+    # and visit all the selected relational nodes in the
+    # d_mining_map mining map to mine from dataset_source the values
+    # defined in the mining map and to produce output.
+    me = 'RelationMiner.mine()'
+    required_args = [dataset_source, relation_main ,output_folder]
 
-    </param> <param name='primary_relation_name_suffix'>
-      This indicates the primary relation name_suffix in the datasource that
-      is associated with the d_mining_map primary relation. The primary relation
-      name is constructed from this and the relation_name_prefix parameter.
+    if not all(required_args):
+      raise ValueError("{}:Missing some required_args values in {}"
+      .format(repr(me,required_args)))
 
-    </param> <param name='output_folder_name'>
-      This is the name of the primary output_folder in the filesystem.
-      Considering: Later this argument may be changed or expanded to accept an
-      alternate and more general object called datasource_destination that
-      abstracts filesysetm objects and various datasets, databases, and other
-      output types.
+    self.primary_relation_name = primary_relation_name
+    self.output_folder = output_folder
+    self.zfill_id_count = zfill_id_count
+    # Make sure output folder exists
 
-    </param> <param name='output_file_name'>
-      This argument is optional by design. If it is not given, then an independent
-      filename will be constructed per input row of the primary relation
-      and written to the output folder.
-
-    </param> <param name=''>
-    </param>
-    '''
-    def mine(self, dataset_source=None
-        , relation_name_prefix=''
-        , primary_relation_name=None
-        , output_folder=None
-        , output_file_name=None
-        , zfill_id_count=8
-        ,verbosity=0):
-        # Register input and output style options
-        # and visit all the selected relational nodes in the
-        # d_mining_map mining map to mine from dataset_source the values
-        # defined in the mining map and to produce output.
-        me = 'RelationMiner.mine()'
-        required_args = [dataset_source, relation_main
-            ,output_folder]
-        if not all(required_args):
-            raise ValueError("{}:Missing some required_args values in {}"
-                .format(repr(me,required_args)))
-
-        self.primary_relation_name = primary_relation_name
-        self.output_folder = output_folder
-        self.zfill_id_count = zfill_id_count
-        # Make sure output folder exists
-
-        self.output_file_name = '' if output_file_name is None else output_file_name
-        if self.output_file_name != '':
-            # One big output file is required
-            with open(
-              '{}{}'.format(output_folder,output_file_name),'w') as self.output_file:
-                node_visit_output(self, d_mining_map, lineage_ids=lineage_ids)
-        else:
-            self.output_file = None
-            # One output file per primary relation row is required.
-            node_visit_output(self, d_mining_map, lineage_ids=lineage_ids )
-        return
-
-    '''
-    <summary>Method node_visit_output:
-    To support one-big xml file of output vs one per output record,
-    node_visit_output always checks output_file, and if None, it will output
+    self.output_file_name = '' if output_file_name is None else output_file_name
+    if self.output_file_name != '':
+      # One big output file is required
+      with open(
+        '{}{}'.format(output_folder,output_file_name),'w') as self.output_file:
+          node_visit_output(self, d_mining_map, lineage_ids=lineage_ids)
+    else:
+        self.output_file = None
+        # One output file per primary relation row is required.
+        node_visit_output(self, d_mining_map, lineage_ids=lineage_ids )
+    return
+  '''
+  <summary>Method node_visit_output:
+  To support one-big xml file of output vs one per output record,
+  node_visit_output always checks output_file, and if None, it will output
     one xml file per primary relation row.
 
     If none, it constructs the output file name and opens a separate
@@ -292,235 +259,319 @@ class RelationMiner:
     rows with that parent id.
     A relation-row generator is initialized when
 
+
+    # node1_name is the input dataset's group record name:
+    # for databasess it is a table or relation name
+    # for xml it is an element tag name,
+    # for 'tsf' files in a directory it is a file name of tab separated
+    # ordered values per file line, etc.
+    # And node2_name is the output dataset's name for a record or
+    # parent group of data
+    <20171104 notes> <summary>
+    This method's processing - summary:
+
+    This method is designed to be first called with a node that represents the
+    root of an input hierarchical tree of data. The first version/instance is
+    designed to do a depth first tour of the rows  in a  hierarchical set of
+    relations,
+    <move_me todo='add this to docs on OrderedRelation' or the tsf
+    derived class of OrderedRelation>
+    where the data for each relation is in the same input folder, and each
+    relation has 2 associated text input files: relation.tsf and relation.txt.
+    File relation.tsf has a single line, which is Tab-Separated Fieldsnames(TSF)
+    of the relation, and file realtion.txt is a set of text lines of
+    tab-separated values, each representing a row of the relation. Since
+    .txt is a common extension used for files of Tab-Separated Values, that
+    naming convention used for those files rather than '.tsv'.
+    </move_me>
+
+    The method arguments of  'ancestor_ids' and 'd_row' provide the parent
+    relation row id information and key-value pairs of the parent rows with
+    the key in the form of relation_name.column_name and the value for each
+    key is a simple string value.
+    Note: Since this is python 3, that string is internally unicode,
+    and reads and writes of the data are expected to be using UTF-8 encoding.
+
+    In this method, the sibling rows of the current relation (all rows
+    with the same parent row) are visited in a loop.
+
+     - For each sibling row: the following is done:
+     (See loop: for row in relation.squence.ordered_siblings: )
+     - That retrieve's from the input dataswet the next row's values (field1 values)
+     - the node.d_field2_field1 dictionary is enumerated to output field2 values
+     that are dervied from  the field1 values of the sibling row.
+     - an inner loop through the node's child_nodes is executed, where for each child_node:
+    -- the sibling_id of the main relation row is appended to the given
+      ancestor_ids
+    -- a new d_row value is appended by appending this sibing row's values
+     to the given d_row (they might be used by a recursive call in case a
+     child_node node needs to use them to derive some values)
+     -- a recursive call is made to node_visit_output for the child node
+
+
+    The given node corresponds to an input relation
+    named in the node['node1_name'], and it will produce output
+    in node2_name.
+
+    Note the node has a dictionary d_field2_field1
+    (or may change name to d__field_output__fields_input to be more explicit
+    and allow for multiple inputs to affect output)
+    which appears reversed, however
+    note that the dictaonry key here is field2 which identifies a unique output,
+    however the input field1 value might be of use to several different output fields
+    to calculate derived values, and so it appears as the value of the dictionary, as it
+    might repeat across dictionary entries..
+
+    When this method is called, the d_row dictionary will have the field values
+    of the input dataset's parent relations. Because this
+
+    </summary> </20171104 notes>
     </notes>
     '''
-    def node_visit_output(self
-        ,node=None
-        ,d_name_relation=None
-        ,composite_ids=None
-        ,d_row=None
-        ,verbosity=0
-        ):
-        me = 'node_visit_output()'
+  def node_visit_output(self
+    ,node=None
+    ,d_name_relation=None
+    ,ancestor_ids=None
+    ,d_row=None
+    ,verbosity=0
+    ):
+    me = 'node_visit_output()'
+
+    required_args = [node, d_name_relation]
+    if not all(required_args):
+      raise ValueError("{}:Missing some required_args values in {}"
+      .format(me,repr(required_args)))
+
+    # node1_name is the input dataset's group record name:
+    # for databasess it is a table or relation name
+    # for xml it is an element tag name,
+    # for 'tsf' files in a directory it is a file name of tab separated
+    # ordered values per file line, etc.
+    # And node2_name is the output dataset's name for a record or
+    # parent group of data
+
+    node1_name = node['node1_name'] # eg a relation name
+
+    if verbosity > 0:
+      msg = (
+      "{}: verbosity={},node1_name={}, ancestor_ids={},len(d_row_={})"
+      .format(me, verbosity, node1_name, repr(ancestor_ids),len(d_row)))
+      print(msg)
+
+    if len(ancestor_ids) == 1 and output_file is None:
+      # This node visit and child visits will generate an output forw for the
+      # main relation, which will produce its own output file.
+      # Now open one the output file for this primary relation row.
+      file_path_name = (
+      '{}{}_{}'.format(self.output_folder,node1_name
+      , str(sibling_id).zfill(self.zfill_id_count)))
+
+      output_file = open('file_path_name','w')
+
+    # Next for loop - cycle through this node's sibling rows
+    #TODO: maybe add argument d_name_relation to calculate relation
+    #from a relaton name or depth.
+
+    for (row_count, sibling_row) in relation.sequence_ordered_siblings():
+
+     # This row's sibling id, appended to ancestor_ids
+     # identifies this row as unique in the dataset w hen composed with  its
+     # ancestor_ids (parent ids)
+     # Consider: a flexible way to identify the sibling id column name.
+     # Perhaps it would be some param info to add to d_map_params.
+     # This is 'the way' that xml2rdb names the lineage id columns, and
+     # this code is initially developed to work with that, so the column
+     # names are constrained to be the ones expected here.
+     # It might better be defined by params for dataset_source, and
+     # its selection method should return a vector of these ids to resuse
+     # perhaps as an additional argument to this mehod
+
+     name_this_id ='{}_id'.format(node['node1_name'])
+     sibling_id = int(sibling_row[name_this_id])
+     ancestor_ids.append(sibling_id)
 
 
-        required_args = [node, d_name_relation]
+    attribute_text = d_map_params.get('attribute_text','text')
+    attribute_innerhtml = d_map_params.get(
+        'attribute_innerhtml' ,'attribute_innerhtml')
 
-        if not all(required_args):
-            raise ValueError("{}:Missing some required_args values in {}"
-                .format(me,repr(required_args)))
+    if(verbosity > 0):
+        print("attribute_text={}, attribute_innerhtml-{}"
+        .format(attribute_text,attribute_innerhtml))
 
-        node_depth = len(composite_ids)
-        # Note: special checks are made whether node_depth is 0, in which case
-        # this is the root or top level call, and when it returns, the recursive
-        # mining process has completed.
+    d_row = {}; d_attribute_value = {}; content_value = ''
+    # d_field2_field1 is keyed by the output column/field name within its
+    # parent, and the value is the input d_row{} key/column name to use to
+    # retrieve the data value to use.
+    d_field2_field1 = d_mining_map.get('d_field2_field1', None)
+    if d_field2_field1 is not None:
+      # We have some field2 ouptut fields with associated  field1
+      # input fields/columns designed for outputting
+      # so we will set them up in d_row key-value pairs.
 
-        node1_name = node['node1_name'] # eg a relation name
+      if not isinstance(d_field2_field1, dict):
+        # detect some sorts of errors/typos in the d_mining_map parsing configuration
+        raise Exception(
+            "d_field2_field1 {}, type={} is not dict. stack_tags={}"
+            .format(repr(d_field2_field1
+            ,repr(type(d_field2_field1)),stack_tags)))
 
-        if verbosity > 0:
-            msg = ("{}:START: verbosity={},node.relation_name={}, lineage_ids={}"
-               .format(me, verbosity, node.relation_name, lineage_ids))
-            print(msg)
+      #node_text = etree.tostring(node, encoding='unicode', method='text')
+      # Must discard tabs, used as bulk load delimiter, else sql server 2008 bulk insert error
+      # messages appear, numbered 4832 and 7399, and inserts fail.
+      #node_text = node_text.replace('\t',' ').replace('\n',' ').strip()
+      #node_text = "" if stringify is None else stringify.strip()
 
-        # This row's sibling id defines its lineage_id
-        # Consider: a flexible way to identify the sibling id column name.
-        # Perhaps it would be some param info to add to d_map_params.
-        # This is 'the way' that xml2rdb names the lineage id columns, and
-        # this code is initially developed to work with that, so the column
-        # names are constrained to be the ones expected here.
-        # It might better be defined by params for dataset_source, and
-        # its selection method should return a vector of these ids to resuse
-        # perhaps as an additional argument to this mehod
+      for attribute_name, column_name in d_field2_field1.items():
+        # For every key in attr_column, if it is reserved name in attribute_text,
+        # use the node's text value, else seek the key in node.attrib
+        # and use its value.
 
-        sibling_id = d_row['{}_id'.format(node.relation_name)]
-        composite_ids.append(sibling_id)
+        column_value = ''
+        content_value = ''
+        if attribute_name == attribute_text:
+            # Special reserved name in attribute_text: it is not really
+            # an attribute name, but this indicates that we shall use the node's
+            # content/text for this attribute
+            content_value = d_row[column_name]
+        else:
+            column_value = d_row[column_name]
 
-        if len(lineage_ids == 1) and self.output_file is None:
-            #This node is a row for the primary relation, and
-            #no output file is yet defined, so we
-            #must open one for this primary relation row.
-
-            file_path_name = (
-              '{}{}_{}'.format(self.output_folder,self.primary_relation_name
-              , str(sibling_id).zfill(self.zfill_id_count)))
-            output_file = open('file_path_name','w')
-            raise ValueError('Not all args {} were given.'.format(required_args))
-
-        attribute_text = d_map_params.get('attribute_text','text')
-        attribute_innerhtml = d_map_params.get(
-            'attribute_innerhtml' ,'attribute_innerhtml')
-
-        d_row = {}; d_attribute_value = {}; content_value = ''
-
-        d_attribute_column = d_mining_map.get('attribute_column', None)
-        if d_attr_column is not None:
-            # We have some node attributes with associated relational columns
-            # eligible for output as xml attributes
-            # so we will set them up in d_row key-value pairs.
-            if not isinstance(d_attribute_column, dict):
-                # detect some sorts of errors/typos in the d_mining_map parsing configuration
-                import types
-                raise Exception(
-                    "d_attribute_column {}, type={} is not dict. stack_tags={}"
-                    .format(repr(d_attribute_column
-                    ,repr(type(d_attribute_column)),stack_tags)))
-
-            #node_text = etree.tostring(node, encoding='unicode', method='text')
-            # Must discard tabs, used as bulk load delimiter, else sql server 2008 bulk insert error
-            # messages appear, numbered 4832 and 7399, and inserts fail.
-            #node_text = node_text.replace('\t',' ').replace('\n',' ').strip()
-            #node_text = "" if stringify is None else stringify.strip()
-
-            for attribute_name, column_name in d_attribute_column.items():
-                # For every key in attr_column, if it is reserved name in attribute_text,
-                # use the node's text value, else seek the key in node.attrib
-                # and use its value.
-
-                column_value = ''
-                content_value = ''
-                if attribute_name == attribute_text:
-                    # Special reserved name in attribute_text: it is not really an attribute name,
-                    # but this indicates that we shall use the node's content/text for
-                    # this attribute
-                    content_value = d_row[column_name]
-                else:
-                    column_value = d_row[column_name]
-
-                #print("setting d_row for column_name={} to value={}".format(column_name,column_value))
-                d_attribute_value[column_name] = column_value
+        #print("setting d_row for column_name={} to value={}".format(column_name,column_value))
+        d_attribute_value[column_name] = column_value
         # All attribute values and content for this xml element, if any was found,
         # is ready to be output and stored in d_attribute_value, so output it.
 
-        # First cut, always output the element tag name even if no values found
-        # yet for it.
-        # Later we might provide an option defer xml tag  output until/unless
-        # a value is found in dataset source that belongs within the element.
-        print('<{}'.format(node['element_tag_name']))
-        # for every attribute value, insert a setting for it
-        for attribute, value in d_attribute_value:
-            print(' {}={}'.format(attribute, value), file=self.output_file)
-        print(' >', file=self.outputfile)
+      # First cut, always output the element tag name even if no values found
+      # yet for it.
+      # Later we might provide an option defer xml tag  output until/unless
+      # a value is found in dataset source that belongs within the element.
+      print('<{}'.format(node['element_tag_name']))
+      # for every attribute value, insert a setting for it
+      for attribute, value in d_attribute_value:
+        print(' {}={}'.format(attribute, value), file=self.output_file)
+      print(' >', file=self.outputfile)
 
-        ################# SECTION - For each child relation recurse to its child nodes ###############
+      ################# SECTION - On current sibling_row, for each child
+      # node relation, recurse to visit it and output its data.
 
-        d_relation_child_nodes = d_mining_map.get('relation_child_nodes', None)
+      d_relation_child_nodes = d_mining_map.get('child_nodes', None)
+      wrote_some_output = 0
 
-        wrote_some_output = 0
+      if d_relation_child_nodes is not None:
+        for relation_name, d_child_node in d_relation_child_nodes.items():
+          #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_mining_map)))
+          #children = node.findall(xpath, d_namespaces )
+          # CRITICAL: make sure db.sequence() does select with order by the relation_namd_id
+          # else hard-to-debug errors may result
+          child_rows = db.sequence(relation_name, node_index)
+          if (verbosity > 0):
+            print("{}:for relation_name={} found some child rows".format(me,relation_name))
+          # TODO:Future: may add a new argument for caller-object that child may use to accumulate, figure,
+          # summary statistic
+          d_child_row = None
+          for d_row in db.select_contained_rows(
+            relation_name, lineage_ids=lineage_ids):
+            # Asssume i always goes in counting order at first, later get it out of the row
+            # index = d_child_row['{}_id'.format(relation_name)
+            d_child_row, child_output = node_visit_output(node=d_child_node
+            , ancestor=ancestor_ids
+            , d_row=d_row
+            , output_file=output_file
+            , d_map_params = d_map_params
+            , verbosity=verbosity)
+            # Finished visiting a child relation
+            # Register whether any data was output: misc info or new retval should have that.
+            if child_output:
+              made_output = True
+            # so that we can eventually discover whether any  data was output under this relation row
+            # and thus decide whether to output a closing xml tag.
 
-        if d_relation_child_nodes is not None:
-            for relation_name, d_child_node in d_relation_child_nodes.items():
-                #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_mining_map)))
-                #children = node.findall(xpath, d_namespaces )
-                # CRITICAL: make sure db.sequence() does select with order by the relation_namd_id
-                # else hard-to-debug errors may result
-                child_rows = db.sequence(relation_name, node_index)
-                if (verbosity > 0):
-                    print("{}:for relation_name={} found some child rows".format(me,relation_name))
-                # TODO:Future: may add a new argument for caller-object that child may use to accumulate, figure,
-                # summary statistic
-                d_child_row = None
-                for d_row in db.select_contained_rows(
-                    relation_name, lineage_ids=lineage_ids):
-                    # Asssume i always goes in counting order at first, later get it out of the row
-                    # index = d_child_row['{}_id'.format(relation_name)
-                    d_child_row, child_output = node_visit_output(node=d_child_node
-                        , lineage_ids=lineage_ids
-                        , d_row=d_row
-                        , output_file=output_file
-                        , d_map_params = d_map_params
-                        , verbosity=verbosity)
-                    # Finished visiting a child relation
-                    # Register whether any data was output: misc info or new retval should have that.
-                    if child_output:
-                        made_output = True
-                    # so that we can eventually discover whether any  data was output under this relation row
-                    # and thus decide whether to output a closing xml tag.
+          # Finished one or more children with same xpath
+          if d_child_row is not None and len(d_child_row) > 0:
+            for column_name, value in d_child_row.items():
+              # Allowing this may be a feature to facilitate re-use of column functions
+              # TEST RVP 201611215
+              #if column_name in d_row:
+              #    raise Exception(
+              #        'node.tag={} duplicate column name {} is also in a child xpath={}.'
+              #        .format(node.tag,column_name,xpath))
+              d_row[column_name] = value
+          #Finished visiting children for this xpath.
+        #Finished visting all child xpaths for this node
+      #End loop through all child xpaths to visit.
 
-                # Finished one or more children with same xpath
-                if d_child_row is not None and len(d_child_row) > 0:
-                    for column_name, value in d_child_row.items():
-                        # Allowing this may be a feature to facilitate re-use of column functions
-                        # TEST RVP 201611215
-                        #if column_name in d_row:
-                        #    raise Exception(
-                        #        'node.tag={} duplicate column name {} is also in a child xpath={}.'
-                        #        .format(node.tag,column_name,xpath))
-                        d_row[column_name] = value
-                #Finished visiting children for this xpath.
-            #Finished visting all child xpaths for this node
-        #End loop through all child xpaths to visit.
+      ######## Set any local column constants ##############
+      if 'column_constant' in d_mining_map:
+        for column, constant in d_mining_map['column_constant'].items():
+          d_row[column] = constant
 
-        ######## Set any local column constants ##############
-        if 'column_constant' in d_mining_map:
-            for column, constant in d_mining_map['column_constant'].items():
-                d_row[column] = constant
-        import types
-        d_column_functions = d_mining_map.get('column_function',None)
-        if d_column_functions is not None:
-            # Add columns to d_row for derived values:
-            # Change later to do these after children return and provide
-            # as args all child data dict and the lxml node itself so such a function
-            # has more to work with.
-            for column_name, function in d_column_functions.items():
-                if type(function) is types.FunctionType:
-                    # This function knows the d_row key(s) to use
-                    d_row[column_name] = function(d_row)
-                else: # Assume types.TupleType of: (function, dict of params)
-                    # This function will find its arguments in the given dict of function params
-                    d_row[column_name] = function[0](d_row, function[1])
+      import types
+      d_column_functions = d_mining_map.get('column_function',None)
+      if d_column_functions is not None:
+        # Add columns to d_row for derived values:
+        # Change later to do these after children return and provide
+        # as args all child data dict and the lxml node itself so such a function
+        # has more to work with.
+        for column_name, function in d_column_functions.items():
+          if type(function) is types.FunctionType:
+            # This function knows the d_row key(s) to use
+            d_row[column_name] = function(d_row)
+          else: # Assume types.TupleType of: (function, dict of params)
+            # This function will find its arguments in the given dict of function params
+            d_row[column_name] = function[0](d_row, function[1])
 
-        ####################### OUTPUT for MULTIPLE (== 1) NODES
-        if multiple == 1:
-            # For multiple == 1 nodes, we write an output line to the database
-            # relation/table named by this node's 'db_name' value.
-            db_file = get_writable_db_file(od_relation=od_relation,
-                od_rel_datacolumns=od_rel_datacolumns,
-                db_name=db_name, output_folder=output_folder, od_parent_index=od_parent_index)
+      ####################### OUTPUT for MULTIPLE (== 1) NODES
+      if multiple == 1:
+        # For multiple == 1 nodes, we write an output line to the database
+        # relation/table named by this node's 'db_name' value.
+        db_file = get_writable_db_file(od_relation=od_relation,
+        od_rel_datacolumns=od_rel_datacolumns,
+        db_name=db_name, output_folder=output_folder, od_parent_index=od_parent_index)
 
-            sep = ''
-            db_line = ''
-            #First, ouput parent indexes
-            for parent_index in od_parent_index.values():
-                db_line += ("{}{}".format(sep,parent_index))
-                sep = '\t'
-            # Now output this node's index
-            # It identifies a row for this node.tag in this relation among all rows outputted.
-            # It is assigned by the caller via an argument, as the caller
-            # tracks this node's count/index value as it scans the input xml document.
+        sep = ''
+        db_line = ''
+        #First, ouput parent indexes
+        for parent_index in od_parent_index.values():
+          db_line += ("{}{}".format(sep,parent_index))
+          sep = '\t'
+          # Now output this node's index
+          # It identifies a row for this node.tag in this relation among all rows outputted.
+          # It is assigned by the caller via an argument, as the caller
+          # tracks this node's count/index value as it scans the input xml document.
 
-            db_line += ("{}{}".format(sep,node_index))
+          db_line += ("{}{}".format(sep,node_index))
 
-            # ##################  NOW, OUTPUT THE DATA COLUMNS ##################
-            # For each field in d_row, put its value into od_column_values
-            #
-            od_column_default = od_rel_datacolumns[db_name]
+        # ##################  NOW, OUTPUT THE DATA COLUMNS ##################
+        # For each field in d_row, put its value into od_column_values
+        #
+        od_column_default = od_rel_datacolumns[db_name]
 
-            for i,(key,value) in enumerate(od_column_default.items()):
-                # Note: this 'picks' the needed column values from d_row, rather than scan
-                # the d_row and try to test that each is an od_column_default key, by design.
-                # This design allows the child to set up local d_row attribute_column values with names
-                # other than those in od_column_default so that the column_function feature may use
-                # those 'temporary values' to derive its output to put into named d_row entries.
-                value = ''
-                if key in d_row:
-                    value = d_row[key]
-                db_line += ("\t{}".format(str(value).replace('\t',' ')))
+        for i,(key,value) in enumerate(od_column_default.items()):
+          # Note: this 'picks' the needed column values from d_row, rather than scan
+          # the d_row and try to test that each is an od_column_default key, by design.
+          # This design allows the child to set up local d_row d_field2_field1 values with names
+          # other than those in od_column_default so that the column_function feature may use
+          # those 'temporary values' to derive its output to put into named d_row entries.
+          value = ''
+          if key in d_row:
+            value = d_row[key]
+          db_line += ("\t{}".format(str(value).replace('\t',' ')))
 
-            #Output a row in the db file
-            print('{}'.format(db_line), file=db_file)
+          #Output a row in the db file
+          print('{}'.format(db_line), file=db_file)
 
-            ############################################################
-            # Now that all output is done for multiple == 1, set d_row = None, otherwise it's
-            # presence would upset the caller.
-            d_row = None
-        # end if multiple == 1
+      ############################################################
+      # Now that all output is done for multiple == 1, set d_row = None, otherwise it's
+      # presence would upset the caller.
+      d_row = None
+      # end if multiple == 1
 
-        msg = ("{}:FINISHED node.tag={}, node_index={}, returning d_row={}"
-               .format(me, node.tag, node_index,repr(d_row)))
-        #print(msg)
-        return d_row
-    # def end node_visit_output
-
+      msg = ("{}:FINISHED node.tag={}, node_index={}, returning d_row={}"
+         .format(me, node.tag, node_index,repr(d_row)))
+      #print(msg)
+      return d_row
+  # def end node_visit_output
 # end class RelationMiner
 '''
 Method rdb_to_xml: from given xml doc(eg, from an Elsevier full text retrieval apifile),
@@ -530,907 +581,183 @@ Excel and other apps allow the '.txt' filename extension for tab-separated-value
 New twist - now this is rdb_to_xml
 '''
 def rdb_to_xml(
-    tags=None
-    ,d_root_node_params=None
-    ,d_mining_map=None
-    ,output_folder=None
-    ,d_map_params=None
-    ,od_rel_datacolumns=None # Add later to validate mining map
-    ,od_relation=None
-    ,input_file_name=None
-    ,file_count=None
-    ,doc_rel_name=None
-    ,doc_root=None # doc element is meta element to use as root xml node per article/doc
-    ,doc_root_xpath=None
-    ,verbosity=0):
+  tags=None
+  ,d_root_node_params=None
+  ,d_mining_map=None
+  ,output_folder=None
+  ,d_map_params=None
+  ,od_rel_datacolumns=None # Add later to validate mining map
+  ,od_relation=None
+  ,input_file_name=None
+  ,file_count=None
+  ,doc_rel_name=None
+  ,doc_root=None # doc element is meta element to use as root xml node per article/doc
+  ,doc_root_xpath=None
+  ,verbosity=0):
 
-    me = 'rdb_to_xml()'
-    log_messages = []
+  me = 'rdb_to_xml()'
+  log_messages = []
 
-    required_args = [tags, output_folder]
-    if not all(required_args):
-        raise ValueError('Not all args {} were given.'.format(required_args))
+  required_args = [tags, output_folder]
+  if not all(required_args):
+    raise ValueError('Not all args {} were given.'.format(required_args))
 
 
-        msg = ("{}:Got tags='{}', output_folder='{}', od_relation='{}',"
-           "len(d_mining_map)='{}', len od_rel_datacolumns={}."
-          .format(me, repr(tags), output_folder, repr(od_relation)
-                  ,len(d_mining_map) ,len(od_rel_datacolumns)))
-        print(msg)
+  msg = ("{}:Got tags='{}', output_folder='{}', od_relation='{}',"
+     "len(d_mining_map)='{}', len od_rel_datacolumns={}."
+    .format(me, repr(tags), output_folder, repr(od_relation)
+      ,len(d_mining_map) ,len(od_rel_datacolumns)))
 
-    # retrieve next row from main relation's row generator method
-    #
-    # (1) Read an input xml file to variable input_xml_str
-    # correcting newlines and doubling up on curlies so format() works on them later.
-    # Class db will have opened the proper database that contains the relations.
-    # The generator restricts the selected records to those that match in order on the hierarchy
-    # coordinates or path indexes, in order of the columns defined by the relation's primary key.
+  print(msg)
 
-    # 20171026 testing runs
+  # retrieve next row from main relation's row generator method
+  #
+  # (1) Read an input xml file to variable input_xml_str
+  # correcting newlines and doubling up on curlies so format() works on them later.
+  # Class db will have opened the proper database that contains the relations.
+  # The generator restricts the selected records to those that match in order on the hierarchy
+  # coordinates or path indexes, in order of the columns defined by the relation's primary key.
 
-    root_tag = 'docroot'
-    relation_name = node['relation_name']
+  # 20171026 testing runs
 
-    # final: row_selection = dataset.cursor_relation(relation_name='record', node_index=[])
-    # testing:
+  root_tag = 'docroot'
+  relation_name = node['relation_name']
 
-    row_selection =  [{'a':'5', 'b':'6'}, { 'a':'8', 'b':'9' }]
-    node_index = []
-    output_file_name = output_folder + '/rdbtoxml.xml'
+  # final: row_selection = dataset.cursor_relation(relation_name='record', node_index=[])
+  # testing:
 
-    tags = [root_tag]
-    node = d_mining_map['start'];
+  row_selection =  [{'a':'5', 'b':'6'}, { 'a':'8', 'b':'9' }]
+  node_index = []
+  output_file_name = output_folder + '/rdbtoxml.xml'
 
-    d_map_params = dict({'attribute_text':'text'})
+  tags = [root_tag]
+  node = d_mining_map['start'];
 
-    # Above was emulation of some args - now star method code prototype
-    print("Using output_file={}".format(output_file))
+  d_map_params = dict({'attribute_text':'text'})
 
-    tag = tags[len(tags) - 1]
-    with open(output_file_name, mode='r', encoding='utf-8') as file_out:
-        retval = rel_node_visit_output(
-            node=od_mining_map
-            ,tags=tags
-            ,node_index=node_index
-            ,d_map_params=d_map_params
-            ,output_file=output_file)
+  # Above was emulation of some args - now start method code prototype
+  print("Using output_file={}".format(output_file))
 
-    print ("Done!")
+  tag = tags[len(tags) - 1]
+  with open(output_file_name, mode='r', encoding='utf-8') as file_out:
+    retval = rel_node_visit_output(
+      node=od_mining_map
+      ,tags=tags
+      ,node_index=node_index
+      ,d_map_params=d_map_params
+      ,output_file=output_file)
 
-    for row_index, d_row in enumerate(row_selection):
-        print("For row {}, using d_row={}".format(row_index,repr(d_row)))
-        # set args for rel_node_visit_output()
-        node_index.append(row_index)
+  print ("Done!")
 
-        #MAKE RECURSIVE CALL
-        tags = rel_node_doc_visit(node=node, tags=tags)
+  for row_index, d_row in enumerate(row_selection):
+    print("For row {}, using d_row={}".format(row_index,repr(d_row)))
+    # set args for rel_node_visit_output()
+    node_index.append(row_index)
 
-        if len(tags) == 0:
-            # The tag at this level was opened and outputted, so now close it
-            print("</{}>".format(tag), file=output_file)
+  #MAKE RECURSIVE CALL
+  tags = rel_node_doc_visit(node=node, tags=tags)
 
-    # (2) and convert input_xml_str to a tree input_doc using etree.fromstring,
+  if len(tags) == 0:
+    # The tag at this level was opened and outputted, so now close it
+    print("</{}>".format(tag), file=output_file)
 
-    if input_xml_str[0:9] == '<failure>':
-        # IMPORTANT: This 'if clause' is a custom check for a 'bad' xml file common to a
-        # particular set of test UF xml files.
-        # This skipping is not generic feature of xml2rdb and may be removed.
-        # print("This xml file is a <failure>. Skipping it.")
-        log_messages.append("<failure> input_file {}.Skip.".format(input_file_name))
-        return log_messages, None, None
+  # (2) and convert input_xml_str to a tree input_doc using etree.fromstring,
 
-    try:
-        tree_input_doc = etree.parse(input_file_name)
-    except Exception as e:
-        msg = (
-            "Skipping exception='{}' in etree.fromstring failure for input_file_name={}"
-            .format(repr(e), input_file_name))
-        #print(msg)
-        log_messages.append(msg)
-        return log_messages, None, None
+  if input_xml_str[0:9] == '<failure>':
+    # IMPORTANT: This 'if clause' is a custom check for a 'bad' xml file common to a
+    # particular set of test UF xml files.
+    # This skipping is not generic feature of xml2rdb and may be removed.
+    # print("This xml file is a <failure>. Skipping it.")
+    log_messages.append("<failure> input_file {}.Skip.".format(input_file_name))
 
-    # GET xml ROOT for this file
-    try:
-        input_node_root = tree_input_doc.getroot()
-    except Exception as e:
-        msg = ("Exception='{}' doing getroot() on tree_input_doc={}. Return."
-                .format(repr(e),repr(tree_input_doc)))
-        #print(msg)
-        log_messages.append(msg)
-        return log_messages, None, None
+    return log_messages, None, None
 
-    #Append this xml files root node to doc_root so it can be processed, wallked.
-    doc_root.append(input_node_root)
+  try:
+    tree_input_doc = etree.parse(input_file_name)
+  except Exception as e:
+    msg = (
+      "Skipping exception='{}' in etree.fromstring failure for input_file_name={}"
+      .format(repr(e), input_file_name))
+    #print(msg)
+    log_messages.append(msg)
+    return log_messages, None, None
 
-    # Do not put the default namespace (as it has no tag prefix) into the d_namespaces dict.
-    d_nsmap = dict(input_node_root.nsmap)
-    d_namespaces = {key:value for key,value in d_nsmap.items() if key is not None}
+  # GET xml ROOT for this file
+  try:
+    input_node_root = tree_input_doc.getroot()
+  except Exception as e:
+    msg = ("Exception='{}' doing getroot() on tree_input_doc={}. Return."
+      .format(repr(e),repr(tree_input_doc)))
+    #print(msg)
+    log_messages.append(msg)
 
-    if load_name is not None:
-        print("Warning: User must add column names 'load' and 'file_name' to the root table"
-              " to enable their values to be output in the output data")
-    else:
-        load_name=""
+  return log_messages, None, None
 
-    # document root params
-    d_root_params = {
-        'db_name': doc_rel_name, 'multiple':1,
-        'attrib_column': {
-            'file_name':'file_name',
-            'load': load_name,
-        },
-        'child_xpaths':{doc_root_xpath:d_mining_map}
-    }
+  #Append this xml files root node to doc_root so it can be processed, wallked.
+  doc_root.append(input_node_root)
 
-    if verbosity > 1:
-        print("xml2rdb: Using db_name='{}', doc_root_xpath='{}'"
-          .format(doc_rel_name , doc_root_xpath))
+  # Do not put the default namespace (as it has no tag prefix) into the d_namespaces dict.
+  d_nsmap = dict(input_node_root.nsmap)
+  d_namespaces = {key:value for key,value in d_nsmap.items() if key is not None}
 
-    # OrderedDict with key of parent tag name and value is parent's index among its siblings.
-    od_parent_index = OrderedDict()
-    node_index = file_count
+  if load_name is not None:
+    print("Warning: User must add column names 'load' and 'file_name' to the root table"
+      " to enable their values to be output in the output data")
+  else:
+    load_name=""
 
-    # In this scheme, the root node always has multiple = 1 - that is, it may have multiple
-    # occurences, specifically, over the set of input files.
-    # Also, this program requires that it be included in the relational output files.
-    multiple = 1
+  # document root params
+  d_root_params = {
+  'db_name': doc_rel_name, 'multiple':1,
+  'attrib_column': {
+    'file_name':'file_name',
+    'load': load_name,
+  },
+  'child_xpaths':{doc_root_xpath:d_mining_map}
+  }
 
-    with open(output_file_name, "w", encoding="utf-8") as output_file:
+  if verbosity > 1:
+    print("xml2rdb: Using db_name='{}', doc_root_xpath='{}'"
+    .format(doc_rel_name , doc_root_xpath))
 
-      d_return = rel_node_visit_output(
-        tags=['document_root']
-        ,od_relation=od_relation
-        ,d_namespaces=d_namespaces
-        ,d_mining_map=d_root_params
-        ,od_rel_datacolumns=od_rel_datacolumns
-        ,output_folder=output_folder
-        ,od_parent_index=od_parent_index
-        ,node_index=node_index
-        ,node=doc_root
-        ,d_map_params=d_map_params
-        ,verbosity=verbosity
-        )
-    return log_messages
+  # OrderedDict with key of parent tag name and value is parent's index among its siblings.
+  od_parent_index = OrderedDict()
+  node_index = file_count
+
+  # In this scheme, the root node always has multiple = 1 - that is, it may have multiple
+  # occurences, specifically, over the set of input files.
+  # Also, this program requires that it be included in the relational output files.
+  multiple = 1
+
+  with open(output_file_name, "w", encoding="utf-8") as output_file:
+
+    d_return = rel_node_visit_output(
+    tags=['document_root']
+    ,od_relation=od_relation
+    ,d_namespaces=d_namespaces
+    ,d_mining_map=d_root_params
+    ,od_rel_datacolumns=od_rel_datacolumns
+    ,output_folder=output_folder
+    ,od_parent_index=od_parent_index
+    ,node_index=node_index
+    ,node=doc_root
+    ,d_map_params=d_map_params
+    ,verbosity=verbosity
+    )
+
+  return log_messages
 # end def rdb_to_xml():
 
-'''
-Method xml_paths_rdb():
-Loop through all the input xml files in a slice of the input_path_list,
-and call rdb_to_xml to create relational database table output rows
-for each input xml doc.
-
-'''
-def xml_paths_rdb(
-      input_path_list=None
-    , doc_root_xpath=None
-    , rel_prefix=None
-    , doc_rel_name=None
-    , d_mining_map=None
-    , od_rel_datacolumns=None
-    , output_folder=None
-    , use_db=None
-    , file_count_first=0
-    , file_count_span=1
-    , verbosity=0
-    , d_map_params=None
-    ):
-    me = "xml_paths_rdb"
-    bad = 0
-    if not (output_folder):
-        bad = 1
-    elif not (rel_prefix)and rel_prefix != '':
-        bad = 2
-    elif not (input_path_list):
-        bad = 3
-    elif not(doc_root_xpath):
-        bad = 4
-    elif not( doc_rel_name):
-        bad=5
-    elif not (d_mining_map):
-        bad = 6
-    elif not (output_folder):
-        bad = 7
-    elif not (od_rel_datacolumns):
-        bad = 8
-    elif not (use_db):
-        bad = 9
-    elif d_map_params is None:
-        bad = 10
-
-    if bad > 0:
-        raise Exception("Bad args. code={}".format(bad))
-
-    log_messages = []
-    msg = ("{}:START with file_count_first={} among total file count={}"
-           .format(me, file_count_first, len(input_path_list)))
-    if (verbosity > 0):
-        print(msg)
-
-    max_input_files = 0
-    count_input_file_failures = 0
-
-    # Dictionary with output relation name key and value is dict with row keys,
-    # values may be types later
-    od_relation = new_od_relation(od_rel_datacolumns)
-    row_index = 0
-
-    # Caller has already sliced input_path_list with first 'real file count'
-    # value being file_count_first. So in the for loop, add i to file_count_first to
-    # get the file_count among the input_path_list.
-    for i, path in enumerate(input_path_list):
-        if (max_input_files > 0) and ( i >= max_input_files):
-            if verbosity > 0:
-              # This clause used for testing only...
-              msg =  "Max number of {} files processed. Breaking.".format(i)
-              log_messages.append(msg)
-            break
-
-        file_count = file_count_first + i + 1
-
-        # Full absolute path of input file name is:
-        input_file_name = "{}/{}".format(path.parents[0], path.name)
-        if verbosity > 0:
-            print("{}:Reading file {} with file_count={}"
-                 .format(me,input_file_name,file_count))
-        batch_size = 250
-        if batch_size > 0  and (i % batch_size == 0):
-            progress_report = 1
-        else:
-            progress_report = 0
-
-        if (progress_report):
-            utc_now = datetime.datetime.utcnow()
-            utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-            msg = ("{}: At {}, processed through input file count = {} so far."
-                   .format(me,utc_secs_z, file_count))
-            print(msg)
-            #log_messages.append(msg)
-            # Flush all the output files in od_relation
-            for relation, d_info in od_relation.items():
-                file = d_info.get('db_file', None)
-                if file is not None:
-                    file.flush()
-
-        # Try to read the article's input full-text xml file and accrue its statistics
-        with open(str(input_file_name), "r", encoding='utf-8') as input_file:
-            try:
-                input_xml_str = input_file.read().replace('\n','')
-                # print("### Got input_xml_str={}".format(input_xml_str))
-            except Exception as e:
-                if 1 == 1:
-                    msg = ( "\tSkipping read failure {} for input_file_name={}"
-                        .format(e,input_file_name))
-                    print("{}:ERROR: {}".format(me,msg))
-                    log_messages.append(msg)
-                count_input_file_failures += 1
-                continue
-        if verbosity > 0:
-            print("{}:Have read input file {} with length = {}"
-                  .format(me,input_file_name,len(input_xml_str)))
-        row_index += 1
-
-        #Create an internal root document node to manage database outputs
-        doc_root = etree.Element("doc")
-        doc_root.attrib['file_name'] = input_file_name
-        msg = ("{}:calling xml_rdb_doc with doc_root.tag={}, file_count={},verbosity={}"
-          .format(me,doc_root.tag, file_count,verbosity))
-        doc_root_tag = 'documen_root'
-        tags = [doc_root_tag]
-
-        if verbosity > 0:
-            print("{}:{}".format(me,msg))
-
-        sub_messages = xml_rdb_doc(tags=tags
-            , output_folder=output_folder
-            , input_file_name=input_file_name
-            , file_count=file_count
-            , doc_rel_name = doc_rel_name
-            , doc_root=doc_root
-            , doc_root_xpath=doc_root_xpath
-            , d_mining_map=d_mining_map
-            , od_rel_datacolumns=od_rel_datacolumns
-            , verbosity=verbosity
-            , d_map_params=d_map_params)
-
-        if len(sub_messages) > 0 and False:
-            log_messages.append({'xml-tsv':sub_messages})
-
-        if verbosity > 2:
-            log_messages.append( "Got stats for input file[{}], name = {}. \n"
-                .format(i+1, input_file_name)
-                 )
-        # end for i, fname in input_file_list
-    # end with open() as output_file
-    print ("{}:Finished processing through file_count={}".format(me,file_count))
-
-    #### CREATE THE RDB INSERT COMMANDS - HERE USING SQL THAT WORKS WITH MSOFT SQL
-    # SERVER 2008, maybe 2008+
-
-    sql_filename = "{}/sql_server_creates.sql".format(output_folder)
-    use_setting = 'use [{}];\n'.format(use_db)
-    msg = ("Database sql create statements file name: {}".format(sql_filename))
-    log_messages.append(msg)
-    print(msg)
-
-    with open(sql_filename, mode='w', encoding='utf-8') as sql_file:
-        print(use_setting, file=sql_file)
-        #TEST OUTPUT create table statements for sql server...
-        print('begin transaction;', file=sql_file)
-        for rel_key, d_relinfo in od_relation.items():
-            relation = '{}{}'.format(rel_prefix,rel_key)
-
-            print(("IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{}') "
-                   "TRUNCATE TABLE {}").format(relation,relation), file=sql_file)
-
-            print(("IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{}') "
-                   "drop table {}").format(relation,relation), file=sql_file)
-
-        for rel_key, d_relinfo in od_relation.items():
-            relation = '{}{}'.format(rel_prefix,rel_key)
-            #print("{}: Table {}, od_relation has key={}, value of d_relinfo with its keys={}"
-            #      .format(me, relation, rel_key, repr(d_relinfo.keys())))
-            if 'attrib_column' not in d_relinfo:
-                print("{}: WARNING: Table {} has keys={}, but no values for it in current "
-                    "file were found.".format(me,relation,repr(d_relinfo.keys())))
-                continue
-
-            # SQL CREATE SYNTAX FOR COLUMNS
-            print('create table {}('.format(relation), file=sql_file)
-
-            d_column_type = d_relinfo['attrib_column']
-            # Create serial number, sn column for every table
-            # print('sn int not null identity(1,1)', file=sql_file)
-            sep = ''
-            #print("{}:Getting columns for relation '{}'".format(me,relation))
-            if d_column_type is None:
-                raise Exception("Table {}, d_column_type is None".format(relation))
-            for i,(column, ctype) in enumerate(d_column_type.items()):
-                #print("Column index {}".format(i))
-                import sys
-                sys.stdout.flush()
-                #print("Column = {}.{}".format(relation,column))
-
-                if ctype is None:
-                    raise Exception("Table {}, column {} ctype is None".format(relation,column))
-                if column is None:
-                    raise Exception("Table {} has a None column".format(relation))
-
-                print('{}{} {}'.format(sep,column.replace('-','_'),ctype)
-                    ,file=sql_file)
-                sep = ','
-
-            #PRIMARY KEY eg: CONSTRAINT pk_PersonID PRIMARY KEY (P_Id,LastName)
-            print('CONSTRAINT pk_{} PRIMARY KEY({})'.format(relation, d_relinfo['pkey'])
-                 , file=sql_file)
-
-            #End table schema definition
-            print(');', file=sql_file)
-
-        # loop over relations
-        print("\nCOMMIT transaction;", file=sql_file)
-
-        ############### WRITE BULK INSERTS STATEMENTS TO SQL_FILE
-
-        for rel_key, d_relinfo in od_relation.items():
-            # Allow a prefix for all table names. Sometimes useful for
-            # longitudinal studies.
-            relation = '{}{}'.format(rel_prefix,rel_key)
-
-            #bulk insert statement
-            print('begin transaction;', file=sql_file)
-
-            print("\nBULK INSERT {}".format(relation), file=sql_file)
-            print("FROM '{}/{}.txt'".format(output_folder,rel_key), file=sql_file)
-            # print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '\\n');\n", file=sql_file)
-            # Next works better -- else may get bulk insert error # 4866
-            print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '0x0A');\n", file=sql_file)
-            print("\nCOMMIT transaction;", file=sql_file)
-            print('begin transaction;', file=sql_file)
-
-            # AFTER loading data for this relation, now add the sn column.
-            print("ALTER TABLE {} ADD sn INT IDENTITY;"
-                  .format(relation), file=sql_file)
-            print("CREATE UNIQUE INDEX ux_{}_sn on {}(sn);"
-                  .format(relation,relation), file=sql_file)
-            print("\nCOMMIT transaction;", file=sql_file)
-        # end statements for bulk inserts
-    # end sql output
-
-    # Close all the table data output files in od_relation
-    for d_info in od_relation.values():
-        file = d_info.get('db_file', None)
-        if file is not None:
-            file.flush()
-            file.close()
-
-    return count_input_file_failures
-# end def xml_paths_rdb
 
 # RUN PARAMS AND RUN
 import datetime
 import pytz
 import os
 from collections import OrderedDict
-'''
-xml2rdb is the main method.
 
-It accepts three main groups of input parameters:
-(1) to define the  group of input xml files to read
-(2) to define the SQL schema for tables and columns to be outputted
-(3) to define the mining map that associates table and column names with
-    target nodes (designated by child xpath expressions) and their values in
-    each inputted xml file.
-
-If folder_output_base is None, then
-the output folder is defined herein, but it may be promoted to a required argument soon.
-
-These parameters may be re-grouped later into fewer parameters to more plainly separate
-the three groups, each which contains sub-parameters for its group.
-'''
-def xml2rdb( input_path_list=None,
-            folder_output_base=None,
-            doc_root_xpath=None, rel_prefix=None,
-            doc_rel_name=None, use_db=None,
-            d_mining_map=None, od_rel_datacolumns=None,
-            d_params=None, file_count_first=0, file_count_span=1,
-            d_map_params=None,verbosity=0):
-    me = "xml2rdb"
-    utc_now = datetime.datetime.utcnow()
-    utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    print("{}: STARTING at {}".format(me, utc_secs_z))
-
-    if not (input_path_list
-            and (rel_prefix or rel_prefix == '')
-            and doc_root_xpath and use_db and doc_rel_name
-            and d_mining_map and od_rel_datacolumns
-            and d_params
-            and d_map_params is not None
-            ):
-        raise Exception('{}:bad args'.format(me))
-
-    d_log = OrderedDict()
-
-    if folder_output_base is None:
-        # folder_output_base = input_folders + me + '/'
-        folder_output_base = etl.data_folder(linux="/home/robert/", windows="U:/",
-            data_relative_folder='data/outputs/xml2rdb')
-
-    d_params['folder-output-base'] = folder_output_base
-    os.makedirs(folder_output_base, exist_ok=True)
-
-    # We also use secsz_start as part of a folder name, and windows chokes on ':', so use
-    # all hyphens for delimiters
-    secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
-
-    # The output_folder encodes start time of run in its name.
-    output_folder_secsz = '{}/{}'.format(folder_output_base, secsz_start)
-    os.makedirs(output_folder_secsz, exist_ok=True)
-    print("Using output folder={}"
-          .format(output_folder_secsz))
-
-    lil = len(input_path_list)
-    print("Using total real input file count={}"
-          .format(lil))
-
-    if file_count_first is None:
-        input_low_index = 0
-    else:
-        input_low_index = file_count_first
-
-    # Special test - if file count span is 0, then examine all files above low_index
-    if  file_count_span is None or file_count_span <= 0:
-        input_high_index = lil
-    else:
-        input_high_index = file_count_first + file_count_span
-
-    # Use a slice of the total input file list, which may also be the full list.
-    index_max = lil if input_high_index > lil else input_high_index
-    sliced_input_path_list = input_path_list[input_low_index:index_max]
-    #output_name_suffix="_{}_{}".format(input_low_index,index_max)
-
-    #os.makedirs(output_folder_secsz, exist_ok=True)
-    skip_extant = False
-    d_params.update({
-        'secsz-1-start': secsz_start
-        ,'output-folder': output_folder_secsz
-        ,'input-files-index-limit-1-low': repr(input_low_index)
-        ,'input-files-index-limit-2-high': repr(input_high_index)
-    })
-
-    d_log['run_parameters'] = d_params
-
-    #### Open all the output files for all the relations... ####
-
-    ################# READ THE INPUT, AND COLLECT AND OUTPUT STATS ################
-
-    count_input_file_failures = xml_paths_rdb(
-        input_path_list=sliced_input_path_list
-      , doc_root_xpath=doc_root_xpath
-      , rel_prefix = rel_prefix
-      , doc_rel_name = doc_rel_name
-      , output_folder=output_folder_secsz
-      , d_mining_map=d_mining_map
-      , od_rel_datacolumns=od_rel_datacolumns
-      , use_db=use_db
-      , file_count_first=file_count_first
-      , file_count_span=file_count_span
-      #, output_name_suffix=output_name_suffix
-      , verbosity=verbosity
-      , d_map_params=d_map_params
-    )
-    d_log['run_parameters'].update({"count_input_file_failures": count_input_file_failures})
-
-    # Put d_log, logfile dict info, into xml tree,  and then OUTPUT logfile info
-    # as an xml tree.
-    secsz_finish = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%SZ")
-    d_log['run_parameters'].update({"secsz-2-finish": secsz_finish})
-
-    e_root = etree.Element("uf-xml2rdb")
-    # add_subelements_from_dict(e_root, d_log)
-    etl.add_subelements(e_root, d_log)
-
-    # log file output
-    log_filename = '{}/log_xml2rdb.xml'.format(output_folder_secsz)
-    with open(log_filename, mode='w', encoding='utf-8') as outfile:
-        pretty_log = etree.tostring(e_root, pretty_print=True)
-        outfile.write(pretty_log.decode('utf-8'))
-    return log_filename, pretty_log
-# end def xml2rdb
-
-def run_study(study=None):
-    ''' SET UP MAIN ENVIRONMENT PARAMETERS FOR A RUN OF XML2RDB
-    Now all these parameters are 'hard-coded' here, but they could go into
-    a configuration file later for common usage.
-    Better still, this would all be managed by a web-interface with xml2rdb as a back end.
-    This is where a web service comes in that
-    (1) manages thousands of users accounts,
-    (2) collects fees for
-      (a) configuration file storage,
-      (b) uploads and storage of the xml input files
-      (c) storage for versions of SQL output (paired with input files)
-      (d) paid user downloads of the SQL outputs.
-      (e) and more...
-    '''
-    me = 'run'
-    # Study choices
-    study_choices = [
-     'ccila'
-     , 'citrus'
-     , 'crafa'
-     , 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
-     , 'crawd' # Crossref filter where D is for doi
-     , 'elsevier'
-     , 'entitlement' # Elevier entitlment data.
-     , 'merrick_oai_set'
-     , 'oadoi'
-     , 'orcid'
-     , 'scopus'
-    ]
-
-    if study not in study_choices:
-        raise ValueError("Unknown study='{}'".format(repr(study)))
-
-    # KEEP ONLY ONE LINE NEXT: Study Selection
-    study = 'crafd' # Crossreff affiliation filter where D here is for Deposit Date.
-
-    file_count_first = 0
-    file_count_span = 0
-    use_db = 'silodb'
-
-    #folders_base = etl.home_folder_name() + '/'
-    data_elsevier_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
-            data_relative_folder='data/elsevier/')
-
-    d_map_params = {}
-    # Part of a deprecation... now only marcxml uses this and passes it to xml2rdb,
-    # So value of None is signal to interpret arguments an 'older' way.
-    folder_output_base = None
-
-    if study == 'crafa':
-        import xml2rdb_configs.crossref as config
-        # Note- input folder is/was populated via program crafatxml
-        rel_prefix = 'y2016_'
-        # All files under the input folder selected for input_path_list below will be used as input
-        input_folder = '{}/output_crafatxml/doi/2016'.format(input_folders_base)
-        input_folder = etl.home_relative_folder('/output_crafatxml/doi/2016')
-        doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns
-        #doc_root_xpath = './crossref-api-filter-aff-UF' #this matches root node assignment in crafatxml program
-        doc_root_xpath = './crossref-api-filter-aff-UF/message'
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-        input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
-        print("STUDY={}, got {} input files under {}"
-              .format(study, len(input_path_list),input_folder))
-        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-        od_rel_datacolumns, d_mining_map = config.sql_mining_params()
-        file_count_first = 0
-        file_count_span = 0
-
-    elif study in [ 'ccila' ] : #ccila is cuban collection i? latin america
-        import xml2rdb_configs.marcxml as config
-        rel_prefix = 'ccila_'
-
-        # This is where the precursor program marc2xml leaves its marcxml data for ccila UCRiverside
-        # items
-        in_folder_name = etl.data_folder(linux='/home/robert/',
-            windows='U:/', data_relative_folder='data/outputs/marcxml/UCRiverside/')
-
-        folder_output_base = etl.data_folder(linux='/home/robert/',
-            windows='U:/', data_relative_folder='data/outputs/xml2rdb/UCRiverside')
-
-        input_folder = in_folder_name
-        input_folders = []
-        input_folders.append(input_folder)
-        input_path_glob = '**/marc*.xml'
-
-        doc_rel_name = 'record' # must match highest level table dbname in od_rel_datacolumns
-        doc_root_xpath = ".//{*}record"
-
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-        d_map_params['attribute_text'] = 'text'
-
-        print("STUDY={}, got {} input files under {}"
-              .format(study, len(input_path_list),input_folder))
-        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-        od_rel_datacolumns, d_mining_map = config.sql_mining_params()
-        file_count_first = 0
-        file_count_span = 0
-
-    elif study in [ 'entitlement' ] : #
-        import xml2rdb_configs.entitlement as config
-        rel_prefix = 'enttl_'
-
-        # This is where the precursor program marc2xml leaves its marcxml data for ccila UCRiverside
-        # items
-        in_folder_name = etl.data_folder(linux='/home/robert/', windows='U:/'
-            , data_relative_folder='data/elsevier/output_entitlement/')
-
-        folder_output_base = etl.data_folder(linux='/home/robert/', windows='U:/'
-            , data_relative_folder='data/outputs/xml2rdb/entitlement/')
-
-        input_folder = in_folder_name
-        input_folders = []
-        input_folders.append(input_folder)
-        input_path_glob = 'pii*.xml'
-
-        doc_rel_name = 'entitlement' # must match highest level table dbname in od_rel_datacolumns
-        doc_root_xpath = ".//{*}document-entitlement"
-
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-        d_map_params['attribute_text'] = 'text'
-
-        print("STUDY={}, got {} input files under {}"
-              .format(study, len(input_path_list),input_folder))
-        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-        od_rel_datacolumns, d_mining_map = config.sql_mining_params()
-        file_count_first = 0
-        file_count_span = 0
-    elif study == 'crawd': # CrossRefApi Works by Doi-list
-        import xml2rdb_configs.crossref as config
-        # Note- input folder is/was populated via program crawdxml- where crawdxml
-        # gets Works Dois MD for 'new' uf articles as found by diffing a week to
-        # week SCOPUS harvest # of UF-affiliated dois/articles
-        rel_prefix = 'crawd_' # maybe try wd_ as a prefix sometime
-        input_folder = '{}/output_crawdxml/doi'.format(data_elsevier_folder)
-        doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns
-        doc_root_xpath = './response/message'
-        input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
-        print("STUDY={}, got {} input files under {}"
-            .format(study, len(input_path_list),input_folder))
-        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-        od_rel_datacolumns, d_mining_map = config.sql_mining_params()
-        file_count_first = 0
-        file_count_span = 0
-
-    elif study == 'crafd': # CrossRefApi filter by D for deposit date (and it selects only UF affiliations)
-        import xml2rdb_configs.crossref as config
-        # Note- input folder is/was populated via program crafdtxml
-        rel_prefix = 'crafd2017_'
-        # NOTE LIMIT INPUT FOLDER for now...
-        input_folder = '{}/output_crafdtxml/doi/2017/06/23'.format(data_elsevier_folder)
-        input_folders = [ input_folder ]
-        input_path_glob = 'doi_*.xml'
-        doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns, set below.
-        #Next doc_root_xpath is set by the harvester crafdtxml so see its code.
-        doc_root_xpath = './crossref-api-filter-date-UF/message'
-
-        input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
-        print("STUDY={}, got {} input files under {}"
-              .format(study, len(input_path_list),input_folder))
-        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-        od_rel_datacolumns, d_mining_map = config.sql_mining_params()
-        file_count_first = 0
-        file_count_span = 0
-
-    elif study == 'elsevier':
-        import xml2rdb_configs.elsevier as config
-
-        file_count_first = 0
-        file_count_span = 0
-        input_path_glob = '**/pii_*.xml'
-
-        rel_prefix='e2016b_'
-        # Set input folders to 'orig load date' to capture recent years through 20170824,
-        # that is, the latest elsevier harvest to date.
-        rel_prefix='e2017b_'
-
-        input_folders = []
-        for year in range(2010, 2018):
-            input_folders.append('{}/output_ealdxml/{}/'.format(data_elsevier_folder,year))
-
-        doc_rel_name = 'doc'
-        doc_root_xpath = './{*}full-text-retrieval-response'
-
-        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-        od_rel_datacolumns, d_mining_map = config.sql_mining_params()
-    elif study == 'scopus':
-        import xml2rdb_configs.scopus as config
-        rel_prefix = 'h5_' #h5 is harvest 5 of 20161202
-        rel_prefix = 'h6_' #h6 is harvst 6 of 20161210 saturday
-        rel_prefix = 'h7_' #h7 is 20161216 friday
-        rel_prefix = 'h8_' #h8 is 20161223 friday - not run
-        rel_prefix = 'h9_' #h9 is 20161230 friday - not run
-        rel_prefix = 'h2016_10_' #h2016 is for query pubyear 2016, 10 is for harvest 10 done on 20170106 friday
-
-        rel_prefix, year = ('h201709_', '2017')
-
-        # Year 2016 input
-        input_folder = '{}/output_satxml/{}/doi'.format(data_elsevier_folder,year)
-
-        input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
-
-        doc_rel_name = 'scopus'
-        doc_root_xpath = './{*}entry'
-        od_rel_datacolumns, d_mining_map = config.sql_mining_params()
-
-    elif study == 'oadoi':
-        import xml2rdb_configs.oadoi as config
-        # for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
-        # for 20170308 run using dois from crafd_crawd for UF year 2016
-
-        input_folder =  data_elsevier_folder + "/outputs/oadoi/"
-        input_folders = [input_folder]
-        input_path_glob = '**/oadoi_*.xml'
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-
-        print("Study oadoi, input folder={}, input path glob={}, N input files={},"
-              " data_elsevier_folder = {}"
-              .format(input_folder,input_path_glob,len(input_path_list),data_elsevier_folder))
-
-        # rel_prefix 'oa2016_' is used because the oaidoi precursor process to produce the dois input list
-        # was run on scopus dois fo/der uf authors from year 2016... should probably change prefix to oa_scopus2016_
-        # input_folder = '{}/output_oadoi/2016-01-10T12-54-23Z'.format(data_elsevier_folder)
-        rel_prefix = 'oa_cruf2016_'
-        doc_rel_name = 'oadoi'
-        doc_root_xpath = './{*}entry'
-        od_rel_datacolumns, d_mining_map = config.sql_mining_params()
-
-    elif study == 'orcid':
-        import xml2rdb_configs.orcid as config
-        #for 20161210 run of satxml(_h6) and oaidoi - c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
-        #input_folder = '{}/output_oadoi/2017-01-10T12-54-23Z'.format(data_elsevier_folder)
-        # for 20170308 run using dois from crafd_crawd for UF year 2016
-        input_folder = '{}/output_orpubtxml'.format(data_elsevier_folder)
-        input_folders = [ input_folder]
-        input_path_glob = '**/orcid_*.xml'
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-
-        print("Study {}, input folder={}, input path glob={}, input files={}"
-              .format(study, input_folder,input_path_glob,len(input_path_list)))
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-        rel_prefix = 'orcid_'
-        doc_rel_name = 'person'
-        #TODO: add batch id or dict column_constant to define column name and constant to insert in the
-        # doc_rel_name table to hold hash for external grouping studies, repeated/longitutinal studies
-        #raise Exception("Development EXIT")
-
-        doc_root_xpath = './{*}record'
-        od_rel_datacolumns, d_mining_map = config.sql_mining_params()
-
-    elif study == 'citrus':
-        import xml2rdb_configs.citrus as config
-
-
-        input_folder = etl.data_folder(linux='/home/robert/', windows='u:/',
-            data_relative_folder='data/citrus_mets_base')
-        input_folders = [ input_folder]
-        input_path_glob = '**/*mets.xml'
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-
-        print("Study {}, input folder={}, input path glob={}, input files={}"
-              .format(study, input_folder,input_path_glob,len(input_path_list)))
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-        rel_prefix = 'citrus_'
-        doc_rel_name = 'mets'
-        #TODO: add batch id or dict column_constant to define column name and constant to insert in the
-        # doc_rel_name table to hold hash for external grouping studies, repeated/longitutinal studies
-        #raise Exception("Development EXIT")
-
-        doc_root_xpath = './METS:mets'
-        d_map_params['attribute_text'] = 'attribute_text'
-        d_map_params['attribute_innerhtml'] =  'attribute_innerhtml'
-
-        od_rel_datacolumns, d_mining_map = config.sql_mining_params()
-    elif study == 'merrick_oai_set':
-        import xml2rdb_configs.merrick_oai_sets as config
-
-        input_folder = etl.data_folder(linux='/home/robert/', windows='u:/',
-            data_relative_folder='data/merrick_oai_set')
-        input_folders = [ input_folder]
-        input_path_glob = '**/*listsetspecs.xml'
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-
-        print("Study {}, input folder={}, input path glob={}, input files={}"
-              .format(study, input_folder,input_path_glob,len(input_path_list)))
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-        rel_prefix = 'merrick_oai_'
-        doc_rel_name = 'parent'
-        #TODO: add batch id or dict column_constant to define column name and constant to insert in the
-        # doc_rel_name table to hold hash for external grouping studies, repeated/longitutinal studies
-        #raise Exception("Development EXIT")
-
-        doc_root_xpath = './/{*}ListSets'
-        d_map_params['attribute_text'] = 'attribute_text'
-        d_map_params['attribute_innerhtml'] =  'attribute_innerhtml'
-
-        od_rel_datacolumns, d_mining_map = config.sql_mining_params()
-    else:
-        raise Exception("Study ={} is not valid.".format(repr(study)))
-
-    # OPTIONAL - If a study specified multiple input folders and input_path_glob,
-    # then honor them when constructing the input_path_list
-    if (input_folders is not None and input_path_glob is not None):
-        # compose input_path_list over multiple input_folders
-        input_path_list = []
-        for input_folder in input_folders:
-            print("{}:Study {}:Using input_folder='{}'\n"
-                .format(me,study,input_folder))
-            input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
-
-    # If input_folders not defined in a study, define it by putting the single input folder into this list
-    if input_folders is None:
-        input_folders = []
-        input_folders.append(input_folder)
-
-    lip = len(input_path_list)
-    if (lip < 1 ):
-        raise Exception(
-            "No input files in input_folder='{}'".format(input_folder))
-    d_params = OrderedDict()
-    #d_params = OrderedDict()
-    d_params.update({
-         'python-sys-version': sys.version
-        #,'input-files-xml-folder' : input_folder
-        ,'study': repr(study)
-        ,'input-folders': repr(input_folders)
-        ,'folder-output-base': repr(folder_output_base)
-        ,'input-files-count': str(len(input_path_list))
-        ,'file-count-first': file_count_first
-        ,'file-count-span': file_count_span
-        ,'folders_base': data_elsevier_folder
-        ,'doc-rel-name': doc_rel_name
-        ,'doc-root-xpath': doc_root_xpath
-        ,'use-db': use_db
-        ,'d-node-params': repr(d_mining_map)
-        ,'od-rel-datacolumns': repr(od_rel_datacolumns)
-    })
-
-    # RUN the analysis and collect stats
-    log_filename, pretty_log = xml2rdb(
-        input_path_list=input_path_list,
-        folder_output_base=folder_output_base,
-        doc_root_xpath=doc_root_xpath, rel_prefix=rel_prefix,
-        doc_rel_name=doc_rel_name, use_db=use_db,
-        d_mining_map=d_mining_map, od_rel_datacolumns=od_rel_datacolumns,
-        d_params=d_params, file_count_first=file_count_first, file_count_span=file_count_span,
-        d_map_params=d_map_params)
-
-    print("Done.")
-#end def run_study()
-#
 
 def rdb2xml_test():
-  me = rdb2xml_test
+  me = 'rdb2xml_test'
 
   import rdb2xml_configs.marctsf2xml as config
 
@@ -1440,17 +767,17 @@ def rdb2xml_test():
 
   d_map_params = {'attribute_text':'text'}
   input_folder = etl.data_folder(
-      linux="/home/robert/", windows="C:/users/podengo/",
-      data_relative_folder='git/outputs/xml2rdb/ccila/')
+  linux="/home/robert/", windows="C:/users/podengo/",
+  data_relative_folder='git/outputs/xml2rdb/ccila/')
 
   output_folder = etl.data_folder(
   # See xml2rdb.py study 'ccila' definition of folder_output_base
-      linux="/home/robert/", windows="C:/users/podengo/",
-      data_relative_folder='git/outputs/rdb2xml/ccila/')
+  linux="/home/robert/", windows="C:/users/podengo/",
+  data_relative_folder='git/outputs/rdb2xml/ccila/')
   composite_ids = []
 
   relation_miner = RelationMiner(d_mining_map=config.d_nodes_map,
-    d_map_params=d_map_params)
+  d_map_params=d_map_params)
 
   # create test set of relations to mine with rudimentary manual instantiations.
   print('{}:Constructing phd = PHD(...)'.format(me))
@@ -1462,37 +789,44 @@ def rdb2xml_test():
   # some diagnostic and error reporting
 
   parent_child_tuples = [
-      ('','record'),
-      ('record','controlfield'),
-      ('record','datafield'),
-      ('datafield','subfield')
+  ('','record'),
+  ('record','controlfield'),
+  ('record','datafield'),
+  ('datafield','subfield')
   ]
   d_name_relation = {}
 
   for (parent_name, relation_name) in parent_child_tuples:
-    relation = phd.add_relation(parent_name, relation_name=relation_name,
-            verbosity=0)
+    relation = phd.add_relation(parent_name=parent_name
+    , relation_name=relation_name
+    ,verbosity=0)
     d_name_relation[relation_name] = relation
     print('{}:Added relation named {} with parent named {}'
-          .format(me,relation_name,parent_name))
+      .format(me,relation_name,parent_name))
+    ancestor_ids = []
+    d_row = {'test':'test',}
 
-  composite_ids = []
-  d_row = {'test':'test',}
+    #Mine this config - visit all nodes and create outputs
+    #note todo: add argument for d_name_relation for node_visit_output to use to
+    #invoke correct sequence generator
 
-  #Mine this config - visit all nodes and create outputs
-  #note todo: add argument for d_name_relation for node_visit_output to use to
-  #invoke correct sequence generator
+    node = config.d_nodes_map
+
+  if 1 > 0:
+    print("step x2")
+    print("{}.Using node={}.".format(me,repr(node)))
 
   relation_miner.node_visit_output(node=config.d_nodes_map
-        ,d_name_relation=d_name_relation
-        ,composite_ids=composite_ids
-        ,d_row=d_row
-        ,verbosity=1
-        )
+    ,d_name_relation=d_name_relation
+    ,ancestor_ids=ancestor_ids
+    ,d_row=d_row
+    ,verbosity=1
+    )
 
   # Set up and perform  a test run.
   # First we test with
   return
+
 #end run_test
 
 
