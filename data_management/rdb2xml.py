@@ -325,7 +325,42 @@ class RelationMiner:
     When this method is called, the d_row dictionary will have the field values
     of the input dataset's parent relations. Because this
 
-    </summary> </20171104 notes>
+    </20171104 notes>
+    <notes date='20171105'>
+    Modified node_visit_output processing. Maybe change method name to
+    node_output_dive()
+    Step 1 - context: assume caller has provided arg composite_ids, and it DOES include
+    all composite ids for a specific row, and d_row includes the field values for
+    this row.
+
+    So in effect the caller has already 'visited' the node because
+    it has read and populated the d_row argument with current single rows- value.
+    Maybe call the method row_process_delve():
+
+    Here, the given argument node also represents the mapping of this row
+    field values -- the mining map or d_node_params is the same as used
+    yesterday in fact.
+
+    Step 2: sub-process output:
+    given the output_file argument, use the node.d_field2_field1
+    map and output the values
+
+    Step 3: sub-process delve
+    3a: take the child_nodes list and for each child_node :
+     use the node.node1_name to get the source object -
+      (first cut is just an OreredRelation object, from arg d_name_relation).
+    3a1: enter a for loop over the relation.sequence.ordered_siblings()
+         for each child's-sibling, invoke again row_output_delve()
+
+    That should about do it... 20171105t0926
+
+
+
+
+
+
+    </notes date='20171105'>
+    </summary>
     </notes>
     '''
   def node_visit_output(self
