@@ -327,8 +327,17 @@ class RelationMiner:
 
     </20171104 notes>
     <notes date='20171105'>
-    Modified node_visit_output processing. Maybe change method name to
-    node_output_dive()
+    Modified node_visit_output processing.
+    Maybe change method name to
+    node_output_dive() or
+
+    translate_delve_extract() : because it does:
+     (a) translate: the given d_row argument values into outputs and outpus them
+     (b) delve: into child nodes of given row
+          for each child_node, loop to extract sibling rows
+          and for each child/sibling row found do:
+     (d) recurse: call self at next level for each child_node row!
+
     Step 1 - context: assume caller has provided arg composite_ids, and it DOES include
     all composite ids for a specific row, and d_row includes the field values for
     this row.
