@@ -466,14 +466,14 @@ class RelationMiner:
         print("attribute_text={}, attribute_innerhtml-{}"
         .format(attribute_text,attribute_innerhtml))
 
-    d_row = {}; d_attribute_value = {}; content_value = ''
+    # d_row = {}; d_attribute_value = {}; content_value = ''
     # d_field2_field1 is keyed by the output column/field name within its
     # parent, and the value is the input d_row{} key/column name to use to
     # retrieve the data value to use.
-    d_field2_field1 = d_mining_map.get('d_field2_field1', None)
+    d_field2_field1 = node.get('d_field2_field1', None)
     if d_field2_field1 is not None:
-      # We have some field2 ouptut fields with associated  field1
-      # input fields/columns designed for outputting
+      # We have some field2 fields to output with associated  field1
+      # input fields/columns.
       # so we will set them up in d_row key-value pairs.
 
       if not isinstance(d_field2_field1, dict):
