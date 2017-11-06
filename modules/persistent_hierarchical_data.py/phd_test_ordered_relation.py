@@ -13,7 +13,7 @@ def get_path_modules(verbosity=0):
 sys.path.append(get_path_modules())
 
 import etl
-from rdb2xml_configs.marctsf2xml import d_nodes_map
+from rdb2xml_configs.marctsf2xml import d_mining_map
 
 from collections import OrderedDict
 import lxml
@@ -292,11 +292,12 @@ class PHD():
 
         self.d_name_relation[relation_name] = relation
         return relation
+      # end:def add_relation
 
 #end class PHD
 
-def testme(d_nodes_map=None):
-    required_args = [d_nodes_map]
+def testme(d_mining_map=None):
+    required_args = [d_mining_map]
     if len(required_args) != 0 and not all(required_args):
         raise ValueError("{}:Missing some required_args values in {}"
             .format(me,repr(required_args)))
@@ -323,7 +324,7 @@ def testme(d_nodes_map=None):
     print('{}: using input_folder={}, output_folder={}'
           .format(me, input_folder, output_folder))
 
-    # node_visit_output(d_nodes_map,composite_ids)
+    # node_visit_output(d_mining_map,composite_ids)
 
     print('{}:Constructing phd = PHD(...)'.format(me))
     phd = PHD(input_folder, output_folder,verbosity=1)
@@ -362,5 +363,5 @@ def testme(d_nodes_map=None):
     return
 #####################
 print("Calling testme()")
-testme(d_nodes_map=d_nodes_map)
+testme(d_mining_map=d_mining_map)
 print ("Done!")

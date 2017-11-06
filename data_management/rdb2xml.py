@@ -32,7 +32,7 @@ import etl
 from dataset.ordered_relation import OrderedRelation
 
 '''
-Method rnode_visit_output
+Method row_visit_output
 
 Given parameters:
 (*) node_index - the index of the current node (it is the depth of
@@ -115,20 +115,21 @@ elements and data.
 Within iterations of that loop, meaning a child_name is given, a new select
 cursor is created that selects all rows of the relation indicated in the child
 name, and an inner loop is entered to deliver each row (via parameter od_row)
-to a recursive call to rnode_visit_output for that row.
+to a recursive call to row_visit_output for that row.
 
-(*) After the 'child_path' processing code, and if any data was output from this node,
-as inferred from the return values from the recursive calls (or the presence of a key in d_rdb_xml)
-a closing tag is output.
+(*) After the 'child_path' processing code, and if any data was output from
+this node, as inferred from the return values from the recursive calls (or
+the presence of a key in d_rdb_xml) a closing tag is output.
 
-Def rel_node_visit_output()
+Def rel_row_visit_output()
 use this name, same as in xml2rdb except with rel_ prefix.
 
-Compare and contrast some features with established node_visit_output() in xml2rdb as of 20171026:
+Compare and contrast some features with established row_visit_output() in
+xml2rdb as of 20171026:
 
 
 Note: if arg output_file is not set one xml file will be created in output folder
-when needed named by bar-separated list of lineage_ids.
+when needed named by bar-separated list of composite_ids.
 
 method rel_node_visit()
 
@@ -140,7 +141,7 @@ node - In the mining map, where a dictionary key is a relation name,
 stack_tags: the list or stack of all parent tags to this one in the context
   of this call in a DAG tree of recursive calls.
 
-lineage_ids: the array or ordered indexes into this relations ancestor
+composite_ids: the array or ordered indexes into this relations ancestor
   relations.
 
 open_level - the index into stack_tags that identifies the closest ancestor
@@ -165,17 +166,28 @@ column data to convert to produce each output attribute value.
 '''
 class RelationMiner:
 
-  def __init__(self, d_mining_map=None ,d_map_params=None, verbosity=0):
+  def __init__(self, d_mining_map=None ,d_mining_params=None, verbosity=0):
     required_args = [d_mining_map, d_map_params]
     if not all(required_args):
       raise ValueError("Missing some required_args values in {}"
       .format(repr(required_args)))
 
     self.d_mining_map = d_mining_map
-
     self.d_map_params = d_map_params if d_map_params is not None else {}
-
     self.verbosity = verbosity
+
+  '''
+  method mine():
+  Set up context data and initial data to prepare the call to
+  the recursive mining method: Eg, row_visit_output()
+
+  This will be cleaned up later... now it is a mashup of
+  code to prepare for and execute the mining via the depth-first
+  processing that is executed by this  call to
+  row_visit_output(), which uses the d_nodes_map to recursively
+  call itself to do the mining.
+
+  '''
 
   def mine(self, dataset_source=None
       , relation_name_prefix=''
@@ -184,12 +196,12 @@ class RelationMiner:
       , output_file_name=None
       , zfill_id_count=8
       , verbosity=0):
+    me = 'RelationMiner.mine()'
 
     # Register input and output style options
     # and visit all the selected relational nodes in the
     # d_mining_map mining map to mine from dataset_source the values
     # defined in the mining map and to produce output.
-    me = 'RelationMiner.mine()'
     required_args = [dataset_source, relation_main ,output_folder]
 
     if not all(required_args):
@@ -202,20 +214,26 @@ class RelationMiner:
     # Make sure output folder exists
 
     self.output_file_name = '' if output_file_name is None else output_file_name
+
+    composite_ids = []
+
     if self.output_file_name != '':
       # One big output file is required
       with open(
         '{}{}'.format(output_folder,output_file_name),'w') as self.output_file:
-          node_visit_output(self, d_mining_map, lineage_ids=lineage_ids)
+        self.row_visit_output(
+          node=d_mining_map, composite_ids=composite_ids, output_file=self.output_file)
     else:
         self.output_file = None
         # One output file per primary relation row is required.
-        node_visit_output(self, d_mining_map, lineage_ids=lineage_ids )
+        row_visit_output(self, dd_mining_map=_mining_map, composite_ids=composite_ids )
     return
+  #end:def mine in RelationMiner
+
   '''
-  <summary>Method node_visit_output:
+  <summary>Method row_visit_output:
   To support one-big xml file of output vs one per output record,
-  node_visit_output always checks output_file, and if None, it will output
+  row_visit_output always checks output_file, and if None, it will output
     one xml file per primary relation row.
 
     If none, it constructs the output file name and opens a separate
@@ -226,8 +244,8 @@ class RelationMiner:
     Either the root value (a dictionary) for the self.d_mining map or the
     dictonary value of a child node in the self.d_mining map.
 
-    </param><param name='lineage_ids'>
-    The stack of lineage_ids (relation_id values) of all parent rows and the
+    </param><param name='composite_ids'>
+    The stack of composite_ids (relation_id values) of all parent rows and the
     current relation  row. This is used in calls to
     dataset_source.select_contained_rows to select the particular rows of interest
     to output to the xml output file(s).
@@ -285,7 +303,7 @@ class RelationMiner:
     naming convention used for those files rather than '.tsv'.
     </move_me>
 
-    The method arguments of  'ancestor_ids' and 'd_row' provide the parent
+    The method arguments of  'composite_ids' and 'd_row' provide the parent
     relation row id information and key-value pairs of the parent rows with
     the key in the form of relation_name.column_name and the value for each
     key is a simple string value.
@@ -302,11 +320,11 @@ class RelationMiner:
      that are dervied from  the field1 values of the sibling row.
      - an inner loop through the node's child_nodes is executed, where for each child_node:
     -- the sibling_id of the main relation row is appended to the given
-      ancestor_ids
+      composite_ids
     -- a new d_row value is appended by appending this sibing row's values
      to the given d_row (they might be used by a recursive call in case a
      child_node node needs to use them to derive some values)
-     -- a recursive call is made to node_visit_output for the child node
+     -- a recursive call is made to row_visit_output for the child node
 
 
     The given node corresponds to an input relation
@@ -327,7 +345,7 @@ class RelationMiner:
 
     </20171104 notes>
     <notes date='20171105'>
-    Modified node_visit_output processing.
+    Modified row_visit_output processing.
     Maybe change method name to
     node_output_dive() or
 
@@ -369,27 +387,41 @@ class RelationMiner:
 
 
     </notes date='20171105'>
+    <notes date='20171106'>
+    Resolved: first try will be simalr to xml2rdb approach.
+    Upon entry to this routine, the composite_ids will indicate one unique row,
+    aka this object aka this node. Therefore, the caller is in charge of finding this row
+    in the input data in the first place and sending the row with column values in as d_row.
+    (Though in xml2rdb node_visit_output, the routine does find its own node values from
+    lxml node.xxx calls, the important point is that an entry to either routine features a
+    unique node/object/row as the key object. The fact that it may have other child
+    objects/rows/nodes is beside that point. Code is included also in this method to
+    proceed to visit all the child rows of each of the child nodes and invoke the
+    next level of recursive calls.
+
+    </notes date='20171106'>
     </summary>
     </notes>
     '''
-  def node_visit_output(self
+  def row_visit_output(self
     ,node=None
     ,d_name_relation=None
-    ,ancestor_ids=None
+    ,composite_ids=None
     ,d_row=None
+    ,output_file=None #make this a generic dataset later
     ,verbosity=0
     ):
-    me = 'node_visit_output()'
+    me = 'row_visit_output()'
 
-    required_args = [node, d_name_relation]
+    required_args = [node, d_name_relation, composite_ids, d_row, output_file]
     if not all(required_args):
       raise ValueError("{}:Missing some required_args values in {}"
       .format(me,repr(required_args)))
 
-    # node1_name is the input dataset's group record name:
-    # for databasess it is a table or relation name
-    # for xml it is an element tag name,
-    # for 'tsf' files in a directory it is a file name of tab separated
+    # node1_name is the input dataset's relation name for the curent row.
+    # For input databases it is a table or relation name,
+    # and for input xml (maybe a future input source) it is an element tag name,
+    # Ror input directory of 'tsf' files it is a file name of tab separated
     # ordered values per file line, etc.
     # And node2_name is the output dataset's name for a record or
     # parent group of data
@@ -398,42 +430,33 @@ class RelationMiner:
 
     if verbosity > 0:
       msg = (
-      "{}: verbosity={},node1_name={}, ancestor_ids={},len(d_row_={})"
-      .format(me, verbosity, node1_name, repr(ancestor_ids),len(d_row)))
+      "{}: verbosity={},node1_name={}, composite_ids={},len(d_row_={})"
+      .format(me, verbosity, node1_name, repr(composite_ids),len(d_row)))
       print(msg)
 
-    if len(ancestor_ids) == 1 and output_file is None:
-      # This node visit and child visits will generate an output forw for the
-      # main relation, which will produce its own output file.
-      # Now open one the output file for this primary relation row.
+    if len(composite_ids) == 1 and output_file is None:
+      # This node visit and child visits will generate some output data for the
+      # main relation, which will produce (in conjunction with deeper calls)
+      # its own entire xml output file.
+      # Now open the output file for this row of this primary relation.
       file_path_name = (
       '{}{}_{}'.format(self.output_folder,node1_name
       , str(sibling_id).zfill(self.zfill_id_count)))
 
       output_file = open('file_path_name','w')
 
-    # Next for loop - cycle through this node's sibling rows
-    #TODO: maybe add argument d_name_relation to calculate relation
-    #from a relaton name or depth.
+    # Note: This row's composite_ids set identifies this row as unique in the dataset.
 
-    for (row_count, sibling_row) in relation.sequence_ordered_siblings():
+    # Next, we use a flexible way to identify the sibling id column name.
+    # It might better be defined by params for dataset_source, and
+    # its selection method should return a vector of these ids to resuse
+    # perhaps as an additional argument to this mehod
 
-     # This row's sibling id, appended to ancestor_ids
-     # identifies this row as unique in the dataset w hen composed with  its
-     # ancestor_ids (parent ids)
-     # Consider: a flexible way to identify the sibling id column name.
-     # Perhaps it would be some param info to add to d_map_params.
-     # This is 'the way' that xml2rdb names the lineage id columns, and
-     # this code is initially developed to work with that, so the column
-     # names are constrained to be the ones expected here.
-     # It might better be defined by params for dataset_source, and
-     # its selection method should return a vector of these ids to resuse
-     # perhaps as an additional argument to this mehod
-
-     name_this_id ='{}_id'.format(node['node1_name'])
-     sibling_id = int(sibling_row[name_this_id])
-     ancestor_ids.append(sibling_id)
-
+    name_this_id ='{}_id'.format(node['node1_name'])
+    # Note:This node's sibling_id (last composite id) is d_row[name_this_id]
+    # consider using that value to stick in composite_ids instead of the integer
+    # order id of the sibling in the future. It may be more flexible.
+    # But we wont use it in the first version of this code.
 
     attribute_text = d_map_params.get('attribute_text','text')
     attribute_innerhtml = d_map_params.get(
@@ -515,11 +538,11 @@ class RelationMiner:
           # summary statistic
           d_child_row = None
           for d_row in db.select_contained_rows(
-            relation_name, lineage_ids=lineage_ids):
+            relation_name, composite_ids=composite_ids):
             # Asssume i always goes in counting order at first, later get it out of the row
             # index = d_child_row['{}_id'.format(relation_name)
-            d_child_row, child_output = node_visit_output(node=d_child_node
-            , ancestor=ancestor_ids
+            d_child_row, child_output = row_visit_output(node=d_child_node
+            , ancestor=composite_ids
             , d_row=d_row
             , output_file=output_file
             , d_map_params = d_map_params
@@ -615,7 +638,10 @@ class RelationMiner:
          .format(me, node.tag, node_index,repr(d_row)))
       #print(msg)
       return d_row
-  # def end node_visit_output
+  # def end row_visit_output
+
+  def mine(): # visit the d_nodes_map to mine the input and write the output
+    return
 # end class RelationMiner
 '''
 Method rdb_to_xml: from given xml doc(eg, from an Elsevier full text retrieval apifile),
@@ -684,7 +710,7 @@ def rdb_to_xml(
 
   tag = tags[len(tags) - 1]
   with open(output_file_name, mode='r', encoding='utf-8') as file_out:
-    retval = rel_node_visit_output(
+    retval = rel_row_visit_output(
       node=od_mining_map
       ,tags=tags
       ,node_index=node_index
@@ -695,7 +721,7 @@ def rdb_to_xml(
 
   for row_index, d_row in enumerate(row_selection):
     print("For row {}, using d_row={}".format(row_index,repr(d_row)))
-    # set args for rel_node_visit_output()
+    # set args for rel_row_visit_output()
     node_index.append(row_index)
 
   #MAKE RECURSIVE CALL
@@ -775,7 +801,7 @@ def rdb_to_xml(
 
   with open(output_file_name, "w", encoding="utf-8") as output_file:
 
-    d_return = rel_node_visit_output(
+    d_return = rel_row_visit_output(
     tags=['document_root']
     ,od_relation=od_relation
     ,d_namespaces=d_namespaces
@@ -827,7 +853,6 @@ def rdb2xml_test():
   print('{}:Constructing phd = PHD(...)'.format(me))
   phd = PHD(input_folder, output_folder,verbosity=1)
 
-  relation_name='record'
   # NOTE: IMPOSE a requirement to use '' as the parent of the root relation.
   # It should facilitate
   # some diagnostic and error reporting
@@ -838,36 +863,49 @@ def rdb2xml_test():
   ('record','datafield'),
   ('datafield','subfield')
   ]
-  d_name_relation = {}
 
+  # Set up and perform a test run.
   for (parent_name, relation_name) in parent_child_tuples:
     relation = phd.add_relation(parent_name=parent_name
     , relation_name=relation_name
     ,verbosity=0)
-    d_name_relation[relation_name] = relation
+    # add a sequence_ordered_siblings sequence for this relation
+    relation.sequence = relation.sequence_ordered_siblings()
     print('{}:Added relation named {} with parent named {}'
       .format(me,relation_name,parent_name))
-    ancestor_ids = []
-    d_row = {'test':'test',}
 
-    #Mine this config - visit all nodes and create outputs
-    #note todo: add argument for d_name_relation for node_visit_output to use to
-    #invoke correct sequence generator
+  composite_ids = []
+  #Mine this config - visit all nodes and create outputs
+  #note todo: add argument for d_name_relation for row_visit_output to use to
+  #invoke correct sequence generator
 
-    node = config.d_nodes_map
+  node_root = {
+    'node1_name':'run_context',
+    'node2_name':'run_context'
+    ,'child_nodes': [d_mining_map]
+    }
+  output_file = '{}{}'.format(output_folder,'rdb2xml_output.xml')
+
+  verbosity = 1
+  composite_ids = []
+  d_row = {
+     'context.bib_id':'ZZ00004567', 'context.row_column1':'test1',
+     'context.row_column2':'test2'}
 
   if 1 > 0:
-    print("step x2")
+    print("Creating output file {}".format(output_file))
     print("{}.Using node={}.".format(me,repr(node)))
+    print("{}:Calling relation_miner.row_visit_output()".format(me))
 
-  relation_miner.node_visit_output(node=config.d_nodes_map
-    ,d_name_relation=d_name_relation
-    ,ancestor_ids=ancestor_ids
+  # Main call
+  relation_miner.row_visit_output(node=node_root
+    ,d_name_relation=phd.d_name_relation
+    ,composite_ids=composite_ids
     ,d_row=d_row
-    ,verbosity=1
+    ,output_file=output_file
+    ,verbosity=verbosity
     )
 
-  # Set up and perform  a test run.
   # First we test with
   return
 

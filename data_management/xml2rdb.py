@@ -194,14 +194,20 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
 Method node_visit_output
 
 Given node, the current node, and d_node_params, the 'mining map' starting with the
-given node's entry in the mining map hierarchy, garner the input fields for this node.
+given node's entry in the mining map hierarchy, select the the data input fields for
+this node.
 
-If the node has a db_name (and/or a multiple=1 value, meaning multiple of this node type is
-allowed to exist under the same parent), the node represents a row in an sql relation,
-so after visiting its children nodes (using each given child_xpath),
+If the node has a db_name (and/or a multiple=1 value, meaning multiple of
+this node type is allowed to exist under the same parent),
+the node represents a row in an sql relation:
+
+So after visiting its children nodes (using each given child_xpath),
 and getting their values via return value d_row, then we output a row for this node.
-Else, this node is not a db_name node, rather only one node of this type is allowd under its parent
-node in the xml input document, so this node is mined to garner input values into a
+
+Else, this node is not a db_name node, rather only one node of this type is
+allowed under its parent node in the xml input document:
+
+So this node is mined to garner input values into a
 dictionary, d_row, to return to the parent node for its use.
 '''
 
@@ -262,7 +268,7 @@ def node_visit_output(node=None, node_index=None, d_namespaces=None,
     # column names) with underbars (which are commonly alowed in rdbs in column names).
     d_attr_column = d_node_params.get('attrib_column', None)
     if d_attr_column is not None:
-        # We have some node attributes destined for relational columns,
+        # We have some node attributes destined for output to relational columns,
         # so set them up in d_row key-value pairs.
         if not isinstance(d_attr_column, dict):
             # detect some sorts of errors/typos in the d_node_params parsing configuration

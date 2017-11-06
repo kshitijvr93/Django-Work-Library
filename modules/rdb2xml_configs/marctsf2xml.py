@@ -74,7 +74,7 @@ next bibid and invoke it for the record relation. fine.
     each encountered db record.
 
 '''
-d_nodes_map =  {
+d_mining_map =  {
     'node1_name':'record'
     ,'node2_name':'record'
     ,'d_field1_field2': {
