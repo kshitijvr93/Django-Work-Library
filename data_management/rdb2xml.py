@@ -400,6 +400,15 @@ class RelationMiner:
     next level of recursive calls.
 
     </notes date='20171106'>
+    <notes date='20171107'>
+    RE: argument d_name_relation - it is named to get current relation info,
+    eg the relation sequences. However, when support filters per sequence,will
+    need a tree of sequences because might have two simultanesous filters open on one
+    relation, -- or may need a way to fork sequences..
+    to hold place in one sequence/file for one fork, then expand the other via a
+    child filter, but later come back and resume first sequence...? Maybe not..
+
+    </notes date='20171107'>
     </summary>
     </notes>
     '''
