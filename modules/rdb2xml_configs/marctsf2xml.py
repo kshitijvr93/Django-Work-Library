@@ -109,6 +109,7 @@ d_mining_map =  {
         }
     ]
 }
+d_nodes_map = d_mining_map #name is settling ... decide later..
 # end d_nodes_map
 
 xml_mining_map = '''

@@ -32,7 +32,7 @@ import etl
 from dataset.ordered_relation import OrderedRelation
 
 '''
-Method row_visit_output
+Method row_output_visit
 
 Given parameters:
 (*) node_index - the index of the current node (it is the depth of
@@ -115,16 +115,16 @@ elements and data.
 Within iterations of that loop, meaning a child_name is given, a new select
 cursor is created that selects all rows of the relation indicated in the child
 name, and an inner loop is entered to deliver each row (via parameter od_row)
-to a recursive call to row_visit_output for that row.
+to a recursive call to row_output_visit for that row.
 
 (*) After the 'child_path' processing code, and if any data was output from
 this node, as inferred from the return values from the recursive calls (or
 the presence of a key in d_rdb_xml) a closing tag is output.
 
-Def rel_row_visit_output()
+Def rel_row_output_visit()
 use this name, same as in xml2rdb except with rel_ prefix.
 
-Compare and contrast some features with established row_visit_output() in
+Compare and contrast some features with established row_output_visit() in
 xml2rdb as of 20171026:
 
 
@@ -155,7 +155,7 @@ This defines child relations to the primary relation, and for each it provides
 a mining map of xml elements and attributes to output, along with the source
 column data to convert to produce each output attribute value.
 
-</param><param name='d_map_params'>
+</param><param name='d_mining_params'>
 
   A dictonary of key terms that may be used to define map-related
   parameters, such as keywords to use to indicate output to element
@@ -167,24 +167,24 @@ column data to convert to produce each output attribute value.
 class RelationMiner:
 
   def __init__(self, d_mining_map=None ,d_mining_params=None, verbosity=0):
-    required_args = [d_mining_map, d_map_params]
+    required_args = [d_mining_map, d_mining_params]
     if not all(required_args):
       raise ValueError("Missing some required_args values in {}"
       .format(repr(required_args)))
 
     self.d_mining_map = d_mining_map
-    self.d_map_params = d_map_params if d_map_params is not None else {}
+    self.d_mining_params = d_mining_params if d_mining_params is not None else {}
     self.verbosity = verbosity
 
   '''
   method mine():
   Set up context data and initial data to prepare the call to
-  the recursive mining method: Eg, row_visit_output()
+  the recursive mining method: Eg, row_output_visit()
 
   This will be cleaned up later... now it is a mashup of
   code to prepare for and execute the mining via the depth-first
   processing that is executed by this  call to
-  row_visit_output(), which uses the d_nodes_map to recursively
+  row_output_visit(), which uses the d_nodes_map to recursively
   call itself to do the mining.
 
   '''
@@ -221,21 +221,259 @@ class RelationMiner:
       # One big output file is required
       with open(
         '{}{}'.format(output_folder,output_file_name),'w') as self.output_file:
-        self.row_visit_output( node=d_mining_map, composite_ids=composite_ids,
+        self.row_output_visit( node=d_mining_map, composite_ids=composite_ids,
            output_file=self.output_file, verbosity=1)
     else:
         self.output_file = None
         # One output file per primary relation row is required.
-        row_visit_output(self, dd_mining_map=_mining_map,
+        row_output_visit(self, dd_mining_map=_mining_map,
             composite_ids=composite_ids )
     return
 
   #end:def mine in RelationMiner
 
   '''
-  <summary>Method row_visit_output:
+  <summary name="row_output">
+  Method row_output() given a node and its row values, derive and output xml attribute values
+  <notes_20171108>
+  NOTE: in future, we might pass actual data values from the input data composite columns as
+  the composite ids. But letting the code keep and use simple row counts may suffice for some
+  types of data sources, eg, the 'tsf' based dataset.
+  <details>
+
+    # Next, we may further require that input data follows a convention to name/identify
+    # the sibling id column name.
+    # for now, the sequence_ordered_siblings does not 'check' (nor does this code) that its data-based composite
+    # ids match this programs simple row-counters that are used as the composite ids.
+    # the only requirement on input is that the rows of each relation are ordered per their
+    # hierarchically organized ascending composite ids.
+    # node['node1_name']  might later be defined by new params relating to the input dataset_source, and
+    # its selection method (a more complex node['node1_name'] with relation name plus
+    # optional filtering conditions, similar to xpath if not exactly xpath) should return
+    # a vector of these ids to reuse
+    # perhaps as an additional argument to this mehod
+    <example> derivation of a composite node column name and value (the last composite id is the
+    sibling id among its siblings)
+        name_this_id ='{}_id'.format(node['node1_name'])
+    < /example>
+    #
+  </details>
+  -
+  </notes_20171108>
+
+  </summary>
+  '''
+  def row_output(self, node=None, d_row=None, output_file=None, verbosity=0):
+    me = 'row_output'
+    required_arguments = ['node','d_row','output_file']
+    if not all( required_arguments):
+      raise ValueError(
+        "{}:Not all required_arguments were given: {}".format(me, repr(required_arguments)))
+
+    '''
+    Keyword 'attribute_content' is a special keyword (may make a param later)
+    that is used in a d_mining_map dictionary d_field2_field1 as a field2 key value name
+    to mean that the associated input row column value should be copied/written out into
+    the xml output file in  the style of the xml tag's
+    content text rather than as any specific xml attribute value
+    '''
+    #attribute_content = d_mining_params.get('attribute_text','text')
+    attribute_content = 'attribute_content'
+
+    # attribute_innerhtml = d_mining_params.get( 'attribute_innerhtml' ,'attribute_innerhtml')
+
+    if(verbosity > 0):
+        print("{}:attribute_content={}".format(me, attribute_content))
+
+    print(
+      "comment='{}:misc xml tag content and attribute values'"
+      .format(me), file=output_file, end='')
+
+    '''
+    # d_row = {}; d_attribute_value = {}; content_value = ''
+    # d_field2_field1 is keyed by the output column/field name within its
+    # parent, and the value is the input d_row{} key/column name to use to
+    # retrieve the data value to use.
+    d_field2_field1 = node.get('d_field2_field1', None)
+    if d_field2_field1 is not None:
+      # We have some field2 fields to output with associated  field1
+      # input fields/columns.
+      # so we will set them up in d_row key-value pairs.
+
+      if not isinstance(d_field2_field1, dict):
+        # detect some sorts of errors/typos in the d_mining_map parsing configuration
+        raise Exception(
+            "d_field2_field1 {}, type={} is not dict. stack_tags={}"
+            .format(repr(d_field2_field1
+            ,repr(type(d_field2_field1)),stack_tags)))
+
+      #node_text = etree.tostring(node, encoding='unicode', method='text')
+      # Must discard tabs, used as bulk load delimiter, else sql server 2008 bulk insert error
+      # messages appear, numbered 4832 and 7399, and inserts fail.
+      #node_text = node_text.replace('\t',' ').replace('\n',' ').strip()
+      #node_text = "" if stringify is None else stringify.strip()
+
+      for attribute_name, column_name in d_field2_field1.items():
+        # For every key in attr_column, if it is reserved name in attribute_text,
+        # use the node's text value, else seek the key in node.attrib
+        # and use its value.
+
+        column_value = ''
+        content_value = ''
+        if attribute_name == attribute_text:
+            # Special reserved name in attribute_text: it is not really
+            # an attribute name, but this indicates that we shall use the node's
+            # content/text for this attribute
+            content_value = d_row[column_name]
+        else:
+            column_value = d_row[column_name]
+
+        #print("setting d_row for column_name={} to value={}".format(column_name,column_value))
+        d_attribute_value[column_name] = column_value
+        # All attribute values and content for this xml element, if any was found,
+        # is ready to be output and stored in d_attribute_value, so output it.
+
+      # First cut, always output the element tag name even if no values found
+      # yet for it.
+      # Later we might provide an option defer xml tag  output until/unless
+      # a value is found in dataset source that belongs within the element.
+      print('<{}'.format(node['element_tag_name']))
+      # for every attribute value, insert a setting for it
+      for attribute, value in d_attribute_value:
+        print(' {}={}'.format(attribute, value), file=self.output_file)
+      print(' >', file=self.outputfile)
+      '''
+    return
+  #end:def row_output
+
+  def row_children_visit(
+    self, node=None, verbosity=0):
+
+    ################# SECTION - On current sibling_row, for each child
+    # node relation, recurse to visit it and output its data.
+
+    d_relation_child_nodes = d_mining_map.get('child_nodes', None)
+    wrote_some_output = 0
+
+    if d_relation_child_nodes is not None:
+      for relation_name, d_child_node in d_relation_child_nodes.items():
+        #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_mining_map)))
+        #children = node.findall(xpath, d_namespaces )
+        # CRITICAL: make sure db.sequence() does select with order by the relation_namd_id
+        # else hard-to-debug errors may result
+        child_rows = db.sequence(relation_name, node_index)
+        if (verbosity > 0):
+          print("{}:for relation_name={} found some child rows".format(me,relation_name))
+        # TODO:Future: may add a new argument for caller-object that child may use to accumulate, figure,
+        # summary statistic
+        d_child_row = None
+        for d_row in db.select_contained_rows(
+          relation_name, composite_ids=composite_ids):
+          # Asssume i always goes in counting order at first, later get it out of the row
+          # index = d_child_row['{}_id'.format(relation_name)
+          d_child_row, child_output = row_output_visit(node=d_child_node
+          , ancestor=composite_ids
+          , d_row=d_row
+          , output_file=output_file
+          , d_mining_params = d_mining_params
+          , verbosity=verbosity)
+          # Finished visiting a child relation
+          # Register whether any data was output: misc info or new retval should have that.
+          if child_output:
+            made_output = True
+          # so that we can eventually discover whether any  data was output under this relation row
+          # and thus decide whether to output a closing xml tag.
+
+        # Finished one or more children with same xpath
+        if d_child_row is not None and len(d_child_row) > 0:
+          for column_name, value in d_child_row.items():
+            # Allowing this may be a feature to facilitate re-use of column functions
+            # TEST RVP 201611215
+            #if column_name in d_row:
+            #    raise Exception(
+            #        'node.tag={} duplicate column name {} is also in a child xpath={}.'
+            #        .format(node.tag,column_name,xpath))
+            d_row[column_name] = value
+        #Finished visiting children for this xpath.
+      #Finished visting all child xpaths for this node
+    #End loop through all child xpaths to visit.
+    return
+
+  '''
+  Method row_post_visits(node=None, output_file=None, verbosity=None)
+
+  Having visited all the children of this node/row, wrap up some loose end outputs
+  and possibly calculate the return value for the return value of the caller
+  (row_output_visit).
+  '''
+
+  def row_post_visits(self, node=None, output_file=None, verbosity=None):
+    # set up column constants if any
+      ######## Set any local column constants ##############
+      if 'column_constant' in d_mining_map:
+        for column, constant in d_mining_map['column_constant'].items():
+          d_row[column] = constant
+
+      import types
+      d_column_functions = d_mining_map.get('column_function',None)
+      if d_column_functions is not None:
+        # Add columns to d_row for derived values:
+        # Change later to do these after children return and provide
+        # as args all child data dict and the lxml node itself so such a function
+        # has more to work with.
+        for column_name, function in d_column_functions.items():
+          if type(function) is types.FunctionType:
+            # This function knows the d_row key(s) to use
+            d_row[column_name] = function(d_row)
+          else: # Assume types.TupleType of: (function, dict of params)
+            # This function will find its arguments in the given dict of function params
+            d_row[column_name] = function[0](d_row, function[1])
+
+      ####################### OUTPUT for MULTIPLE (== 1) NODES
+      if multiple == 1:
+        # For multiple == 1 nodes, we write an output line to the database
+        # relation/table named by this node's 'db_name' value.
+        db_file = get_writable_db_file(od_relation=od_relation,
+        od_rel_datacolumns=od_rel_datacolumns,
+        db_name=db_name, output_folder=output_folder, od_parent_index=od_parent_index)
+
+        sep = ''
+        db_line = ''
+        #First, ouput parent indexes
+        for parent_index in od_parent_index.values():
+          db_line += ("{}{}".format(sep,parent_index))
+          sep = '\t'
+          # Now output this node's index
+          # It identifies a row for this node.tag in this relation among all rows outputted.
+          # It is assigned by the caller via an argument, as the caller
+          # tracks this node's count/index value as it scans the input xml document.
+
+          db_line += ("{}{}".format(sep,node_index))
+
+        # ##################  NOW, OUTPUT THE DATA COLUMNS ##################
+        # For each field in d_row, put its value into od_column_values
+        #
+        od_column_default = od_rel_datacolumns[db_name]
+
+        for i,(key,value) in enumerate(od_column_default.items()):
+          # Note: this 'picks' the needed column values from d_row, rather than scan
+          # the d_row and try to test that each is an od_column_default key, by design.
+          # This design allows the child to set up local d_row d_field2_field1 values with names
+          # other than those in od_column_default so that the column_function feature may use
+          # those 'temporary values' to derive its output to put into named d_row entries.
+          value = ''
+          if key in d_row:
+            value = d_row[key]
+          db_line += ("\t{}".format(str(value).replace('\t',' ')))
+
+          #Output a row in the db file
+          print('{}'.format(db_line), file=db_file)
+
+      ############################################################
+  '''
+  <summary>Method row_output_visit:
   To support one-big xml file of output vs one per output record,
-  row_visit_output always checks output_file, and if None, it will output
+  row_output_visit always checks output_file, and if None, it will output
     one xml file per primary relation row.
 
     If none, it constructs the output file name and opens a separate
@@ -326,7 +564,7 @@ class RelationMiner:
     -- a new d_row value is appended by appending this sibing row's values
      to the given d_row (they might be used by a recursive call in case a
      child_node node needs to use them to derive some values)
-     -- a recursive call is made to row_visit_output for the child node
+     -- a recursive call is made to row_output_visit for the child node
 
 
     The given node corresponds to an input relation
@@ -347,7 +585,7 @@ class RelationMiner:
 
     </20171104 notes>
     <notes date='20171105'>
-    Modified row_visit_output processing.
+    Modified row_output_visit processing.
     Maybe change method name to
     node_output_dive() or
 
@@ -383,11 +621,6 @@ class RelationMiner:
 
     That should about do it... 20171105t0926
 
-
-
-
-
-
     </notes date='20171105'>
     <notes date='20171106'>
     Resolved: first try will be simalr to xml2rdb approach.
@@ -416,7 +649,7 @@ class RelationMiner:
     </summary>
     </notes>
     '''
-  def row_visit_output(self
+  def row_output_visit(self
     ,node=None
     ,d_name_relation=None
     ,composite_ids=None
@@ -424,247 +657,80 @@ class RelationMiner:
     ,output_file=None #make this a generic dataset later
     ,verbosity=0
     ):
-    me = 'row_visit_output()'
-    rname = node['relation_name']
-    relation = d_name_relation[rname]
-    depth = len[composite_ids]
-
-    if verbosity > 0:
-      rname = node['relation_name']
-      print("{}: node relation={},composite_ids={}, row={}"
-            .format(me,rname,repr(composite_ids), repr(d_row)))
-
-    required_args = [node, d_name_relation, composite_ids, d_row, output_file]
-    if not all(required_args):
-      raise ValueError("{}:Missing some required_args values in {}"
-      .format(me,repr(required_args)))
-
-    # test EXIT
-    if depth >=1 and composite_ids[depth-1] > 10:
-      return None
+    me = 'row_output_visit()'
 
     # node1_name is the input dataset's relation name for the curent row.
     # For input databases it is a table or relation name,
     # and for input xml (maybe a future input source) it is an element tag name,
-    # Ror input directory of 'tsf' files it is a file name of tab separated
+    # For input directory of 'tsf' files it is a file name of tab separated
     # ordered values per file line, etc.
     # And node2_name is the output dataset's name for a record or
     # parent group of data
 
     node1_name = node['node1_name'] # eg a relation name
+    rname = node1_name
+    depth = len(composite_ids)
+    relation = d_name_relation[rname] if depth > 0 else None
+    sibling_id = composite_ids[depth-1] if depth > 0 else None
 
+    required_args = [node, d_name_relation, d_row]
+    msg = "{}: node={}\n".format(me, node)
+    msg +=  "{}: d_name_relation={}\n".format(me, d_name_relation)
+    msg +=  "{}: output_file={}\n".format(me,repr(output_file))
+    if not all(required_args):
+      raise ValueError("{}:Missing some required_args values:\n{}"
+        .format(me, msg))
+
+
+    msg += "{}: d_row={}\n".format(me, repr(d_row))
     if verbosity > 0:
-      msg = (
-      "{}: verbosity={},node1_name={}, composite_ids={},len(d_row_={})"
-      .format(me, verbosity, node1_name, repr(composite_ids),len(d_row)))
-      print(msg)
+      print("{}: {}".format(me,msg))
 
-    if len(composite_ids) == 1 and output_file is None:
+    # testing: do premature return
+    if depth >=1 and composite_ids[depth-1] > 10:
+      return None
+
+    if depth == 1 and sibling_id == 1 and output_file is None:
       # This node visit and child visits will generate some output data for the
       # main relation, which will produce (in conjunction with deeper calls)
       # its own entire xml output file.
       # Now open the output file for this row of this primary relation.
       file_path_name = (
-      '{}{}_{}'.format(self.output_folder,node1_name
+      '{}{}_{}'.format(self.output_folder,rname
       , str(sibling_id).zfill(self.zfill_id_count)))
-
       output_file = open('file_path_name','w')
 
-    # Note: This row's composite_ids set identifies this row as unique in the
-    # dataset.
+    xml_tag_name = node['node2_name'] # eg an xml tag name
 
-    # Next, we use a flexible way to identify the sibling id column name.
-    # It might better be defined by params for dataset_source, and
-    # its selection method should return a vector of these ids to resuse
-    # perhaps as an additional argument to this mehod
+    # Output the prefix of opening tag for the xml element to be output to the output file
+    if output_file is not None:
+      print("<{}".format(xml_tag_name), end='', file=output_file)
 
-    name_this_id ='{}_id'.format(node['node1_name'])
-    # Note:This node's sibling_id (last composite id) is d_row[name_this_id]
-    # consider using that value to stick in composite_ids instead of the integer
-    # order id of the sibling in the future. It may be more flexible.
-    # But we wont use it in the first version of this code.
+    #Output values mapped directly from this input row's column values
+    return_val = self.row_output(
+      node=node, d_row=d_row, output_file=output_file, verbosity=1)
 
-    attribute_text = d_map_params.get('attribute_text','text')
-    attribute_innerhtml = d_map_params.get(
-        'attribute_innerhtml' ,'attribute_innerhtml')
+    # output the suffix of the xml opening tag
+    if output_file is not None:
+      print(" >", file=output_file)
 
-    if(verbosity > 0):
-        print("attribute_text={}, attribute_innerhtml-{}"
-        .format(attribute_text,attribute_innerhtml))
+    # test return
+    if (1 == 1):
+      return
 
-    # d_row = {}; d_attribute_value = {}; content_value = ''
-    # d_field2_field1 is keyed by the output column/field name within its
-    # parent, and the value is the input d_row{} key/column name to use to
-    # retrieve the data value to use.
-    d_field2_field1 = node.get('d_field2_field1', None)
-    if d_field2_field1 is not None:
-      # We have some field2 fields to output with associated  field1
-      # input fields/columns.
-      # so we will set them up in d_row key-value pairs.
+    # Next, call row_children_visit(node=node,verbosity=1)
+    # Next, call row_post_visit()
 
-      if not isinstance(d_field2_field1, dict):
-        # detect some sorts of errors/typos in the d_mining_map parsing configuration
-        raise Exception(
-            "d_field2_field1 {}, type={} is not dict. stack_tags={}"
-            .format(repr(d_field2_field1
-            ,repr(type(d_field2_field1)),stack_tags)))
+    # Now that all output is done for multiple == 1, set d_row = None, otherwise it's
+    # presence would upset the caller.
+    d_row = None
+    # end if multiple == 1
 
-      #node_text = etree.tostring(node, encoding='unicode', method='text')
-      # Must discard tabs, used as bulk load delimiter, else sql server 2008 bulk insert error
-      # messages appear, numbered 4832 and 7399, and inserts fail.
-      #node_text = node_text.replace('\t',' ').replace('\n',' ').strip()
-      #node_text = "" if stringify is None else stringify.strip()
-
-      for attribute_name, column_name in d_field2_field1.items():
-        # For every key in attr_column, if it is reserved name in attribute_text,
-        # use the node's text value, else seek the key in node.attrib
-        # and use its value.
-
-        column_value = ''
-        content_value = ''
-        if attribute_name == attribute_text:
-            # Special reserved name in attribute_text: it is not really
-            # an attribute name, but this indicates that we shall use the node's
-            # content/text for this attribute
-            content_value = d_row[column_name]
-        else:
-            column_value = d_row[column_name]
-
-        #print("setting d_row for column_name={} to value={}".format(column_name,column_value))
-        d_attribute_value[column_name] = column_value
-        # All attribute values and content for this xml element, if any was found,
-        # is ready to be output and stored in d_attribute_value, so output it.
-
-      # First cut, always output the element tag name even if no values found
-      # yet for it.
-      # Later we might provide an option defer xml tag  output until/unless
-      # a value is found in dataset source that belongs within the element.
-      print('<{}'.format(node['element_tag_name']))
-      # for every attribute value, insert a setting for it
-      for attribute, value in d_attribute_value:
-        print(' {}={}'.format(attribute, value), file=self.output_file)
-      print(' >', file=self.outputfile)
-
-      ################# SECTION - On current sibling_row, for each child
-      # node relation, recurse to visit it and output its data.
-
-      d_relation_child_nodes = d_mining_map.get('child_nodes', None)
-      wrote_some_output = 0
-
-      if d_relation_child_nodes is not None:
-        for relation_name, d_child_node in d_relation_child_nodes.items():
-          #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_mining_map)))
-          #children = node.findall(xpath, d_namespaces )
-          # CRITICAL: make sure db.sequence() does select with order by the relation_namd_id
-          # else hard-to-debug errors may result
-          child_rows = db.sequence(relation_name, node_index)
-          if (verbosity > 0):
-            print("{}:for relation_name={} found some child rows".format(me,relation_name))
-          # TODO:Future: may add a new argument for caller-object that child may use to accumulate, figure,
-          # summary statistic
-          d_child_row = None
-          for d_row in db.select_contained_rows(
-            relation_name, composite_ids=composite_ids):
-            # Asssume i always goes in counting order at first, later get it out of the row
-            # index = d_child_row['{}_id'.format(relation_name)
-            d_child_row, child_output = row_visit_output(node=d_child_node
-            , ancestor=composite_ids
-            , d_row=d_row
-            , output_file=output_file
-            , d_map_params = d_map_params
-            , verbosity=verbosity)
-            # Finished visiting a child relation
-            # Register whether any data was output: misc info or new retval should have that.
-            if child_output:
-              made_output = True
-            # so that we can eventually discover whether any  data was output under this relation row
-            # and thus decide whether to output a closing xml tag.
-
-          # Finished one or more children with same xpath
-          if d_child_row is not None and len(d_child_row) > 0:
-            for column_name, value in d_child_row.items():
-              # Allowing this may be a feature to facilitate re-use of column functions
-              # TEST RVP 201611215
-              #if column_name in d_row:
-              #    raise Exception(
-              #        'node.tag={} duplicate column name {} is also in a child xpath={}.'
-              #        .format(node.tag,column_name,xpath))
-              d_row[column_name] = value
-          #Finished visiting children for this xpath.
-        #Finished visting all child xpaths for this node
-      #End loop through all child xpaths to visit.
-
-      ######## Set any local column constants ##############
-      if 'column_constant' in d_mining_map:
-        for column, constant in d_mining_map['column_constant'].items():
-          d_row[column] = constant
-
-      import types
-      d_column_functions = d_mining_map.get('column_function',None)
-      if d_column_functions is not None:
-        # Add columns to d_row for derived values:
-        # Change later to do these after children return and provide
-        # as args all child data dict and the lxml node itself so such a function
-        # has more to work with.
-        for column_name, function in d_column_functions.items():
-          if type(function) is types.FunctionType:
-            # This function knows the d_row key(s) to use
-            d_row[column_name] = function(d_row)
-          else: # Assume types.TupleType of: (function, dict of params)
-            # This function will find its arguments in the given dict of function params
-            d_row[column_name] = function[0](d_row, function[1])
-
-      ####################### OUTPUT for MULTIPLE (== 1) NODES
-      if multiple == 1:
-        # For multiple == 1 nodes, we write an output line to the database
-        # relation/table named by this node's 'db_name' value.
-        db_file = get_writable_db_file(od_relation=od_relation,
-        od_rel_datacolumns=od_rel_datacolumns,
-        db_name=db_name, output_folder=output_folder, od_parent_index=od_parent_index)
-
-        sep = ''
-        db_line = ''
-        #First, ouput parent indexes
-        for parent_index in od_parent_index.values():
-          db_line += ("{}{}".format(sep,parent_index))
-          sep = '\t'
-          # Now output this node's index
-          # It identifies a row for this node.tag in this relation among all rows outputted.
-          # It is assigned by the caller via an argument, as the caller
-          # tracks this node's count/index value as it scans the input xml document.
-
-          db_line += ("{}{}".format(sep,node_index))
-
-        # ##################  NOW, OUTPUT THE DATA COLUMNS ##################
-        # For each field in d_row, put its value into od_column_values
-        #
-        od_column_default = od_rel_datacolumns[db_name]
-
-        for i,(key,value) in enumerate(od_column_default.items()):
-          # Note: this 'picks' the needed column values from d_row, rather than scan
-          # the d_row and try to test that each is an od_column_default key, by design.
-          # This design allows the child to set up local d_row d_field2_field1 values with names
-          # other than those in od_column_default so that the column_function feature may use
-          # those 'temporary values' to derive its output to put into named d_row entries.
-          value = ''
-          if key in d_row:
-            value = d_row[key]
-          db_line += ("\t{}".format(str(value).replace('\t',' ')))
-
-          #Output a row in the db file
-          print('{}'.format(db_line), file=db_file)
-
-      ############################################################
-      # Now that all output is done for multiple == 1, set d_row = None, otherwise it's
-      # presence would upset the caller.
-      d_row = None
-      # end if multiple == 1
-
-      msg = ("{}:FINISHED node.tag={}, node_index={}, returning d_row={}"
-         .format(me, node.tag, node_index,repr(d_row)))
-      #print(msg)
-      return d_row
-  # def end row_visit_output
+    msg = ("{}:FINISHED output tag name={}, node_index={}, returning d_row={}"
+       .format(me, xml_tag_name, node_index,repr(d_row)))
+    #print(msg)
+    return d_row
+  # def end row_output_visit
 
   def mine(): # visit the d_nodes_map to mine the input and write the output
     return
@@ -681,7 +747,7 @@ def rdb_to_xml(
   ,d_root_node_params=None
   ,d_mining_map=None
   ,output_folder=None
-  ,d_map_params=None
+  ,d_mining_params=None
   ,od_rel_datacolumns=None # Add later to validate mining map
   ,od_relation=None
   ,input_file_name=None
@@ -729,25 +795,25 @@ def rdb_to_xml(
   tags = [root_tag]
   node = d_mining_map['start'];
 
-  d_map_params = dict({'attribute_text':'text'})
+  d_mining_params = dict({'attribute_text':'text'})
 
   # Above was emulation of some args - now start method code prototype
   print("Using output_file={}".format(output_file))
 
   tag = tags[len(tags) - 1]
   with open(output_file_name, mode='r', encoding='utf-8') as file_out:
-    retval = rel_row_visit_output(
+    retval = rel_row_output_visit(
       node=od_mining_map
       ,tags=tags
       ,node_index=node_index
-      ,d_map_params=d_map_params
-      ,output_file=output_file)
+      ,d_mining_params=d_mining_params
+      ,output_file=None)
 
   print ("Done!")
 
   for row_index, d_row in enumerate(row_selection):
     print("For row {}, using d_row={}".format(row_index,repr(d_row)))
-    # set args for rel_row_visit_output()
+    # set args for rel_row_output_visit()
     node_index.append(row_index)
 
   #MAKE RECURSIVE CALL
@@ -827,7 +893,7 @@ def rdb_to_xml(
 
   with open(output_file_name, "w", encoding="utf-8") as output_file:
 
-    d_return = rel_row_visit_output(
+    d_return = rel_row_output_visit(
     tags=['document_root']
     ,od_relation=od_relation
     ,d_namespaces=d_namespaces
@@ -837,7 +903,7 @@ def rdb_to_xml(
     ,od_parent_index=od_parent_index
     ,node_index=node_index
     ,node=doc_root
-    ,d_map_params=d_map_params
+    ,d_mining_params=d_mining_params
     ,verbosity=verbosity
     )
 
@@ -861,7 +927,7 @@ def rdb2xml_test():
   from dataset.phd import PHD
   import dataset.phd
 
-  d_map_params = {'attribute_text':'text'}
+  d_mining_params = {'attribute_text':'text'}
   input_folder = etl.data_folder(
   linux="/home/robert/", windows="C:/users/podengo/",
   data_relative_folder='git/outputs/xml2rdb/ccila/')
@@ -871,9 +937,9 @@ def rdb2xml_test():
   linux="/home/robert/", windows="C:/users/podengo/",
   data_relative_folder='git/outputs/rdb2xml/ccila/')
   composite_ids = []
-
-  relation_miner = RelationMiner(d_mining_map=config.d_nodes_map,
-  d_map_params=d_map_params)
+  d_mining_map = config.d_mining_map
+  relation_miner = RelationMiner(d_mining_map=d_mining_map,
+  d_mining_params=d_mining_params)
 
   # create test set of relations to mine with rudimentary manual instantiations.
   print('{}:Constructing phd = PHD(...)'.format(me))
@@ -902,13 +968,13 @@ def rdb2xml_test():
 
   composite_ids = []
   #Mine this config - visit all nodes and create outputs
-  #note todo: add argument for d_name_relation for row_visit_output to use to
+  #note todo: add argument for d_name_relation for row_output_visit to use to
   #invoke correct sequence generator
 
   node_root = {
     'node1_name':'run_context',
     'node2_name':'run_context'
-    ,'child_nodes': [d_mining_map]
+    ,'child_nodes': d_mining_map
     }
   output_file = '{}{}'.format(output_folder,'rdb2xml_output.xml')
 
@@ -920,15 +986,15 @@ def rdb2xml_test():
 
   if 1 > 0:
     print("Creating output file {}".format(output_file))
-    print("{}.Using node={}.".format(me,repr(node)))
-    print("{}:Calling relation_miner.row_visit_output()".format(me))
+    print("{}.Using node_root={}.".format(me,repr(node_root)))
+    print("{}:Calling relation_miner.row_output_visit()".format(me))
 
   # Main call
-  relation_miner.row_visit_output(node=node_root
+  relation_miner.row_output_visit(node=node_root
     ,d_name_relation=phd.d_name_relation
     ,composite_ids=composite_ids
     ,d_row=d_row
-    ,output_file=output_file
+    ,output_file=None
     ,verbosity=verbosity
     )
 
