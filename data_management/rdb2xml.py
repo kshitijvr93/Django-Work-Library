@@ -347,7 +347,18 @@ class RelationMiner:
   #end:def row_output
 
   def row_children_visit(
-    self, node=None, verbosity=0):
+    self,
+    node=None,
+    d_name_relation=None,
+    composite_ids=None,
+    output_file=None,
+    verbosity=0):
+    me = "row_children_visit"
+
+    required_args = [node,  d_name_relation, composite_ids, output_file]
+    if not all(required_args):
+      raise ValueError("{}:Missing some required_args values in {}"
+        .format(me,repr(required_args)))
 
     # On current input node/row, for each child  node relation,
     # recurse to visit it and output its data.
@@ -355,14 +366,22 @@ class RelationMiner:
     child_nodes = node.get('child_nodes', None)
 
     if len(child_nodes) > 0:
-      for node in child_nodes:
+      for child_node in child_nodes:
+        child_name_relation = child_node['node1_name']
+        child_relation=d_name_relation[child_name_relation]
+        child_rows = child_relation.sequence
         #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_mining_map)))
         #children = node.findall(xpath, d_namespaces )
         # CRITICAL: make sure db.sequence() does select with order by the relation_namd_id
         # else hard-to-debug errors may result
-        child_rows = db.sequence(relation_name, node_index)
+        for row_tuple in child_rows:
+          if row_tuple is None:
+            break;
+          sibling_id = row_tuple[0]
+
         if (verbosity > 0):
-          print("{}:for relation_name={} found some child rows".format(me,relation_name))
+          print("{}:for child relation_name={} found some child rows"
+             .format(me,child_name_relation))
         # TODO:Future: may add a new argument for caller-object that child may use to accumulate, figure,
         # summary statistic
         d_child_row = None
@@ -649,12 +668,9 @@ class RelationMiner:
     </notes>
     '''
   def row_output_visit(self
-    ,node=None
-    ,d_name_relation=None
-    ,composite_ids=None
-    ,d_row=None
+    ,node=None ,d_name_relation=None ,composite_ids=None
     ,output_file=None #make this a generic dataset later
-    ,verbosity=0
+    ,d_row=None ,verbosity=0
     ):
     me = 'row_output_visit()'
 
@@ -682,10 +698,9 @@ class RelationMiner:
       raise ValueError("{}:Missing some required_args values:\n{}"
         .format(me, msg))
 
-
     msg += "{}: d_row={}\n".format(me, repr(d_row))
     if verbosity > 0:
-      print("{}: {}".format(me,msg))
+      print("{}: {}".format(me, msg))
 
     # testing: do premature return
     if depth >=1 and composite_ids[depth-1] > 10:
@@ -701,6 +716,9 @@ class RelationMiner:
       , str(sibling_id).zfill(self.zfill_id_count)))
       output_file = open('file_path_name','w')
 
+      if verbosity > 0:
+        print("{}: Opened output file name={}".format(file_path_name))
+
     xml_tag_name = node['node2_name'] # eg an xml tag name
 
     # Output the prefix of opening tag for the xml element to be output to the output file
@@ -708,19 +726,22 @@ class RelationMiner:
       print("<{}".format(xml_tag_name), end='', file=output_file)
 
     #Output values mapped directly from this input row's column values
+    print("{}:calling row_output()".format(me))
     return_val = self.row_output(
       node=node, d_row=d_row, output_file=output_file, verbosity=1)
+
+    # Next, call row_children_visit(node=node,verbosity=1)
+    print("{}: Calling row_children_visit".format(me))
+
+    retval = self.row_children_visit(node=node,composite_ids=composite_ids,
+        d_name_relation=d_name_relation, output_file=output_file,
+        verbosity=verbosity)
+
+    # Next, call row_post_visit()
 
     # output the suffix of the xml opening tag
     if output_file is not None:
       print(" >", file=output_file)
-
-    # test return
-    if (1 == 1):
-      return
-
-    # Next, call row_children_visit(node=node,verbosity=1)
-    # Next, call row_post_visit()
 
     # Now that all output is done for multiple == 1, set d_row = None, otherwise it's
     # presence would upset the caller.
