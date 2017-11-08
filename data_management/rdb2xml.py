@@ -349,14 +349,13 @@ class RelationMiner:
   def row_children_visit(
     self, node=None, verbosity=0):
 
-    ################# SECTION - On current sibling_row, for each child
-    # node relation, recurse to visit it and output its data.
+    # On current input node/row, for each child  node relation,
+    # recurse to visit it and output its data.
 
-    d_relation_child_nodes = d_mining_map.get('child_nodes', None)
-    wrote_some_output = 0
+    child_nodes = node.get('child_nodes', None)
 
-    if d_relation_child_nodes is not None:
-      for relation_name, d_child_node in d_relation_child_nodes.items():
+    if len(child_nodes) > 0:
+      for node in child_nodes:
         #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_mining_map)))
         #children = node.findall(xpath, d_namespaces )
         # CRITICAL: make sure db.sequence() does select with order by the relation_namd_id
@@ -674,7 +673,9 @@ class RelationMiner:
     sibling_id = composite_ids[depth-1] if depth > 0 else None
 
     required_args = [node, d_name_relation, d_row]
-    msg = "{}: node={}\n".format(me, node)
+    msg = "{}: depth={}\n".format(me, depth)
+    msg += "{}: composite_ids={}\n".format(me, repr(composite_ids))
+    msg += "{}: node={}\n".format(me, node)
     msg +=  "{}: d_name_relation={}\n".format(me, d_name_relation)
     msg +=  "{}: output_file={}\n".format(me,repr(output_file))
     if not all(required_args):

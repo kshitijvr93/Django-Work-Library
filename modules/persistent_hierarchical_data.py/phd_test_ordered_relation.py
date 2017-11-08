@@ -350,7 +350,7 @@ def testme(d_mining_map=None):
     nrow = 0
     for group_count in range(100):
       print("{}: Getting new set {} of sibling rows:".format(me, group_count))
-      for row_tuple in sibling_rows:
+      for index_count, row_tuple in enumerate(sibling_rows):
           if row_tuple is None:
             print("Got row_tuple of None".format(me))
             break;
