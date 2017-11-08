@@ -221,13 +221,15 @@ class RelationMiner:
       # One big output file is required
       with open(
         '{}{}'.format(output_folder,output_file_name),'w') as self.output_file:
-        self.row_visit_output(
-          node=d_mining_map, composite_ids=composite_ids, output_file=self.output_file)
+        self.row_visit_output( node=d_mining_map, composite_ids=composite_ids,
+           output_file=self.output_file, verbosity=1)
     else:
         self.output_file = None
         # One output file per primary relation row is required.
-        row_visit_output(self, dd_mining_map=_mining_map, composite_ids=composite_ids )
+        row_visit_output(self, dd_mining_map=_mining_map,
+            composite_ids=composite_ids )
     return
+
   #end:def mine in RelationMiner
 
   '''
@@ -409,6 +411,8 @@ class RelationMiner:
     child filter, but later come back and resume first sequence...? Maybe not..
 
     </notes date='20171107'>
+    <notes date='20171108' return value is d_row, and ...
+    </notes date='20171108'>
     </summary>
     </notes>
     '''
@@ -421,11 +425,23 @@ class RelationMiner:
     ,verbosity=0
     ):
     me = 'row_visit_output()'
+    rname = node['relation_name']
+    relation = d_name_relation[rname]
+    depth = len[composite_ids]
+
+    if verbosity > 0:
+      rname = node['relation_name']
+      print("{}: node relation={},composite_ids={}, row={}"
+            .format(me,rname,repr(composite_ids), repr(d_row)))
 
     required_args = [node, d_name_relation, composite_ids, d_row, output_file]
     if not all(required_args):
       raise ValueError("{}:Missing some required_args values in {}"
       .format(me,repr(required_args)))
+
+    # test EXIT
+    if depth >=1 and composite_ids[depth-1] > 10:
+      return None
 
     # node1_name is the input dataset's relation name for the curent row.
     # For input databases it is a table or relation name,
@@ -454,7 +470,8 @@ class RelationMiner:
 
       output_file = open('file_path_name','w')
 
-    # Note: This row's composite_ids set identifies this row as unique in the dataset.
+    # Note: This row's composite_ids set identifies this row as unique in the
+    # dataset.
 
     # Next, we use a flexible way to identify the sibling id column name.
     # It might better be defined by params for dataset_source, and
