@@ -329,11 +329,12 @@ def testme(d_mining_map=None):
     print('{}:Constructing phd = PHD(...)'.format(me))
     phd = PHD(input_folder, output_folder,verbosity=1)
     relation_name='record'
-    # NOTE: IMPOSE a requirement to use '' as the parent of the root relation. It should facilitate
-    # some diagnostic and error reporting
+    # NOTE: IMPOSE a requirement to use '' as the parent of the root relation.
+    # It should facilitate some diagnostic and error reporting.
 
     parent_child_tuples = [
-      ('','record'), ('record','controlfield'),('record','datafield'),('datafield','subfield')
+      ('','record'), ('record','controlfield'),('record','datafield'),
+      ('datafield','subfield')
     ]
 
     for (parent_name, relation_name)  in parent_child_tuples:
