@@ -29,7 +29,7 @@ from lxml import etree
 from lxml.etree import tostring
 from pathlib import Path
 import etl
-from dataset.ordered_relation import OrderedRelation
+from dataset.ordered_relation import OrderedRelation,OrderedSiblings
 
 '''
 Method row_output_visit
@@ -788,10 +788,6 @@ class RelationMiner:
 
     # Next, call row_post_visit()
 
-    # output the suffix of the xml opening tag
-    if output_file is not None:
-      print(" >", file=output_file)
-
     # Now that all output is done for multiple == 1, set d_row = None, otherwise it's
     # presence would upset the caller.
     d_row = None
@@ -801,6 +797,7 @@ class RelationMiner:
        .format(me, xml_tag_name, depth,repr(d_row)))
 
     print(msg)
+    print("</{}>".format(relation_name), file=output_file) #Close the xml opening tag
     return d_row
   # end:def row_output_visit
 

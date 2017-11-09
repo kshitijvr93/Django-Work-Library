@@ -189,3 +189,70 @@ class OrderedRelation:
   # end def sequence_ordered_siblings : this returns a generator object
 
 #end class OrderedRelation
+
+class OrderedSiblings:
+  '''
+  This uses OrderedRelation as a member.
+  It might be better to base it on OrderdRelation later...but this way we can have multiple sequences
+  open on the same relation.
+  NOTE: all parent_id  values and row column values are strings.
+  '''
+  def __init__(self, ordered_relation=None,verbosity=None):
+    required_args = [ordered_relation]
+    if not all(required_args):
+      raise ValueError("Missing some required_args values in {}"
+      .format(repr(required_args)))
+
+    self.ordered_relation = ordered_relation
+    self.all_rows = ordered_relation.sequence_all_rows()
+    self.next_row = next(self.all_rows)
+    self.parent_depth = 0
+    if ordered_relation.order_depth > 1:
+       self.parent_depth = ordered_relation.order_depth - 1
+    self.next_ids = self.next_row[:self.parent_depth]
+
+  def next_by_parent_ids(self, parent_ids=None):
+    '''
+    Given the parent composite id values, return the parent's next ordered sibling
+    row in this relation.
+    Return None if there is no next sibling for the parent.
+    It is an exception if the next available sibling has an order that preceds
+    that of the given parent.
+    If there are no composite id values, return the next ordered row of the relaton
+    Note: every relation must have a depth, but the root hierarchical relation,
+    with a depth of 1, has no parent ids, so just return every row for it.
+    '''
+    if self.parent_depth != len(parent_ids):
+        raise ValueError("Parent_depth={} but len(parent_ids)={}"
+                 .format(self.parent_depth,len(parent_ids)))
+    if self.parent_depth == 0:
+      tmp_row = self.next_row
+      if self.next_result is not None:
+        self.next_result = next(ordered_relation.all_rows)
+        self.next_row = self.next_result[1]
+        self.next_ids = self.next_row[:ordered_relation.order_depth-1]
+      else:
+        return None
+      return tmp_row
+
+    if parent_ids < self.next_ids:
+      # If 'greater' parent_ids, it is OK for parent to call again later with
+      # increasing parent_ids until caller finds this row
+      return None
+    elif parent_ids == self.next_ids:
+      tmp_row = self.next_row
+      if self.next_result is not None:
+        self.next_result = next(ordered_relation.all_rows)
+        self.next_row = self.next_result[1]
+        self.next_ids = self.next_row[:ordered_relation.order_depth-1]
+      else:
+        return None
+      return tmp_row
+    else:
+      # Fatal Exception:
+      raise ValueError("Given parent_ids={}, but next_ids={}. You abandoned orphans! Fatal Error."
+        .format(repr(parent_ids),repr(self.next_ids)))
+
+    return
+
+#end:class OrderedSiblings
