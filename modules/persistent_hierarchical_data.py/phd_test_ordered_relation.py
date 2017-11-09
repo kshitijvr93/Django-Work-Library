@@ -73,7 +73,7 @@ class PHD():
 
         rlen = len(self.d_name_relation)
         print("{}:Starting with len of d_name_relation={}".format(me,rlen))
-        sys.stdout.flush()
+        #sys.stdout.flush()
 
         if len(self.d_name_relation) == 0:
           order_depth = 1

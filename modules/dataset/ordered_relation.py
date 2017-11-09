@@ -32,6 +32,7 @@ applications, so different versions of this can be implemented cleanly to handle
 data sources.
 
 '''
+import sys
 
 class OrderedRelation:
 
@@ -205,7 +206,9 @@ class OrderedSiblings:
 
     self.ordered_relation = ordered_relation
     self.all_rows = ordered_relation.sequence_all_rows()
-    self.next_row = next(self.all_rows)
+
+    self.next_result = next(self.all_rows)
+    self.next_row = self.next_result[1]
     self.parent_depth = 0
     if ordered_relation.order_depth > 1:
        self.parent_depth = ordered_relation.order_depth - 1
@@ -222,19 +225,24 @@ class OrderedSiblings:
     Note: every relation must have a depth, but the root hierarchical relation,
     with a depth of 1, has no parent ids, so just return every row for it.
     '''
+    me = 'next_by_parent_ids'
     if self.parent_depth != len(parent_ids):
         raise ValueError("Parent_depth={} but len(parent_ids)={}"
                  .format(self.parent_depth,len(parent_ids)))
     if self.parent_depth == 0:
       tmp_row = self.next_row
       if self.next_result is not None:
-        self.next_result = next(ordered_relation.all_rows)
+        self.next_result = next(self.all_rows)
+        print("Got next_result={}".format(repr(next_result)))
         self.next_row = self.next_result[1]
+        print("Got next_row={}".format(repr(next_row)))
+
         self.next_ids = self.next_row[:ordered_relation.order_depth-1]
       else:
         return None
       return tmp_row
-
+    print("{}: parent_ids={}, self.next_ids={}".format( me, parent_ids, self.next_ids))
+    sys.stdout.flush()
     if parent_ids < self.next_ids:
       # If 'greater' parent_ids, it is OK for parent to call again later with
       # increasing parent_ids until caller finds this row
@@ -242,9 +250,9 @@ class OrderedSiblings:
     elif parent_ids == self.next_ids:
       tmp_row = self.next_row
       if self.next_result is not None:
-        self.next_result = next(ordered_relation.all_rows)
+        self.next_result = next(self.all_rows)
         self.next_row = self.next_result[1]
-        self.next_ids = self.next_row[:ordered_relation.order_depth-1]
+        self.next_ids = self.next_row[:self.ordered_relation.order_depth-1]
       else:
         return None
       return tmp_row
