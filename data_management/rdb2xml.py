@@ -355,7 +355,7 @@ class RelationMiner:
     verbosity=0):
     me = "row_children_visit"
 
-    required_args = [node,  d_name_relation, composite_ids, output_file]
+    required_args = [node,  d_name_relation]
     if not all(required_args):
       raise ValueError("{}:Missing some required_args values in {}"
         .format(me,repr(required_args)))
@@ -364,9 +364,18 @@ class RelationMiner:
     # recurse to visit it and output its data.
 
     child_nodes = node.get('child_nodes', None)
+    msg = ("{}: Got child_nodes='{}'\nof type {}, len-{}"
+          .format(me, repr(child_nodes), type(child_nodes),len(child_nodes)))
+    if not isinstance(child_nodes, list):
+      # Note: when start to interpret xml config, such error will be caught
+      # elsewhere, when interpretting that config
+      msg = "Error: " + msg
+      raise ValueError(msg)
 
     if len(child_nodes) > 0:
       for child_node in child_nodes:
+        print("{}:Using child_node='{}'\nof type {}"
+           .format(me, repr(child_node), type(child_node)))
         child_name_relation = child_node['node1_name']
         child_relation=d_name_relation[child_name_relation]
         child_rows = child_relation.sequence
@@ -378,43 +387,31 @@ class RelationMiner:
           if row_tuple is None:
             break;
           sibling_id = row_tuple[0]
+          row_count = row_tuple[0]
+          column_values = row_tuple[1]
+          print("{}: got row_count={}, column values={}"
+              .format(me,row_count,repr(column_values)))
+          if row_count > 10:
+            print("{}: breaking on test limit 10 child row_count".format(me))
+            break;
 
-        if (verbosity > 0):
-          print("{}:for child relation_name={} found some child rows"
-             .format(me,child_name_relation))
-        # TODO:Future: may add a new argument for caller-object that child may use to accumulate, figure,
-        # summary statistic
-        d_child_row = None
-        for d_row in db.select_contained_rows(
-          relation_name, composite_ids=composite_ids):
-          # Asssume i always goes in counting order at first, later get it out of the row
-          # index = d_child_row['{}_id'.format(relation_name)
-          d_child_row, child_output = row_output_visit(node=d_child_node
-          , ancestor=composite_ids
-          , d_row=d_row
-          , output_file=output_file
-          , d_mining_params = d_mining_params
-          , verbosity=verbosity)
-          # Finished visiting a child relation
-          # Register whether any data was output: misc info or new retval should have that.
-          if child_output:
-            made_output = True
-          # so that we can eventually discover whether any  data was output under this relation row
-          # and thus decide whether to output a closing xml tag.
-
-        # Finished one or more children with same xpath
-        if d_child_row is not None and len(d_child_row) > 0:
-          for column_name, value in d_child_row.items():
-            # Allowing this may be a feature to facilitate re-use of column functions
-            # TEST RVP 201611215
-            #if column_name in d_row:
-            #    raise Exception(
-            #        'node.tag={} duplicate column name {} is also in a child xpath={}.'
-            #        .format(node.tag,column_name,xpath))
-            d_row[column_name] = value
-        #Finished visiting children for this xpath.
-      #Finished visting all child xpaths for this node
-    #End loop through all child xpaths to visit.
+          #NEXT PHASE: INSERT -- recursive call to row_output_visit()
+          # consider: copy column_values to d_row to return to caller...?
+          '''
+          note: If do do this--- tbd: outdent this to put it in childnode loop?
+          if d_child_row is not None and len(d_child_row) > 0:
+            for column_name, value in d_child_row.items():
+              # Allowing this may be a feature to facilitate re-use of column functions
+              # TEST RVP 201611215
+              #if column_name in d_row:
+              #    raise Exception(
+              #        'node.tag={} duplicate column name {} is also in a child xpath={}.'
+              #        .format(node.tag,column_name,xpath))
+              d_row[column_name] = value
+        #Finished visiting child_rows for this relation/node/sibling group
+      #Finished visting all child nodes/paths for this node
+        '''
+    #End check for some child nodes to visit.
     return
 
   '''
@@ -748,11 +745,12 @@ class RelationMiner:
     d_row = None
     # end if multiple == 1
 
-    msg = ("{}:FINISHED output tag name={}, node_index={}, returning d_row={}"
-       .format(me, xml_tag_name, node_index,repr(d_row)))
+    msg = ("{}:FINISHED output tag name={},  returning d_row={}"
+       .format(me, xml_tag_name, repr(d_row)))
+
     #print(msg)
     return d_row
-  # def end row_output_visit
+  # end:def row_output_visit
 
   def mine(): # visit the d_nodes_map to mine the input and write the output
     return
@@ -984,9 +982,10 @@ def rdb2xml_test():
     , relation_name=relation_name
     ,verbosity=0)
     # add a sequence_ordered_siblings sequence for this relation
-    relation.sequence = relation.sequence_ordered_siblings()
-    print('{}:Added relation named {} with parent named {}'
-      .format(me,relation_name,parent_name))
+    all_rows = relation.sequence_all_rows()
+    relation.sequence = relation.sequence_ordered_siblings(all_rows=all_rows)
+    print('{}:Added relation named {} with sequence={} of type {}, and with parent named {}'
+      .format(me,relation_name,repr(relation.sequence),type(relation.sequence),parent_name))
 
   composite_ids = []
   #Mine this config - visit all nodes and create outputs
@@ -996,7 +995,7 @@ def rdb2xml_test():
   node_root = {
     'node1_name':'run_context',
     'node2_name':'run_context'
-    ,'child_nodes': d_mining_map
+    ,'child_nodes': [d_mining_map]
     }
   output_file = '{}{}'.format(output_folder,'rdb2xml_output.xml')
 
