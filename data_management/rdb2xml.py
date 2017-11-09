@@ -7,7 +7,7 @@ from a set of database tables that are rooted in a main root table.
 It also reads a configuration file that defines how fields from the database
 tables are to be output in an xml output file.
 
-This program is based logically on doing the 'reverse' of what mature program
+This program is based logically on doing the 'reverse' of what longer-standing program
 xml2rdb does.
 
 Each input xml file has xml-coded information pertaining to a single xml
@@ -166,8 +166,9 @@ column data to convert to produce each output attribute value.
 '''
 class RelationMiner:
 
-  def __init__(self, d_mining_map=None ,d_mining_params=None, verbosity=0):
-    required_args = [d_mining_map, d_mining_params]
+  def __init__(self, d_mining_map=None ,d_mining_params=None, output_folder=None,
+    zfill_id_count=8, verbosity=0):
+    required_args = [output_folder,d_mining_map, d_mining_params]
     if not all(required_args):
       raise ValueError("Missing some required_args values in {}"
       .format(repr(required_args)))
@@ -175,9 +176,13 @@ class RelationMiner:
     self.d_mining_map = d_mining_map
     self.d_mining_params = d_mining_params if d_mining_params is not None else {}
     self.verbosity = verbosity
+    self.output_folder = output_folder
+    # To id mulitple output files, this is minimum length of the id, left zero-filled
+    # It makes for easy file sorting viewing and finding, nicer for a user to deal with.
+    self.zfill_id_count = zfill_id_count
 
   '''
-  method mine():
+  method mine(): TODO --- not used yet
   Set up context data and initial data to prepare the call to
   the recursive mining method: Eg, row_output_visit()
 
@@ -221,15 +226,14 @@ class RelationMiner:
       # One big output file is required
       with open(
         '{}{}'.format(output_folder,output_file_name),'w') as self.output_file:
-        self.row_output_visit( node=d_mining_map, composite_ids=composite_ids,
+        self.xrow_output_visit( node=d_mining_map, composite_ids=None,
            output_file=self.output_file, verbosity=1)
     else:
         self.output_file = None
         # One output file per primary relation row is required.
-        row_output_visit(self, dd_mining_map=_mining_map,
+        xrow_output_visit(self, dd_mining_map=_mining_map,
             composite_ids=composite_ids )
     return
-
   #end:def mine in RelationMiner
 
   '''
@@ -265,6 +269,7 @@ class RelationMiner:
   '''
   def row_output(self, node=None, d_row=None, output_file=None, verbosity=0):
     me = 'row_output'
+
     required_arguments = ['node','d_row','output_file']
     if not all( required_arguments):
       raise ValueError(
@@ -279,14 +284,9 @@ class RelationMiner:
     '''
     #attribute_content = d_mining_params.get('attribute_text','text')
     attribute_content = 'attribute_content'
-
     # attribute_innerhtml = d_mining_params.get( 'attribute_innerhtml' ,'attribute_innerhtml')
 
-    if(verbosity > 0):
-        print("{}:attribute_content={}".format(me, attribute_content))
-
-    print(
-      "comment='{}:misc xml tag content and attribute values'"
+    print(" comment='{}:misc xml tag content and attribute values'"
       .format(me), file=output_file, end='')
 
     '''
@@ -343,6 +343,7 @@ class RelationMiner:
         print(' {}={}'.format(attribute, value), file=self.output_file)
       print(' >', file=self.outputfile)
       '''
+
     return
   #end:def row_output
 
@@ -352,7 +353,7 @@ class RelationMiner:
     d_name_relation=None,
     composite_ids=None,
     output_file=None,
-    verbosity=0):
+    verbosity=0 ):
     me = "row_children_visit"
 
     required_args = [node,  d_name_relation]
@@ -362,40 +363,73 @@ class RelationMiner:
 
     # On current input node/row, for each child  node relation,
     # recurse to visit it and output its data.
+    node_relation_name = node['node1_name']
+    depth = 0 if composite_ids is None else len(composite_ids)
+    if depth > 0 and output_file is None:
+      raise ValueError("Undefined output file")
 
-    child_nodes = node.get('child_nodes', None)
-    msg = ("{}: Got child_nodes='{}'\nof type {}, len-{}"
-          .format(me, repr(child_nodes), type(child_nodes),len(child_nodes)))
+    print("\n{}: STARTING: parent relation={}, depth={}, composite_ids={} "
+          .format(me, node_relation_name, depth, repr(composite_ids)))
+
+    child_nodes = node.get('child_nodes', list())
+
     if not isinstance(child_nodes, list):
       # Note: when start to interpret xml config, such error will be caught
       # elsewhere, when interpretting that config
       msg = "Error: " + msg
       raise ValueError(msg)
 
+
     if len(child_nodes) > 0:
-      for child_node in child_nodes:
-        print("{}:Using child_node='{}'\nof type {}"
-           .format(me, repr(child_node), type(child_node)))
+      for child_position,child_node in enumerate(child_nodes):
         child_name_relation = child_node['node1_name']
         child_relation=d_name_relation[child_name_relation]
         child_rows = child_relation.sequence
+        print("{}: At list position={} child_node='{}', relation_name={},\nof type {}, will seek child_rows"
+           .format(me, child_position, repr(child_node), child_name_relation,type(child_node)))
         #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_mining_map)))
         #children = node.findall(xpath, d_namespaces )
         # CRITICAL: make sure db.sequence() does select with order by the relation_namd_id
         # else hard-to-debug errors may result
+        print("{}:Recheck depth={}".format(me,depth))
         for row_tuple in child_rows:
           if row_tuple is None:
+            print("No more child rows for this sibling group")
             break;
-          sibling_id = row_tuple[0]
-          row_count = row_tuple[0]
+          sibling_count = row_tuple[0]
           column_values = row_tuple[1]
-          print("{}: got row_count={}, column values={}"
-              .format(me,row_count,repr(column_values)))
-          if row_count > 10:
-            print("{}: breaking on test limit 10 child row_count".format(me))
-            break;
+          sibling_id = column_values[depth]
 
-          #NEXT PHASE: INSERT -- recursive call to row_output_visit()
+          print("{}: child row sibling_count={}, using depth={}, column values={}, sibling_id='{}'"
+              .format(me, sibling_count, depth, repr(column_values), sibling_id))
+
+          # Here, insert check that the parent composite ids of this child row all match
+          # the given arguments
+          # for cid in composite_ids ...
+          for d in range(depth):
+            # NOTE we now use str to make generic comparison...
+            # todo: work out details of relation column id types(str vs int)
+            if str(composite_ids[d]) != str(column_values[d]):
+              msg = ("{}: Child relation {}, sibling_id {} has parent relation {} with composite_ids={},"
+              .format(me,child_name_relation, sibling_id, node_relation_name, repr(composite_ids)))
+              msg += ("\nbut composite position={} mismatch: got row column values={}"
+                .format(d,  column_values))
+              raise ValueError(msg)
+
+          child_composite_ids = list() if composite_ids is None else list(composite_ids)
+          if verbosity > 0:
+            print("{}: adding sibling_id={} to child_composite_ids={}".format(me,sibling_id,
+                repr(child_composite_ids)))
+          child_composite_ids.append(sibling_id)
+          if verbosity > 0:
+            print("{}:MAKING recursive call with child_composite_ids={} type={}"
+                  .format(me,repr(child_composite_ids), type(child_composite_ids)))
+
+          self.row_output_visit(node=child_node, composite_ids=child_composite_ids,
+            d_row=column_values,d_name_relation=d_name_relation, output_file=output_file, verbosity=1)
+
+          print("{}: back from row_output_visit. Depth is back to {}".format(me,depth))
+
           # consider: copy column_values to d_row to return to caller...?
           '''
           note: If do do this--- tbd: outdent this to put it in childnode loop?
@@ -408,11 +442,20 @@ class RelationMiner:
               #        'node.tag={} duplicate column name {} is also in a child xpath={}.'
               #        .format(node.tag,column_name,xpath))
               d_row[column_name] = value
+          '''
         #Finished visiting child_rows for this relation/node/sibling group
+        print("{}: Finished visiting all composite_ids={} sibling rows of child relation"
+              .format(me,composite_ids,child_name_relation))
       #Finished visting all child nodes/paths for this node
-        '''
+      print("{}: Finished visitng all child nodes/relations for composite_ids={}"
+            .format(me,child_name_relation,composite_ids))
     #End check for some child nodes to visit.
+    else:
+      print("{}:No child nodes - returning with depth={}".format(me,depth))
+
+    print("{}: depth={} RETURNING".format(me,depth))
     return
+  # end:def row_children_visit
 
   '''
   Method row_post_visits(node=None, output_file=None, verbosity=None)
@@ -667,7 +710,7 @@ class RelationMiner:
   def row_output_visit(self
     ,node=None ,d_name_relation=None ,composite_ids=None
     ,output_file=None #make this a generic dataset later
-    ,d_row=None ,verbosity=0
+    ,d_row=None, verbosity=0
     ):
     me = 'row_output_visit()'
 
@@ -680,13 +723,13 @@ class RelationMiner:
     # parent group of data
 
     node1_name = node['node1_name'] # eg a relation name
-    rname = node1_name
+    relation_name = node1_name
     depth = len(composite_ids)
-    relation = d_name_relation[rname] if depth > 0 else None
+    relation = d_name_relation[relation_name] if depth > 0 else None
     sibling_id = composite_ids[depth-1] if depth > 0 else None
 
     required_args = [node, d_name_relation, d_row]
-    msg = "{}: depth={}\n".format(me, depth)
+    msg = "{}: depth={}, relation_name={},sibling_id={}\n".format(me, depth,relation_name,sibling_id)
     msg += "{}: composite_ids={}\n".format(me, repr(composite_ids))
     msg += "{}: node={}\n".format(me, node)
     msg +=  "{}: d_name_relation={}\n".format(me, d_name_relation)
@@ -697,24 +740,29 @@ class RelationMiner:
 
     msg += "{}: d_row={}\n".format(me, repr(d_row))
     if verbosity > 0:
-      print("{}: {}".format(me, msg))
+      print("\n{}: STARTING: \n{}".format(me, msg))
 
-    # testing: do premature return
-    if depth >=1 and composite_ids[depth-1] > 10:
-      return None
+    # testing: show only 10 siblings to do premature return
+    #if depth >=1 and composite_ids[depth-1] > 1799:
+    #  print("{}:Early return for depth={}, id={}".format(me,depth,composite_ids[depth-1]))
+    #  return None
 
-    if depth == 1 and sibling_id == 1 and output_file is None:
+    if depth == 1 and output_file is None and sibling_id == '1':
+      # fixme: check for sibling_id == '1' is a band-aid for testing, as it comports with
+      # THE TEST DATA, but not abribtrary data... so fix this.
       # This node visit and child visits will generate some output data for the
       # main relation, which will produce (in conjunction with deeper calls)
       # its own entire xml output file.
       # Now open the output file for this row of this primary relation.
-      file_path_name = (
-      '{}{}_{}'.format(self.output_folder,rname
-      , str(sibling_id).zfill(self.zfill_id_count)))
-      output_file = open('file_path_name','w')
+      output_file_name = (
+        '{}{}_{}.xml'.format(self.output_folder,relation_name
+        , str(sibling_id).zfill(self.zfill_id_count)))
+
+      output_file = open(output_file_name,'w')
+      relation.output_file = output_file
 
       if verbosity > 0:
-        print("{}: Opened output file name={}".format(file_path_name))
+        print("\n{}: *********** Created and Opened output file name={}".format(me,output_file_name))
 
     xml_tag_name = node['node2_name'] # eg an xml tag name
 
@@ -727,12 +775,16 @@ class RelationMiner:
     return_val = self.row_output(
       node=node, d_row=d_row, output_file=output_file, verbosity=1)
 
+    print(" >", file=output_file) #Close the xml opening tag
+
     # Next, call row_children_visit(node=node,verbosity=1)
     print("{}: Calling row_children_visit".format(me))
 
     retval = self.row_children_visit(node=node,composite_ids=composite_ids,
         d_name_relation=d_name_relation, output_file=output_file,
         verbosity=verbosity)
+
+    print("{}: back from row_children_visit() call...".format(me))
 
     # Next, call row_post_visit()
 
@@ -745,15 +797,13 @@ class RelationMiner:
     d_row = None
     # end if multiple == 1
 
-    msg = ("{}:FINISHED output tag name={},  returning d_row={}"
-       .format(me, xml_tag_name, repr(d_row)))
+    msg = ("{}:FINISHED output tag name={},  depth={}, returning d_row={}"
+       .format(me, xml_tag_name, depth,repr(d_row)))
 
-    #print(msg)
+    print(msg)
     return d_row
   # end:def row_output_visit
 
-  def mine(): # visit the d_nodes_map to mine the input and write the output
-    return
 # end class RelationMiner
 '''
 Method rdb_to_xml: from given xml doc(eg, from an Elsevier full text retrieval apifile),
@@ -818,7 +868,7 @@ def rdb_to_xml(
   d_mining_params = dict({'attribute_text':'text'})
 
   # Above was emulation of some args - now start method code prototype
-  print("Using output_file={}".format(output_file))
+  print("Using output_file_name={}".format(output_file_name))
 
   tag = tags[len(tags) - 1]
   with open(output_file_name, mode='r', encoding='utf-8') as file_out:
@@ -827,6 +877,7 @@ def rdb_to_xml(
       ,tags=tags
       ,node_index=node_index
       ,d_mining_params=d_mining_params
+      ,composite_ids = composite_ids
       ,output_file=None)
 
   print ("Done!")
@@ -959,7 +1010,7 @@ def rdb2xml_test():
   composite_ids = []
   d_mining_map = config.d_mining_map
   relation_miner = RelationMiner(d_mining_map=d_mining_map,
-  d_mining_params=d_mining_params)
+  d_mining_params=d_mining_params,output_folder=output_folder)
 
   # create test set of relations to mine with rudimentary manual instantiations.
   print('{}:Constructing phd = PHD(...)'.format(me))
@@ -987,7 +1038,6 @@ def rdb2xml_test():
     print('{}:Added relation named {} with sequence={} of type {}, and with parent named {}'
       .format(me,relation_name,repr(relation.sequence),type(relation.sequence),parent_name))
 
-  composite_ids = []
   #Mine this config - visit all nodes and create outputs
   #note todo: add argument for d_name_relation for row_output_visit to use to
   #invoke correct sequence generator
@@ -997,7 +1047,6 @@ def rdb2xml_test():
     'node2_name':'run_context'
     ,'child_nodes': [d_mining_map]
     }
-  output_file = '{}{}'.format(output_folder,'rdb2xml_output.xml')
 
   verbosity = 1
   composite_ids = []
@@ -1005,8 +1054,7 @@ def rdb2xml_test():
      'context.bib_id':'ZZ00004567', 'context.row_column1':'test1',
      'context.row_column2':'test2'}
 
-  if 1 > 0:
-    print("Creating output file {}".format(output_file))
+  if verbosity > 0:
     print("{}.Using node_root={}.".format(me,repr(node_root)))
     print("{}:Calling relation_miner.row_output_visit()".format(me))
 
@@ -1015,7 +1063,7 @@ def rdb2xml_test():
     ,d_name_relation=phd.d_name_relation
     ,composite_ids=composite_ids
     ,d_row=d_row
-    ,output_file=None
+    ,output_file=None # Use NONE because we default to record-level output files
     ,verbosity=verbosity
     )
 
