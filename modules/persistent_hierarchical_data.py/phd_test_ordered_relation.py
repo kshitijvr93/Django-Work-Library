@@ -179,11 +179,11 @@ def testme(d_mining_map=None):
                 .format(me,row_count,repr(column_values)))
     parent_ids = ['1']
 
-    print("Calling control_ordered_siblings.next_by_parent_ids(parent_ids={})"
+    print("Calling control_ordered_siblings.findall(parent_ids={})"
         .format(repr(parent_ids)))
     a = 77
     while (1 == 1):
-        next_result = control_ordered_siblings.next_by_parent_ids(parent_ids=parent_ids)
+        next_result = control_ordered_siblings.findall(parent_ids=parent_ids)
         if next_result is None:
           break;
         print("Got next_result = {}".format(next_result))

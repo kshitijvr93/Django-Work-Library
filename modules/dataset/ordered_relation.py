@@ -229,9 +229,9 @@ class OrderedSiblings:
     self.parent_depth = 0
     if ordered_relation.order_depth > 1:
        self.parent_depth = ordered_relation.order_depth - 1
-    self.next_ids = self.next_row[:self.parent_depth]
+    self.next_ids = [int(x) for x in self.next_row[:self.parent_depth]]
 
-  def next_by_parent_ids(self, parent_ids=None):
+  def findall(self, parent_ids=None):
     '''
     Given the parent composite id values, return the parent's next ordered sibling
     row in this relation.
@@ -241,8 +241,12 @@ class OrderedSiblings:
     If there are no composite id values, return the next ordered row of the relaton
     Note: every relation must have a depth, but the root hierarchical relation,
     with a depth of 1, has no parent ids, so just return every row for it.
+
+    Return None if no rows, else return column_values[]
     '''
-    me = 'next_by_parent_ids'
+    me = 'findall'
+    #todo: formalize type of id!
+    parent_ids = [int(x) for x in parent_ids]
     if self.parent_depth != len(parent_ids):
         raise ValueError("Parent_depth={} but len(parent_ids)={}"
                  .format(self.parent_depth,len(parent_ids)))
@@ -255,13 +259,15 @@ class OrderedSiblings:
         print("{}:Got parent_ids={},Got next_result={}".format(me,repr(parent_ids),repr(self.next_result)))
         self.next_row = self.next_result[1]
         print("{}:Got next_row={}".format(me,repr(self.next_row)))
-        self.next_ids = self.next_row[:self.ordered_relation.order_depth-1]
+        #todo: make int vs str a formal member flag or option
+        self.next_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]
       else:
         print("{}:returning None".format(me))
         return None
       print("{}:returning row={}".format(me,tmp_row))
       return tmp_row
 
+    #todo:Make sure these are ints before comparing , or give int/str order options
     if parent_ids < self.next_ids:
       # If 'lesser' parent_ids, it is OK for parent to call again later with
       # increasing parent_ids until caller finds this row
@@ -272,7 +278,7 @@ class OrderedSiblings:
       if self.next_result is not None:
         self.next_result = next(self.all_rows)
         self.next_row = self.next_result[1]
-        self.next_ids = self.next_row[:self.ordered_relation.order_depth-1]
+        self.next_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]
       else:
         print("{}:returning None".format(me))
         return None

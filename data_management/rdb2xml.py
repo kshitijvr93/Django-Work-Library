@@ -194,7 +194,7 @@ class RelationMiner:
 
   '''
 
-  def mine(self, dataset_source=None
+  def xmine(self, dataset_source=None
       , relation_name_prefix=''
       , primary_relation_name=None
       , output_folder=None
@@ -234,7 +234,7 @@ class RelationMiner:
         xrow_output_visit(self, dd_mining_map=_mining_map,
             composite_ids=composite_ids )
     return
-  #end:def mine in RelationMiner
+  #end:def xmine in RelationMiner
 
   '''
   <summary name="row_output">
@@ -394,10 +394,14 @@ class RelationMiner:
         print("{}:Recheck depth={}".format(me,depth))
         #for row_tuple in child_rows:
         while (1):
-          column_values = child_relation.ordered_siblings.next_by_parent_ids(composite_ids)
+          column_values = child_relation.ordered_siblings.findall(composite_ids)
           if column_values is None:
             print("No more rows for this sibling group")
             break;
+          #TODO: add option to indicate str vs int column id values
+          #initial versions: use int - as it implies row ordering
+          for cid in range(depth):
+            column_values[cid] = int(column_values[cid])
           print("{}:=================Got sibling row column_values={}".format(me,column_values))
           sibling_id = column_values[depth]
 
@@ -408,9 +412,8 @@ class RelationMiner:
           # the given arguments
           # for cid in composite_ids ...
           for d in range(depth):
-            # NOTE we now use str to make generic comparison...
-            # todo: work out details of relation column id types(str vs int)
-            if str(composite_ids[d]) != str(column_values[d]):
+            # Todo: work out details of relation column id types(str vs int)
+            if (int(composite_ids[d]) != int(column_values[d])):
               msg = ("{}: Child relation {}, sibling_id {} has parent relation {} with composite_ids={},"
               .format(me,child_name_relation, sibling_id, node_relation_name, repr(composite_ids)))
               msg += ("\nbut composite position={} mismatch: got row column values={}"
