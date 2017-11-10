@@ -259,9 +259,12 @@ class OrderedSiblings:
           self.next_row = self.next_result[1]
           self.next_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]
         except:
+          return None
+          '''
           self.next_result = None
           self.next_row = None
           self.next_ids = None
+          '''
       else:
         #print("{}:returning None".format(me))
         return None

@@ -798,7 +798,7 @@ class RelationMiner:
       print(msg)
 
     print("</{}>".format(relation_name), file=output_file) #Close the xml opening tag
-    return d_row
+    return output_file
   # end:def row_output_visit
 # end class RelationMiner
 
@@ -890,13 +890,16 @@ def rdb2xml_test():
     print("{}:Calling relation_miner.row_output_visit()".format(me))
 
   # Main call
-  relation_miner.row_output_visit(node=node_root
+  output_file = relation_miner.row_output_visit(node=node_root
     ,d_name_relation=phd.d_name_relation
     ,composite_ids=composite_ids
     ,d_row=d_row
     ,output_file=None # Use NONE because we default to record-level output files
     ,verbosity=verbosity
     )
+
+  if output_file is not None:
+    close(output_file)
 
   # First we test with
   return
