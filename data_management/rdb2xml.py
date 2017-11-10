@@ -232,9 +232,8 @@ class RelationMiner:
     attribute_content = 'attribute_content'
     # attribute_innerhtml = d_mining_params.get( 'attribute_innerhtml' ,'attribute_innerhtml')
 
-    print(" comment='{}:misc xml tag content and attribute values'"
-          .format(me), file=output_file, end='')
-    relation_name = node['node1_name']
+    for name, value in d_row.items():
+      print(" {}='{}'".format(name,value),end='',file=output_file)
     #relation = d_name_relation(relation_name)
     #for i, field_name in relation.fields:
     #    pass
@@ -385,19 +384,19 @@ class RelationMiner:
             print("{}:MAKING recursive call with child_composite_ids={} type={}"
                   .format(me,repr(child_composite_ids), type(child_composite_ids)))
           # create d_row from column_values
-          if 1==1:
+          if verbosity > 0:
             print("{}:child relation={}, fields={},depth={},column_values={}"
               .format(me,child_name_relation, child_relation.fields, depth, column_values))
-          for i in range(len(column_values)):
 
-            x = child_relation.fields[i]
-            pass
+          d_row = { child_relation.fields[i]:v
+                   for  i, v in enumerate(column_values)}
 
-
-          d_row = {child_relation.fields[i]:v for  i, v in enumerate(column_values)}
+          d_row = { child_relation.fields[i]:column_values[i]
+                   for  i in range(depth+1, len(column_values))}
+          print("===================d_row ={}".format(d_row))
 
           self.row_output_visit(node=child_node, composite_ids=child_composite_ids,
-            d_row=column_values,d_name_relation=d_name_relation,
+            d_row=d_row,d_name_relation=d_name_relation,
             output_file=output_file, verbosity=1)
 
           if verbosity> 0:
@@ -801,7 +800,6 @@ class RelationMiner:
     return d_row
   # end:def row_output_visit
 # end class RelationMiner
-
 
 
 # RUN PARAMS AND RUN
