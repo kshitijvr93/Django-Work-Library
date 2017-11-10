@@ -181,60 +181,6 @@ class RelationMiner:
     # It makes for easy file sorting viewing and finding, nicer for a user to deal with.
     self.zfill_id_count = zfill_id_count
 
-  '''
-  method mine(): TODO --- not used yet
-  Set up context data and initial data to prepare the call to
-  the recursive mining method: Eg, row_output_visit()
-
-  This will be cleaned up later... now it is a mashup of
-  code to prepare for and execute the mining via the depth-first
-  processing that is executed by this  call to
-  row_output_visit(), which uses the d_nodes_map to recursively
-  call itself to do the mining.
-
-  '''
-
-  def xmine(self, dataset_source=None
-      , relation_name_prefix=''
-      , primary_relation_name=None
-      , output_folder=None
-      , output_file_name=None
-      , zfill_id_count=8
-      , verbosity=0):
-    me = 'RelationMiner.mine()'
-
-    # Register input and output style options
-    # and visit all the selected relational nodes in the
-    # d_mining_map mining map to mine from dataset_source the values
-    # defined in the mining map and to produce output.
-    required_args = [dataset_source, relation_main ,output_folder]
-
-    if not all(required_args):
-      raise ValueError("{}:Missing some required_args values in {}"
-      .format(repr(me,required_args)))
-
-    self.primary_relation_name = primary_relation_name
-    self.output_folder = output_folder
-    self.zfill_id_count = zfill_id_count
-    # Make sure output folder exists
-
-    self.output_file_name = '' if output_file_name is None else output_file_name
-
-    composite_ids = []
-
-    if self.output_file_name != '':
-      # One big output file is required
-      with open(
-        '{}{}'.format(output_folder,output_file_name),'w') as self.output_file:
-        self.xrow_output_visit( node=d_mining_map, composite_ids=None,
-           output_file=self.output_file, verbosity=1)
-    else:
-        self.output_file = None
-        # One output file per primary relation row is required.
-        xrow_output_visit(self, dd_mining_map=_mining_map,
-            composite_ids=composite_ids )
-    return
-  #end:def xmine in RelationMiner
 
   '''
   <summary name="row_output">
@@ -287,7 +233,11 @@ class RelationMiner:
     # attribute_innerhtml = d_mining_params.get( 'attribute_innerhtml' ,'attribute_innerhtml')
 
     print(" comment='{}:misc xml tag content and attribute values'"
-      .format(me), file=output_file, end='')
+          .format(me), file=output_file, end='')
+    relation_name = node['node1_name']
+    #relation = d_name_relation(relation_name)
+    #for i, field_name in relation.fields:
+    #    pass
 
     '''
     # d_row = {}; d_attribute_value = {}; content_value = ''
@@ -364,6 +314,8 @@ class RelationMiner:
     # On current input node/row, for each child  node relation,
     # recurse to visit it and output its data.
     node_relation_name = node['node1_name']
+
+
     depth = 0 if composite_ids is None else len(composite_ids)
     if depth > 0 and output_file is None:
       raise ValueError("Undefined output file")
@@ -432,9 +384,21 @@ class RelationMiner:
           if verbosity > 0:
             print("{}:MAKING recursive call with child_composite_ids={} type={}"
                   .format(me,repr(child_composite_ids), type(child_composite_ids)))
+          # create d_row from column_values
+          if 1==1:
+            print("{}:child relation={}, fields={},depth={},column_values={}"
+              .format(me,child_name_relation, child_relation.fields, depth, column_values))
+          for i in range(len(column_values)):
+
+            x = child_relation.fields[i]
+            pass
+
+
+          d_row = {child_relation.fields[i]:v for  i, v in enumerate(column_values)}
 
           self.row_output_visit(node=child_node, composite_ids=child_composite_ids,
-            d_row=column_values,d_name_relation=d_name_relation, output_file=output_file, verbosity=1)
+            d_row=column_values,d_name_relation=d_name_relation,
+            output_file=output_file, verbosity=1)
 
           if verbosity> 0:
             print("{}: back from row_output_visit. Depth is back to {}".format(me,depth))
@@ -721,9 +685,10 @@ class RelationMiner:
     </notes>
     '''
   def row_output_visit(self
-    ,node=None ,d_name_relation=None ,composite_ids=None
+    ,node=None ,d_name_relation=None,composite_ids=None
+    ,d_row=None
     ,output_file=None #make this a generic dataset later
-    ,d_row=None, verbosity=0
+    ,verbosity=0
     ):
     me = 'row_output_visit'
 
@@ -748,6 +713,7 @@ class RelationMiner:
     msg += "{}: node={}\n".format(me, node)
     msg +=  "{}: d_name_relation={}\n".format(me, d_name_relation)
     msg +=  "{}: output_file={}\n".format(me,repr(output_file))
+
     if not all(required_args):
       raise ValueError("{}:Missing some required_args values:\n{}"
         .format(me, msg))
@@ -768,7 +734,7 @@ class RelationMiner:
     output_file_for_each_record = 1
 
     if relation is not None and relation.last_sibling_id is not None:
-      raise("Test EXIT")
+      raise ValueError("Test EXIT")
     last_sibling_id = sibling_id
     if ( depth == 1 and output_file_for_each_record == 1
         and (relation.last_sibling_id is None or sibling_id != relation.last_sibling_id)
@@ -834,184 +800,9 @@ class RelationMiner:
     print("</{}>".format(relation_name), file=output_file) #Close the xml opening tag
     return d_row
   # end:def row_output_visit
-
 # end class RelationMiner
-'''
-Method rdb_to_xml: from given xml doc(eg, from an Elsevier full text retrieval apifile),
-convert the xml doc for output to relational data and output to relational tab-separated-value (tsv) files.
-Excel and other apps allow the '.txt' filename extension for tab-separated-value files.
-
-New twist - now this is rdb_to_xml
-'''
-def rdb_to_xml(
-  tags=None
-  ,d_root_node_params=None
-  ,d_mining_map=None
-  ,output_folder=None
-  ,d_mining_params=None
-  ,od_rel_datacolumns=None # Add later to validate mining map
-  ,od_relation=None
-  ,input_file_name=None
-  ,file_count=None
-  ,doc_rel_name=None
-  ,doc_root=None # doc element is meta element to use as root xml node per article/doc
-  ,doc_root_xpath=None
-  ,verbosity=0):
-
-  me = 'rdb_to_xml()'
-  log_messages = []
-
-  required_args = [tags, output_folder]
-  if not all(required_args):
-    raise ValueError('Not all args {} were given.'.format(required_args))
 
 
-  msg = ("{}:Got tags='{}', output_folder='{}', od_relation='{}',"
-     "len(d_mining_map)='{}', len od_rel_datacolumns={}."
-    .format(me, repr(tags), output_folder, repr(od_relation)
-      ,len(d_mining_map) ,len(od_rel_datacolumns)))
-
-  print(msg)
-
-  # retrieve next row from main relation's row generator method
-  #
-  # (1) Read an input xml file to variable input_xml_str
-  # correcting newlines and doubling up on curlies so format() works on them later.
-  # Class db will have opened the proper database that contains the relations.
-  # The generator restricts the selected records to those that match in order on the hierarchy
-  # coordinates or path indexes, in order of the columns defined by the relation's primary key.
-
-  # 20171026 testing runs
-
-  root_tag = 'docroot'
-  relation_name = node['relation_name']
-
-  # final: row_selection = dataset.cursor_relation(relation_name='record', node_index=[])
-  # testing:
-
-  row_selection =  [{'a':'5', 'b':'6'}, { 'a':'8', 'b':'9' }]
-  node_index = []
-  output_file_name = output_folder + '/rdbtoxml.xml'
-
-  tags = [root_tag]
-  node = d_mining_map['start'];
-
-  d_mining_params = dict({'attribute_text':'text'})
-
-  # Above was emulation of some args - now start method code prototype
-  if verbosity > 0:
-    print("Using output_file_name={}".format(output_file_name))
-
-  tag = tags[len(tags) - 1]
-  with open(output_file_name, mode='r', encoding='utf-8') as file_out:
-    retval = rel_row_output_visit(
-      node=od_mining_map
-      ,tags=tags
-      ,node_index=node_index
-      ,d_mining_params=d_mining_params
-      ,composite_ids = composite_ids
-      ,output_file=None)
-
-  print ("Done!")
-
-  for row_index, d_row in enumerate(row_selection):
-    print("For row {}, using d_row={}".format(row_index,repr(d_row)))
-    # set args for rel_row_output_visit()
-    node_index.append(row_index)
-
-  #MAKE RECURSIVE CALL
-  tags = rel_node_doc_visit(node=node, tags=tags)
-
-  if len(tags) == 0:
-    # The tag at this level was opened and outputted, so now close it
-    print("</{}>".format(tag), file=output_file)
-
-  # (2) and convert input_xml_str to a tree input_doc using etree.fromstring,
-
-  if input_xml_str[0:9] == '<failure>':
-    # IMPORTANT: This 'if clause' is a custom check for a 'bad' xml file common to a
-    # particular set of test UF xml files.
-    # This skipping is not generic feature of xml2rdb and may be removed.
-    # print("This xml file is a <failure>. Skipping it.")
-    log_messages.append("<failure> input_file {}.Skip.".format(input_file_name))
-
-    return log_messages, None, None
-
-  try:
-    tree_input_doc = etree.parse(input_file_name)
-  except Exception as e:
-    msg = (
-      "Skipping exception='{}' in etree.fromstring failure for input_file_name={}"
-      .format(repr(e), input_file_name))
-    #print(msg)
-    log_messages.append(msg)
-    return log_messages, None, None
-
-  # GET xml ROOT for this file
-  try:
-    input_node_root = tree_input_doc.getroot()
-  except Exception as e:
-    msg = ("Exception='{}' doing getroot() on tree_input_doc={}. Return."
-      .format(repr(e),repr(tree_input_doc)))
-    #print(msg)
-    log_messages.append(msg)
-
-  return log_messages, None, None
-
-  #Append this xml files root node to doc_root so it can be processed, wallked.
-  doc_root.append(input_node_root)
-
-  # Do not put the default namespace (as it has no tag prefix) into the d_namespaces dict.
-  d_nsmap = dict(input_node_root.nsmap)
-  d_namespaces = {key:value for key,value in d_nsmap.items() if key is not None}
-
-  if load_name is not None:
-    print("Warning: User must add column names 'load' and 'file_name' to the root table"
-      " to enable their values to be output in the output data")
-  else:
-    load_name=""
-
-  # document root params
-  d_root_params = {
-  'db_name': doc_rel_name, 'multiple':1,
-  'attrib_column': {
-    'file_name':'file_name',
-    'load': load_name,
-  },
-  'child_xpaths':{doc_root_xpath:d_mining_map}
-  }
-
-  if verbosity > 1:
-    print("xml2rdb: Using db_name='{}', doc_root_xpath='{}'"
-    .format(doc_rel_name , doc_root_xpath))
-
-  # OrderedDict with key of parent tag name and value is parent's index among its siblings.
-  od_parent_index = OrderedDict()
-  node_index = file_count
-
-  # In this scheme, the root node always has multiple = 1 - that is, it may have multiple
-  # occurences, specifically, over the set of input files.
-  # Also, this program requires that it be included in the relational output files.
-  multiple = 1
-
-  with open(output_file_name, "w", encoding="utf-8") as output_file:
-
-    d_return = rel_row_output_visit(
-    tags=['document_root']
-    ,od_relation=od_relation
-    ,d_namespaces=d_namespaces
-    ,d_mining_map=d_root_params
-    ,od_rel_datacolumns=od_rel_datacolumns
-    ,output_folder=output_folder
-    ,od_parent_index=od_parent_index
-    ,node_index=node_index
-    ,node=doc_root
-    ,d_mining_params=d_mining_params
-    ,verbosity=verbosity
-    )
-
-  return log_messages
-# end def rdb_to_xml():
 
 # RUN PARAMS AND RUN
 import datetime
