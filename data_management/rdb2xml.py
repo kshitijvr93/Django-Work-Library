@@ -286,8 +286,7 @@ class RelationMiner:
     attribute_content = 'attribute_content'
     # attribute_innerhtml = d_mining_params.get( 'attribute_innerhtml' ,'attribute_innerhtml')
 
-    if self.verbosity > 0:
-      print(" comment='{}:misc xml tag content and attribute values'"
+    print(" comment='{}:misc xml tag content and attribute values'"
       .format(me), file=output_file, end='')
 
     '''
