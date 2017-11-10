@@ -343,7 +343,6 @@ class RelationMiner:
         #children = node.findall(xpath, d_namespaces )
         # CRITICAL: make sure db.sequence() does select with order by the relation_namd_id
         # else hard-to-debug errors may result
-        print("{}:Recheck depth={}".format(me,depth))
         #for row_tuple in child_rows:
         while (1):
           column_values = child_relation.ordered_siblings.findall(composite_ids)
@@ -393,11 +392,12 @@ class RelationMiner:
 
           d_row = { child_relation.fields[i]:column_values[i]
                    for  i in range(depth+1, len(column_values))}
-          print("===================d_row ={}".format(d_row))
+          if verbosity> 0:
+            print("===================d_row ={}".format(d_row))
 
           self.row_output_visit(node=child_node, composite_ids=child_composite_ids,
             d_row=d_row,d_name_relation=d_name_relation,
-            output_file=output_file, verbosity=1)
+            output_file=output_file, verbosity=0)
 
           if verbosity> 0:
             print("{}: back from row_output_visit. Depth is back to {}".format(me,depth))
@@ -733,7 +733,8 @@ class RelationMiner:
     output_file_for_each_record = 1
 
     if relation is not None and relation.last_sibling_id is not None:
-      raise ValueError("Test EXIT")
+      #raise ValueError("Test EXIT")
+      pass
     last_sibling_id = sibling_id
     if ( depth == 1 and output_file_for_each_record == 1
         and (relation.last_sibling_id is None or sibling_id != relation.last_sibling_id)
@@ -741,7 +742,7 @@ class RelationMiner:
       relation.last_sibling_id = sibling_id
       if output_file is not None:
         close(output_file)
-        raise ValueError("Test Exit to clean up prints.")
+        # raise ValueError("Test Exit to clean up prints.")
       # fixme: check for sibling_id == '1' is a band-aid for testing, as it comports with
       # THE TEST DATA, but not abribtrary data... so fix this.
       # This node visit and child visits will generate some output data for the
@@ -768,7 +769,7 @@ class RelationMiner:
     if verbosity> 0:
       print("{}:calling row_output()".format(me))
     return_val = self.row_output(
-      node=node, d_row=d_row, output_file=output_file, verbosity=1)
+      node=node, d_row=d_row, output_file=output_file, verbosity=0)
 
     print(" >", file=output_file) #Close the xml opening tag
 
@@ -878,7 +879,7 @@ def rdb2xml_test():
     ,'child_nodes': [d_mining_map]
     }
 
-  verbosity = 1
+  verbosity = 0
   composite_ids = []
   d_row = {
      'context.bib_id':'ZZ00004567', 'context.row_column1':'test1',

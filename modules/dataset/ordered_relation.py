@@ -104,13 +104,12 @@ class OrderedRelation:
       row_count = 0
       #print("{}----------------Opening data_file_name='{}'".format(me,data_file_name))
 
-      with open(data_file_name, 'r') as input_file:
+      with open(data_file_name, 'r', encoding='utf-8',errors='replace') as input_file:
           for line in input_file:
             row_count += 1
             # Remove last newline and split out field/colum values by tab delimiter.
             column_values = line.replace('\n','').split('\t')
             yield row_count, column_values
-      return
 
     '''
     Method ordered_siblings():
@@ -255,9 +254,14 @@ class OrderedSiblings:
     if self.parent_depth == 0:
       tmp_row = self.next_row
       if self.next_result is not None:
-        self.next_result = next(self.all_rows)
+        try:
+          self.next_result = next(self.all_rows)
+          self.next_row = self.next_result[1]
+        except:
+          self.next_result = None
+          self.next_row = None
+
         #print("{}:Got parent_ids={},Got next_result={}".format(me,repr(parent_ids),repr(self.next_result)))
-        self.next_row = self.next_result[1]
         #print("{}:Got next_row={}".format(me,repr(self.next_row)))
         #todo: make int vs str a formal member flag or option
         self.next_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]
