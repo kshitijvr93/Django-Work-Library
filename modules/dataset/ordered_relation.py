@@ -257,14 +257,11 @@ class OrderedSiblings:
         try:
           self.next_result = next(self.all_rows)
           self.next_row = self.next_result[1]
+          self.next_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]
         except:
           self.next_result = None
           self.next_row = None
-
-        #print("{}:Got parent_ids={},Got next_result={}".format(me,repr(parent_ids),repr(self.next_result)))
-        #print("{}:Got next_row={}".format(me,repr(self.next_row)))
-        #todo: make int vs str a formal member flag or option
-        self.next_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]
+          self.next_ids = None
       else:
         #print("{}:returning None".format(me))
         return None
@@ -280,7 +277,10 @@ class OrderedSiblings:
     elif parent_ids == self.next_ids:
       tmp_row = self.next_row
       if self.next_result is not None:
-        self.next_result = next(self.all_rows)
+        try:
+          self.next_result = next(self.all_rows)
+        except: #stopiteration
+          return None
         self.next_row = self.next_result[1]
         self.next_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]
       else:
