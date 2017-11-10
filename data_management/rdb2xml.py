@@ -379,7 +379,6 @@ class RelationMiner:
       msg = "Error: " + msg
       raise ValueError(msg)
 
-
     if len(child_nodes) > 0:
       for child_position,child_node in enumerate(child_nodes):
         child_name_relation = child_node['node1_name']
@@ -685,7 +684,7 @@ class RelationMiner:
 
     </notes date='20171105'>
     <notes date='20171106'>
-    Resolved: first try will be simalr to xml2rdb approach.
+    Resolved: first try will be similar to xml2rdb approach.
     Upon entry to this routine, the composite_ids will indicate one unique row,
     aka this object aka this node. Therefore, the caller is in charge of finding this row
     in the input data in the first place and sending the row with column values in as d_row.
@@ -755,7 +754,13 @@ class RelationMiner:
       print("++++++++++++++++++{}:for depth 1 got sibling_id = '{}'"
             .format(me,sibling_id))
 
-    if depth == 1 and output_file is None and sibling_id == '1':
+    output_file_for_each_record = 1
+    if ( depth == 1 and output_file_for_each_record == 1
+        and (relation.last_sibling_id is None or sibling_id != relation.last_sibling_id)
+       ):
+      relation.last_sibling_id = sibling_id
+      if output_file is not None:
+        close(output_file)
       # fixme: check for sibling_id == '1' is a band-aid for testing, as it comports with
       # THE TEST DATA, but not abribtrary data... so fix this.
       # This node visit and child visits will generate some output data for the
@@ -1041,6 +1046,7 @@ def rdb2xml_test():
     all_rows = relation.sequence_all_rows()
     relation.sequence = relation.sequence_ordered_siblings(all_rows=all_rows)
     relation.ordered_siblings = OrderedSiblings(ordered_relation=relation)
+    relation.last_sibling_id = None
 
     msg=("Added relation '{}'' with sequence={} of type {}, and with parent {}"
       .format(relation_name,repr(relation.sequence),type(relation.sequence),
