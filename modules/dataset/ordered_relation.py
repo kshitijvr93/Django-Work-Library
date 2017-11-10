@@ -84,10 +84,27 @@ class OrderedRelation:
     This generates a generator for a sequence of rows in this relation.
     '''
 
+    def sequence_count_values(self):
+      me = 'OrderedRelation.sequence_all_rows()'
+      data_file_name = '{}{}.txt'.format(self.folder, self.relation_name)
+      row_count = 0
+      print("{}:----------------Opening data_file_name='{}'"
+        .format(me,data_file_name))
+
+      with open(data_file_name, 'r') as input_file:
+          for line in input_file:
+            row_count += 1
+            # Remove last newline and split out field/colum values by tab delimiter.
+            column_values = line.replace('\n','').split('\t')
+            yield row_count, column_values
+      return
+
     def sequence_all_rows(self):
       me = 'OrderedRelation.sequence_all_rows()'
       data_file_name = '{}{}.txt'.format(self.folder, self.relation_name)
       row_count = 0
+      print("{}----------------Opening data_file_name='{}'"
+        .format(me,data_file_name))
 
       with open(data_file_name, 'r') as input_file:
           for line in input_file:
@@ -229,23 +246,26 @@ class OrderedSiblings:
     if self.parent_depth != len(parent_ids):
         raise ValueError("Parent_depth={} but len(parent_ids)={}"
                  .format(self.parent_depth,len(parent_ids)))
+    print("{}:Using parent_ids={}".format(me,repr(parent_ids)))
+
     if self.parent_depth == 0:
       tmp_row = self.next_row
       if self.next_result is not None:
         self.next_result = next(self.all_rows)
-        print("Got next_result={}".format(repr(next_result)))
+        print("{}:Got parent_ids={},Got next_result={}".format(me,repr(parent_ids),repr(self.next_result)))
         self.next_row = self.next_result[1]
-        print("Got next_row={}".format(repr(next_row)))
-
-        self.next_ids = self.next_row[:ordered_relation.order_depth-1]
+        print("{}:Got next_row={}".format(me,repr(self.next_row)))
+        self.next_ids = self.next_row[:self.ordered_relation.order_depth-1]
       else:
+        print("{}:returning None".format(me))
         return None
+      print("{}:returning row={}".format(me,tmp_row))
       return tmp_row
-    print("{}: parent_ids={}, self.next_ids={}".format( me, parent_ids, self.next_ids))
-    sys.stdout.flush()
+
     if parent_ids < self.next_ids:
-      # If 'greater' parent_ids, it is OK for parent to call again later with
+      # If 'lesser' parent_ids, it is OK for parent to call again later with
       # increasing parent_ids until caller finds this row
+      print("{}:returning None".format(me))
       return None
     elif parent_ids == self.next_ids:
       tmp_row = self.next_row
@@ -254,10 +274,12 @@ class OrderedSiblings:
         self.next_row = self.next_result[1]
         self.next_ids = self.next_row[:self.ordered_relation.order_depth-1]
       else:
+        print("{}:returning None".format(me))
         return None
+      print("{}:returning row={}".format(me,tmp_row))
       return tmp_row
     else:
-      # Fatal Exception:
+      # Parent_ids skipped over an available child row  - Fatal Exception:
       raise ValueError("Given parent_ids={}, but next_ids={}. You abandoned orphans! Fatal Error."
         .format(repr(parent_ids),repr(self.next_ids)))
 

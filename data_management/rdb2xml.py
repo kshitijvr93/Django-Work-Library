@@ -392,16 +392,17 @@ class RelationMiner:
         # CRITICAL: make sure db.sequence() does select with order by the relation_namd_id
         # else hard-to-debug errors may result
         print("{}:Recheck depth={}".format(me,depth))
-        for row_tuple in child_rows:
-          if row_tuple is None:
-            print("No more child rows for this sibling group")
+        #for row_tuple in child_rows:
+        while (1):
+          column_values = child_relation.ordered_siblings.next_by_parent_ids(composite_ids)
+          if column_values is None:
+            print("No more rows for this sibling group")
             break;
-          sibling_count = row_tuple[0]
-          column_values = row_tuple[1]
+          print("{}:=================Got sibling row column_values={}".format(me,column_values))
           sibling_id = column_values[depth]
 
-          print("{}: child row sibling_count={}, using depth={}, column values={}, sibling_id='{}'"
-              .format(me, sibling_count, depth, repr(column_values), sibling_id))
+          print("{}: child row  using depth={}, column values={}, sibling_id='{}'"
+              .format(me,  depth, repr(column_values), sibling_id))
 
           # Here, insert check that the parent composite ids of this child row all match
           # the given arguments
@@ -712,7 +713,7 @@ class RelationMiner:
     ,output_file=None #make this a generic dataset later
     ,d_row=None, verbosity=0
     ):
-    me = 'row_output_visit()'
+    me = 'row_output_visit'
 
     # node1_name is the input dataset's relation name for the curent row.
     # For input databases it is a table or relation name,
@@ -729,7 +730,8 @@ class RelationMiner:
     sibling_id = composite_ids[depth-1] if depth > 0 else None
 
     required_args = [node, d_name_relation, d_row]
-    msg = "{}: depth={}, relation_name={},sibling_id={}\n".format(me, depth,relation_name,sibling_id)
+    msg = ("{}: depth={}, relation_name={},sibling_id={}\n"
+           .format(me, depth,relation_name,sibling_id))
     msg += "{}: composite_ids={}\n".format(me, repr(composite_ids))
     msg += "{}: node={}\n".format(me, node)
     msg +=  "{}: d_name_relation={}\n".format(me, d_name_relation)
@@ -746,6 +748,9 @@ class RelationMiner:
     #if depth >=1 and composite_ids[depth-1] > 1799:
     #  print("{}:Early return for depth={}, id={}".format(me,depth,composite_ids[depth-1]))
     #  return None
+    if depth == 1:
+      print("++++++++++++++++++{}:for depth 1 got sibling_id = '{}'"
+            .format(me,sibling_id))
 
     if depth == 1 and output_file is None and sibling_id == '1':
       # fixme: check for sibling_id == '1' is a band-aid for testing, as it comports with
@@ -991,7 +996,7 @@ def rdb2xml_test():
 
   import rdb2xml_configs.marctsf2xml as config
 
-  from dataset.ordered_relation import OrderedRelation
+  # from dataset.ordered_relation import OrderedRelation
   from dataset.phd import PHD
   import dataset.phd
 
@@ -1032,8 +1037,16 @@ def rdb2xml_test():
     # add a sequence_ordered_siblings sequence for this relation
     all_rows = relation.sequence_all_rows()
     relation.sequence = relation.sequence_ordered_siblings(all_rows=all_rows)
-    print('{}:Added relation named {} with sequence={} of type {}, and with parent named {}'
-      .format(me,relation_name,repr(relation.sequence),type(relation.sequence),parent_name))
+    relation.ordered_siblings = OrderedSiblings(ordered_relation=relation)
+
+    msg=("Added relation '{}'' with sequence={} of type {}, and with parent {}"
+      .format(relation_name,repr(relation.sequence),type(relation.sequence),
+      parent_name))
+    msg += ("and with ordered_siblings of type {}"
+      .format(type(relation.ordered_siblings)))
+
+    print('{}:{}'.format(me,msg))
+
 
   #Mine this config - visit all nodes and create outputs
   #note todo: add argument for d_name_relation for row_output_visit to use to
