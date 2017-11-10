@@ -77,7 +77,8 @@ next bibid and invoke it for the record relation. fine.
 d_mining_map =  {
     'node1_name':'record'
     ,'node2_name':'record'
-    ,'d_field1_field2': {
+    ,'d_field2_field1': {
+        'leader' : 'leader',
         'element_text' : 'leader'
     }
     ,'child_paths': [

@@ -229,22 +229,34 @@ class RelationMiner:
     the xml tag's element content text rather than as any specific xml
     attribute value
     '''
-    #attribute_content = d_mining_params.get('attribute_text','text')
-    '''
-    element_text = ''
-    for field1, field2 in node.d_field1_field2.items():
-      if field1 == 'element_text':
-        element_text = d_row.get(field2,'')
-      else:
-        value = d_row.get(field2,'')
-        if value != '':
-          print(' {}="{}"'.format(field1,value),end='',file=output_file)
+    # print("{}: node={}".format(me,repr(node)))
 
-    '''
+    d_field2_field1 = node.get('d_field2_field1',None)
+
+    if d_field2_field1 == None:
+      # No mapping to produce output for this node, so just return
+      print(">", file=output_file)
+      return
+
+    element_text = ''
+    for field2, field1 in node['d_field2_field1'].items():
+      if field2 == 'element_text':
+        element_text = d_row.get(field1,'')
+      else:
+        value = d_row.get(field1,'')
+        if value != '':
+          print(' {}="{}"'.format(field2,value),end='',file=output_file)
+
+    #Close the xml opening tag
+    print(">", file=output_file,end='')
+
+    if element_text != '':
+      print("{}".format(element_text), end='', file=output_file)
+
     # attribute_innerhtml = d_mining_params.get( 'attribute_innerhtml' ,'attribute_innerhtml')
 
-    for name, value in d_row.items():
-      print(' {}="{}"'.format(name,value),end='',file=output_file)
+    #for name, value in d_row.items():
+    #  print(' {}="{}"'.format(name,value),end='',file=output_file)
 
     '''
     # d_row = {}; d_attribute_value = {}; content_value = ''
@@ -779,7 +791,6 @@ class RelationMiner:
     return_val = self.row_output(
       node=node, d_row=d_row, output_file=output_file, verbosity=0)
 
-    print(">", file=output_file) #Close the xml opening tag
 
     # Next, call row_children_visit(node=node,verbosity=1)
     if verbosity> 0:
