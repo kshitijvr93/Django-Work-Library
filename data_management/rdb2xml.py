@@ -286,7 +286,8 @@ class RelationMiner:
     attribute_content = 'attribute_content'
     # attribute_innerhtml = d_mining_params.get( 'attribute_innerhtml' ,'attribute_innerhtml')
 
-    print(" comment='{}:misc xml tag content and attribute values'"
+    if self.verbosity > 0:
+      print(" comment='{}:misc xml tag content and attribute values'"
       .format(me), file=output_file, end='')
 
     '''
@@ -368,7 +369,8 @@ class RelationMiner:
     if depth > 0 and output_file is None:
       raise ValueError("Undefined output file")
 
-    print("\n{}: STARTING: parent relation={}, depth={}, composite_ids={} "
+    if verbosity > 0:
+      print("\n{}: STARTING: parent relation={}, depth={}, composite_ids={} "
           .format(me, node_relation_name, depth, repr(composite_ids)))
 
     child_nodes = node.get('child_nodes', list())
@@ -384,7 +386,8 @@ class RelationMiner:
         child_name_relation = child_node['node1_name']
         child_relation=d_name_relation[child_name_relation]
         child_rows = child_relation.sequence
-        print("{}: At list position={} child_node='{}', relation_name={},\nof type {}, will seek child_rows"
+        if verbosity > 0:
+          print("{}: At list position={} child_node='{}', relation_name={},\nof type {}, will seek child_rows"
            .format(me, child_position, repr(child_node), child_name_relation,type(child_node)))
         #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_mining_map)))
         #children = node.findall(xpath, d_namespaces )
@@ -395,16 +398,19 @@ class RelationMiner:
         while (1):
           column_values = child_relation.ordered_siblings.findall(composite_ids)
           if column_values is None:
-            print("No more rows for this sibling group")
+            if verbosity > 0:
+              print("No more rows for this sibling group")
             break;
           #TODO: add option to indicate str vs int column id values
           #initial versions: use int - as it implies row ordering
           for cid in range(depth):
             column_values[cid] = int(column_values[cid])
-          print("{}:=================Got sibling row column_values={}".format(me,column_values))
+          if verbosity > 0:
+            print("{}:=================Got sibling row column_values={}".format(me,column_values))
           sibling_id = column_values[depth]
 
-          print("{}: child row  using depth={}, column values={}, sibling_id='{}'"
+          if verbosity> 0:
+            print("{}: child row  using depth={}, column values={}, sibling_id='{}'"
               .format(me,  depth, repr(column_values), sibling_id))
 
           # Here, insert check that the parent composite ids of this child row all match
@@ -431,7 +437,8 @@ class RelationMiner:
           self.row_output_visit(node=child_node, composite_ids=child_composite_ids,
             d_row=column_values,d_name_relation=d_name_relation, output_file=output_file, verbosity=1)
 
-          print("{}: back from row_output_visit. Depth is back to {}".format(me,depth))
+          if verbosity> 0:
+            print("{}: back from row_output_visit. Depth is back to {}".format(me,depth))
 
           # consider: copy column_values to d_row to return to caller...?
           '''
@@ -447,16 +454,20 @@ class RelationMiner:
               d_row[column_name] = value
           '''
         #Finished visiting child_rows for this relation/node/sibling group
-        print("{}: Finished visiting all composite_ids={} sibling rows of child relation"
+        if verbosity>0:
+          print("{}: Finished visiting all composite_ids={} sibling rows of child relation"
               .format(me,composite_ids,child_name_relation))
       #Finished visting all child nodes/paths for this node
-      print("{}: Finished visitng all child nodes/relations for composite_ids={}"
+      if verbosity>0:
+        print("{}: Finished visitng all child nodes/relations for composite_ids={}"
             .format(me,child_name_relation,composite_ids))
     #End check for some child nodes to visit.
     else:
-      print("{}:No child nodes - returning with depth={}".format(me,depth))
+      if verbosity > 0:
+        print("{}:No child nodes - returning with depth={}".format(me,depth))
 
-    print("{}: depth={} RETURNING".format(me,depth))
+    if verbosity > 0:
+      print("{}: depth={} RETURNING".format(me,depth))
     return
   # end:def row_children_visit
 
@@ -751,16 +762,22 @@ class RelationMiner:
     #  print("{}:Early return for depth={}, id={}".format(me,depth,composite_ids[depth-1]))
     #  return None
     if depth == 1:
-      print("++++++++++++++++++{}:for depth 1 got sibling_id = '{}'"
+      if verbosity > 0:
+        print("++++++++++++++++++{}:for depth 1 got sibling_id = '{}'"
             .format(me,sibling_id))
 
     output_file_for_each_record = 1
+
+    if relation is not None and relation.last_sibling_id is not None:
+      raise("Test EXIT")
+    last_sibling_id = sibling_id
     if ( depth == 1 and output_file_for_each_record == 1
         and (relation.last_sibling_id is None or sibling_id != relation.last_sibling_id)
        ):
       relation.last_sibling_id = sibling_id
       if output_file is not None:
         close(output_file)
+        raise ValueError("Test Exit to clean up prints.")
       # fixme: check for sibling_id == '1' is a band-aid for testing, as it comports with
       # THE TEST DATA, but not abribtrary data... so fix this.
       # This node visit and child visits will generate some output data for the
@@ -784,20 +801,23 @@ class RelationMiner:
       print("<{}".format(xml_tag_name), end='', file=output_file)
 
     #Output values mapped directly from this input row's column values
-    print("{}:calling row_output()".format(me))
+    if verbosity> 0:
+      print("{}:calling row_output()".format(me))
     return_val = self.row_output(
       node=node, d_row=d_row, output_file=output_file, verbosity=1)
 
     print(" >", file=output_file) #Close the xml opening tag
 
     # Next, call row_children_visit(node=node,verbosity=1)
-    print("{}: Calling row_children_visit".format(me))
+    if verbosity> 0:
+      print("{}: Calling row_children_visit".format(me))
 
     retval = self.row_children_visit(node=node,composite_ids=composite_ids,
         d_name_relation=d_name_relation, output_file=output_file,
         verbosity=verbosity)
 
-    print("{}: back from row_children_visit() call...".format(me))
+    if verbosity > 0:
+      print("{}: back from row_children_visit() call...".format(me))
 
     # Next, call row_post_visit()
 
@@ -809,7 +829,9 @@ class RelationMiner:
     msg = ("{}:FINISHED output tag name={},  depth={}, returning d_row={}"
        .format(me, xml_tag_name, depth,repr(d_row)))
 
-    print(msg)
+    if verbosity> 0:
+      print(msg)
+
     print("</{}>".format(relation_name), file=output_file) #Close the xml opening tag
     return d_row
   # end:def row_output_visit
@@ -878,7 +900,8 @@ def rdb_to_xml(
   d_mining_params = dict({'attribute_text':'text'})
 
   # Above was emulation of some args - now start method code prototype
-  print("Using output_file_name={}".format(output_file_name))
+  if verbosity > 0:
+    print("Using output_file_name={}".format(output_file_name))
 
   tag = tags[len(tags) - 1]
   with open(output_file_name, mode='r', encoding='utf-8') as file_out:
@@ -991,13 +1014,11 @@ def rdb_to_xml(
   return log_messages
 # end def rdb_to_xml():
 
-
 # RUN PARAMS AND RUN
 import datetime
 import pytz
 import os
 from collections import OrderedDict
-
 
 def rdb2xml_test():
   me = 'rdb2xml_test'
@@ -1020,7 +1041,9 @@ def rdb2xml_test():
   composite_ids = []
   d_mining_map = config.d_mining_map
   relation_miner = RelationMiner(d_mining_map=d_mining_map,
-  d_mining_params=d_mining_params,output_folder=output_folder)
+    d_mining_params=d_mining_params,output_folder=output_folder,
+    verbosity=0
+    )
 
   # create test set of relations to mine with rudimentary manual instantiations.
   print('{}:Constructing phd = PHD(...)'.format(me))
@@ -1088,8 +1111,6 @@ def rdb2xml_test():
 
   # First we test with
   return
-
-#end run_test
-
+#end:def rdb2xml_test():
 
 rdb2xml_test()

@@ -88,8 +88,7 @@ class OrderedRelation:
       me = 'OrderedRelation.sequence_all_rows()'
       data_file_name = '{}{}.txt'.format(self.folder, self.relation_name)
       row_count = 0
-      print("{}:----------------Opening data_file_name='{}'"
-        .format(me,data_file_name))
+      #print("{}:----------------Opening data_file_name='{}'".format(me,data_file_name))
 
       with open(data_file_name, 'r') as input_file:
           for line in input_file:
@@ -103,8 +102,7 @@ class OrderedRelation:
       me = 'OrderedRelation.sequence_all_rows()'
       data_file_name = '{}{}.txt'.format(self.folder, self.relation_name)
       row_count = 0
-      print("{}----------------Opening data_file_name='{}'"
-        .format(me,data_file_name))
+      #print("{}----------------Opening data_file_name='{}'".format(me,data_file_name))
 
       with open(data_file_name, 'r') as input_file:
           for line in input_file:
@@ -215,7 +213,7 @@ class OrderedSiblings:
   open on the same relation.
   NOTE: all parent_id  values and row column values are strings.
   '''
-  def __init__(self, ordered_relation=None,verbosity=None):
+  def __init__(self, ordered_relation=None,verbosity=0):
     required_args = [ordered_relation]
     if not all(required_args):
       raise ValueError("Missing some required_args values in {}"
@@ -223,6 +221,7 @@ class OrderedSiblings:
 
     self.ordered_relation = ordered_relation
     self.all_rows = ordered_relation.sequence_all_rows()
+    self.verbosity = verbosity
 
     self.next_result = next(self.all_rows)
     self.next_row = self.next_result[1]
@@ -250,28 +249,29 @@ class OrderedSiblings:
     if self.parent_depth != len(parent_ids):
         raise ValueError("Parent_depth={} but len(parent_ids)={}"
                  .format(self.parent_depth,len(parent_ids)))
-    print("{}:Using parent_ids={}".format(me,repr(parent_ids)))
+    if self.verbosity > 0:
+      print("{}:Using parent_ids={}".format(me,repr(parent_ids)))
 
     if self.parent_depth == 0:
       tmp_row = self.next_row
       if self.next_result is not None:
         self.next_result = next(self.all_rows)
-        print("{}:Got parent_ids={},Got next_result={}".format(me,repr(parent_ids),repr(self.next_result)))
+        #print("{}:Got parent_ids={},Got next_result={}".format(me,repr(parent_ids),repr(self.next_result)))
         self.next_row = self.next_result[1]
-        print("{}:Got next_row={}".format(me,repr(self.next_row)))
+        #print("{}:Got next_row={}".format(me,repr(self.next_row)))
         #todo: make int vs str a formal member flag or option
         self.next_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]
       else:
-        print("{}:returning None".format(me))
+        #print("{}:returning None".format(me))
         return None
-      print("{}:returning row={}".format(me,tmp_row))
+      #print("{}:returning row={}".format(me,tmp_row))
       return tmp_row
 
     #todo:Make sure these are ints before comparing , or give int/str order options
     if parent_ids < self.next_ids:
       # If 'lesser' parent_ids, it is OK for parent to call again later with
       # increasing parent_ids until caller finds this row
-      print("{}:returning None".format(me))
+      #print("{}:returning None".format(me))
       return None
     elif parent_ids == self.next_ids:
       tmp_row = self.next_row
@@ -280,9 +280,9 @@ class OrderedSiblings:
         self.next_row = self.next_result[1]
         self.next_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]
       else:
-        print("{}:returning None".format(me))
+        #print("{}:returning None".format(me))
         return None
-      print("{}:returning row={}".format(me,tmp_row))
+      #print("{}:returning row={}".format(me,tmp_row))
       return tmp_row
     else:
       # Parent_ids skipped over an available child row  - Fatal Exception:
