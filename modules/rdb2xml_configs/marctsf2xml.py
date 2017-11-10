@@ -80,7 +80,7 @@ d_mining_map =  {
     ,'d_field1_field2': {
         'element_text' : 'leader'
     }
-    ,'child_nodes': [
+    ,'child_paths': [
         {
             'node1_name': 'controlfield',
             'node2_name' : 'controlfield',
@@ -96,7 +96,7 @@ d_mining_map =  {
                 'ind1': 'indicator1',
                 'ind2': 'indicator2',
             },
-            'child_nodes' : [
+            'child_paths' : [
                 {
                     'node1_name': 'subfield',
                     'node2_name': 'subfield',

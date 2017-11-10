@@ -258,13 +258,8 @@ class OrderedSiblings:
           self.next_result = next(self.all_rows)
           self.next_row = self.next_result[1]
           self.next_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]
-        except:
+        except StopIteration:
           return None
-          '''
-          self.next_result = None
-          self.next_row = None
-          self.next_ids = None
-          '''
       else:
         #print("{}:returning None".format(me))
         return None
@@ -282,7 +277,7 @@ class OrderedSiblings:
       if self.next_result is not None:
         try:
           self.next_result = next(self.all_rows)
-        except: #stopiteration
+        except StopIteration:
           return None
         self.next_row = self.next_result[1]
         self.next_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]

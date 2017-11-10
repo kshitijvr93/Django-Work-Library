@@ -222,21 +222,29 @@ class RelationMiner:
         "{}:Not all required_arguments were given: {}".format(me, repr(required_arguments)))
 
     '''
-    Keyword 'attribute_content' is a special keyword (may make a param later)
-    that is used in a d_mining_map dictionary d_field2_field1 as a field2 key value name
-    to mean that the associated input row column value should be copied/written out into
-    the xml output file in  the style of the xml tag's
-    content text rather than as any specific xml attribute value
+    Keyword 'element_text' is a special keyword (may make a param later)
+    that is used in a d_mining_map dictionary d_field2_field1 as a field2
+    key value name to mean that the associated input row column value
+    should be copied/written out into the xml output file in  the style of
+    the xml tag's element content text rather than as any specific xml
+    attribute value
     '''
     #attribute_content = d_mining_params.get('attribute_text','text')
-    attribute_content = 'attribute_content'
+    '''
+    element_text = ''
+    for field1, field2 in node.d_field1_field2.items():
+      if field1 == 'element_text':
+        element_text = d_row.get(field2,'')
+      else:
+        value = d_row.get(field2,'')
+        if value != '':
+          print(' {}="{}"'.format(field1,value),end='',file=output_file)
+
+    '''
     # attribute_innerhtml = d_mining_params.get( 'attribute_innerhtml' ,'attribute_innerhtml')
 
     for name, value in d_row.items():
-      print(" {}='{}'".format(name,value),end='',file=output_file)
-    #relation = d_name_relation(relation_name)
-    #for i, field_name in relation.fields:
-    #    pass
+      print(' {}="{}"'.format(name,value),end='',file=output_file)
 
     '''
     # d_row = {}; d_attribute_value = {}; content_value = ''
@@ -323,16 +331,16 @@ class RelationMiner:
       print("\n{}: STARTING: parent relation={}, depth={}, composite_ids={} "
           .format(me, node_relation_name, depth, repr(composite_ids)))
 
-    child_nodes = node.get('child_nodes', list())
+    child_paths = node.get('child_paths', list())
 
-    if not isinstance(child_nodes, list):
+    if not isinstance(child_paths, list):
       # Note: when start to interpret xml config, such error will be caught
       # elsewhere, when interpretting that config
       msg = "Error: " + msg
       raise ValueError(msg)
 
-    if len(child_nodes) > 0:
-      for child_position,child_node in enumerate(child_nodes):
+    if len(child_paths) > 0:
+      for child_position,child_node in enumerate(child_paths):
         child_name_relation = child_node['node1_name']
         child_relation=d_name_relation[child_name_relation]
         child_rows = child_relation.sequence
@@ -592,7 +600,7 @@ class RelationMiner:
      - That retrieve's from the input dataswet the next row's values (field1 values)
      - the node.d_field2_field1 dictionary is enumerated to output field2 values
      that are dervied from  the field1 values of the sibling row.
-     - an inner loop through the node's child_nodes is executed, where for each child_node:
+     - an inner loop through the node's child_paths is executed, where for each child_node:
     -- the sibling_id of the main relation row is appended to the given
       composite_ids
     -- a new d_row value is appended by appending this sibing row's values
@@ -647,7 +655,7 @@ class RelationMiner:
     map and output the values
 
     Step 3: sub-process delve
-    3a: take the child_nodes list and for each child_node :
+    3a: take the child_paths list and for each child_node :
      use the node.node1_name to get the source object -
       (first cut is just an OreredRelation object, from arg d_name_relation).
     3a1: enter a for loop over the relation.sequence.ordered_siblings()
@@ -771,7 +779,7 @@ class RelationMiner:
     return_val = self.row_output(
       node=node, d_row=d_row, output_file=output_file, verbosity=0)
 
-    print(" >", file=output_file) #Close the xml opening tag
+    print(">", file=output_file) #Close the xml opening tag
 
     # Next, call row_children_visit(node=node,verbosity=1)
     if verbosity> 0:
@@ -876,7 +884,7 @@ def rdb2xml_test():
   node_root = {
     'node1_name':'run_context',
     'node2_name':'run_context'
-    ,'child_nodes': [d_mining_map]
+    ,'child_paths': [d_mining_map]
     }
 
   verbosity = 0
