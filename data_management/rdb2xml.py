@@ -790,6 +790,8 @@ class RelationMiner:
 
     # Output the prefix of opening tag for the xml element to be output to the output file
     if output_file is not None:
+      if depth > 1:
+        print(file=output_file)
       print("<{}".format(xml_tag_name), end='', file=output_file)
 
     #Output values mapped directly from this input row's column values
@@ -822,7 +824,7 @@ class RelationMiner:
     if verbosity> 0:
       print(msg)
 
-    print("</{}>".format(xml_tag_name), file=output_file) #Close the xml opening tag
+    print("</{}>".format(xml_tag_name), file=output_file,end='') #Close the xml opening tag
 
     return output_file
   # end:def row_output_visit
