@@ -319,6 +319,7 @@ class RelationMiner:
   def row_children_visit(
     self,
     node=None,
+    d_row=None,
     d_name_relation=None,
     composite_ids=None,
     output_file=None,
@@ -333,7 +334,6 @@ class RelationMiner:
     # On current input node/row, for each child  node relation,
     # recurse to visit it and output its data.
     node_relation_name = node['node1_name']
-
 
     depth = 0 if composite_ids is None else len(composite_ids)
     if depth > 0 and output_file is None:
@@ -359,86 +359,93 @@ class RelationMiner:
         if verbosity > 0:
           print("{}: At list position={} child_node='{}', relation_name={},\nof type {}, will seek child_rows"
            .format(me, child_position, repr(child_node), child_name_relation,type(child_node)))
-        #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_mining_map)))
-        #children = node.findall(xpath, d_namespaces )
-        # CRITICAL: make sure db.sequence() does select with order by the relation_namd_id
-        # else hard-to-debug errors may result
-        #for row_tuple in child_rows:
-        while (1):
-          column_values = child_relation.ordered_siblings.findall(composite_ids)
-          if column_values is None:
-            if verbosity > 0:
-              print("No more rows for this sibling group")
-            break;
-          #TODO: add option to indicate str vs int column id values
-          #initial versions: use int - as it implies row ordering
-          for cid in range(depth):
-            column_values[cid] = int(column_values[cid])
-          if verbosity > 0:
-            print("{}:=================Got sibling row column_values={}".format(me,column_values))
-          sibling_id = column_values[depth]
 
-          if verbosity> 0:
-            print("{}: child row  using depth={}, column values={}, sibling_id='{}'"
-              .format(me,  depth, repr(column_values), sibling_id))
-
-          # Here, insert check that the parent composite ids of this child row all match
-          # the given arguments
-          # for cid in composite_ids ...
-          for d in range(depth):
-            # Todo: work out details of relation column id types(str vs int)
-            if (int(composite_ids[d]) != int(column_values[d])):
-              msg = ("{}: Child relation {}, sibling_id {} has parent relation {} with composite_ids={},"
-              .format(me,child_name_relation, sibling_id, node_relation_name, repr(composite_ids)))
-              msg += ("\nbut composite position={} mismatch: got row column values={}"
-                .format(d,  column_values))
-              raise ValueError(msg)
-
-          child_composite_ids = list() if composite_ids is None else list(composite_ids)
-          if verbosity > 0:
-            print("{}: adding sibling_id={} to child_composite_ids={}".format(me,sibling_id,
-                repr(child_composite_ids)))
-          child_composite_ids.append(sibling_id)
-          if verbosity > 0:
-            print("{}:MAKING recursive call with child_composite_ids={} type={}"
-                  .format(me,repr(child_composite_ids), type(child_composite_ids)))
-          # create d_row from column_values
-          if verbosity > 0:
-            print("{}:child relation={}, fields={},depth={},column_values={}"
-              .format(me,child_name_relation, child_relation.fields, depth, column_values))
-
-          d_row = { child_relation.fields[i]:v
-                   for  i, v in enumerate(column_values)}
-
-          d_row = { child_relation.fields[i]:column_values[i]
-                   for  i in range(depth+1, len(column_values))}
-          if verbosity> 0:
-            print("===================d_row ={}".format(d_row))
-
-          self.row_output_visit(node=child_node, composite_ids=child_composite_ids,
+        if child_name_relation  == node_relation_name:
+          print("nested xml tag {}".format(child_node['node2_name']))
+          self.row_output_visit(node=child_node, composite_ids=composite_ids,
             d_row=d_row,d_name_relation=d_name_relation,
             output_file=output_file, verbosity=0)
+        else:
+          #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_mining_map)))
+          #children = node.findall(xpath, d_namespaces )
+          # CRITICAL: make sure db.sequence() does select with order by the relation_namd_id
+          # else hard-to-debug errors may result
+          #for row_tuple in child_rows:
+          while (1):
+            column_values = child_relation.ordered_siblings.findall(composite_ids)
+            if column_values is None:
+              if verbosity > 0:
+                print("No more rows for this sibling group")
+              break;
+            #TODO: add option to indicate str vs int column id values
+            #initial versions: use int - as it implies row ordering
+            for cid in range(depth):
+              column_values[cid] = int(column_values[cid])
+            if verbosity > 0:
+              print("{}:=================Got sibling row column_values={}".format(me,column_values))
+            sibling_id = column_values[depth]
 
-          if verbosity> 0:
-            print("{}: back from row_output_visit. Depth is back to {}".format(me,depth))
+            if verbosity> 0:
+              print("{}: child row  using depth={}, column values={}, sibling_id='{}'"
+                .format(me,  depth, repr(column_values), sibling_id))
 
-          # consider: copy column_values to d_row to return to caller...?
-          '''
-          note: If do do this--- tbd: outdent this to put it in childnode loop?
-          if d_child_row is not None and len(d_child_row) > 0:
-            for column_name, value in d_child_row.items():
-              # Allowing this may be a feature to facilitate re-use of column functions
-              # TEST RVP 201611215
-              #if column_name in d_row:
-              #    raise Exception(
-              #        'node.tag={} duplicate column name {} is also in a child xpath={}.'
-              #        .format(node.tag,column_name,xpath))
-              d_row[column_name] = value
-          '''
-        #Finished visiting child_rows for this relation/node/sibling group
-        if verbosity>0:
-          print("{}: Finished visiting all composite_ids={} sibling rows of child relation"
-              .format(me,composite_ids,child_name_relation))
+            # Here, insert check that the parent composite ids of this child row all match
+            # the given arguments
+            # for cid in composite_ids ...
+            for d in range(depth):
+              # Todo: work out details of relation column id types(str vs int)
+              if (int(composite_ids[d]) != int(column_values[d])):
+                msg = ("{}: Child relation {}, sibling_id {} has parent relation {} with composite_ids={},"
+                .format(me,child_name_relation, sibling_id, node_relation_name, repr(composite_ids)))
+                msg += ("\nbut composite position={} mismatch: got row column values={}"
+                  .format(d,  column_values))
+                raise ValueError(msg)
+
+            child_composite_ids = list() if composite_ids is None else list(composite_ids)
+            if verbosity > 0:
+              print("{}: adding sibling_id={} to child_composite_ids={}".format(me,sibling_id,
+                  repr(child_composite_ids)))
+            child_composite_ids.append(sibling_id)
+            if verbosity > 0:
+              print("{}:MAKING recursive call with child_composite_ids={} type={}"
+                    .format(me,repr(child_composite_ids), type(child_composite_ids)))
+            # create d_row from column_values
+            if verbosity > 0:
+              print("{}:child relation={}, fields={},depth={},column_values={}"
+                .format(me,child_name_relation, child_relation.fields, depth, column_values))
+
+            d_row = { child_relation.fields[i]:v
+                     for  i, v in enumerate(column_values)}
+
+            d_row = { child_relation.fields[i]:column_values[i]
+                     for  i in range(depth+1, len(column_values))}
+            if verbosity> 0:
+              print("===================d_row ={}".format(d_row))
+
+            self.row_output_visit(node=child_node, composite_ids=child_composite_ids,
+              d_row=d_row,d_name_relation=d_name_relation,
+              output_file=output_file, verbosity=0)
+
+            if verbosity> 0:
+              print("{}: back from row_output_visit. Depth is back to {}".format(me,depth))
+
+            # consider: copy column_values to d_row to return to caller...?
+            '''
+            note: If do do this--- tbd: outdent this to put it in childnode loop?
+            if d_child_row is not None and len(d_child_row) > 0:
+              for column_name, value in d_child_row.items():
+                # Allowing this may be a feature to facilitate re-use of column functions
+                # TEST RVP 201611215
+                #if column_name in d_row:
+                #    raise Exception(
+                #        'node.tag={} duplicate column name {} is also in a child xpath={}.'
+                #        .format(node.tag,column_name,xpath))
+                d_row[column_name] = value
+            '''
+          #Finished visiting child_rows for this relation/node/sibling group
+          if verbosity>0:
+            print("{}: Finished visiting all composite_ids={} sibling rows of child relation"
+                .format(me,composite_ids,child_name_relation))
       #Finished visting all child nodes/paths for this node
       if verbosity>0:
         print("{}: Finished visitng all child nodes/relations for composite_ids={}"
@@ -791,13 +798,12 @@ class RelationMiner:
     return_val = self.row_output(
       node=node, d_row=d_row, output_file=output_file, verbosity=0)
 
-
     # Next, call row_children_visit(node=node,verbosity=1)
     if verbosity> 0:
       print("{}: Calling row_children_visit".format(me))
 
     retval = self.row_children_visit(node=node,composite_ids=composite_ids,
-        d_name_relation=d_name_relation, output_file=output_file,
+        d_row=d_row,d_name_relation=d_name_relation, output_file=output_file,
         verbosity=verbosity)
 
     if verbosity > 0:
@@ -816,7 +822,8 @@ class RelationMiner:
     if verbosity> 0:
       print(msg)
 
-    print("</{}>".format(relation_name), file=output_file) #Close the xml opening tag
+    print("</{}>".format(xml_tag_name), file=output_file) #Close the xml opening tag
+
     return output_file
   # end:def row_output_visit
 # end class RelationMiner
