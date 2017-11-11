@@ -2,16 +2,18 @@
 Python 3.6 code, may work with earlier Python 3.x versions
 
 Program rdb2xml  reads strcutured hierarchical relational database data
-from a set of database tables that are rooted in a main root table.
+from a hierarchically-related set of database tables that are rooted in a
+main root table.
 
 It also reads a configuration file that defines how fields from the database
-tables are to be output in an xml output file.
+tables are to be mapped to one or more utf-8 encoded xml output files.
 
-This program is based logically on doing the 'reverse' of what longer-standing program
-xml2rdb does.
+This program conceptually does  the 'reverse' of what
+longer-standing program xml2rdb does.
 
-Each input xml file has xml-coded information pertaining to a single xml
+Each output xml file has xml-coded information pertaining to a single xml
 document.
+
 '''
 import sys, os, os.path, platform
 sys.path.append('{}/git/citrus/modules'.format(os.path.expanduser('~')))
@@ -162,12 +164,17 @@ column data to convert to produce each output attribute value.
   content rather than to specific xml attributes.
 
 </param>
+<param name=relation_name_prefix> todo: honor this and prepend it to input names
+of input relation nams found in the mining map to derive the physical filenn
+name of the utf8-file holding composite_, numerically sorted rows of
+the relation
+</param>
 
 '''
 class RelationMiner:
 
   def __init__(self, d_mining_map=None ,d_mining_params=None, output_folder=None,
-    zfill_id_count=8, verbosity=0):
+    zfill_id_count=8, relation_name_prefix='', verbosity=0):
     required_args = [output_folder,d_mining_map, d_mining_params]
     if not all(required_args):
       raise ValueError("Missing some required_args values in {}"
@@ -183,7 +190,7 @@ class RelationMiner:
 
 
   '''
-  <summary name="row_output">
+  <summary method_name="row_output">
   Method row_output() given a node and its row values, derive and output xml attribute values
   <notes_20171108>
   NOTE: in future, we might pass actual data values from the input data composite columns as
@@ -245,73 +252,14 @@ class RelationMiner:
       else:
         value = d_row.get(field1,'')
         if value != '':
-          print(' {}="{}"'.format(field2,value),end='',file=output_file)
+          print(' {}="{}"'
+                .format(field2,value),end='',file=output_file)
 
     #Close the xml opening tag
     print(">", file=output_file,end='')
 
     if element_text != '':
       print("{}".format(element_text), end='', file=output_file)
-
-    # attribute_innerhtml = d_mining_params.get( 'attribute_innerhtml' ,'attribute_innerhtml')
-
-    #for name, value in d_row.items():
-    #  print(' {}="{}"'.format(name,value),end='',file=output_file)
-
-    '''
-    # d_row = {}; d_attribute_value = {}; content_value = ''
-    # d_field2_field1 is keyed by the output column/field name within its
-    # parent, and the value is the input d_row{} key/column name to use to
-    # retrieve the data value to use.
-    d_field2_field1 = node.get('d_field2_field1', None)
-    if d_field2_field1 is not None:
-      # We have some field2 fields to output with associated  field1
-      # input fields/columns.
-      # so we will set them up in d_row key-value pairs.
-
-      if not isinstance(d_field2_field1, dict):
-        # detect some sorts of errors/typos in the d_mining_map parsing configuration
-        raise Exception(
-            "d_field2_field1 {}, type={} is not dict. stack_tags={}"
-            .format(repr(d_field2_field1
-            ,repr(type(d_field2_field1)),stack_tags)))
-
-      #node_text = etree.tostring(node, encoding='unicode', method='text')
-      # Must discard tabs, used as bulk load delimiter, else sql server 2008 bulk insert error
-      # messages appear, numbered 4832 and 7399, and inserts fail.
-      #node_text = node_text.replace('\t',' ').replace('\n',' ').strip()
-      #node_text = "" if stringify is None else stringify.strip()
-
-      for attribute_name, column_name in d_field2_field1.items():
-        # For every key in attr_column, if it is reserved name in attribute_text,
-        # use the node's text value, else seek the key in node.attrib
-        # and use its value.
-
-        column_value = ''
-        content_value = ''
-        if attribute_name == attribute_text:
-            # Special reserved name in attribute_text: it is not really
-            # an attribute name, but this indicates that we shall use the node's
-            # content/text for this attribute
-            content_value = d_row[column_name]
-        else:
-            column_value = d_row[column_name]
-
-        #print("setting d_row for column_name={} to value={}".format(column_name,column_value))
-        d_attribute_value[column_name] = column_value
-        # All attribute values and content for this xml element, if any was found,
-        # is ready to be output and stored in d_attribute_value, so output it.
-
-      # First cut, always output the element tag name even if no values found
-      # yet for it.
-      # Later we might provide an option defer xml tag  output until/unless
-      # a value is found in dataset source that belongs within the element.
-      print('<{}'.format(node['element_tag_name']))
-      # for every attribute value, insert a setting for it
-      for attribute, value in d_attribute_value:
-        print(' {}={}'.format(attribute, value), file=self.output_file)
-      print(' >', file=self.outputfile)
-      '''
 
     return
   #end:def row_output
@@ -461,13 +409,13 @@ class RelationMiner:
   # end:def row_children_visit
 
   '''
+  future:
   Method row_post_visits(node=None, output_file=None, verbosity=None)
 
   Having visited all the children of this node/row, wrap up some loose end outputs
   and possibly calculate the return value for the return value of the caller
   (row_output_visit).
   '''
-
   def row_post_visits(self, node=None, output_file=None, verbosity=None):
     # set up column constants if any
       ######## Set any local column constants ##############
@@ -762,6 +710,7 @@ class RelationMiner:
     if relation is not None and relation.last_sibling_id is not None:
       #raise ValueError("Test EXIT")
       pass
+
     last_sibling_id = sibling_id
     if ( depth == 1 and output_file_for_each_record == 1
         and (relation.last_sibling_id is None or sibling_id != relation.last_sibling_id)
@@ -811,13 +760,11 @@ class RelationMiner:
     if verbosity > 0:
       print("{}: back from row_children_visit() call...".format(me))
 
-    # Next, call row_post_visit()
+    # future? - Next, call row_post_visit()
 
     # Now that all output is done for multiple == 1, set d_row = None, otherwise it's
     # presence would upset the caller.
     d_row = None
-    # end if multiple == 1
-
     msg = ("{}:FINISHED output tag name={},  depth={}, returning d_row={}"
        .format(me, xml_tag_name, depth,repr(d_row)))
 
@@ -899,7 +846,6 @@ def rdb2xml_test():
       .format(type(relation.ordered_siblings)))
 
     print('{}:{}'.format(me,msg))
-
 
   #Mine this config - visit all nodes and create outputs
   #note todo: add argument for d_name_relation for row_output_visit to use to
