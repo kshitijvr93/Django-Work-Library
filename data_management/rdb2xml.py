@@ -361,7 +361,7 @@ class RelationMiner:
            .format(me, child_position, repr(child_node), child_name_relation,type(child_node)))
 
         if child_name_relation  == node_relation_name:
-          print("nested xml tag {}".format(child_node['node2_name']))
+          #print("nested xml tag {}".format(child_node['node2_name']))
           self.row_output_visit(node=child_node, composite_ids=composite_ids,
             d_row=d_row,d_name_relation=d_name_relation,
             output_file=output_file, verbosity=0)
@@ -824,7 +824,11 @@ class RelationMiner:
     if verbosity> 0:
       print(msg)
 
+    if depth == 1:
+        print(file=output_file)
     print("</{}>".format(xml_tag_name), file=output_file,end='') #Close the xml opening tag
+    if depth == 1:
+        print(file=output_file)
 
     return output_file
   # end:def row_output_visit
