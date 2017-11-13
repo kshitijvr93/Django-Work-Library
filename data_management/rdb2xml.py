@@ -729,7 +729,8 @@ class RelationMiner:
         '{}{}_{}.xml'.format(self.output_folder,relation_name
         , str(sibling_id).zfill(self.zfill_id_count)))
 
-      output_file = open(output_file_name,'w')
+      # On some Windows platforms, must specify utf-8 encoding else errors in cp1252.py in encode
+      output_file = open(output_file_name,'w', encoding='utf-8')
       relation.output_file = output_file
 
       if verbosity > 0:
