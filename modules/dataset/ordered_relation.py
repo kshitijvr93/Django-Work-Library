@@ -63,7 +63,7 @@ class OrderedRelation:
         input_file_name = '{}{}.tsf'.format(self.folder, relation_name)
         if verbosity > 0:
           print("{}: using input_file_name='{}'".format(me,input_file_name))
-        with open(input_file_name) as input_tsf:
+        with open(input_file_name,mode='r',encoding='utf-8') as input_tsf:
             for line in input_tsf:
                 self.fields = line.strip().split('\t')
                 if (self.verbosity > 0):
@@ -90,7 +90,7 @@ class OrderedRelation:
       row_count = 0
       #print("{}:----------------Opening data_file_name='{}'".format(me,data_file_name))
 
-      with open(data_file_name, 'r') as input_file:
+      with open(data_file_name, 'r', encoding='utf-8') as input_file:
           for line in input_file:
             row_count += 1
             # Remove last newline and split out field/colum values by tab delimiter.
@@ -104,7 +104,7 @@ class OrderedRelation:
       row_count = 0
       #print("{}----------------Opening data_file_name='{}'".format(me,data_file_name))
 
-      with open(data_file_name, 'r', encoding='utf-8',errors='replace') as input_file:
+      with open(data_file_name, 'r', encoding='utf-8-sig',errors='replace') as input_file:
           for line in input_file:
             row_count += 1
             # Remove last newline and split out field/colum values by tab delimiter.

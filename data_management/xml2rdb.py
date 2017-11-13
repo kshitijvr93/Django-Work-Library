@@ -81,6 +81,7 @@ visited from node_visit_output(), so that the od_parent_index dictionary is
 properly populated with the parent relaton name values that assign the
 composite primary key column names of the given db_name in the mining map's
 hierarchy.
+
 This information is given in the argument od_parent_index.
 
 The actual index values are not important here, but the parent relation
@@ -106,6 +107,11 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
     output_encoding='latin-1', errors="xmlcharrefreplace"):
 
     me='get_writable_db_file'
+
+    print("\n\n===========================\n"
+        "NOTICE: Writing output data with encoding='{}'.format(output_encoding)"
+        "May need utf-8 encoding for XML outputs or may need latin-1 encoding for SQL SERVER 2008!'")
+
     if (od_relation is None or db_name is None
         or output_folder is None or od_parent_index is None
         or od_rel_datacolumns is None):

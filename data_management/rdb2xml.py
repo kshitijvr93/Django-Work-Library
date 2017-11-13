@@ -777,7 +777,6 @@ class RelationMiner:
          and relation.revisits == 0
        ):
        output_file.close()
-       output_file = None
     return None
   # end:def row_output_visit
 # end class RelationMiner
