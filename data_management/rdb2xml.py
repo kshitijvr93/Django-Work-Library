@@ -309,10 +309,16 @@ class RelationMiner:
            .format(me, child_position, repr(child_node), child_name_relation,type(child_node)))
 
         if child_name_relation  == node_relation_name:
-          #print("nested xml tag {}".format(child_node['node2_name']))
+          relation = d_name_relation[node_relation_name]
+          # register a 'revisit' so caller can ensure that if this is a depth==1 relation,
+          # the output file will not be closed prematurely.
+          relation.revisits += 1
+          # print("nested xml tag {}".format(child_node['node2_name']))
+          # Special convention to support nested xml tags for an input relation
           self.row_output_visit(node=child_node, composite_ids=composite_ids,
             d_row=d_row,d_name_relation=d_name_relation,
             output_file=output_file, verbosity=0)
+          relation.revisits -= 1
         else:
           #print("{} seeking xpath={} with node_params={}".format(me,repr(xpath),repr(d_child_mining_map)))
           #children = node.findall(xpath, d_namespaces )
@@ -659,10 +665,8 @@ class RelationMiner:
     </notes>
     '''
   def row_output_visit(self
-    ,node=None ,d_name_relation=None,composite_ids=None
-    ,d_row=None
-    ,output_file=None #make this a generic dataset later
-    ,verbosity=0
+    ,node=None ,d_name_relation=None,composite_ids=None ,d_row=None
+    ,verbosity=0 ,output_file=None #make this a generic dataset later
     ):
     me = 'row_output_visit'
 
@@ -678,47 +682,28 @@ class RelationMiner:
     relation_name = node1_name
     depth = len(composite_ids)
     relation = d_name_relation[relation_name] if depth > 0 else None
-    sibling_id = composite_ids[depth-1] if depth > 0 else None
 
+    #The last composite id is this row's orderd sibling id within its sibling
+    # group
+    sibling_id = composite_ids[depth-1] if depth > 0 else None
     required_args = [node, d_name_relation, d_row]
-    msg = ("{}: depth={}, relation_name={},sibling_id={}\n"
-           .format(me, depth,relation_name,sibling_id))
-    msg += "{}: composite_ids={}\n".format(me, repr(composite_ids))
-    msg += "{}: node={}\n".format(me, node)
-    msg +=  "{}: d_name_relation={}\n".format(me, d_name_relation)
-    msg +=  "{}: output_file={}\n".format(me,repr(output_file))
 
     if not all(required_args):
       raise ValueError("{}:Missing some required_args values:\n{}"
-        .format(me, msg))
+        .format(me, repr(required_args)))
 
-    msg += "{}: d_row={}\n".format(me, repr(d_row))
     if verbosity > 0:
-      print("\n{}: STARTING: \n{}".format(me, msg))
-
-    # testing: show only 10 siblings to do premature return
-    #if depth >=1 and composite_ids[depth-1] > 1799:
-    #  print("{}:Early return for depth={}, id={}".format(me,depth,composite_ids[depth-1]))
-    #  return None
-    if depth == 1:
-      if verbosity > 0:
+      print("\n{}: STARTING: with args=\n{}".format(me, msg))
+      if depth ==1:
         print("++++++++++++++++++{}:for depth 1 got sibling_id = '{}'"
             .format(me,sibling_id))
 
     output_file_for_each_record = 1
 
-    if relation is not None and relation.last_sibling_id is not None:
-      #raise ValueError("Test EXIT")
-      pass
-
-    last_sibling_id = sibling_id
     if ( depth == 1 and output_file_for_each_record == 1
-        and (relation.last_sibling_id is None or sibling_id != relation.last_sibling_id)
+       and relation.revisits == 0
        ):
-      relation.last_sibling_id = sibling_id
-      if output_file is not None:
-        close(output_file)
-        # raise ValueError("Test Exit to clean up prints.")
+      # raise ValueError("Test Exit to clean up prints.")
       # fixme: check for sibling_id == '1' is a band-aid for testing, as it comports with
       # THE TEST DATA, but not abribtrary data... so fix this.
       # This node visit and child visits will generate some output data for the
@@ -729,8 +714,9 @@ class RelationMiner:
         '{}{}_{}.xml'.format(self.output_folder,relation_name
         , str(sibling_id).zfill(self.zfill_id_count)))
 
-      # On some Windows platforms, must specify utf-8 encoding else errors in cp1252.py in encode
-      output_file = open(output_file_name,'w', encoding='utf-8')
+      # On some Windows platforms, must specify utf-8-sig encoding
+      # else errors in cp1252.py in encode or mishandled characters
+      output_file = open(output_file_name,mode='w', encoding='utf-8-sig')
       relation.output_file = output_file
 
       if verbosity > 0:
@@ -747,6 +733,7 @@ class RelationMiner:
     #Output values mapped directly from this input row's column values
     if verbosity> 0:
       print("{}:calling row_output()".format(me))
+
     return_val = self.row_output(
       node=node, d_row=d_row, output_file=output_file, verbosity=0)
 
@@ -766,6 +753,7 @@ class RelationMiner:
     # Now that all output is done for multiple == 1, set d_row = None, otherwise it's
     # presence would upset the caller.
     d_row = None
+
     msg = ("{}:FINISHED output tag name={},  depth={}, returning d_row={}"
        .format(me, xml_tag_name, depth,repr(d_row)))
 
@@ -774,14 +762,25 @@ class RelationMiner:
 
     if depth == 1:
         print(file=output_file)
+
     print("</{}>".format(xml_tag_name), file=output_file,end='') #Close the xml opening tag
+
     if depth == 1:
         print(file=output_file)
 
-    return output_file
+    if (depth == 1 and verbosity > 0):
+      print(
+       '{}:depth={},output_file_for_each_record = {}, relation.revisits={}'
+       .format(me,depth,output_file_for_each_record,relation.revisits))
+
+    if ( depth == 1 and output_file_for_each_record == 1
+         and relation.revisits == 0
+       ):
+       output_file.close()
+       output_file = None
+    return None
   # end:def row_output_visit
 # end class RelationMiner
-
 
 # RUN PARAMS AND RUN
 import datetime
@@ -818,10 +817,12 @@ def rdb2xml_test():
   print('{}:Constructing phd = PHD(...)'.format(me))
   phd = PHD(input_folder, output_folder,verbosity=1)
 
-  # NOTE: IMPOSE a requirement to use '' as the parent of the root relation.
-  # It should facilitate
-  # some diagnostic and error reporting
+  # NOTE: Consider to IMPOSE a requirement to use '' as the parent of the
+  # root relation.
+  # It should facilitate some diagnostic and error reporting
 
+
+  # Set up the input relation hierarchy via hard coded list
   parent_child_tuples = [
   ('','record'),
   ('record','controlfield'),
@@ -834,15 +835,21 @@ def rdb2xml_test():
     relation = phd.add_relation(parent_name=parent_name
     , relation_name=relation_name
     ,verbosity=0)
+
     # add a sequence_ordered_siblings sequence for this relation
     all_rows = relation.sequence_all_rows()
     relation.sequence = relation.sequence_ordered_siblings(all_rows=all_rows)
     relation.ordered_siblings = OrderedSiblings(ordered_relation=relation)
-    relation.last_sibling_id = None
+
+    # relation.revisitis is used to track number of nested revisits during
+    # execution of the mining map, to make sure depth==1 output files are not
+    # closed prematurely
+    relation.revisits = 0
 
     msg=("Added relation '{}'' with sequence={} of type {}, and with parent {}"
       .format(relation_name,repr(relation.sequence),type(relation.sequence),
       parent_name))
+
     msg += ("and with ordered_siblings of type {}"
       .format(type(relation.ordered_siblings)))
 
@@ -878,9 +885,9 @@ def rdb2xml_test():
     )
 
   if output_file is not None:
-    close(output_file)
+    print("{}::Closing '{}'".format(me,output_file_name))
+    output_file.close()
 
-  # First we test with
   return
 #end:def rdb2xml_test():
 
