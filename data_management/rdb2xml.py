@@ -777,6 +777,10 @@ class RelationMiner:
          and relation.revisits == 0
        ):
        output_file.close()
+    elif int(sibling_id) > 16605:
+      print("relation.revisits={}, Not closing sibling_id={}"
+            .format(relation.revisits, sibling_id))
+
     return None
   # end:def row_output_visit
 # end class RelationMiner
@@ -875,17 +879,13 @@ def rdb2xml_test():
     print("{}:Calling relation_miner.row_output_visit()".format(me))
 
   # Main call
-  output_file = relation_miner.row_output_visit(node=node_root
+  relation_miner.row_output_visit(node=node_root
     ,d_name_relation=phd.d_name_relation
     ,composite_ids=composite_ids
     ,d_row=d_row
     ,output_file=None # Use NONE because we default to record-level output files
     ,verbosity=verbosity
     )
-
-  if output_file is not None:
-    print("{}::Closing '{}'".format(me,output_file_name))
-    output_file.close()
 
   return
 #end:def rdb2xml_test():
