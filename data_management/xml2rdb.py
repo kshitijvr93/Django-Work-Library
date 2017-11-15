@@ -108,14 +108,17 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
 
     me='get_writable_db_file'
 
-    print("\n\n===========================\n"
-        "NOTICE: Writing output data with encoding='{}'.format(output_encoding)"
-        "May need utf-8 encoding for XML outputs or may need latin-1 encoding for SQL SERVER 2008!'")
 
     if (od_relation is None or db_name is None
         or output_folder is None or od_parent_index is None
         or od_rel_datacolumns is None):
         raise Exception('{}:bad args'.format(me))
+
+    if 1 == 2:
+      print("\n\n===========================\n"
+        "{}:NOTICE: For dbname={},writing output data with encoding='{}'"
+        .format(me,db_name,repr(output_encoding)))
+      print( "May need utf-8 encoding for XML outputs or may need latin-1 encoding for SQL SERVER 2008!'")
 
     # NOTE: method new_od_relation must be called before this one to create
     # all od_relations in same order as od_rel_datacolumns.
