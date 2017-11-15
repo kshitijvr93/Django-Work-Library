@@ -489,7 +489,7 @@ support a quick run
 
 '''
 
-def run(input_file_name='u:/data/tmp/aus20170601_20170824_cross_doi.txt'):
+def run(input_file_name='u:/data/tmp/cross_doi_20170601_20170824.txt'):
     ####### RUN main CRAWDML program
     # PARAMETERS -- set these manually per run for now... but only cymd_start
     # and cymd_end would normally change.
