@@ -84,18 +84,16 @@ class OrderedRelation:
     This generates a generator for a sequence of rows in this relation.
     '''
 
-    def sequence_count_values(self):
-      me = 'OrderedRelation.sequence_all_rows()'
+    def sequence_column_values(self):
+      me = 'OrderedRelation.sequence_column_values()'
       data_file_name = '{}{}.txt'.format(self.folder, self.relation_name)
-      row_count = 0
       #print("{}:----------------Opening data_file_name='{}'".format(me,data_file_name))
 
-      with open(data_file_name, 'r', encoding='utf-8') as input_file:
+      with open(data_file_name, 'r', encoding='utf-8-sig',errors='replace') as input_file:
           for line in input_file:
-            row_count += 1
             # Remove last newline and split out field/colum values by tab delimiter.
             column_values = line.replace('\n','').split('\t')
-            yield row_count, column_values
+            yield column_values
       return
 
     def sequence_all_rows(self):
@@ -219,68 +217,117 @@ class OrderedSiblings:
       .format(repr(required_args)))
 
     self.ordered_relation = ordered_relation
-    self.all_rows = ordered_relation.sequence_all_rows()
+    #self.all_rows = ordered_relation.sequence_all_rows()
+    self.column_values = ordered_relation.sequence_column_values()
     self.verbosity = verbosity
 
-    self.next_result = next(self.all_rows)
-    self.next_row = self.next_result[1]
+    #self.next_result = next(self.all_rows)
+    #self.next_row = self.next_result[1]
+    self.next_row = next(self.column_values)
+
     self.parent_depth = 0
     if ordered_relation.order_depth > 1:
        self.parent_depth = ordered_relation.order_depth - 1
-    self.next_ids = [int(x) for x in self.next_row[:self.parent_depth]]
+    self.next_parent_ids = [int(x) for x in self.next_row[:self.parent_depth]]
+  # end: def __init__
 
   def findall(self, parent_ids=None):
     '''
-    Given the parent composite id values, return the parent's next ordered sibling
-    row in this relation.
-    Return None if there is no next sibling for the parent.
-    It is an exception if the next available sibling has an order that preceds
-    that of the given parent.
-    If there are no composite id values, return the next ordered row of the relaton
-    Note: every relation must have a depth, but the root hierarchical relation,
-    with a depth of 1, has no parent ids, so just return every row for it.
+    Given :
 
-    Return None if no rows, else return column_values[]
+    <param name='parent_ids'> the parent composite id values to use to group the
+    siblings in this relation.
+    </param>
+
+    <processing>
+    Every relation has a self.parent_depth value preassigned, and the root or hierarchical relation,
+    has a parent ids depth/length of 0, with no parent ids.
+    This method always returns a None value between rows that have a different parent id, otherwise
+    it will return either
+    (1) the first row column values after its previous call returned None, or
+    (2) the next data row that has the same parent_ids as the previously returned row.
+    This behavior allows a caller to provide the parent ids to loop through the next desired set
+    of 'sibling rows' it requires, and also detect the end of a 'sibling group' of child relation rows
+    by observing the "None" return value that this method returns in its next invocation after it returns
+    the last row of a sibling group of rows.
+
+    So, if len(parent_ids) == 0, then this relation is the primary
+    relation, and each successive call to findall with the same parent_ids
+    will simply alternate between:
+    (1) returning the next successive row from the underlying tsv data file, and
+    (2) returning None.
+    After it has returned the last row of child row data, all successive calls
+    with the same parent ids will return None.
+
+    In short, return None if no rows remain in a sibling group, else return next
+    child sibling row's column_values[]
+
+    </processing>
+
+    Return the parent's next ordered sibling row in this relation.
+    Return None if there is no next sibling for the parent.
+
+    EXCEPTIONS:
+    (1) Invalid Parents exception due to wrong parent generation/depth: -- see code comments.
+
+    (2) Invalid Parents due to input data integrity exception:
+    Raise an exception if the parent_ids are greater than the sibling ids.
+    This is an error because it indicates that the parent_ids for the next sibling row must have
+    been skipped/not found and so therefore not used to retrieve the sibling row, and so that
+    sibling row was abandoned (not called for, not picked up) by its proper parent.
+    xml2rdb should produce perfect integer-id-sorted tsf,tsv files, so this exception might only happen
+    if a tsv file was manually un-sorted or a row was deleted from a parent tsv file or inserted into a
+    child tsv file.
+
     '''
     me = 'findall'
-    #todo: formalize type of id!
+
+    # Consider: register and support mixed string or integer id types, specified per relation.
+    # and require input data to be sorted by the apt types.
+    # In current method, we require all integer ids and input data sorted by ascending integer ids.
     parent_ids = [int(x) for x in parent_ids]
+
     if self.parent_depth != len(parent_ids):
+        # This findall() call was invoked outside the context of its true parent.
         raise ValueError("Parent_depth={} but len(parent_ids)={}"
                  .format(self.parent_depth,len(parent_ids)))
-    if self.verbosity > 0:
-      print("{}:Using parent_ids={}".format(me,repr(parent_ids)))
+    if self.verbosity > 0 :
+      print("{}:Given parent_ids={}".format(me,repr(parent_ids)))
 
     if self.parent_depth == 0:
+      # Upon instantiation, the first row of this relation was stored in self.next_row
+      # And start by storing it it tmp_row
+
       tmp_row = self.next_row
-      if self.next_result is not None:
+      if self.next_row is not None:
+        # Try to get another row of column values from this relation
         try:
-          self.next_result = next(self.all_rows)
-          self.next_row = self.next_result[1]
-          self.next_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]
+          self.next_row = next(self.column_values)
+          self.next_parent_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]
         except StopIteration:
           return None
       else:
-        #print("{}:returning None".format(me))
+        # There is no next row of this sibling group. Just return none
         return None
       #print("{}:returning row={}".format(me,tmp_row))
       return tmp_row
 
-    #todo:Make sure these are ints before comparing , or give int/str order options
-    if parent_ids < self.next_ids:
+    # If depth was 0, code above returned. Here, depth is > 0
+    if parent_ids < self.next_parent_ids:
       # If 'lesser' parent_ids, it is OK for parent to call again later with
       # increasing parent_ids until caller finds this row
       #print("{}:returning None".format(me))
       return None
-    elif parent_ids == self.next_ids:
+    elif parent_ids == self.next_parent_ids:
       tmp_row = self.next_row
-      if self.next_result is not None:
+      if self.next_row is not None:
+        # We have not run out of relation rows, so try to get another
         try:
-          self.next_result = next(self.all_rows)
+          self.next_row = next(self.column_values)
         except StopIteration:
           return None
-        self.next_row = self.next_result[1]
-        self.next_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]
+        # Store the next row's parent_ids so we can detect bad parents in next call.
+        self.next_parent_ids = [int(x) for x in self.next_row[:self.ordered_relation.order_depth-1]]
       else:
         #print("{}:returning None".format(me))
         return None
@@ -288,9 +335,10 @@ class OrderedSiblings:
       return tmp_row
     else:
       # Parent_ids skipped over an available child row  - Fatal Exception:
-      raise ValueError("Given parent_ids={}, but next_ids={}. You abandoned orphans! Fatal Error."
-        .format(repr(parent_ids),repr(self.next_ids)))
+      raise ValueError("Given parent_ids={}, but next_parent_ids={}. Missing parent abandoned orphans! Fatal Error."
+        .format(repr(parent_ids),repr(self.next_parent_ids)))
 
     return
+  # end:def findall
 
 #end:class OrderedSiblings
