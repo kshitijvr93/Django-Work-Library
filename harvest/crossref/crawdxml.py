@@ -127,14 +127,14 @@ subdirectories based on run dates as done in xml2rdb.
 Param l_dois has a list of DOIS to use for the search API to use to select
 which articles for which to return metadata.
 '''
-def crawdxml(d_params=None, l_dois=None, verbosity=0):
+def crawdxml(d_params=None, file_name_doi_strings=None, verbosity=0):
     #
     # VALIDATE d_params
     # dt_start is the first orig-load-date that we want to collect
     # dt_end is the last orig-load dates that we want to collect
     me = 'crawdxml'
-    if not d_params and d_dois:
-        raise Exception("Missing arg d_params or l_dois")
+    if not d_params and file_name_doi_strings:
+        raise Exception("Missing arg d_params or file_name_doi_strings")
 
     total_results = 0
 
@@ -159,8 +159,11 @@ def crawdxml(d_params=None, l_dois=None, verbosity=0):
         shutil.rmtree(output_folder_doi, ignore_errors=True)
 
     os.makedirs(output_folder_doi)
+    input_file = open(file_name_doi_strings, 'r')
 
-    for doi_string in l_dois:
+    for line in input_file:
+        doi_string = line.replace('\n','')
+
         url_worklist_doi = (
             "http://api.crossref.org/works/doi/{}".format(doi_string))
         print("{}: using url={}".format(me,url_worklist_doi))
@@ -213,7 +216,8 @@ def crawdxml(d_params=None, l_dois=None, verbosity=0):
 # end def crawdxml
 
 # doi_strings 2017 open access articles
-
+file_name_doi_strings = 'U:/data/tmp/aus20170601_20170824_cross_doi.txt'
+#
 doi_strings = '''
 10.1016/j.ijheatmasstransfer.2016.11.032
 10.1016/j.ecolmodel.2016.11.015
@@ -485,13 +489,13 @@ support a quick run
 
 '''
 
-def run(doi_strings):
+def run(input_file_name='u:/data/tmp/aus20170601_20170824_cross_doi.txt'):
     ####### RUN main CRAWDML program
     # PARAMETERS -- set these manually per run for now... but only cymd_start
     # and cymd_end would normally change.
     #
 
-    me = 'main code to run crawdml'
+    me = 'run()'
     utc_now = datetime.datetime.utcnow()
     verbosity = 0
     # secsz_start: secz means seconds in utc(suffix 'z') when this run started
@@ -501,14 +505,10 @@ def run(doi_strings):
         data_relative_folder='data/outputs/crawdxml/run/{}/'
             .format(secsz_start))
 
-    l_dois = doi_strings.split('\n')
-    len_dois = len(l_dois)
+    print("{}: Reading input file = {}".format(me,input_file_name))
 
-    print("Number of DOIS to process: {}".format(len_dois))
-
-    print ("START CRAWDXML RUN at {}\n\twith:\n '{}' doi values, using "
-           "output_folder_run={}"
-           .format(secsz_start, len(l_dois), output_folder_run))
+    print ("START CRAWDXML RUN at {}\n, using output_folder_run={}"
+           .format(secsz_start,  output_folder_run))
 
     if not os.path.isdir(output_folder_run):
         os.makedirs(output_folder_run)
@@ -517,7 +517,7 @@ def run(doi_strings):
     # Dict of metadata run parameter info on this run
     d_params={
         "secsz_start": secsz_start,
-        "len_dois" : len_dois,
+        "input_file_name" : input_file_name,
         "doi_strings" : doi_strings,
         "output_folder_run" : output_folder_run,
         "python_version" : sys.version,
@@ -531,7 +531,9 @@ def run(doi_strings):
     ###### MAIN CALL TO CRAWDXML() ########
 
     if (1 == 1): # test with or without call to crawdxml
-        entries_collected, entries_excepted = crawdxml(d_params=d_params, l_dois=l_dois, verbosity=verbosity)
+        entries_collected, entries_excepted = crawdxml(d_params=d_params,
+          file_name_doi_strings=file_name_doi_strings,
+          verbosity=verbosity)
 
     ############### WRAP-UP MISC OUTPUT ################
 
@@ -557,15 +559,13 @@ def run(doi_strings):
     with open(out_filename, 'wb') as outfile:
         outfile.write(etree.tostring(e_root, pretty_print=True))
 
-
     utc_now = datetime.datetime.utcnow()
     # secsz_start: secz means seconds in utc(suffix 'z') when this run started
     secsz_now = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
 
-    print ("END CRAWDXML RUN at {}\n\twith:\n '{}' doi values, using "
+    print ("END CRAWDXML RUN at {}\n\twith:\n input file '{}', using "
            "output_folder_run={}, with {} dois collected, and {} excepted"
-           .format(secsz_now, len(l_dois), output_folder_run, entries_collected, entries_excepted))
-
+           .format(secsz_now, input_file_name, output_folder_run, entries_collected, entries_excepted))
 
     print("Done!")
 #end def run()
