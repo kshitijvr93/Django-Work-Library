@@ -127,14 +127,15 @@ subdirectories based on run dates as done in xml2rdb.
 Param l_dois has a list of DOIS to use for the search API to use to select
 which articles for which to return metadata.
 '''
-def crawdxml(d_params=None, file_name_doi_strings=None, verbosity=0):
+def crawdxml(d_params=None, input_file_name=None, verbosity=0):
     #
     # VALIDATE d_params
     # dt_start is the first orig-load-date that we want to collect
     # dt_end is the last orig-load dates that we want to collect
     me = 'crawdxml'
-    if not d_params and file_name_doi_strings:
-        raise Exception("Missing arg d_params or file_name_doi_strings")
+    required_args = ['d_params', 'input_file_name']
+    if not all(required_args):
+        raise Exception("Missing some required_args: {}".format(required_args))
 
     total_results = 0
 
@@ -159,7 +160,7 @@ def crawdxml(d_params=None, file_name_doi_strings=None, verbosity=0):
         shutil.rmtree(output_folder_doi, ignore_errors=True)
 
     os.makedirs(output_folder_doi)
-    input_file = open(file_name_doi_strings, 'r')
+    input_file = open(input_file_name, 'r')
 
     for line in input_file:
         doi_string = line.replace('\n','')
@@ -215,281 +216,7 @@ def crawdxml(d_params=None, file_name_doi_strings=None, verbosity=0):
     return entries_collected, entries_excepted
 # end def crawdxml
 
-# doi_strings 2017 open access articles
-file_name_doi_strings = 'U:/data/tmp/aus20170601_20170824_cross_doi.txt'
-#
-doi_strings = '''
-10.1016/j.ijheatmasstransfer.2016.11.032
-10.1016/j.ecolmodel.2016.11.015
-10.1016/j.softx.2016.12.002
-10.1016/j.omtm.2016.12.003
-10.1016/j.epsl.2016.11.054
-10.1016/j.pmedr.2016.12.008
-10.1016/j.omto.2016.12.002
-10.1016/j.visj.2016.10.004
-10.1016/j.pcorm.2016.12.004
-10.1016/j.physletb.2016.12.017
-10.1016/j.jdcr.2016.10.002
-10.1016/S0140-6736(16)32621-6
-10.1016/j.cbpa.2016.12.005
-10.1016/j.eucr.2016.11.002
-10.1016/j.chb.2016.09.030
-10.1016/j.bbadis.2016.09.020
-10.1016/j.jik.2016.12.006
-10.1016/j.jns.2017.02.042
-10.1016/j.ijpddr.2017.02.002
-10.1016/j.colsurfb.2017.02.025
-10.1016/j.gecco.2016.12.005
-10.1016/j.yebeh.2016.11.022
-10.1016/j.aaf.2017.01.004
-10.1016/j.rbo.2016.11.006
-10.1016/j.gdata.2017.02.011
-10.1016/j.apgeog.2017.02.009
-10.1016/j.cja.2017.01.002
-10.1016/j.ijwd.2017.02.012
-10.1016/j.tree.2017.01.007
-10.1016/j.rmcr.2017.02.015
-10.1016/j.rse.2017.01.037
-10.1016/j.cja.2017.02.005
-10.1016/j.radcr.2017.01.008
-10.1016/j.ekir.2017.02.002
-10.1016/j.ymthe.2017.01.015
-10.1016/j.amepre.2016.10.001
-10.1016/j.nicl.2017.02.012
-10.1016/j.amepre.2016.10.011
-10.1016/j.rse.2017.01.039
-10.1016/j.cellsig.2017.02.002
-10.1016/j.physletb.2017.02.032
-10.1016/j.ymthe.2016.11.009
-10.1016/j.idcr.2017.02.002
-10.1016/j.celrep.2017.01.019
-10.1016/j.ijrobp.2017.05.014
-10.1016/j.ijge.2016.06.003
-10.1016/j.nicl.2017.05.001
-10.1016/j.xocr.2017.05.001
-10.1016/j.epsc.2017.05.014
-10.1016/j.hemonc.2017.04.002
-10.1016/j.dsr.2017.05.002
-10.1016/j.pmedr.2017.05.006
-10.1016/j.molmet.2017.05.001
-10.1016/j.physletb.2017.05.045
-10.1016/j.redox.2017.05.007
-10.1016/j.ympev.2017.05.014
-10.1016/j.jsamd.2017.05.008
-10.1016/j.envpol.2017.05.019
-10.1016/j.landurbplan.2017.05.004
-10.1016/j.jpain.2017.02.421
-10.1016/j.ajem.2017.05.002
-10.1016/j.jacc.2017.03.528
-10.1016/j.jdcr.2017.03.007
-10.1016/j.tranon.2017.03.009
-10.1016/j.trci.2017.04.006
-10.1016/j.fiae.2017.03.003
-10.1016/j.epidem.2017.03.006
-10.1016/j.ajhg.2017.04.003
-10.1016/j.gsf.2017.05.001
-10.1016/j.celrep.2017.05.018
-10.1016/j.visj.2017.04.011
-10.1016/j.ejop.2017.05.005
-10.1016/j.sajce.2017.05.001
-10.1016/j.trpro.2017.03.009
-10.1016/j.rvsc.2017.05.021
-10.1016/j.trpro.2017.03.055
-10.1016/j.trpro.2017.03.046
-10.1016/j.trpro.2017.03.027
-10.1016/j.adro.2017.05.004
-10.1016/j.jse.2017.03.013
-10.1016/j.compedu.2017.05.006
-10.1016/j.rmcr.2017.05.003
-10.1016/j.parepi.2017.05.001
-10.1016/j.ijinfomgt.2017.04.006
-10.1016/j.dib.2017.05.047
-10.1016/j.physletb.2017.07.062
-10.1016/j.dsr2.2017.08.008
-10.1016/j.jfda.2017.07.013
-10.1016/j.epsc.2017.08.016
-10.1016/j.jctube.2017.08.002
-10.1016/j.physletb.2017.08.015
-10.1053/j.ajkd.2017.07.004
-10.1016/j.conctc.2017.08.005
-10.1016/j.idcr.2017.08.011
-10.1016/j.physletb.2017.08.027
-10.1016/j.livres.2017.08.002
-10.1016/j.parkreldis.2017.08.006
-10.1016/j.jdcr.2017.05.008
-10.1016/j.rinp.2017.08.023
-10.1016/j.leukres.2017.07.008
-10.1016/j.celrep.2017.07.018
-10.1016/j.marpol.2017.08.004
-10.1016/j.ebiom.2017.08.010
-10.1016/j.jsamd.2017.07.010
-10.1016/j.agsy.2017.07.010
-10.1016/j.artd.2017.06.008
-10.1016/j.jams.2017.08.002
-10.1016/j.adro.2017.07.004
-10.1016/j.ijppaw.2017.08.003
-10.1016/j.tjog.2017.04.037
-10.1016/j.dcn.2017.08.001
-10.1016/j.conctc.2017.04.003
-10.1016/j.omtm.2017.04.004
-10.1016/j.jlumin.2017.04.017
-10.1016/j.ttbdis.2017.04.009
-10.1016/j.celrep.2017.04.003
-10.1016/j.rinp.2017.03.022
-10.1016/j.jvsv.2016.12.016
-10.1016/j.euf.2017.04.005
-10.1016/j.afjem.2017.04.005
-10.1016/j.pvr.2017.04.004
-10.1016/j.radcr.2017.03.004
-10.1016/j.procs.2017.03.160
-10.1016/j.cub.2017.04.002
-10.1016/j.rausp.2017.02.001
-10.1016/j.expneurol.2017.04.015
-10.1016/j.curtheres.2017.04.004
-10.1016/j.physletb.2017.04.069
-10.1016/j.ijcha.2017.03.005
-10.1016/j.heliyon.2017.e00279
-10.1016/j.trecan.2017.03.003
-10.1016/j.eucr.2016.05.009
-10.1016/j.ymthe.2017.03.029
-10.1016/j.eucr.2017.02.014
-10.1016/j.ymgme.2017.04.013
-10.1016/j.aap.2017.03.015
-10.1016/j.radcr.2017.03.022
-10.1016/j.adro.2017.01.006
-10.1016/j.abrep.2017.01.002
-10.1016/j.jbi.2016.12.013
-10.1016/j.asej.2016.08.017
-10.1016/j.proeps.2017.01.001
-10.1016/j.abrep.2017.01.003
-10.1016/j.amjcard.2016.11.066
-10.1016/j.tourman.2016.12.014
-10.1016/j.taml.2017.01.004
-10.1016/j.joems.2016.11.001
-10.1016/j.tjem.2016.11.007
-10.1016/j.biocon.2017.01.007
-10.1016/j.fcr.2016.12.004
-10.1016/j.aej.2016.11.008
-10.1016/j.bjan.2016.05.002
-10.1016/j.hpj.2017.01.002
-10.1016/j.pmedr.2017.01.004
-10.1016/j.ymgme.2017.01.001
-10.1016/j.pmedr.2017.01.009
-10.1016/j.critrevonc.2017.01.005
-10.1016/j.agsy.2017.05.006
-10.1016/j.aqrep.2017.06.002
-10.1016/j.mehy.2017.06.016
-10.1016/j.ebiom.2017.06.014
-10.1016/j.trci.2017.06.003
-10.1016/j.ekir.2017.06.009
-10.1016/j.jhep.2017.06.011
-10.1016/j.jtbi.2017.06.013
-10.1016/j.omtn.2017.06.011
-10.1016/j.wjorl.2017.05.001
-10.1016/j.ijscr.2017.06.032
-10.1016/j.jdcr.2017.05.001
-10.1016/j.trpro.2017.05.314
-10.1016/j.trpro.2017.05.218
-10.1016/j.trpro.2017.05.319
-10.1016/j.celrep.2017.06.006
-10.1016/j.dib.2017.06.040
-10.1016/j.hrthm.2017.06.020
-10.1016/j.jip.2017.06.002
-10.1016/j.trpro.2017.05.002
-10.1016/j.amjcard.2017.06.023
-10.1016/j.hemonc.2017.05.012
-10.1016/j.procs.2017.05.176
-10.1016/j.procs.2017.05.260
-10.1016/j.scitotenv.2017.06.002
-10.1016/j.addr.2017.06.002
-10.1016/j.procs.2017.05.053
-10.1016/S2214-109X(17)30215-2
-10.1016/j.ajoc.2017.06.002
-10.1016/j.cyto.2017.05.024
-10.1016/j.idcr.2017.06.012
-10.1016/j.ijpe.2017.06.032
-10.1016/j.ijscr.2017.06.003
-10.1016/j.dib.2017.03.024
-10.1016/j.eucr.2016.11.004
-10.1016/j.urolonc.2017.01.025
-10.1016/j.conctc.2017.03.002
-10.1016/j.radcr.2017.02.002
-10.1016/j.eucr.2017.02.009
-10.1016/j.ymthe.2017.02.017
-10.1016/j.jns.2017.03.030
-10.1016/j.joca.2017.03.006
-10.1016/j.diin.2017.02.002
-10.1016/j.apmr.2017.02.001
-10.3168/jds.2016-11815
-10.1016/j.cois.2017.03.003
-10.1016/j.jmpt.2017.02.001
-10.1016/j.quageo.2017.03.001
-10.1016/j.omtm.2017.02.004
-10.1016/j.ccc.2016.12.008
-10.1016/j.jdcr.2017.01.026
-10.1016/j.pecon.2017.02.002
-10.1016/j.dib.2017.03.008
-10.1016/j.rmcr.2017.03.018
-10.1016/j.rbms.2017.03.001
-10.1016/j.ijppaw.2017.03.001
-10.1016/j.aaf.2017.03.002
-10.1016/j.eucr.2017.03.003
-10.3168/jds.2016-12103
-10.1016/j.urolonc.2017.03.008
-10.1016/j.jcde.2017.03.002
-10.1016/j.jvs.2016.12.136
-10.1016/j.stemcr.2017.03.002
-10.1016/j.jdcr.2017.01.008
-10.1016/j.nefroe.2016.12.009
-10.1016/j.jacl.2017.03.007
-10.1016/j.omtm.2017.03.005
-10.1016/j.fertnstert.2017.01.022
-10.1016/j.anres.2016.12.008
-10.1016/j.jesf.2017.07.001
-10.1016/j.prro.2017.07.008
-10.1016/j.jdcr.2017.03.009
-10.1016/j.onehlt.2017.07.001
-10.1016/j.hrcr.2017.07.001
-10.1016/j.desal.2017.07.012
-10.1016/j.ecoleng.2017.07.012
-10.1016/j.omtm.2017.07.003
-10.1016/j.epsc.2017.07.007
-10.1016/j.anres.2017.04.002
-10.1016/j.dib.2017.07.035
-10.1016/j.vetimm.2017.07.004
-10.1016/j.pneurobio.2017.07.004
-10.1016/j.hrthm.2017.07.008
-10.1016/j.eucr.2017.06.013
-10.1016/j.jfda.2017.06.002
-10.1016/j.jcrc.2017.07.047
-10.1016/j.ebiom.2017.07.008
-10.1016/j.idcr.2017.06.014
-10.1016/j.procs.2017.06.119
-10.1016/j.procs.2017.06.115
-10.1016/j.rbe.2017.06.006
-10.1016/j.hkjot.2017.06.001
-10.1016/j.jped.2017.06.002
-10.1016/j.heliyon.2017.e00344
-10.1016/j.eujim.2017.07.005
-10.1016/j.ihj.2017.07.014
-10.1016/j.joep.2017.07.009
-10.1016/j.jacc.2017.06.012
-10.1016/j.solener.2017.07.064'''
-
-'''
-def run() takes a single parameter, doi_strings, like:
-doi_strings=***
-abc
-def
-ghi
-klm***
-
-Using that form make it easier to quickly copy-paste a list of dois to
-support a quick run
-
-'''
-
-def run(input_file_name='u:/data/tmp/cross_doi_20170601_20170824.txt'):
+def run(input_file_name=None):
     ####### RUN main CRAWDML program
     # PARAMETERS -- set these manually per run for now... but only cymd_start
     # and cymd_end would normally change.
@@ -505,10 +232,10 @@ def run(input_file_name='u:/data/tmp/cross_doi_20170601_20170824.txt'):
         data_relative_folder='data/outputs/crawdxml/run/{}/'
             .format(secsz_start))
 
-    print("{}: Reading input file = {}".format(me,input_file_name))
+    print("{}: Reading input_file_name = {}".format(me,input_file_name))
 
-    print ("START CRAWDXML RUN at {}\n, using output_folder_run={}"
-           .format(secsz_start,  output_folder_run))
+    print ("START CRAWDXML RUN at {}\n, using input_file_name={}, output_folder_run={}"
+           .format(secsz_start, input_file_name, output_folder_run))
 
     if not os.path.isdir(output_folder_run):
         os.makedirs(output_folder_run)
@@ -518,7 +245,6 @@ def run(input_file_name='u:/data/tmp/cross_doi_20170601_20170824.txt'):
     d_params={
         "secsz_start": secsz_start,
         "input_file_name" : input_file_name,
-        "doi_strings" : doi_strings,
         "output_folder_run" : output_folder_run,
         "python_version" : sys.version,
         "max-queries" : "0", # TODO
@@ -528,12 +254,9 @@ def run(input_file_name='u:/data/tmp/cross_doi_20170601_20170824.txt'):
     entries_collected = 0
     entries_excepted = 0
 
-    ###### MAIN CALL TO CRAWDXML() ########
 
-    if (1 == 1): # test with or without call to crawdxml
-        entries_collected, entries_excepted = crawdxml(d_params=d_params,
-          file_name_doi_strings=file_name_doi_strings,
-          verbosity=verbosity)
+    ###### MAIN CALL TO CRAWDXML() ########
+    crawdxml(d_params=d_params, input_file_name=input_file_name)
 
     ############### WRAP-UP MISC OUTPUT ################
 
@@ -568,8 +291,19 @@ def run(input_file_name='u:/data/tmp/cross_doi_20170601_20170824.txt'):
            .format(secsz_now, input_file_name, output_folder_run, entries_collected, entries_excepted))
 
     print("Done!")
-#end def run()
+#end:def run()
 
 #run
-run(doi_strings)
+'''
+windows_file_name='u:/data/tmp/cross_doi_20170601_20170824.txt'
+linux_file_name= '/home/robert/Downloads/cross_doi_20170601_20170824.txt'
+'''
+input_folder = etl.data_folder(
+  linux='/home/robert/Downloads/', windows='U:/data/tmp/')
+
+input_file_name="{}/cross_doi_20170601_20170824.txt".format(input_folder)
+
+print("Using input_file_name={}".format(input_file_name))
+
+run(input_file_name=input_file_name)
 #

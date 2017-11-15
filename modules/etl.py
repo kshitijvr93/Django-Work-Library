@@ -169,7 +169,7 @@ def platform_output_folder(
     return folder
 
 def data_folder(linux='/tmp/data/', windows='c:/data/',
-    data_relative_folder=None, exist_ok=True, verbosity=0):
+    data_relative_folder='', exist_ok=True, verbosity=0):
     if platform.system().lower() == 'linux':
         folder = linux + data_relative_folder
     else:
