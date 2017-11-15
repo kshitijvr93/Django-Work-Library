@@ -335,6 +335,7 @@ class RelationMiner:
             #initial versions: use int - as it implies row ordering
             for cid in range(depth):
               column_values[cid] = int(column_values[cid])
+
             if verbosity > 0:
               print("{}:=================Got sibling row column_values={}".format(me,column_values))
             sibling_id = column_values[depth]
@@ -347,7 +348,7 @@ class RelationMiner:
             # the given arguments
             # for cid in composite_ids ...
             for d in range(depth):
-              # Todo: work out details of relation column id types(str vs int)
+              # Consider: future spport of non-integer relation column id types(str vs int)
               if (int(composite_ids[d]) != int(column_values[d])):
                 msg = ("{}: Child relation {}, sibling_id {} has parent relation {} with composite_ids={},"
                 .format(me,child_name_relation, sibling_id, node_relation_name, repr(composite_ids)))
@@ -363,7 +364,7 @@ class RelationMiner:
             if verbosity > 0:
               print("{}:MAKING recursive call with child_composite_ids={} type={}"
                     .format(me,repr(child_composite_ids), type(child_composite_ids)))
-            # create d_row from column_values
+            # create d_row from relation field/value names and column_values
             if verbosity > 0:
               print("{}:child relation={}, fields={},depth={},column_values={}"
                 .format(me,child_name_relation, child_relation.fields, depth, column_values))
@@ -402,7 +403,7 @@ class RelationMiner:
                 .format(me,composite_ids,child_name_relation))
       #Finished visting all child nodes/paths for this node
       if verbosity>0:
-        print("{}: Finished visitng all child nodes/relations for composite_ids={}"
+        print("{}: Finished visiting all child nodes/relations for composite_ids={}"
             .format(me,child_name_relation,composite_ids))
     #End check for some child nodes to visit.
     else:
@@ -837,6 +838,7 @@ def rdb2xml_test():
 
     # add a sequence_ordered_siblings sequence for this relation
     all_rows = relation.sequence_all_rows()
+    column_values = relation.sequence_column_values()
     relation.sequence = relation.sequence_ordered_siblings(all_rows=all_rows)
     relation.ordered_siblings = OrderedSiblings(ordered_relation=relation)
 

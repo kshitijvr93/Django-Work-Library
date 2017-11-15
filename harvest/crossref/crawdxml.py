@@ -14,7 +14,7 @@
  already have --- to get uf author affiliation data and funding data (which is NOT in
  our circa-2016 style of Scopus API feed) and other details from
  crossref for UF articles published by all publishers that are covered by scopus
- ncluding non-elsevier-published articles.
+ including non-elsevier-published articles.
 
  With that info, we might query peoplesoft for info to contact authors to ask them sources of
  funding and encourage them create OA works and go satisfy funding rqts and to get
