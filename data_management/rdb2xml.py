@@ -44,16 +44,18 @@ Given parameters:
 
 (*) node_names (names of outer parents in nested
   relations where the first node name is the outermost nested relation and
-  the last name is for this row row of the current relation), identified in uuids[]
+  the last name is for this row row of the current relation), identified in
+  uuids[]
 
 (*) uuids[], (the parent nodes and current node is represented by this list
   path of hierarchical uuids from a set of parent database tables, with the
   final uuid identifying a unique row in the current node), and
 
-(*) opened_index: index into node_names indicating the highest level where an opening tag
-  has so far been outputted. This way, a recursive call that generates the first output for
-  a node can determine the greatest ancestor parent that has not yet output its opening tag,
-  and then output those tags in proper order, as needed.
+(*) opened_index: index into node_names indicating the highest level where
+  an opening tag has so far been outputted. This way, a recursive call that
+  generates the first output for a node can determine the greatest ancestor
+  parent that has not yet output its opening tag, and then output those
+  tags in proper order, as needed.
 
 (*) d_mining_map, the 'mining map' starting with the
    given node's entry in the mining map hierarchy, garner the input fields
@@ -69,38 +71,47 @@ Given parameters:
   In xml2rdb it is used to store values to be composed, for example a first
   name and last name may be stored among siblings to same xml parent, and a
   column_attribute function may be applied to derive a column with full
-  last_name, comma, first_name' value. It is used for the 'translation' functionality
-  of an ETL process, which may be of limited use since the data has already been
-  mapped into the relational database, usually in a nice format.
+  last_name, comma, first_name' value. It is used for the 'translation'
+  functionality of an ETL process, which may be of limited use since the
+  data has already been mapped into the relational database, usually in a
+  nice format.
   However, it might be reversed-emulated somehow in future versions for use
   in the rdb2xml direction.
 
 Processing:
 
 The node represents a 'current row', a specific data row in a table/db_name.
-(*) If the row has any data to be output (per the below processing), an xml element
-opening tag is outputted with the same name as the current row's table name.
+(*) If the row has any data to be output (per the below processing), an xml
+element opening tag is outputted with the same name as the current row's
+table name.
 
-(*) The param od_mining_map may include a key 'od_attribute_column' which value is a dictionary where
-each key is an attribute name to output and the value is a column name in the current row.
-Special attribute names are reserved: text_content' indicates tha the rdb value is to put output as the main content of
-the current xml elemnt being output. Other names are the actual xml attribute names to be outputted.
+(*) The param od_mining_map may include a key 'od_attribute_column' which
+value is a dictionary where each key is an attribute name to output and the
+value is a column name in the current row.
+Special attribute names are reserved: text_content' indicates tha the rdb
+value is to put output as the main content of the current xml elemnt being
+output. Other names are the actual xml attribute names to be outputted.
 
 For each entry in od_attribute_column,
 ....
-(1) first check the given 'opening_index' value that somhow indicates not-yet-outputted parent xml tags
-and open all the parent tags given in array 'tags'(output their opening tag to the output stream)
-consider:  let prior recursive caller just maintain arg tags and put in the ancestral line of unopened tags.
-So in this call, if any value is detected that needs to be output, then output all openings of any tags, plus this
-tag, and clear the tags list to pass down in next recursive call. To make things simpler, at very start of this method,
-always append 'this' tag to the list of tags.
+(1) first check the given 'opening_index' value that somhow indicates not-
+yet-outputted parent xml tags and open all the parent tags given in array
+'tags'(output their opening tag to the output stream)
+consider:  let prior recursive caller just maintain arg tags and put in the
+ancestral line of unopened tags.
+So in this call, if any value is detected that needs to be output, then
+output all openings of any tags, plus this
+tag, and clear the tags list to pass down in next recursive call.
+To make things simpler, at very start of this method, always append 'this'
+tag to the list of tags.
 
 
 After a recursive call, the tags are included in the return values by the child.
 If a child returns the tags list with any tags, then the last tag pertains to
 this call instance, meaning no data was found to output for this tag,
 and so do not output a closing tag, and DO delete this last tag in the list,
-and then return that as part of the return value. This may be a phase 0 or phase 1 feature.
+and then return that as part of the return value. This may be a phase 0 or
+phase 1 feature.
 ...
 
 In a call instance, if an attribute has a non-null associated value:
@@ -718,6 +729,9 @@ class RelationMiner:
       # else errors in cp1252.py in encode or mishandled characters
       output_file = open(output_file_name,mode='w', encoding='utf-8-sig')
       relation.output_file = output_file
+      if int(sibling_id) > 16605:
+        print("relation.revisits={}, opened file {} for  sibling_id={}"
+            .format(relation.revisits, output_file_name, sibling_id))
 
       if verbosity > 0:
         print("\n{}: *********** Created and Opened output file name={}".format(me,output_file_name))
@@ -777,8 +791,8 @@ class RelationMiner:
          and relation.revisits == 0
        ):
        output_file.close()
-    elif int(sibling_id) > 16605:
-      print("relation.revisits={}, Not closing sibling_id={}"
+       if int(sibling_id) > 16605:
+        print("relation.revisits={}, Closed sibling_id={}"
             .format(relation.revisits, sibling_id))
 
     return None
