@@ -1,12 +1,26 @@
 #
 '''
- crawdxml.xml
+ crawdxml2.py -- IN PROGRESS
 
  This is python 3.5.1 code
 
  crawdxml (Cross Ref Api Works by DOI - Given a list of DOIS, get crossRef 'works'
- result metadata and save to xml files.
- This dev code started based on crafaxml (CrosRef Api Find Affiliated works --- 20161218)
+ result metadata in its xml format (cf crawdxml.py that retrieves json and
+ convert to xml),
+
+ This dev code started based on crawdxml.py -- As of 20171116,
+ Development may be put on hold until a time when
+ the native xml api offers more useful data than the json api flavor. 20171116.
+
+ sample xml query
+ http://api.crossref.org/works/doi/10.1200/jco.2017.74.6032/transform/application/vnd.crossref.unixsd+xml
+
+ On 20171116, that url works, but have not found any data of use today that is not given by the json
+ api (and crawdxml already converts that to xml for UF use.)
+
+ ==== BELOW is to be modified....
+
+  (CrosRef Api Find Affiliated works --- 20161218)
  and oadoi (mainly the part that feeds queries using a doi string).
 
  The dev plan is to make crawdxml get crossref full MD query data from a doi,
@@ -164,11 +178,9 @@ def crawdxml(d_params=None, input_file_name=None, verbosity=0):
 
     for line in input_file:
         doi_string = line.replace('\n','')
-        #2017116 per new crossref readme.md, be polite and use https and give email
-        #
+
         url_worklist_doi = (
-            "https://api.crossref.org/works/doi/{}?mailto=podengo@ufl.edu"
-            .format(doi_string))
+            "http://api.crossref.org/works/doi/{}".format(doi_string))
         print("{}: using url={}".format(me,url_worklist_doi))
 
         d_json = get_json_result_by_url(url_worklist_doi)
@@ -213,7 +225,7 @@ def crawdxml(d_params=None, input_file_name=None, verbosity=0):
             bytes_xml = etree.tostring(node_root, pretty_print=True, encoding='utf-8')
             outfile.write(bytes_xml)
         entries_collected += 1
-    # end for line in input file:
+    # end for doi_string in l_dois:
     # Return n good and n bad
     return entries_collected, entries_excepted
 # end def crawdxml
@@ -236,7 +248,7 @@ def run(input_file_name=None):
 
     print("{}: Reading input_file_name = {}".format(me,input_file_name))
 
-    print ("xxxSTART CRAWDXML RUN at {}\n, using input_file_name={}, output_folder_run={}"
+    print ("START CRAWDXML RUN at {}\n, using input_file_name={}, output_folder_run={}"
            .format(secsz_start, input_file_name, output_folder_run))
 
     if not os.path.isdir(output_folder_run):
@@ -258,8 +270,6 @@ def run(input_file_name=None):
 
 
     ###### MAIN CALL TO CRAWDXML() ########
-    print("Calling crawdxml with INPUT_FILE_NAME={}".format(input_file_name))
-
     crawdxml(d_params=d_params, input_file_name=input_file_name)
 
     ############### WRAP-UP MISC OUTPUT ################
@@ -299,16 +309,13 @@ def run(input_file_name=None):
 
 #run
 '''
-SET BASE INPUT FILE NAME -- EDIT THIS PER RUN. 01_20170824.txt'
+windows_file_name='u:/data/tmp/cross_doi_20170601_20170824.txt'
+linux_file_name= '/home/robert/Downloads/cross_doi_20170601_20170824.txt'
 '''
-
-base_input_file_name = "cross_doi_tmp.txt" # temp test doi
-base_input_file_name = "cross_doi_20170601_20170824.txt" #64K records
-
 input_folder = etl.data_folder(
   linux='/home/robert/Downloads/', windows='U:/data/tmp/')
 
-input_file_name="{}{}".format(input_folder,base_input_file_name)
+input_file_name="{}/cross_doi_20170601_20170824.txt".format(input_folder)
 
 print("Using input_file_name={}".format(input_file_name))
 
