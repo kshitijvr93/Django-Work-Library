@@ -1016,16 +1016,15 @@ def run(study=None):
      'ccila'
      , 'citrus'
      , 'crafa'
-     , 'crafd' # Crossref affiliation filter where D here is for Deposit Date.
-     , 'crawd' # Crossref filter where D is for doi
+     , 'crafd' # Crossref FILTER (by affiliation) where D here is for Deposit Date.
+     , 'crawd' # Crossref WORKS where D is for doi
      , 'elsevier'
-     , 'entitlement' # Elevier entitlment data.
+     , 'entitlement' # Elsevier entitlment data.
      , 'merrick_oai_set'
      , 'oadoi'
      , 'orcid'
      , 'scopus'
     ]
-
 
     # Study selection KEEP ONLY ONE LINE next
     study = 'ccila'
@@ -1046,6 +1045,32 @@ def run(study=None):
     folder_output_base = None
     output_folder_include_secsz = False
 
+    # Define a redo_rel_prefix for this study
+    rel_prefix = 'crawd2017b_'
+
+    if rel_prefix == 'crawd2017b_':
+        import xml2rdb_configs.crossref as config
+        study = 'crawd'
+        input_folder = 'u:/data/outputs/crawdxml/run/2017-11-16T15-41-59Z/doi'
+        input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
+
+        # doc_rel_name must match highest level table dbname in sql_mining_params od_rel_datacolumns
+        doc_rel_name = 'cross_doi'
+        doc_root_xpath = './response/message'
+
+        print("STUDY for rel_prefix={}, got {} input files under {}"
+            .format(rel_prefix, len(input_path_list),input_folder))
+        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+        file_count_first = 0
+        file_count_span = 0
+
+    else:
+         raise ValueError("Unknown rel_prefix = {}. Exit.".format(redo_rel_prefix))
+
+
+    # migrate rest of these
+    '''
     if study == 'crafa':
         import xml2rdb_configs.crossref as config
         # Note- input folder is/was populated via program crafatxml
@@ -1301,6 +1326,7 @@ def run(study=None):
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
     else:
         raise Exception("Study ={} is not valid.".format(repr(study)))
+    '''
 
     # OPTIONAL - If a study specified multiple input folders and input_path_glob,
     # then honor them when constructing the input_path_list

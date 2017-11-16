@@ -185,7 +185,7 @@ def sql_mining_params():
                     ".//authenticated-orcid" : {
                         'attrib_column': {'text':'authenticated-orcid'},
                     },
-                    ".//orcid" : {
+                    ".//ORCID" : { #20171116-observed on API response as upper case
                         'attrib_column': {'text':'orcid'},
                     },
                 },
