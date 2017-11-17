@@ -288,7 +288,8 @@ def node_visit_output(node=None, node_index=None, d_namespaces=None,
         node_text = etree.tostring(node, encoding='unicode', method='text')
         # Must discard tabs, used as bulk load delimiter, else sql server 2008 bulk insert error
         # messages appear, numbered 4832 and 7399, and inserts fail.
-        node_text = node_text.replace('\t',' ').replace('\n',' ').strip()
+        # also discard carriage returns - 20171117 from crossref in orcid ids
+        node_text = node_text.replace('\t',' ').replace('\r','').replace('\n',' ').strip()
         #node_text = "" if stringify is None else stringify.strip()
 
         for attr_name, column_name in d_attr_column.items():
@@ -835,7 +836,7 @@ def xml_paths_rdb(
             print('begin transaction;', file=sql_file)
 
             print("\nBULK INSERT {}".format(relation), file=sql_file)
-            print("FROM '{}/{}.txt'".format(output_folder,rel_key), file=sql_file)
+            print("FROM '{}{}.txt'".format(output_folder,rel_key), file=sql_file)
             # print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '\\n');\n", file=sql_file)
             # Next works better -- else may get bulk insert error # 4866
             print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '0x0A');\n", file=sql_file)
