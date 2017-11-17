@@ -309,7 +309,10 @@ def node_visit_output(node=None, node_index=None, d_namespaces=None,
                 column_value = etree.tostring(node, encoding='unicode')
             else:
                 if attr_name in node.attrib:
-                    column_value = node.attrib[attr_name]
+                    # Clean the data values
+                    column_value = (node.attrib[attr_name].replace('\t',' ')
+                      .replace('\n',' ').replace('\r','').strip())
+
             #print("setting d_row for column_name={} to value={}".format(column_name,column_value))
             d_row[column_name] = column_value
     # When multiple is 1 we always stack a node index
@@ -1048,10 +1051,10 @@ def run(study=None):
 
     # Define a redo_rel_prefix for this study
     rel_prefix = 'crawd2017b_'
-    rel_prefix = 'cr20171101_'
+    rel_prefix = 'cr201711_'
 
     # Select the rel_prefix
-    rel_prefix = 'cr20171101_'
+    rel_prefix = 'cr201711_'
 
     if rel_prefix == 'crawd2017b_':
         import xml2rdb_configs.crossref as config
@@ -1075,10 +1078,10 @@ def run(study=None):
         file_count_first = 0
         file_count_span = 0
 
-    elif rel_prefix == 'cr20171101_':
+    elif rel_prefix == 'cr201711_':
         import xml2rdb_configs.crossref as config
         # Note- input folder is/was populated via program crafdtxml
-        rel_prefix = 'cr20171101_'
+        rel_prefix = 'cr201711_'
         # NOTE LIMIT INPUT FOLDER for now...
         # Set input_folders to sequence of study_days to map
         cymd_start = '20171101'
