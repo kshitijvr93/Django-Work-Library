@@ -182,12 +182,15 @@ def crafdtxml(d_params, verbosity=0):
         output_folder_ymd = '{}doi/{}/{}/{}'.format(
             output_folder_base, y4, mm, dd)
 
-        print("DELETING and RE-Making output_folder_ymd='{}'"
-            .format(output_folder_ymd))
 
         if os.path.isdir(output_folder_ymd):
             try:
-                shutil.rmtree(output_folder_ymd, ignore_errors=True)
+              print("DELETING and RE-making output_folder_ymd='{}'"
+                .format(output_folder_ymd))
+              raise ValueError("{}: ERROR: Too risky to delete folder {} here.\n{}"
+                    .format(me,output_folder_ymd
+                    ,"You must delete by hand and rerun for this folder/date."))
+              shutil.rmtree(output_folder_ymd, ignore_errors=True)
             except:
                 print("Cannot rmtree folder {}. File or folder might be in use?"
                       .format(output_folder_ymd))
@@ -215,7 +218,7 @@ def crafdtxml(d_params, verbosity=0):
             n_batch += 1
 
             url_worklist_day = (
-                "http://api.crossref.org/works?rows={}&cursor={}&filter="
+                "https://api.crossref.org/works?mailto=podengo@ufl.edu&rows={}&cursor={}&filter="
                 "has-affiliation:true,from-deposit-date:{},until-deposit-date:{}"
                 .format(n_batch_rows,cursor,y4_m_d, y4_m_d))
 
@@ -474,17 +477,17 @@ def run(od_target_affiliation_info):
   # So here, since we are using CrossRef APIs, the cymd_start and
   # cymd_end days are INCLUDED in the API query results, aka closed interval
 
-  cymd_start = '20170601'
+  cymd_start = '20171031'
 
   # CRAFATXML - Here, we do only one day at a time...
-  cymd_end = '20170622'
+  cymd_end = '20171031'
 
   utc_now = datetime.datetime.utcnow()
   # secsz_start: secz means seconds in utc(suffix 'z') when this run started
   secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
 
   output_folder_base = etl.data_folder(linux='/home/robert/', windows='U:/',
-      data_relative_folder='data/elsevier/output_crafdtxml/')
+      data_relative_folder='data/outputs/crafdtxml/')
 
   print ("START CRAFDTXML RUN at {}\n\twith:\ncymd_start='{}', cymd_end='{}'\n  "
          "output_folder_base={},verbosity={}"
@@ -560,6 +563,7 @@ Note: first 3 letters of a key should be an iso03166-1 alapha-3 code,
  followed by an underbar, followed by a university code .. which UFL created,
  so we use authority code of  usa_ufl for all the affiliation keys
  in od_target_affiliation_info
+
 
 '''
 od_target_affiliation_info = OrderedDict({

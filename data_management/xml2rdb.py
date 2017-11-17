@@ -880,6 +880,7 @@ These parameters may be re-grouped later into fewer parameters to more plainly s
 the three groups, each which contains sub-parameters for its group.
 '''
 def xml2rdb( input_path_list=None,
+## --- RESUME
             folder_output_base=None,
             output_folder_include_secsz=True,
             doc_root_xpath=None, rel_prefix=None,
@@ -907,7 +908,7 @@ def xml2rdb( input_path_list=None,
     if folder_output_base is None:
         # folder_output_base = input_folders + me + '/'
         folder_output_base = etl.data_folder(linux="/home/robert/", windows="U:/",
-            data_relative_folder='data/outputs/xml2rdb')
+            data_relative_folder='data/outputs/xml2rdb/{}/'.format(rel_prefix))
 
     d_params['folder-output-base'] = folder_output_base
     os.makedirs(folder_output_base, exist_ok=True)
@@ -1047,12 +1048,21 @@ def run(study=None):
 
     # Define a redo_rel_prefix for this study
     rel_prefix = 'crawd2017b_'
+    rel_prefix = 'cr20171101_'
+
+    # Select the rel_prefix
+    rel_prefix = 'cr20171101_'
 
     if rel_prefix == 'crawd2017b_':
         import xml2rdb_configs.crossref as config
         study = 'crawd'
         input_folder = 'u:/data/outputs/crawdxml/run/2017-11-16T15-41-59Z/doi'
         input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
+
+        folder_output_base = etl.data_folder(linux='/home/robert/data/outputs/'
+            , windows='U:/data/outputs/'
+            , data_relative_folder='xml2rdb/{}/'.format(rel_prefix))
+
 
         # doc_rel_name must match highest level table dbname in sql_mining_params od_rel_datacolumns
         doc_rel_name = 'cross_doi'
@@ -1064,6 +1074,45 @@ def run(study=None):
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
         file_count_first = 0
         file_count_span = 0
+
+    elif rel_prefix == 'cr20171101_':
+        import xml2rdb_configs.crossref as config
+        # Note- input folder is/was populated via program crafdtxml
+        rel_prefix = 'cr20171101_'
+        # NOTE LIMIT INPUT FOLDER for now...
+        # Set input_folders to sequence of study_days to map
+        cymd_start = '20171101'
+        cymd_end = '20171115'
+        study_days = etl.sequence_days(cymd_start, cymd_end)
+        input_folders = []
+        for y4md, dt_day in study_days:
+          y4 = y4md[0:4]
+          mm = y4md[4:6]
+          dd = y4md[6:8]
+          input_folder = ('U:/data/outputs/crafdtxml/doi/{}/{}/{}'
+            .format(y4,mm,dd))
+          input_folders.append(input_folder)
+        # end for y4md, dt_day in study_days
+        input_path_glob = 'doi_*.xml'
+        print("{}: rel_prefix={}, using input_path_glob={} with input folders={}"
+              .format(me, rel_prefix, input_path_glob, input_folder))
+
+        folder_output_base = etl.data_folder(linux='/home/robert/git/'
+            , windows='U:/data/'
+            , data_relative_folder='outputs/xml2rdb/{}/'.format(rel_prefix))
+
+        doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns, set below.
+        #Next doc_root_xpath is set by the harvester crafdtxml so see its code.
+        doc_root_xpath = './crossref-api-filter-date-UF/message'
+
+        input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
+        print("STUDY={}, got {} input files under {}"
+              .format(study, len(input_path_list),input_folder))
+        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+        file_count_first = 0
+        file_count_span = 0
+
 
     else:
          raise ValueError("Unknown rel_prefix = {}. Exit.".format(redo_rel_prefix))
