@@ -1,0 +1,3 @@
+
+Notes:
+Note 1: On a special case by case basis, when small batches of updates with manager-editable configurations is indicated, the MAW may be employed to use METS files as input for batch editing. The edited files may be submitted to the builder for their edits to be registered in UFDC. for specialty batch edits is needed, and XIS 
