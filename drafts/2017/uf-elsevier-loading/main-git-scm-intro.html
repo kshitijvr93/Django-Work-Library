@@ -1,0 +1,121 @@
+<html>
+<head><title>Image map created by yEd</title>
+<style type="text/css">
+.tooltip {
+  font-size:10pt;
+  background-color:#FFFFCC;
+  border:1px solid black;
+  padding:2px
+}
+</style>
+<style type="text/css">
+.tooltip {
+  position:absolute;
+  display:none
+}
+</style>
+</head>
+<body>
+
+<script type="text/javascript">
+tooltip = null;
+document.onmousemove = updateTooltip;
+function updateTooltip(e) {
+try {
+if (document.all) {
+if (document.documentElement && document.documentElement.scrollTop) { // Explorer 6 Strict
+x = document.documentElement.scrollLeft + window.event.x;
+y = document.documentElement.scrollTop + window.event.y;
+}
+else { // all other Explorers
+x = document.body.scrollLeft + window.event.x;
+y = document.body.scrollTop + window.event.y;
+}
+}
+else {
+x = e.pageX;
+y = e.pageY;
+}
+if (tooltip != null) {
+o = 20;
+var sx, sy;
+if (self.pageYOffset) { // all except Explorer
+sx = self.pageXOffset;
+sy = self.pageYOffset;
+}
+else if (document.documentElement && document.documentElement.scrollTop) { // Explorer 6 Strict
+sx = document.documentElement.scrollLeft;
+sy = document.documentElement.scrollTop;
+}
+else if (document.body) { // all other Explorers
+sx = document.body.scrollLeft;
+sy = document.body.scrollTop;
+}
+t = y + o + tooltip.offsetHeight;
+w = sy + document.body.clientHeight;
+if (t > w) {
+y = y - o - tooltip.offsetHeight;
+}
+else {
+y = y + o;
+}
+t = x + o + tooltip.offsetWidth;
+w = sx + document.body.clientWidth;
+if (t > w) {
+x = x - o - tooltip.offsetWidth;
+}
+else {
+x = x + o;
+}
+if ((tooltip.style.top == '' || tooltip.style.top == 0) && (tooltip.style.left == '' || tooltip.style.left == 0))
+{
+tooltip.style.width = tooltip.offsetWidth + 'px';
+tooltip.style.height = tooltip.offsetHeight + 'px';
+}
+tooltip.style.left = x + "px";
+tooltip.style.top = y + "px";
+}
+} catch (error) { error = null; }
+}
+function showTooltip(id) {
+try {
+tooltip = document.getElementById(id);
+tooltip.style.display = "block";
+} catch (error) { error = null; }
+}
+function hideTooltip() {
+try {
+tooltip.style.display = "none";
+} catch (error) { error = null; }
+}
+</script>
+
+<div class="tooltip" id="n0">Click for brief online walk-through of the<br> few most used and useful Git commands. </div>
+<div class="tooltip" id="n1">Title: Basic Git for UFLIB Web & Programming Staff Meeting<br><br>Presented: 2016-06-22  by Robert Phillips</div>
+<div class="tooltip" id="n2">- Click here to browse main Git-SCM page from your PC,<br>- See image of monitor with blue background,<br>- Click on "Downloads for Windows" to get a Git-*-.exe file,<br>- Do virus scan, and run it.</div>
+<div class="tooltip" id="n3">Click for details.<br><br>The git repository structure uses the<br> filesystem structure of the project<br> folder that was initialzed, plus it adds<br> some files to manage git functions.<br> <br>You push your code from the local<br> repository to a remote repo (e.g.,<br> your own repositories or GitLab or<br> GitHub,or other services) and pull code<br> from the remote to your local repo.<br><br> </div>
+<div class="tooltip" id="n4">On your local Windows PC, visit the topmost directory <br>of your project code.<br>            <br>Right Click and  Select "Git Bash Here" to open a git bash window.<br>        At the $, enter git init<br><br>        You'll see a few lines of  output that you can ignore and<br>the $ prompt will appear on a new line.<br><br>        Success!<br></div>
+<div class="tooltip" id="n5">Well organized introductory<br> documents and links with videos.</div>
+<div class="tooltip" id="n6">Start</div>
+<div class="tooltip" id="n7">Comprehensive yet concise<br>well-written documents</div>
+
+<map name="image1_1">
+  <area shape="rect" coords="586,140,646,192" href="https://git-scm.com/doc" alt="" onmouseover="showTooltip('n7')" onmouseout="hideTooltip()"/>
+  <area shape="rect" coords="15,140,54,192" alt="" onmouseover="showTooltip('n6')" onmouseout="hideTooltip()"/>
+  <area shape="rect" coords="479,140,560,192" href="http://www.gitguys.com/" alt="" onmouseover="showTooltip('n5')" onmouseout="hideTooltip()"/>
+  <area shape="rect" coords="161,140,248,192" href="git-init-project.html" alt="" onmouseover="showTooltip('n4')" onmouseout="hideTooltip()"/>
+  <area shape="rect" coords="268,140,329,192" href="git-basic-structure-repository.html" alt="" onmouseover="showTooltip('n3')" onmouseout="hideTooltip()"/>
+  <area shape="rect" coords="74,140,141,192" href="https://git-scm.com/" alt="" onmouseover="showTooltip('n2')" onmouseout="hideTooltip()"/>
+  <area shape="rect" coords="259,15,414,100" alt="" onmouseover="showTooltip('n1')" onmouseout="hideTooltip()"/>
+  <area shape="rect" coords="355,140,453,192" href="https://try.github.io/levels/1/challenges/1" alt="" onmouseover="showTooltip('n0')" onmouseout="hideTooltip()"/>
+</map>
+
+
+    <table class="yimagetable" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td><img class="yimage" src="main-git-scm-intro1_1.png" usemap="#image1_1" border="0" alt=""/></td>
+      </tr>
+    </table>
+
+</body>
+</html>
