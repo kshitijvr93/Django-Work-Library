@@ -10,8 +10,21 @@ Each input xml file has xml-coded information pertaining to a single xml
 document.
 '''
 import sys, os, os.path, platform
-sys.path.append('{}/git/citrus/modules'.format(os.path.expanduser('~')))
+
+def register_modules():
+    platform_name = platform.system().lower()
+    if platform_name == 'linux':
+        modules_root = 'tbd'
+        raise ValueError("MISSING: Enter code here to define modules_root")
+    else:
+        # assume rvp office pc running windows
+        modules_root="C:\\rvp\\"
+    sys.path.append('{}git/citrus/modules'.format(modules_root))
 print("sys.path={}".format(repr(sys.path)))
+return
+
+register_modules()
+
 import datetime
 import pytz
 import os
@@ -31,9 +44,11 @@ import etl
     walk-through of the xml input files.
     From that, it could:
     * register the repeat vs non-repeat nature of every xml tag, and thus be
-      able to derive a complete set of SQL tables, or candidate tables
+      able to derive a complete set of SQL tables, or candidate tables,
+      efficiently and automatically promoting non-repeated child
+      elements/fields to parent relation attributes
     * Allow the user to select a subset of tables and columns within them as
-      well
+      well from that 'full schema'
     * register the mapping-converson functions that a user provides and make
       suggestions or derive function candidates for translations from which
       the user may also choose.
@@ -1055,7 +1070,7 @@ def run(study=None):
     rel_prefix = 'cr201711_'
 
     # Select the rel_prefix
-    rel_prefix = 'cr201711_'
+    rel_prefix = 'ccila_'
 
     if rel_prefix == 'crawd2017b_':
         import xml2rdb_configs.crossref as config
@@ -1117,7 +1132,39 @@ def run(study=None):
         file_count_first = 0
         file_count_span = 0
 
+    elif rel_prefix == 'ccila_': #ccila is cuban collection i? latin america
+        import xml2rdb_configs.marcxml as config
+        output_folder_include_secsz = False
 
+        # This is where the precursor program marc2xml leaves its marcxml data
+        # for ccila UCRiverside # items
+        in_folder_name = etl.data_folder(linux='/home/robert/git/',
+            windows='C:/rvp/data/', data_relative_folder='outputs/marcxml/UCRiverside/')
+
+        #windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
+        folder_output_base = etl.data_folder(linux='/home/robert/git/'
+            , windows='C:/rvp/data/'
+            , data_relative_folder=('outputs/xml2rdb/{}/'.format(study)))
+
+        print("study {}, using folder_output_base={}".format(study,folder_output_base))
+
+        input_folder = in_folder_name
+        input_folders = []
+        input_folders.append(input_folder)
+        input_path_glob = '**/marc*.xml'
+
+        doc_rel_name = 'record' # must match highest level table dbname in od_rel_datacolumns
+        doc_root_xpath = ".//{*}record"
+
+        input_path_list = list(Path(input_folder).glob(input_path_glob))
+        d_xml_params['attribute_text'] = 'text'
+
+        print("STUDY={}, got {} input files under {}"
+              .format(study, len(input_path_list),input_folder))
+        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+        file_count_first = 0
+        file_count_span = 0
     else:
          raise ValueError("Unknown rel_prefix = {}. Exit.".format(redo_rel_prefix))
 

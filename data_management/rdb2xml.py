@@ -16,7 +16,9 @@ document.
 
 '''
 import sys, os, os.path, platform
-sys.path.append('{}/git/citrus/modules'.format(os.path.expanduser('~')))
+modules_root="C:\\rvp\\"
+# was: dev_root=os.path.expanduser('~')
+sys.path.append('{}git/citrus/modules'.format(modules_root))
 print("sys.path={}".format(repr(sys.path)))
 import datetime
 import pytz
@@ -816,9 +818,10 @@ def rdb2xml_test():
   import dataset.phd
 
   d_mining_params = {'attribute_text':'text'}
+  
   input_folder = etl.data_folder(
-  linux="/home/robert/", windows="C:/users/podengo/",
-  data_relative_folder='git/outputs/xml2rdb/ccila/')
+  linux="/home/robert/git/", windows="C:/rvp/data/",
+  data_relative_folder='outputs/xml2rdb/ccila/')
 
   output_folder = etl.data_folder(
   # See xml2rdb.py study 'ccila' definition of folder_output_base

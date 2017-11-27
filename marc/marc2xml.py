@@ -323,11 +323,11 @@ def ucr_mrc_to_csv(input_file_name=None
         print("\nEND COLUMNS THRESHOLD VALUE={}".format(threshhold))
     return
 
-in_folder_name = etl.data_folder(linux='/home/robert/git/citrus/data/',
-    windows='c:/users/podengo/git/citrus/data/marc', data_relative_folder='UCRiverside')
+in_folder_name = etl.data_folder(linux='/home/robert/git/citrus/data/marc/',
+    windows='c:/rvp/data/marc/', data_relative_folder='UCRiverside')
 
 out_folder_name = etl.data_folder(linux='/home/robert/git/outputs/marcxml/',
-    windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
+    windows='c:/rvp/data/outputs/marcxml/', data_relative_folder='UCRiverside')
 
 #os.makedirs(out_folder_name, exist_ok=True)
 
