@@ -54,7 +54,18 @@ with open(file_name, mode="r", encoding='utf-8-sig',  errors='ignore') as ifile:
   #is satisfied.
   #error abort if a line's cumulative field count exceeds the number of
   #expected fields.
-  for line in ifile:
-      print("Got line='{}'".format(line))
+  n_fields = 0
+  output_fields = []
+  nof = 0
+  for n_iline, iline in enumerate(ifile,start=1):
+      #print("Got line='{}'".format(line))
+      fields = import package/moduleline.split('\t')
+      nlf = len(fields)
+      if nof + nlf > field_count:
+          print("Abort. Line {} accrues {} fields, too many."
+          .format(n_iline, nof+nlf))
+      elif nlf + nof == field_count:
+          #we may accrue these fields and output a lines
+          print("reusme ere")
 
 print("done!")

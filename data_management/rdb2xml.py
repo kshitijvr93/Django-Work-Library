@@ -16,9 +16,16 @@ document.
 
 '''
 import sys, os, os.path, platform
-modules_root="C:\\rvp\\"
-# was: dev_root=os.path.expanduser('~')
+
+platform_name = platform.system.lower()
+if platform_name == 'linux':
+    modules_root = 'tbd'
+    raise ValueError("MISSING: Enter code here to define modules_root")
+else:
+    # assume rvp office pc running windows
+    modules_root="C:\\rvp\\"
 sys.path.append('{}git/citrus/modules'.format(modules_root))
+
 print("sys.path={}".format(repr(sys.path)))
 import datetime
 import pytz
@@ -818,7 +825,7 @@ def rdb2xml_test():
   import dataset.phd
 
   d_mining_params = {'attribute_text':'text'}
-  
+
   input_folder = etl.data_folder(
   linux="/home/robert/git/", windows="C:/rvp/data/",
   data_relative_folder='outputs/xml2rdb/ccila/')
