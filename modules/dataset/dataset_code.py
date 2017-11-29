@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+# Some classes to assist in generic data wrangling for file system files AND
+# various database containers and for different utf-8 file formats
+#
 
 import os
 import csv

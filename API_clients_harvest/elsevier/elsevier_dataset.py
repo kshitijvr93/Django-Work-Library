@@ -1,24 +1,14 @@
-# -*- coding: utf-8 -*-
-# <nbformat>3.0</nbformat>
-
-# <codecell>
-
-# 20131007_dataset_unittests
-# snapshot of revision #453 - to create base more unit tests based on this code.
-
-# <codecell>
-
+# NOTE: RATHER see under modules the file dataset_code.py
+# This file will be removed once functional replacement source
+# code in modules/dataset_code.py is developed and tests OK
 import os
 import csv
 import pyodbc
 import xlrd
 import inspect
-# import xlwt
-from collections import OrderedDict
-#from airassessmentreporting.airutility import Joiner
-#-----
+import xlwt
 
-# <codecell>
+from collections import OrderedDict
 
 class SheetDictReader(object):
     """
@@ -549,9 +539,8 @@ def tvp_writeheader( self ):
             coltype = dsw.od_column_type[colname]
             line = "%s\t%s\n" % (colname, coltype)
             fh.write(line)
-
-
 # end ----------------  def tvp_writeheader() ------------------
+
 
 class Dataset(object):
 
@@ -586,6 +575,7 @@ dbms : String
 -------------
     -- csv, excel_srcn, pyodbc, hvp, tvp, fts (under construction),
     -- future possible: postgresql, sqllite3, mysql, etc...
+
 
 Parameters Where dbms='csv'(or None) and open_mode='rb'
 ========================================================
@@ -636,13 +626,13 @@ Where dbms='pyodbc' and open_mode='rb':
 server : String
 ---------------
     -- String representing the SQL Server to use.
-    -- Examples: server="DCSMITHJ1\SQLEXRESS", server="38.118.83.61"
+    -- Examples: server="localhost\SQLEXPRESS", server="128.128.66.66"
     -- Either (1) server and db are required or (2) conn is required
 
 db : String
 -----------
     -- Database to connect to.
-    -- Examples: db="testdb", db="ScoreReportingTestData"
+    -- Examples: db="testdb", db="rvp_test_db"
 
 conn: Pyodbc connection
 -----------------------
@@ -689,7 +679,7 @@ Where dbms="pyodbc" and open_mode='wb':
 server : String
 ---------------
     -- String representing the SQL Server to use.
-    -- Examples: server="DCSMITHJ1\SQLEXRESS", server="38.118.83.61"
+    -- Examples: server="localhost\SQLEXRESS", server="38.118.83.61"
 
 db : String
 -----------
@@ -1671,20 +1661,20 @@ class FastTableStreamWriter(object):
       replace=None,
       nvarchar_fixed_size=128):
         """
-NOTE::: not ready for primetime... Code is just pushed here so it does not get
-lost in case an effort to pick up this work direction is undertaken.
+NOTE: not ready for primetime... Code is just pushed here so it does not
+get lost in case an effort to pick up this work direction is undertaken.
 
-Create a table with AIR Utilities for FastTable processing and return a writer with method
-writerows() to write rows to it.
+Create a table with AIR Utilities for FastTable processing and return a writer
+with method writerows() to write rows to it.
 
-Consider: rather than here, create the table in Dataset's __init__ and allow multiple
-writers to exist that can open their own cursors to race or operate in parallel to insert
-their own rows into the table.
+Consider: rather than here, create the table in Dataset's __init__ and allow
+multiple writers to exist that can open their own cursors to race or
+operate in parallel to insert their own rows into the table.
 
 Along the same lines, but independent issue; consider allowing an option to
 specify appending to an extant table.
-For example, copy the SAS param name "replace", and if 1 then create else assume
-table exists for appending...
+For example, copy the SAS param name "replace", and if 1 then create else
+assume table exists for appending...
 
 Parameters:
 ===========
@@ -1926,7 +1916,8 @@ def test_pyodbc_tvp_001(verbosity=0):
     tddir = "C:/Users/temp_rphillips/testdata/tddir/"
     server='DC1PHILLIPSR\SQLEXPRESS'
     db='testdb'
-    dsr=Dataset(dbms='pyodbc', server=server, db=db, open_mode='rb', table='rvp_tmp_means')
+    dsr=Dataset(dbms='pyodbc', server=server, db=db, open_mode='rb',
+        table='rvp_tmp_means')
     # Define Writable dataset
     fn2_tsv = tddir + "testpyo2tvp.tsv"
     dsw = Dataset(dbms='tvp', open_mode='wb', name=fn2_tsv, verbosity=verbosity)
@@ -1963,7 +1954,7 @@ def test_csv_pyodbc_001(verbosity=False):
     iam = inspect.stack()[0][3]
     if verbosity:
         print ("%s: Starting" % iam)
-    server="DC1PHILLIPSR\SQLEXPRESS"
+    server="localhost\SQLEXPRESS"
     database='testdb'
     namer = "C:/users/temp_rphillips/testdata/means_test_read.csv"
     dsr = Dataset(open_mode='rb', dbms='csv', name=namer)
@@ -1973,7 +1964,8 @@ def test_csv_pyodbc_001(verbosity=False):
     data(dsr=dsr, dsw=dsw
          ,dict_col_name={"upcx_score":"robo_score"}
          ,default_column_spec = "varchar(67)"
-         , od_column_type=OrderedDict({"item_id":"int not null", "robo_score":"float" })
+         , od_column_type=OrderedDict(
+           {"item_id":"int not null", "robo_score":"float" })
         )
     if verbosity:
         print ("%s: Done." % iam)
@@ -1986,7 +1978,7 @@ def test_pyodbc_tsv_write_002(verbosity=0):
     iam = inspect.stack()[0][3]
     if verbosity:
         print ("%s: Starting" % iam)
-    server="DC1PHILLIPSR\SQLEXPRESS"
+    server="localhost\SQLEXPRESS"
     database='testdb'
     dsr=Dataset(open_mode='rb', dbms='pyodbc', table="rvp_tmp_means"
                   ,server=server,db=database,replace=True )
@@ -2057,9 +2049,11 @@ class TestDatacheck(unittest.TestCase):
     def setUpClass(cls):
         """
         Set up class variable 'context' for testing environment.
-        Note that the export_test.ini file is in the same directory as this test script so they can be coordinated within the project.
+        Note that the export_test.ini file is in the same directory as this
+        test script so they can be coordinated within the project.
 
-        Future: SuiteContext() could accept absolute pathname of ini file and calculate and expose realpath of ini file
+        Future: SuiteContext() could accept absolute pathname of ini file and
+        calculate and expose realpath of ini file
         """
         # Consider to add realpath and dirname to SuiteContext
         cls.dirname = os.path.dirname(os.path.realpath(__file__))
@@ -2070,7 +2064,8 @@ class TestDatacheck(unittest.TestCase):
         """
         Simple sanity checks on the context derived from our ini file.
 
-        If we need to adopt related standards, such checks may best raise exceptions in the code and/or go into SuiteContext __init__().
+        If we need to adopt related standards, such checks may best raise
+        exceptions in the code and/or go into SuiteContext __init__().
         """
         return 1
         c = self.context
@@ -2091,7 +2086,9 @@ class TestDatacheck(unittest.TestCase):
         Test longcomp()
 
         NOTE: c.tests_dir may contain ad hoc test data that is not sensitive.
-        Finally, non-sensitive input data like the ini file, and layout files should be kept under project source code control for reliable continuous integration.
+        Finally, non-sensitive input data like the ini file, and layout files
+        should be kept under project source code control for reliable continuous
+        integration.
 
         """
         # set up longcomp input datasets
@@ -2258,7 +2255,8 @@ class TestDatacheck(unittest.TestCase):
 
         dsr = Dataset(open_mode='rb', name=tdd+"students_data2.csv")
 
-        dsw = Dataset(dbms='pyodbc', table='tmp_data_test1', replace=True, columns=column_names,
+        dsw = Dataset(dbms='pyodbc', table='tmp_data_test1', replace=True,
+          columns=column_names,
           server=server, db=database, open_mode='wb')
 
         print "Run 2 of data() to copy from csv to pyodbc table 'tmp_data_test1'"
@@ -2315,7 +2313,8 @@ class TestDatacheck(unittest.TestCase):
 
         dsr = Dataset(open_mode='rb', name=tdd+"students_data2.csv")
 
-        dsw = Dataset(dbms='pyodbc', table='tmp_data_test1', replace=True, columns=column_names,
+        dsw = Dataset(dbms='pyodbc', table='tmp_data_test1', replace=True,
+          columns=column_names,
           server=server, db=database, open_mode='wb')
 
         print "Run 2 of data() to copy from csv to pyodbc table 'tmp_data_test1'"

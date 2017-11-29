@@ -1,5 +1,14 @@
 #at_remove_txt_returns.py
+# exploratory  code that is not promising, so abandoned. See notes.
 #echo input file to output but remove return characters
+# This was/is exploratory code to try to undo the odd outputs of ssms when doubling
+# save results as a .txt file... when it insists on writing newlines for certain
+#subfields of database fields.
+# CONCLUSION: this is too idiosyncratic behavior of SSMS/ SQL Server stuff, so
+# going ahead with more generally useful cod development that will do this
+# by connecting to the database with python code to dump TABLES
+# to files, bypassing use of SSMS.
+# rvp - 20171129
 
 import sys,os, os.path,platform
 sys.path.append('{}/git/citrus/modules'.format(os.path.expanduser('~')))
@@ -39,14 +48,15 @@ def process_first_line(ifile=None):
     return count
 
 # MAIN SETUP AND RUN
-file_name="c:/rvp/documents/at_accessions_input.txt"
+ifn ="c:/rvp/documents/at_accessions_input.txt"
+print("Starting using input file name={}".format(ifn))
 
-with open(file_name, mode="r", encoding='utf-8-sig',  errors='ignore') as ifile:
+ifile = open(ifn, mode="r", encoding='utf-8-sig',  errors='ignore')
+field_count = process_first_line(ifile=ifile)
+print("First line has {} fields".format(field_count))
 
-  print("starting using file_name={}".format(file_name))
-  field_count = process_first_line(ifile=ifile)
-  print("First line has {} fields".format(field_count))
-
+ofn ="c:/rvp/documents/at_accessions_output.txt"
+with open(ofn, mode="w" ) as ofile:
   #Parse a set of rows, each row made of of 'count' fields
   #and output a line for each one
   #first check the newline
@@ -54,18 +64,53 @@ with open(file_name, mode="r", encoding='utf-8-sig',  errors='ignore') as ifile:
   #is satisfied.
   #error abort if a line's cumulative field count exceeds the number of
   #expected fields.
-  n_fields = 0
   output_fields = []
   nof = 0
-  for n_iline, iline in enumerate(ifile,start=1):
-      #print("Got line='{}'".format(line))
-      fields = import package/moduleline.split('\t')
-      nlf = len(fields)
-      if nof + nlf > field_count:
-          print("Abort. Line {} accrues {} fields, too many."
-          .format(n_iline, nof+nlf))
-      elif nlf + nof == field_count:
-          #we may accrue these fields and output a lines
-          print("reusme ere")
+  nol = 0
+  for nil, iline in enumerate(ifile, start=2):
+      fields = iline.split('\t')
+      nif = len(fields)
+      print("Got input line {}='{}'\n --- iline {} with nif={},nof={}"
+        .format(nil,iline,nil,nif,nof))
+
+      if nif == 1 :
+          # Here, this is an 'artifact' line of silly ssms output
+          # of some fields with newlines, so we append to last
+          #output field. We do not increment nof.
+          f = fields[0]
+          print("Appending subfield='{}'".format(f))
+          f=f.replace('\n','|')
+          output_fields[nof-1] = output_fields[nof-1] + f
+          nif = 0
+          #will next syntax work?
+          #output_fields[nof-1] += fields[0]
+      elif nof + nif == field_count +1:
+          #This is the first line after the artifact-lines, so a secondary
+          #artificat. We ignore the first field
+          fields = fields[1:]
+          nof += nif - 1
+      else:
+          #here we have multiple fields, in a line from ssms results,
+          #so experience shows we extend the fields
+          output_fields.extend(fields)
+          nof += nif
+
+      print("Input line {}. nif={},nof={}, fields={}".format(nil,nif,nof,fields))
+      if nof  > field_count:
+          msg = ("Abort. Line {} accrues {} fields, too many. {}"
+          .format(nil, nof,iline))
+          sys.stdout.flush()
+          raise ValueError(msg)
+      elif nof == field_count:
+          nol += 1
+          print("{}:{}".format(nol,output_fields),file=ofile)
+          output_fields=[]
+          nof = 0
+      #
+    #endfor nil,iline
+  print("Finished reading {} lines from {}".format(iline,ifn))
+  #end while
+close(ifile)
 
 print("done!")
+sys.stdout.flush()
