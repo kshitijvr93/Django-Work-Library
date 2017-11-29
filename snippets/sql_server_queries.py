@@ -242,6 +242,10 @@ def alter():
     'userDefinedText3',
     'userDefinedText4'
     ]
+    s = '''declare @NewLine char(1);
+set @NewLine=char(0xa);'''
+    print(s)
+
     for t in tfields:
 
         a = 'alter table dbo.accessions_rvp alter column'
@@ -251,12 +255,7 @@ def alter():
           )
         #print(s)
         #phase 2 - print for this template:
-        s = '''
---
-declare @NewLine char(1);
-set @NewLine=char(0xa);
-
-UPDATE  accessions_rvp set {} =Replace({} , @NewLine,' | ')
+        s = '''UPDATE  accessions_rvp set {} =Replace({} , @NewLine,' | ')
 WHERE {} like '%' +@NewLine +'%';
 --
 '''.format(t,t,t)
