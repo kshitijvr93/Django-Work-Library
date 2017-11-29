@@ -29,9 +29,10 @@ class DBConnection():
             self.db = db
 
         self.verbosity = verbosity
+        self.out_delim = out_delim
         if out_delim is None:
             # silly clause, but just in case a caller sets this to None
-            self.outdelim = '|'
+            self.out_delim = '|'
 
         self.cxs = ("DRIVER={SQL Server};SERVER=%s;"
               "dataBASE=%s;Trusted_connection=yes"
@@ -41,7 +42,8 @@ class DBConnection():
             self.conn = pypyodbc.connect(self.cxs)
         except Exception as e:
             print(
-              "Connection attempt FAILED for:\n'{}',\ngot exception:\n'{}'"
+              "Connection attempt FAILED for:\n'{}',\n"
+              "Got exception:=====\n'{}'\n====="
               .format(self.cxs,repr(e)))
             raise ValueError("{}: Error. Cannot open connection."
                 .format(repr(self)))
@@ -56,19 +58,20 @@ class DBConnection():
               "%s: ERROR - Cannot open cursor." % repr(self))
 
     # query(): given query string, return a tuple of
-    # [0] - header string of column names, [1] list of result rows, separated by self.outdelim
+    # [0] - header string of column names, [1] list of result rows, separated by
+    # self.out_delim
     def query(self, query=''):
         cur = self.cursor.execute(query)
         header = ''
         for i, field_info in enumerate(cur.description):
-            header += self.outdelim if i > 0 else ''
+            header += self.out_delim if i > 0 else ''
             header += field_info[0]
 
         results = []
         for row in cur.fetchall():
             result = ''
             for (i, field_value) in enumerate(row):
-                result += self.outdelim if i > 0 else ''
+                result += self.out_delim if i > 0 else ''
                 result += str(field_value)
             results.append(result)
         return header, results
@@ -136,23 +139,6 @@ def select_ls_item_piis(conn, ntop=3):
 
 
 ############################ START CONNECTION ##########################
-d_dbname_params = {
-  'sobek_production': {
-      'server':'lib-sobekdb\\SobekCM',
-      'db'    :'sobekdb'},
-
-  'archivists_toolkit': {
-      'server': 'lib-ill\\ariel',
-      'db'    :'archiviststoolkit'},
-
-  'sobek_rvp_local' : {
-      'server':'localhost\\SQLExpress',
-      'db'    :'rvp_test_sobekdb'},
-
-  'sobek_integration_test' : {
-      'server': 'lib-ufdc-cache\\ufdcprod,49352',
-      'db'    :'SobekTest'},
-}
 def connect(dbname=None):
     if dbname is None:
         raise ValueError("dbname parameter is missing")
@@ -160,19 +146,71 @@ def connect(dbname=None):
 
     dbname = dbname
     d_params = d_dbname_params[dbname]
-    print('###### START CONNECTION for {}#####'.format(d_params))
+    print('###### START CONNECTION for {} #####'.format(d_params))
 
     prod_conn = DBConnection(d_params=d_params)
 
-    print("Succeded: prod_conn is {}. prod_conn.server={}, conn.db={}, cxs='{}'. Done."
+    print("Succeeded: prod_conn is {}. prod_conn.server={}, conn.db={}, cxs='{}'. Done."
       .format(repr(prod_conn), prod_conn.server, prod_conn.db, prod_conn.cxs))
 
     print("Got connection OK.")
+    return prod_conn
 
 # Run
+d_dbname_params = {
+  'sobek_production': {
+      'server':'lib-sobekdb\\SobekCM', 'db'    :'sobekdb'},
 
-#dbname='archiviststoolkit'
+  'archivists_toolkit': {
+      'server': 'lib-ill\\ariel', 'db'    :'ArchivistsToolkit'},
+
+  'sobek_rvp_local' : {
+      'server':'localhost\\SQLExpress', 'db'    :'rvp_test_sobekdb'},
+
+  'silo' : {
+      'server':'localhost\\SQLExpress', 'db'    :'silodb'},
+
+  'sobek_integration_test' : {
+      'server': 'lib-ufdc-cache\\ufdcprod,49352', 'db'    :'SobekTest'},
+}
+
+dbname='sobek_production'
+dbname='sobek_integration_test'
 dbname='sobek_rvp_local'
-connect(dbname=dbname)
+dbname = 'silo'
+dbname='archivists_toolkit'
+
+def test_at():
+    dbname='archivists_toolkit'
+    connect(dbname=dbname)
+
+def silo_table_dump(table_name=None):
+    if table_name is None:
+        raise ValueError("table_name arg is missing")
+    dbname = 'silo'
+    cn = connect(dbname=dbname)
+    print("For dbname  {}, got connection=={}"
+        .format(dbname,repr(cn)))
+    return cn.query('select * from {}'.format(table_name))
+
+def dbname_query(dbname=None, query=None):
+    cn = connect(dbname=dbname)
+    print("Successful connection string={}")
+    return cn.query(query)
+
+dbname = 'archivists_toolkit'
+query =  'select * from accessions'
+# these 2 work ok 20171129
+dbname = 'silo'
+query = 'select * from ccila_record'
+
+dbname = 'archivists_toolkit'
+query =  'select * from accessions'
+
+header, results = dbname_query(dbname=dbname, query=query)
+
+print("Got header={}".format(repr(header)))
+print("Got {} rows".format(len(results)))
+
 print ("Done!")
 sys.stdout.flush()
