@@ -198,19 +198,71 @@ def dbname_query(dbname=None, query=None):
     print("Successful connection string={}")
     return cn.query(query)
 
-dbname = 'archivists_toolkit'
-query =  'select * from accessions'
-# these 2 work ok 20171129
-dbname = 'silo'
-query = 'select * from ccila_record'
+def run_query():
+    dbname = 'archivists_toolkit'
+    query =  'select * from accessions'
+    # these 2 work ok 20171129
+    dbname = 'silo'
+    query = 'select * from ccila_record'
 
-dbname = 'archivists_toolkit'
-query =  'select * from accessions'
+    dbname = 'archivists_toolkit'
+    query =  'select * from accessions'
 
-header, results = dbname_query(dbname=dbname, query=query)
+    # next pair works ok 20171129
+    dbname = 'sobek_rvp_local'
+    query = 'select * from sobekcm_settings'
 
-print("Got header={}".format(repr(header)))
-print("Got {} rows".format(len(results)))
+    dbname = 'archivists_toolkit'
+    query =  'select * from accessions'
 
-print ("Done!")
+    header, results = dbname_query(dbname=dbname, query=query)
+
+    print("Got header={}".format(repr(header)))
+    print("Got {} rows".format(len(results)))
+
+
+#gen alter statements
+def alter():
+    tfields = [
+    'accessionDispositionNote',
+    'description',
+    'inventory',
+    'title',
+    'containerSummary',
+    'conditionNote',
+    'processingPlan',
+    'retentionRule',
+    'catalogedNote',
+    'accessRestrictionsNote',
+    'useRestrictionsNote',
+    'generalAccessionNote',
+    'rightsTransferredNote',
+    'userDefinedText1',
+    'userDefinedText2',
+    'userDefinedText3',
+    'userDefinedText4'
+    ]
+    for t in tfields:
+
+        a = 'alter table dbo.accessions_rvp alter column'
+        s = (
+          '{} {} nvarchar(4000);'
+          .format(a,t)
+          )
+        #print(s)
+        #phase 2 - print for this template:
+        s = '''
+--
+declare @NewLine char(1);
+set @NewLine=char(0xa);
+
+UPDATE  accessions_rvp set {} =Replace({} , @NewLine,' | ')
+WHERE {} like '%' +@NewLine +'%';
+--
+'''.format(t,t,t)
+        print(s)
+#end def alter
+alter()
+
 sys.stdout.flush()
+print ("Done!")
