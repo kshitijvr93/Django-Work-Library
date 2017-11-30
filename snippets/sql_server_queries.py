@@ -255,8 +255,9 @@ def alter():
     sql_update = (
       'declare @NewLine char(1);\n'
       'declare @TabChar char(1);\n'
+      'declare @CarriageReturn char(1);\n'
       'set @NewLine=char(0xa);\n'
-      'set @TabChar=char(0x9);\n'
+      'set @TabChar=char(0xd);\n'
     )
     for table in d_table_fields.keys():
         sql_alter += ("\n-- table {}\n".format(table))
@@ -276,6 +277,13 @@ def alter():
               "UPDATE  {} set {}="
               "Replace({} , @TabChar,' | ') "
               "WHERE {} like '%' +@TabChar +'%';\n"
+                .format(table,f,f,f)
+            )
+            # Use just a space for carriage return
+            sql_update += (
+              "UPDATE  {} set {}="
+              "Replace({} , @CarriageReturn,' ') "
+              "WHERE {} like '%' +@CarriageReturn +'%';\n"
                 .format(table,f,f,f)
             )
         #end fields

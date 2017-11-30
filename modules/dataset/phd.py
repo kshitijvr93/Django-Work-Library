@@ -38,7 +38,6 @@ import lxml
 #from dataset.ordered_relation import OrderedRelation
 
 
-
 class PHD():
 
     def __init__(self, input_folder=None, output_folder=None, xml_mining_map_root=None
