@@ -157,7 +157,8 @@ def connect(dbname=None):
     return prod_conn
 
 # Run
-d_dbname_params = {
+#
+d_ufname_params = {
   'sobek_production': {
       'server':'lib-sobekdb\\SobekCM', 'db'    :'sobekdb'},
 
@@ -174,21 +175,22 @@ d_dbname_params = {
       'server': 'lib-ufdc-cache\\ufdcprod,49352', 'db'    :'SobekTest'},
 }
 
-dbname='sobek_production'
-dbname='sobek_integration_test'
-dbname='sobek_rvp_local'
-dbname = 'silo'
-dbname='archivists_toolkit'
+# "UF" db names reachable only from UF VPN
+ufname='sobek_production'
+ufname='sobek_integration_test'
+ufname='sobek_rvp_local'
+ufname = 'silo'
+ufname='archivists_toolkit'
 
 def test_at():
-    dbname='archivists_toolkit'
-    connect(dbname=dbname)
+    ufname='archivists_toolkit'
+    connect(dbname=ufname)
 
 def silo_table_dump(table_name=None):
     if table_name is None:
         raise ValueError("table_name arg is missing")
-    dbname = 'silo'
-    cn = connect(dbname=dbname)
+    ufname = 'silo'
+    cn = connect(dbname=ufname)
     print("For dbname  {}, got connection=={}"
         .format(dbname,repr(cn)))
     return cn.query('select * from {}'.format(table_name))
