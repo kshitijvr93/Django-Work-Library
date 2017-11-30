@@ -225,43 +225,66 @@ def run_query():
 
 #gen alter statements
 def alter():
-    tfields = [
-    'accessionDispositionNote',
-    'description',
-    'inventory',
-    'title',
-    'containerSummary',
-    'conditionNote',
-    'processingPlan',
-    'retentionRule',
-    'catalogedNote',
-    'accessRestrictionsNote',
-    'useRestrictionsNote',
-    'generalAccessionNote',
-    'rightsTransferredNote',
-    'userDefinedText1',
-    'userDefinedText2',
-    'userDefinedText3',
-    'userDefinedText4'
-    ]
-    s = '''declare @NewLine char(1);
-set @NewLine=char(0xa);'''
-    print(s)
+    d_table_fields = {
+      'accessions_rvp': [
+        'accessionDispositionNote',
+        'description',
+        'inventory',
+        'title',
+        'containerSummary',
+        'conditionNote',
+        'processingPlan',
+        'retentionRule',
+        'catalogedNote',
+        'accessRestrictionsNote',
+        'useRestrictionsNote',
+        'generalAccessionNote',
+        'rightsTransferredNote',
+        'userDefinedText1',
+        'userDefinedText2',
+        'userDefinedText3',
+        'userDefinedText4'
+        ],
+      'names_rvp': [
+        'descriptionNote',
+        'citation',
+      ]
+    }
 
-    for t in tfields:
+    sql_alter = "use [archiviststoolkit];\n"
+    sql_update = (
+      'declare @NewLine char(1);\n'
+      'declare @TabChar char(1);\n'
+      'set @NewLine=char(0xa);\n'
+      'set @TabChar=char(0x9);\n'
+    )
+    for table in d_table_fields.keys():
+        sql_alter += ("\n-- table {}\n".format(table))
+        sql_update += ("\n-- table {}\n".format(table))
+        for f in d_table_fields[table]:
+            sql_alter += ("alter table {} alter column {} {}"
+                .format(table,f," nvarchar(4000);\n"))
 
-        a = 'alter table dbo.accessions_rvp alter column'
-        s = (
-          '{} {} nvarchar(4000);'
-          .format(a,t)
-          )
-        #print(s)
-        #phase 2 - print for this template:
-        s = '''UPDATE  accessions_rvp set {} =Replace({} , @NewLine,' | ')
-WHERE {} like '%' +@NewLine +'%';
---
-'''.format(t,t,t)
-        print(s)
+            # replace pesky carriage returns
+            sql_update += (
+              "UPDATE  {} set {}="
+              "Replace({} , @NewLine,' | ') "
+              "WHERE {} like '%' +@NewLine +'%';\n"
+                .format(table,f,f,f)
+            )
+            sql_update += (
+              "UPDATE  {} set {}="
+              "Replace({} , @TabChar,' | ') "
+              "WHERE {} like '%' +@TabChar +'%';\n"
+                .format(table,f,f,f)
+            )
+        #end fields
+    #end tables
+    print(sql_alter)
+    print("GO")
+    print(sql_update)
+    print("GO")
+
 #end def alter
 alter()
 
