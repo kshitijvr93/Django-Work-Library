@@ -6,146 +6,223 @@ Had less coding before.. and now pure code camp...
 Mark provided a new item viewer jpeg plugin that we now use at uf..
 and now we have a plugin.. and
 richard bernardy has been using plugins since december 2016
-rb is exploiting the html viewer.. and all thetext fields.. in some records that broke articles to pdfs, i jus tused the downloads iewer, and I usd the html viewer for other
-and if we culd add order values to download vierer it would be good
+
+rb is exploiting the html viewer.. and all the text fields..
+in some records that broke articles to pdfs,
+i just used the downloads viewer, and I used the html viewer for other
+and if we could add order values to download viewer it would be good
 
 mvs - you just added the viewer
-rb - no that was my last viewer.. it seems to be the alst pdf in the struct map
-msv it should have a order, we can do that and make another demo viewer that acknowledges the order
-mvs so ht html tags hothers ahve erquested and we have another ticket from london to put in a carriage return tab..
-and so we need a solution to talk about mroe maybe ehre
+rb - no that was my last viewer.. it seems to be the last pdf in the struct map
+mvs it should have a order, we can do that
+and make another demo viewer that acknowledges the order
+mvs so the html tags others have requested and we have another ticket from
+london to put in a carriage return tab..
+and so we need a solution to talk about more maybe here
 rb and here another
 
-rb but another thing we can think of is usig the wiki context stuff, like
-** becomes double-bulleted.. or we could choose html slashes vs wiki style editing.. and github does it.. and wikipedia does it..
-it seems slightly more accesible for other md entry users
-rb the other big thing is limited nature of the resource type fropdown
-mvs itis only r list for upcoming
-rb overall i need to do more work.. well i do local customizations in js, and other big one.. is .. updating iface fro validationafor html5 validation
-and mvs we want to be html5 valid, but if we are not, please chane the core code and fix and resubmit
-rb - i had a demo that was mobile iface., started, and director of mktg kiled that
-and responsive design regular html i ahe not gotten to yet
+rb but another thing we can think of is using the wiki context stuff, like
+** becomes double-bulleted..
+or we could choose html slashes vs wiki style editing..
+and github does it.. and wikipedia does it..
+it seems slightly more accesible for other metadata, md, entry users
+rb the other big thing is limited nature of the resource type dropdown
+mvs it is only r list for upcoming
+rb overall i need to do more work.. well i do local customizations in js,
+and other big one.. is .. updating iface from validation for html5 validation
+and mvs we want to be html5 valid, but if we are not,
+please change the core code and fix and resubmit
+rb - i had a demo that was mobile iface, started, and director of mktg killed that
+and responsive design regular html i have not gotten to yet
+
 mvs is html 5 invalid
-rb I used, I amd switching to chrome but use firefox now and I use alidation all the time and there are tons of woarnings and error wrt responsiveness tags
-mvs - the responsive thing is another topic we want to addres.
-mvs my feeling is this sie is image driven, and there are mny options you can do..
-it is not like take my corp website and maek ti responsive
-and have been working on making the web aldo a mobile sie.. maybe with new webskins and simpler features.. and if youw ant to do it.. and you can do it as a plugin..
-and when at menhu.. iteim or collection level you can cr a new iewer and offer as a new pluin,..
-rb i wil have to, and ai work with another entity and launch deadline is first day of fall classes, and i ened mroe guidance, and i realied it could be done in tnew top level directory so we can presever our digital url
+rb I used, I am switching to chrome but use firefox now and I use validation
+all the time and there are tons of warnings and error with respect to (wrt)
+responsiveness tags
+mvs - the responsive thing is another topic we want to address.
+
+mvs my feeling is this site is image driven, and there are many options you can do..
+It is not like take my corp website and make it responsive
+and have been working on making the web also a mobile sie..
+maybe with new webskins and simpler features..
+and if you want to do it.. and you can do it as a plugin..
+and when at menu.. item or collection level you can create, cr, a new viewer
+and offer as a new pluin,..
+rb i will have to, and ai work with another entity and launch deadline is
+first day of fall classes, and i need more guidance, and i realized it could
+be done in new top level directory so we can preserve our digital url
 and
-mvs and admin pages i have no itnetnion of changing...
-mvs and wrt better support for other langs, i do not intend to offer for admin pages.. too many
-rb has a coupe of examples to discuss..
-mvs - and good exmaples.. and item viewer you shoul can make look like dml? or etc. nad we will talk about item layout mroe
-and the enw strucutre will use the item layout model for collections, and you can also use that for collections, for config, viewers or layout template, and the newe verison out there i beilive ahs the layout as well.
+mvs and admin pages i have no itention of changing...
+mvs and wrt better support for other langs, i do not intend to offer for
+admin pages.. too many
+rb has a couple of examples to discuss..
+mvs - and good exmaples.. and item viewer you should/can make look like dml?
+or etc.
+and we will talk about item layout more
+and the new strucutre will use the item layout model for collections,
+and you can also use that for collections, for config, viewers or layout template,
+and the new version out there i believe has the layout as well.
 -
-patrick projects - nothing special except looking at some errors and stuff that they thnik it sould be and we are doing retoolig of backend pieces that doe bulk stuff.
+patrick projects - nothing special except looking at some errors and stuff
+that they think it should be and we are doing retooling of backend pieces
+that does bulk stuff.
 and mvs wants to sit down with us, as the new stuff, and t
-patrick and the lem serer, and jacskon is rewritin soem ndnp stuff..
-jackson- there was. aissue, 4.10 had to include new librarires and the conencton stirng hadlin in ndpn and open and save of mets also changed in 4.10 so all had to be updated.
-ands wwhen ne bib,s a new call has to be made.. j
-mvs and you can define workflows of image cleanu with lem server,..and it is eas to apply too much cleanup and laod to an ftp server.
-mvs - and can meet with mark along with chelsea, and fiu also uses it... ie the lem stuff tmvs saw the guy who is diong images work
+patrick and the lem serer, and jacskon is rewriting some ndnp stuff..
+jackson- there was an issue, 4.10 had to include new libraries and the
+connection string handling in ndnp and open
+and save of mets also changed in 4.10 so all had to be updated.
+ands when new bibs a new call has to be made.. j
+mvs and you can define workflows of image cleanup with lem server,..
+and it is easy to apply too much cleanup and load to an ftp server.
+mvs - and can meet with mark along with chelsea, and fiu also uses it...
+ie the lem stuff mvs saw the guy who is doing images work
 and there is a gigantic list --
-rbb we ot a new copy book to replace our boren one tand hey wanted to sell us a lot fo software
-ms -and with lem stuff you wont need to use the dlc toolbox, and it uses, changes the sindows app the qc tool they hae een usin forever..
+rb we got a new copy book to replace our boren one and they wanted to sell
+us a lot fo software
+mvs -and with lem stuff you wont need to use the dlc toolbox, and it uses,
+changes the windows app the qc tool they have been using forever..
 and patrick
-ps she does use both the web version and edesktop ersion  - jane penn--  s - it would be good to know why she si not using the web completely
-alls the dlc toolbo did was build image deivs whcih buildr now does and lem will do, and does soem qc and ftps it up to the server, but now can only drafg and drop to the folde..
+ps jane penn, she does use both the web version and desktop version
+it would be good to know why she is not using the web completely
+all the dlc toolbox did was build image derivs which builder now does
+and lem will do, and does some qc and ftps it up to the server,
+but now can only defrag and drop to the folder..
 and we can drop support with the toolbox.
-jl stuff
-he has beenworking on nonseobken elated and our tivoli has been actin up
+jl jackson looney stuff
+he has beenworking on nonsobeke elated and our tivoli has been acting up
 mvs do you pay fro tivoli
 jl we do pay for it and is more expensive that google cloud
-mvs - we charge by sie of repos to our customers, but we do not keep their masger tiffs, and we consider a sobek integrated archival ssystem .. that loks at glacier, microsoft,
-rb is begging for glacier, most felexible and shceaper, and ok to wait 6 hours then it is fine
-mvs will shae wht he is looing at
+mvs - we charge by size of repos to our customers, but we do not keep their
+master tiffs, and we consider a sobek integrated archival system ..
+that looks at glacier, microsoft,
+rb is begging for glacier, most flexible and cheaper,
+and ok to wait 6 hours then it is fine
+mvs will share what he is looing at
 and
-jl they do not like to wait mroe than 30 seconds..
+jl they do not like to wait more than 30 seconds..
 jl - google cloud has retrievals..
 -
 t0841
-- mvs for us we wantd to spread it across ultipel vendor.. i have nto pricedd google cloud itn a while.. but bit.
-and paul
-is with sobek digital and aoperations.. and ethe archving thening they look at, and beten strating to look work with per metrics and sobek cm in the cloud
-and paul sullivan is on amaon.. psul..
+- mvs for us we want to spread it across multiple vendor..
+i have not priced google cloud in a while.. but bit.
+and paul sullivan
+is with sobek digital and operations.. and the archving thening they look at,
+and beten strating to look work with per metrics and sobek cm in the cloud
+and paul sullivan is on amazon.. psul..
+
 mvs and a good oppty ..
-mvs has been developing uf for 10 or 12 years, orig for dloc project and another we started sobek, for historical societies to submit materials...
-then we open sourced in 6 years ago and I left UF to be able to market the software.. andwe have een around for about 3 years.. and supporint storage
+mvs has been developing uf for 10 or 12 years, orig for dloc project
+and another we started sobek, for historical societies to submit materials...
+then we open sourced in 6 years ago and I left UF to be able to market the
+software.. and we have been around for about 3 years.. and supporing storage
 ud using oreo libray is using sobek and wanted mvs to host it
-and we have beenw riting as open source, and trying to drive to 5.0
-and mvs is seeing light at end of utnnell
-and 5.0 is gib next step
-and soem blugins will be open sourced and some subscription based
+and we have been writing as open source, and trying to drive to 5.0
+and mvs is seeing light at end of tunnell
+and 5.0 is big next step
+and some plugins will be open sourced and some subscription based
 and we will have an app store to register plugins..
 -
-mvs the alst switch ... per the roadmap, we hav to reindex every item in repo, so we do that in verison 5.0
-we have had problems with our solr service  host stopping responding... so why not support old solr and new solr simulatatneosusly.. we can run 3.6 and 6.0 is now out so in 6.0 can connect to it and it will connect as a sql complient db, and can do some nice selects, so less of a black box
+mvs the last switch ... per the roadmap, we have to re-index every item in repo,
+so we do that in verison 5.0
+we have had problems with our solr service  host stopping responding...
+so why not support old solr and new solr simulatatneosusly..
+we can run 3.6 and 6.0 is now out so in 6.0 can connect to it and it will
+connect as a sql complient db, and can do some nice selects, so less of a
+black box
 mvs continuing..
-can look at all data indexed on it, and we may switch to it and have option to go the nwer solr soon, but not nec md searching at first,and problably 4 months out, as with 5.0..
-rb so ththey wanted full text search as default, and not all items have full text.. and that has proved popular..
-and so one professor i mentioned i cannot convince.. the name of the collection is crom, and one itm has 'crom' in the full text that is not related to his collection, and he thingks something i wrong, but no, but a challenge to explain to professors
+can look at all data indexed on it, and we may switch to it and have option
+to go the nwer solr soon, but not nec md searching at first,
+and probably 4 months out, as with 5.0..
+
+rb so they wanted full text search as default, and not all items have full text..
+and that has proved popular..
+and so one professor i mentioned i cannot convince.. the name of the collection
+is crom, and one item has 'crom' in the full text that is not related to
+his collection, and he thingks something i wrong, but no, but a challenge to explain to professors
 
 rb and I returned to the prof a forensic analysis of search results
 and stil not satisfied..
 --
-mvs I was thinking about newpapers and helpful to look fo r'gaiensville sun" together
-mvs and I want to be able to collaspe enwpapers into titles..
-mvs and search for gainesvill sun... can get you into tons and tons of issues... maybe a problem?
-and we use full text indexing on the sql is how we do full text indesing, and problems a is have to choose languaged for the dict and b identifiers with peridos are splitted and it causes failures, so we need speical code for identifier search
+mvs I was thinking about newspapers and helpful to look for "gainesville sun"
+together
+mvs and I want to be able to collapse newspapers into titles..
+mvs and search for gainesville sun...
+can get you into tons and tons of issues... maybe a problem?
+and we use full text indexing on the sql is how we do full text indexing,
+and problems a is have to choose language for the dict and b identifiers
+with periods are splitted and it causes failures, so we need special code
+for identifier search
 --
-and now we look at our schedule... and we will talk fo ra hsort bit and give a chance to work on it.
-and helpful to show some ot ehe work wwe have done to show what we have done, or the group.
-and mvs has proposed som thingss...with the schedule.
+and now we look at our schedule... and we will talk for a short bit
+and give a chance to work on it.
+and helpful to show some of  the work we have done to show what we have done,
+or the group.
+and mvs has proposed some things...with the schedule.
 t0903 -
-mvs - the litltem fda xml files are now downloadable - an issue to fix. so maybe we should be able to add a sobek... xml file of different type.
+mvs - the litltem fda xml files are now downloadable - an issue to fix.
+so maybe we should be able to add a sobek... xml file of different type.
 --
-rb new types of content like rti is jpegs and xml files and the 3d models and texture files are..
-mvs - if oen wanted to use viewer to maek a thousand jpeg slices.
+rb new types of content like rti is jpegs and xml files and the 3d models
+and texture files are..
+mvs - if oen wanted to use viewer to make a thousand jpeg slices.
 --
-mvs we switch the sceduel a it
-today we will cover add new gneing endpoint
-and we add in bulk uploading.. and we can propose anyting else..
+mvs we switch the schedule a bit
+today we will cover add new engine endpoint
+and we add in bulk uploading.. and we can propose anything else..
 -
-topic new engine endpoint
-so think of soemething you want to handle
-coud include an entirely new structure to ssokekcms databbase like a new ead viwer with awhole other structure, showing how ontianers link, and you wnat to upullthat strucure out for another external system
+------- topic new engine endpoint
+
+so think of something you want to handle
+could include an entirely new structure to sobekcms database like a new ead
+viewer with a whole other structure, showing how containers link,
+and you wnat to pull that structure out for another external system
 and think of a report you might want to use
-so if you writ a reporting thing it is simple to tie into html or serve item info a differetn way..
+so if you write a reporting thing it is simple to tie into html or serve
+item info a different way..
 
 and we will add a new endpoint to add a results viewer in a different format
 so lets think about that..
+
 the endpoint topic is at 2:15 today that is..
-Now topic is git basics..
+
+--------- Now topic is git basics..
+
 example repo: https://github.com/SobekDigital/HolaCampistas
 so github.. is .. all topics today are same for github or gitlab
 or sach, not svn though.
 
-mvs likes to use git app separately.. and he usu closes visual studio and launches exernailly
-intalling gitextensio is fyou wna tit:
-downlaod installer: https://gitextensions.github.io
+mvs likes to use git app separately..
+and he usu closes visual studio and launches externally
+installing git extensions, if you want it:
+download installer: https://gitextensions.github.io
 -
--mvs we do not have anytying wathiching the cod now,
-i am looking itno an auto comipile when a coe is comittd.. so i want o reject commits that do not compile using jenkins or hudson.. but team foundation is expensive
-so iwhen I get the code woring for jenkins or hudson... or it is travis has feremiu  minor editions..
-- freemium
+-mvs we do not have anything watching the code now,
+i am looking itno an auto comipile when a code is committed..
+so i want to reject commits that do not compile using jenkins or hudson..
+but team foundation is expensive so when I get the code working for jenkins
+or hudson... or it is travis, that has 'freemium'  minor editions..
+
 jl - travis is nice too
 - jl they also - can pay $70/month for their code..
-t
+
 - today we do hands on to pull down repo and make changes,
 t1040
-fedoria is one of largest open source projects, but for now only 5 of us here, and he may delegate authority to approve pull equests to one of us...
-rb: one plugins came out, it i safer now.. for us to work with
+
+fedora is one of largest open source projects,
+but for now only 5 of us here, and he may delegate authority to approve
+pull requests to one of us...
+
+rb: one plugins came out, it is safer now.. for us to work with
 and so now the pace of the sobek changes have slowed down in last month or so
-mvs
-and in genrql velociy of changes will slow because we make ore things configurtion and plugin driven.. and for exampels changing base functionality will e rarer neeed
+mvs: and in general velocity of changes will slow because we make ore things
+configuration and plugin driven..
+and for example changing base functionality will be rarely neeed
 
 So please do merge and submit any code you do..
 
-msv - So we will talk about results viewer here .. but if we did
-make changes and wanted to add soem functionality..
-and msv says for rb one example is timeline..
+mvs - So we will talk about results viewer here .. but if we did
+make changes and wanted to add some functionality..
+and mvs says for rb one example is timeline..
 and we talked about harvesting.. ..
 
 -- and mvs says there are some things like generic harvesting sources..
@@ -159,25 +236,29 @@ and mvs knows of 2 companies adding to code,
 2) and another group with more localization strings to support,
 about 14 asiatic languages, and that would be only a configuration file...
 - --
-submit often and submit a lot is msv invitation
+submit often and submit a lot is mvs invitation
 
 rb: says he needs to learn the cpt variable name, the inserts or the 'directives'
-mvs yes we call them diretives, where we insert version numer or id
+
+mvs yes we call them directives, where we insert version number or id
 mvs I have considered a way to make that extensible to create your own
 small chunk of code...
 
-so we are talking now, next topic is on the road to version 5 from t1045 to t1130
+So we are talking now, next topic is on the road to version 5
+slated for from t1045 to t1130
+
 We will talk thru the changes.. and we will talk about plugin later from 1130-1230
+
 version 5 idea is more api driven architecture, less monolithic code
 and we are 2 years into this change
 and it was well organized into enumerations nicely mentally
-diveded it was,  but harder to pull into many libraries
-Now we are pushing enumeratios into configurations files for easier changes
+divided it was,  but harder to pull into many libraries
+Now we are pushing enumerations into configurations files for easier changes
 and another major part is to expose data through the config files
 so we can understand what code is doing, how configured...
 
 mvs continues
-now looking at settings/sytem-wide settings
+now looking at settings/system-wide settings
 and we have a new collection wizard
 but system-wide settings is newly organized..
 and it is most 90% now in config files and 10% in database, and
@@ -185,8 +266,10 @@ the item viewers are in th db per item..
 so need some db data on viewers.
 and diff info on md? is in config files
 and new way to create own item viewers is here now too
+
 and go to sobekrepository.org and left margin go to
-technicahelp/development/future...
+technical help/development/future...
+
 that section of page links is now lately maintained.. see text there..
 now it shows version 4.11  list, today.
 
@@ -197,19 +280,19 @@ github daily version
 
 and item mgmt changes item will be in next version,  but this
 version has all architecture changes, version 4.11 that is..
-and we add more system wide editable settings.., adding usage
+and we add more system wide editable settings.. adding usage
 email eg to system wide settings
 
 and this is first one ..
 
-jl - was an issue with the template themselves not includig  the
+jl - was an issue with the template themselves not including  the
 email address on them,
 jl so we should look at our templates
 mvs yes - and I will look at that with you...
-yes, another major change.. is now.. under config/user, and also
-under many places we have added user folders and default folders.
+yes, another major change.. is now.. under config/user,
+and also under many places we have added user folders and default folders.
 
-So now see mySobek/tmplates/default is there.. the default templates
+So now see mySobek/templates/default is there.. the default templates
 had removed the email addresses
 
 So if make a dlocxml and .. so it will look in default first and
@@ -217,98 +300,111 @@ then look in mySobek/templates/user
 
 so the same now with config files, and we should not update the default ..
 
-I can make a user folder that will be honoroed to hold the
+I can make a user folder that will be honored to hold the
 configuration of item viewers.
 
 -- and we also .. now the
 mvs: re the usage email info
-and two more are not now schedulable, but if builder just start
-there are a few that are doe..
+and two more are not now schedulable,
+but if builder just start there are a few that are done..
 but we will add scheduling.. and in future builder will run as a service
 and get fired up but in future it will be a service
 So now it turns itself off at 11pm and back on at 4am...
 but it will soon be a true windows service, so there will not a
-startup... really, so it will hadle schedulable tasks..
+startup... really, so it will handle schedulable tasks..
 so it will become scheduled tasks, in the db, and we work on
 finishing web gui to set them ..
 
 now looking at version 4.12.
 and we are doing more item mgmt stuff,
 and the time beh screen will change and the templates
-and now you just assign little elts in the template files, for
+and now you just assign little elements, elts, in the template files, for
 also editing md and editing behaviors
-and it will change.. and can say create a whole item template page
-and the thumbail will be its own whole item page
+and it will change..
+and can say create a whole item template page
+and the thumbnail will be its own whole item page
 and we added a lot of possibility for item viewers
 
-For inividual items you can change order of the viewers, eg for
+For individual items you can change order of the viewers, eg for
 aerials.. to show the map instead of the first jpeg..
 So for individual item you may want the google map to be the
 first view or you may want it to say tiles instead of map.. and so now you
 can label your viewers, and it will become available via the user iface..
 
-mvs does not like to tie anything to agggregtions, but items can
+mvs does not like to tie anything to aggregations, but items can
 be in multiple aggregations and it becomes a free-for-all..
 
-mvs - and also in v 5.0 is idea of projects - and you would tie
+mvs - and also in v5.0 is idea of projects - and you would tie
 diff info to the project like viewers
 or you can say an item goes into a project to inherit default
-behaviors (as we can already inherit defaut md)..
+behaviors (as we can already inherit default md)..
 --
 
-and usu, usually,  we will add new functionality with plugins and it gives us
-more power ourselves,, and basic architectural changes will slow down
+and usu, usually,  we will add new functionality with plugins
+and it gives us more power ourselves,
+and basic architectural changes will slow down
 and the goal is to not make changes to base code as often
+
 t1102
 mvs maybe some v4.12 features will come out sooner, ie
 the system wide settings
+
 and v 4.12 item 3 - add bulk spreadsheet and marc importer to the
 web interface -- mark is going to support soon..
 and may make a way to save their mappings, and it will be sent
 to builder to do the importing..
 mvs So that is a gigantic piece -
 we purchased a new company last year with 8 or 9 new customers who
-need these bulk speadsheet features..
+need these bulk spreadsheet features..
 --
 and we will look at item viewer and widgets
-and version 4.13 is just the collections stuff.. meaning you can
-do what you wan twith collection home page, and each collection
-may have multiple collection viewers..
+and version 4.13 is just the collections stuff..
+meaning you can do what you want with collection home page,
+and each collection may have multiple collection viewers..
 
--rb: one staffer jsut updates the text but we want to prevent hstaffer from updating other stuff... for safety... to have more granular editing rights..
+-rb: one staffer just updates the text
+but we want to prevent staffer from updating other stuff...
+for safety... to have more granular editing rights..
+
 mvs yes we should think of that
 mvs also is idea of viewing rights on diff collection viewers..
+
 mvs maybe the same way item (editing) permissions, also the viewers will work...
 will be similar to item viewer
 and version 5.0 will move all searching into new Solr indexes and
 make builder run as windows service.
 
 rb: other db support? (rb/USF uses MySQL)
-mvs; we added construct to ask what is the db type and then
+
+mvs: we added construct to ask what is the db type and then
 a gateway to get to it and a layer that gets to that, but no
 coding yet to get to the db..
-
 and postgres is a priority after 5.0..
-we were looking for postgres but rb is working on mstyql
+
+We were looking for postgres but rb is working on msyql
 rb: a colleague must look for failover and disaster recovery..
 rb: our gis people are able to go to the cloud for backup, so why not us
+
 mvs - you could, most expensive will be web-accessible files...
 mvs you can run ms sql on amazon cloud and azure cloud and .net
 runs on amazon and azure too--
+
 mvs biggest thing is just keeping it updated...
 jl question: we are hitting the limit of how fast builder can
 run on a single thread.. and we have 2 ways to approach.
 and we look at .. logging issue
+
 mvs - logging would not be too bad.. it puts in first log and it
 gets back logid .. and all addl logs reference that logid..
 and if you sort by logid it can be sorted..
 and mvs has often said to run another builder...
 but we have no
 way to represent single vs multiple builder in the db..
+
 --
 t1115
 all: builder may need some updates
-mvs I was thinking ..for solr and could also work for bulder,
+mvs I was thinking ..for solr and could also work for builder,
 create an engine endpoint to give the health of solr (and maybe
 another endpoint also for the builder)
 and status cake would email us for a 404 on one url..
@@ -316,20 +412,23 @@ so the endpoint url would return 404, the status monitor url
 for a specific service.. a shortcut status notice.
 -mvs uses statuscake to check urls
 
-- we have a new wolfsonion builder module.. they create a mets file and uses
-their accession number
-mvs and we worked on another builder module that extracts from the pdf and creates
-the mets,  and creates the bibid with an id that it reserves
+- we have a new wolfsonion builder module..
+they create a mets file and use their accession number
+mvs: and we worked on another builder module that extracts
+from the pdf and creates the mets,
+and creates the bibid with an id that it reserves
 and the builder module is really powerful
 mvs has been doing folder level builder modules he has been writing..
 - mvs has a good feeling that when we load it out...
 we will end up saying or they will that they want other md loaded as well..
 - that is our current list of pending projects..
+
 - rb: you have google map editor listed..?
-and it is under additiona planned changes - originally written by laurie..
+and it is under additional planned changes - originally written by laurie..
 --
-mvs - st aug grant was supposed to add user interface for adding
-coordiates and that became funky I will try to add again..
+mvs - st augustine grant was supposed to add user interface for adding
+coordinates and that became funky I will try to add again..
+
 and bullet 4 - sobekcm image server -- to draw a circle around say a
 stadium on a tile., and we will eventually use also to hightlight
 the text version as well.
@@ -339,54 +438,71 @@ and each aerial has many tiles or pages and each is a geo book or
 tile/rectangle, one assigned per page.
 
 and we can add other stuff later.
-.
-the EAD support big part was first getting engine working as much of what
+
+the EAD support,  big part, was first getting engine working as much of what
 we serve is static html, and what is generated by the app is what is seen,
+
 but the idea of ead is compressed container lists and they can
 drill down, and with ajax node expansion it will say just give me
-newest what is in this container.. we will work on this , and we
-will charge non-hosting custs, and john nemmers helped a lot, so
+newest what is in this container..
+
+we will work on this , and we will charge non-hosting custs,
+and john nemmers helped a lot, so
 uf will get it free.
 -
-and other ones we will get is better support for authority contril..
-we are looking and also mvs and I should just say digital comons
+and other ones we will get is better support for authority control..
+we are looking and also mvs and I should just say digital commons
 what is pushed over 2 year is a map of america or world that
-shows where your hits are coming from - digital commons loves that per rb
+shows where your hits are coming from -
+digital commons loves that per rb
 rb we plan ahead for the md thing by expanding author field and
 putting the id number..
+
 mvs some things we will baby step toward -
 at first we will just support open id, just a small amount
+
 and re prepping for new versions - it will take a while to reindex
 your items again..
+
 we will give a small thing that only does a solr, it is a point of
 no return, it runs through all your text and runs solr
+
 so next time you have an item with 500 text files, the next time you need
 not resubmit all 500 items for solr indexing.
+
 and mvs will give us tools that do just that..
 it is big bec it has a point of no return (Q: ask about this concept0
-and puttinng stats on the map will blow up our db because each stat will need a per-country breakout number then.
+and puttinng stats on the map will blow up our db
+because, bec, each stat will need a per-country breakout number then.
 bec now we have small info in the db, we have a single line
-saying this item was hit with soem ffiew options per month, and
-that will explode by N of countries that hit it.. it iwill be
+saying this item was hit with some view options per month, and
+that will explode by N of countries that hit it.. it will be
 interesting, but maybe too costly to keep
 and digital commons keeps all hits from non spyders.. a lot..
+
 t1126
 and mvs wants to see how rb will prepare for the new version
 rb our catalogger works with a traditional catalogger who has done
-a poster projec wity european data model and will next do a full
+
+a poster project with european data model and will next do a full
 conference session on it
-mvs - so the way we will handle them is jsut another table in the
+
+mvs - so the way we will handle them is just another table in the
 db for all your authorities
+
 mvs i tend to think of people and places but also authorities exist
-for subject keywrods
-so we have folder for each resource, and each authority will have
-a folder, and at bottom is an EAC?, like an EAD, and life events
-and marriages can go in there, a vast expanse of data, and there
-will be links to other authority systems like wikipedia or neeco
+for subject keywords
+
+so we have folder for each resource,
+and each authority will have a folder,
+and at bottom is an EAC?, like an EAD,
+and life events and marriages can go in there, a vast expanse of data,
+and there will be links to other authority systems like wikipedia or neeco
 and so each will have assigned authority id record linked to open id record
 rb: and it deps on how open they are..
 --------
 new topic plugins and configurations
+--------
 and we can see how much of a plugin is related to a configuration file..
 and so we will look at configuration file and see where plugins are and
 what all is editable in a plugin.
@@ -408,6 +524,7 @@ rb started a new one that needs many fields...
 item viewer plugins exist, see links on this page for rti item
 viewer, and 2 more and richard created.
 and so if create a plugin..
+
 also engine api endpoint plugins work..
 will be some changes.. but until version 5 there may be more configuration..
 and we had to change some tags when we dled the new jpeg viewer..
@@ -415,69 +532,79 @@ make your new viewer in if it is a plugin in a separate github repo
 and they are injected with new config info plus dll
 so we will look a new configuration information now we will run through
 were to see online and the new config file
-and also the new item viwer layout (it will be similar for collection viewers).
-==44
+and also the new item viewer layout (it will be similar for collection viewers).
+==
 
-so in configure folder,  sobemkcm/config/ have a user folder..
-and it is nto choosingone other or other..
-see system settings, reading log ato ses whole list of config
+so in config folder,  sobemkcm/config/ have a user folder..
+and it is not choosing one other or other..
+see system settings, reading log to see whole list of config
 files that were read..
-and must turn off iis and turn back on to get thsse config files re-read now..
+and must turn off iis and turn back on to get these config files re-read now..
 --
+
 so see config fields reading log
-and see the output., so see it reads all infonconfig/fodler first,
-and in alphabetical order, and then it reads all your plugins
-subfolders (siblings to config, and then the config\user folder)
+and see the output.
+so see it reads all info config/folder first,
+and in alphabetical order,
+and then it reads all your plugins subfolders (siblings to config,
+and then the config\user folder)
 so the core idea is the concept..
-do as much in plugins as posisble, so the config/usr config file
-sobekgital_engie+ips.config file...
-he might make a plugin if did it over again, but make almost all
-you can into a plugin
-the idea of config user is a way to mediate diffs bw plugins, so
-we can stil use it like today
+do as much in plugins as posisble,
+so the config/usr config file sobekgital_engie+ips.config file...
+he might make a plugin if did it over again,
+but make almost all you can into a plugin
+the idea of config user is a way to mediate diffs bw plugins,
+so we can stil use it like today
 but in future maybe call it really a plugin
-and in future may add a way to say whcih plugins would be read in
-first so you can order them
-and also the config user folder config files are a way to emdiate ..
+and in future may add a way to say whcih plugins would be read in first
+so you can order them
+and also the config user folder config files are a way to mediate ..
 so now looking at sobeckm aggregation_viewers.config see this file..
 we did here, a way to inject code into the header see line 26 the
 <htmlHeadWriters> and we needed this bec london needed to add the json info..
 see digital.soas.ac.uk
 they cr a new front end
-clicking on discipline baio juan... no just scrolling, and they sort
-of use a tile look instead of text.
+clicking on discipline baio juan...
+no just scrolling,
+and they sort of use a tile look instead of text.
+
 now we see digital.soas.ac.u/d_bao
+
 and the home page is here, and no home tst, and some collections
 as here have menu item 'about' at far right
 and the tiles are selectted server side, the first 14 or so
-but with the config file here.. you can injust code in header at
-collection level as json.. and your plugins shoul do this injection
+but with the config file here..
+you can inject code in header at collection level as json..
+and your plugins should do this injection
 so here can inject anything you want in the header...
 almost all we have here now.. this is the default one, so it is safe
 enough to say <Clearall /> (but not usually)
-in code I might put basic aggreg ifo,, which is why you see clearAll a lot,
+in code I might put basic aggregation info,
+which is why you see clearAll a lot,
 to make sure all in memory is cleared, or in an config file,
 you can use this.. in version 4.11 or just today's latest github code
 and see sobekcm_brief_item_mapping.config
-and now in it the mets.. the mets is read by the engine and then mapped
-into a brief item and sent to the web, which is used for all its
-public interactions, so to mets item mapeper maps between the mets and
-brief item
+and now in the mets..
+the mets is read by the engine and then mapped
+into a brief item and sent to the web,
+which is used for all its public interactions,
+so to mets item mapper maps between the mets and brief item
 must map to briefitem to make web know about it..
-and sobekcm citation config.. has diff citation ses so you can at least
-select it from the behavior screen
-and now see system wide settings .. under settings/... under ui
-configuration/citaiton viwer.
+and sobekcm citation config.. has diff citation ses
+so you can at least select it from the behavior screen
+and now see system wide settings .. under settings/...
+under ui configuration/citaiton viewer.
 here you see a list of each view..
 and citation sets give the order?
-so when a user sees a ciation this is the order of the metadata,
-and the search code AU is used for creators and if AU appears it
-says creator is linked.. so you dont have to search yourself..
-and last column say customdisplay creator_SectionWriter),
+so when a user sees a citation this is the order of the metadata,
+and the search code AU is used for creators
+and if AU appears it says creator is linked.
+so you dont have to search yourself..
+and last column say customdisplay creator_SectionWriter,
 you can say to create your own..
 and so see for spatial coordinate under subjects spatial coverage row,
-customdisplay(SpatialCoverage_SectionWriter) so you can overwrite
-citation order of tags, etc..
+customdisplay(SpatialCoverage_SectionWriter)
+so you can overwrite citation order of tags, etc..
 rb: wrt temporal coverage, add support for items before common era (AD)
 --
 and see top level contact form, and individual contact form can
@@ -489,44 +616,47 @@ a read only list of engine endpoints, also gives the method that
 is called in your code, and bottom? shows the class that is bing called..
 --
 
-see page content for component c9 and restrictions we see with R0 and R1..  with mOdify and Read Access attributes.
+see page content for component c9 and restrictions we see with R0 and R1..
+with mOdify and Read Access attributes.
 -
-so in sobekcm item viewers, id="OG' allows to inject ogg, and when ..
-including search engine root, they will get this item in the header,
-and the OG is useful in the header a new one..
-and see sobeckcm item viewers.config.. and go to sobekrespository,
-no look at setting page see html viewers/subviewers and there will
-be an item one shortly
+so in sobekcm item viewers, id="OG' allows to inject ogg,
+and when including search engine root, they will get this item in the header,
+and the OG is useful in the header a new one.
+and see sobeckcm item viewers.config..
+and go to sobekrespository, no look at setting page see html viewers/subviewers
+and there will be an item one shortly
 so see these rows
 this is a combo of what is in the db and the config file..
-so if ienabled column is -, then it is not enabled, but see class
-is not implemented..
-and the db gives view order and menu order.. and config file says
-who displays it and it vies the ui code you will use by default.
+so if enabled column is -, then it is not enabled,
+but see class is not implemented..
+and the db gives view order and menu order..
+and config file says who displays it
+and it views the ui code you will use by default.
 ---
-and default view colum checkbox/flag means that for a new item that
-is created in a system, those views are addded.. and also when editing
-an item they appear as viewer options to select or deselect
-so the system now has every view attached to it that is possible to
-show and now every item has a pdf viewer attached..
+and default view column checkbox/flag means that for a new item that
+is created in a system, those views are added..
+and also when editing an item they appear as viewer options to select or deselect
+so the system now has every view attached to it that is possible to show
+and now every item has a pdf viewer attached..
 so every item with a pdf has a pdf viewer attached,
-but the viwer will show only for the pdf item..
+but the viewer will show only for the pdf item..
 -
 we do have a way to say always add this view..
-and mvs has said that.. so would never be able to turn it ovver if
-you check on that always add column.. but usually only used for mgmt views
+and mvs has said that..
+so would never be able to turn it off if you check on that always add column.
+but usually only used for mgmt views
 and see for mgmtViwer="true" in the config sfile..
 --
-and if same mgmt order, they appear in same ddown together, but if
-diff odrder, they appear diffeently.
-now see lin... a new layout file refs a source file
-under sobekcmhtml/itemviwer_default_layout.html
+and if same management, mgmt, order, they appear in same drop-down, ddown, together,
+but if diff order, they appear diffently.
+now see line... a new layout file refs a source file
+under sobekcmhtml/itemviewer_default_layout.html
 see it is like an old sobek file
 and see [%section xxx%] syntax at top
-and if compare that htl to ld version of ufdc, see the view
-source.. you can see the tasmeestgart of a item is <section itemscript itemtype
-so when item is first piplemetnd it reads its source file item
-viewer default_layout.html,
+and if compare that htl to ld version of ufdc, see the view source..
+you can see the tasmeestgart of a item is <section itemscript itemtype
+so when item is first implemented
+it reads its source file item viewer default_layout.html,
 you also have to restart web server,
 so whenever add an item all this text is there....
 so they have directives that define sections..
@@ -539,15 +669,16 @@ see there layout id="Default" source--..
 and see under section writers
 and section name top.. read by item viewer section writers.
 and see about 5 or six show .. see ViewerNav_ItemSectionWriter..
-and also line 43 shows [%section:POSTVIEWER %] , just not used
-here, but if want to also show a bit of citation at the bottom,
-you could create new item viwer method and tag it here... a new
-plugin..
+and also line 43 shows [%section:POSTVIEWER %],
+just not used here,
+but if want to also show a bit of citation at the bottom,
+you could create new item viwer method and tag it here,
+a new plugin..
 -
 MVS a good eg is thumbnails, and if you wanted to show something
 under the ...
 then eg, to look like contentdm, to have small section at bottom,
-either get rigd of citation entirely or use the poseiewer.. so
+either get rid of citation entirely or use the poseiewer.. so
 using this technique you can drastically change the way your item
 viewer is written..
 mvs - this is similar to what we will do with the collection viewer
@@ -555,41 +686,49 @@ mvs - this is similar to what we will do with the collection viewer
 now see config default sobekcm_mapeditor.config
 an example - this is the mapeditor we will try to allow adding
 coordinates... to get working in future
-and see sobekcm_maetadata.config - just marching down the list of
+and see sobekcm_metadata.config - just marching down the list of
 files under config/default
-this shows how to addd and read and write md and .microservices.config
-this is only for the user iface , and we had sobekcm engine and we
-have microservices that tells the web which endpoints to go to.
+this shows how to add and read and write md and .microservices.config
+this is only for the user iface,
+and we had sobekcm engine
+and we have microservices that tells the web which endpoints to go to.
 but we could run the engine on one webserver and ui on other server
 
 and we could have our own services and not use [BASEURL] syntax
-tubt overwrite to go to our own endpoint..
+but overwrite to go to our own endpoint..
 --
 so this also shows you which endpoints we are actually using
-so see first client get-complete-aggregation' you could write
-your own service to return similar data to what the curernt url
-returns
+so see first client get-complete-aggregation'
+you could write your own service
+to return similar data to what the current url returns
 
 likewise if you create new custom code you may want to use this,
 but rather for plugins usu not used, but can be (not used so far)
 
-next topic is oaipmh.config
-this is the harvesting protocol, and it now supports dublin core,
+------
+next topic is oaipmh.config OAI-PMH
+------
+
+This is the harvesting protocol, and it now supports dublin core,
 oa_dc and it has the Class, that writes it, and in a plugin you
+
 could add another third line to serve oai or other in a different format..
 and other viewers may not go away..
+
 but we see file other_viewers.config
+
 file qc.config, has existed a long time
 it lists diff errors that would be available and can assign to diff people
 and more importantly you can define new division types..
-eg adverstising, plkicia data, and you can assign to diff users
+eg advertising, plkicia data, and you can assign to diff users
 working on diff projects, and can give a user a new profile to
 limit their dd lists of their gui...
 have been in dlc toolbox a long time.
 And new results_viewers, config is added...
+
 See here
-these are the diff results viewers by default.. and it is easy
-to add new ones and override one..
+these are the diff results viewers by default..
+and it is easy to add new ones and override one..
 and you .. the system does expect to find a brief view and table view..
 and it is easy to overrite existing or create new ones here, and
 it includes the icon to disply in upper left corner..
@@ -601,32 +740,34 @@ another way to use item viewrs..
 and see file static_resources_cdn config
 and all the javascript is here, etc,
 so here we have also resources_cdn(secure and local)config
-so when go to sobekcm settings.. so go to demo site. and go to
-general settings..no go to guid settings system/server settitnggs (from db)
-and see static resources source (local cdn cdn secrue local, and
-if drop in new config file the choice will appear in ths dd list..
-so can edit to put the resource(s) to link to put on local, eg  if on a
-plane without inet access and need to test develop sobekcm
+so when go to sobekcm settings..
+so go to demo site. and go to guid settings system/server settings (from db)
+and see static resources source (local cdn cdn secure local),
+and if drop in new config file the choice will appear in ths dd list..
+so can edit to put the resource(s) to link to put on local,
+eg  if on a plane without inet access and need to test develop sobekcm
 
-but by switching to cdn, now our default, we hit a content deliv nw,
-and it is faster for users not close to you your webserver, but
-closer to a node on the cdn network.. so good.
+but by switching to cdn, now our default, we hit a content delivery nw,
+and it is faster for users not close to you your webserver,
+but closer to a node on the cdn network.. so good.
 Choice cdn secure is served https worlwide over cdn newrok a new one
 and other file ...secure.config.. see served via cdn.sobekdigital.com
 is https here, so if want to use https, switch to use cdn_secure
+
 now last file is template_elements
-here are. so here, see template and see online..
-in marks mydemo in systemwide settings, under ui/template elements
+
+so here, see template and see online..
+in Marks mydemo in systemwide settings, under ui/template elements
 under systemwide settings
 so here is read only list of of fields you can have there
 this report page also shows the actual ememment that is shown in the screen.
 -
-see gen settings under heading of emailsettings..
-so if you have a pluging yourself.. you can add your own
-settings and it could say myplugin settings could appear there...
-mvs has not had a case.. so far to need it though
+see gen settings under heading of email settings..
+so if you have a plugin yourself, you can add your own settings
+and it could say myplugin settings could appear there...
+mvs has not had a case, so far, to need it though
 but you can use system wide settings for plugins..
-now the cofnig file info under sttings/config/files
+now the config file info under settings/config/files
 see this text.. it tells the order it reads these things..
 and plugins would appear under config_viewers.config
 so if enable a plugin, see this page to verify it found your new config file
@@ -634,15 +775,15 @@ and then can click on the option reading log and it will show where
 it was found in sequence, and as it reads each one, it gives a bit of
 info on each tree it is parsing..
 -
-so this is really what the engine read
+so this is really what the engine reads
 so the engine ignores the microsrevices.config file, which is the
-good reason why it does not announce it was parsing antying -
+good reason why it does not announce it was parsing anything -
 and this is actually ok for this one config file
 all others would say one liner after the Reading.. line..
 so this is helpful
-and now seee see builder settings section/page..
+
+and now see see builder settings section/page..
 and you can see those setttings.
--
 and your incoming folders are listed
 --
 so see admin/builderfolder/1
@@ -652,15 +793,17 @@ and see settings/builder/modules page
 and see section pre-proces modules.. and it does pre processing,
 item processing, post process module
 and the md configuration section.. files readers writers..
-we see breifly now more later
-now to settins/engine/authntication...
+we see briefly now, more later
+now to settings/engine/authentication...
 at bottom .. shibboleth authentication: not naled here today..
-but for uF we will see details..
+but for uf we will see details..
 and this whole page are always going to be read only, so we have to
 edit config files for all this
 and see brief item mapping on left
+
 and see oai-pmh prototocol
 see oai_dc and marcxml are enabled here..
+
 and quality control tool is shown
 and under ui configuration citation viewer....
 and last see html snippets... these are top level html things like
@@ -669,15 +812,17 @@ they now can be edited here, though, so now this section CAN be edited
 via this web page
 last section is the extensions, and it gives a list of extensions..
 -and now click on admin/settings/extensions/1 (TEI)
-so we want to say run some sql script when a plguin is enabled,
+so we want to say run some sql script when a plugin is enabled,
 and add a new section after the plugin info with user-specified config info.
 mvs - so if you store new md in the ..
 and it must be mapped to the brief item..
 the brief item goes to web and web must know it will be displayed
 in the citation as well..
 and must also be in templates if you want to edit it.
-and another thing- editing templates onlie.. md used to be mroe fixed..
-the intent is to be able to click on your tmplats and hae a ddlist to add certin md to th templat..
+
+and another thing- editing templates onlie.. md used to be more fixed..
+the intent is to be able to click on your templates
+and have a ddlist to add certain md to the templat..
 -
 t1231
 rb: tells his people that we can do customize md ..
@@ -685,166 +830,283 @@ t1232 off to lunch - on patio by the pools - Radisson at Cape Canaveral.
 t
 -
 -customizing the appearance -
-now collections - if in the demo instance on mmvs laptop
-so now fo rmost accessible
-for people in customized collections aan go to internal heder, manage admin view
-admin/edit/aggr...
-so see dloc and can say dloc/edit to edit content and edit eir ihome page of their collectionand create a slide viewer.. this is the key point of trying to provide data aout their collection..
-so this ifce works well, not to sohisticated
+
+now collections - if in the demo instance on mvs laptop
+so now for most accessible
+for people in customized collections can go to internal header,
+manage admin view admin/edit/aggr...
+so see dloc and can say dloc/edit to edit content and edit their home
+page of their collectionand create a slide viewer.
+
+this is the key point of trying to provide data about their collection..
+so this iface works well, not too sophisticated
+
 can immed go into source view, but it does strip some tags, not sure why
-so if h3 and inlnne style failes.. it might now work
-but you can upload images well.. so can add a banner, edit width ad height, nice and put it anywhere within the text
+so if h3 and inline style fails.. it might now work
+but you can upload images well..
+so can add a banner, edit width and height, nice
+and put it anywhere within the text
 so you only save this home page.
-so different for home pages are anners and buttons on bottom under subollections. and the buttons will opoint lower but have a link back up
-and can see admin/edigaggr/dloc/e on an edit page
-and here can add hoeme page for dif langu and can add banners, new banners and then click a language from dd list for that banner -- if their bbrowser says this is their primary country of the web user...
+so different for home pages are banners and buttons on bottom under subcollections
+and the buttons will point lower but have a link back up
+and can see admin/editgaggr/dloc/e on an edit page
+and here can add home page for diff language
+and can add banners, new banners
+and then click a language from dd list for that banner
+if their browser says this is their primary country of the web user...
 --
 based on their browser setting
 and see now tab appearance..
-and other chagnes.. you can assign it to a webbsckin (under another level lf mgmt)
-and at botom it shows behavior active or appears oho hoeme page..
-nwo see tab search.. so any colletion admin can choose a search segmen/style, etc..
-and so a rqt for plugins and widgets is you will want a picture to show so thy cn aselect it
-and see towrard bottom they can add map search and at botom..
-but when adding plugins a challenge is hwo to support all this via plugins..
+and other changes.. you can assign it to a webskin (under another level lf mgmt)
+and at bottom it shows behavior active or appears on home page.
+now see tab search.. so any collection admin can choose a search segment/style, etc..
+and so a requrement, rqt, for plugins and widgets is you will want a picture
+to show so they can select it
+and see toward bottom they can add map search and at bottom..
+but when adding plugins a challenge is how to support all this via plugins..
 
-eg one ddlist opton.. fo rmap search default area... the default is 'zoom to ettent) ibecuas we have soem londong papers in this projet, so now you can select florida
-and now can also do custom choice..but you can input your won zoom and lattitude and longituted.
+eg one ddlist option.. for map search default area...
+(the default is 'zoom to extent)
+because we have some london papers in this projet,
+so now you can select florida
+and now can also do custom choice..
+but you can input your own zoom and latitude and longitude
 -
 -and now see tab results
-to change or selet your facts on left
-and tab metadata can set up md browsing.. and can add ssee dd list.. say add affiliation and difficulty, etc.. this is siemple for user to select
+to change or select your facets on left
+and tab metadata can set up md browsing..
+and can add see dd list..
+say add affiliation and difficulty, etc..
+this is simple for user to select
 less simple tho is web skin chagnes..
-we can update html headersffooters., css and javascript, and cn also to collection level css and javascript too, but still mroe complicated to omuch for a collection manager to expect to do.
-so back to websckins - can crete a new webscin called railroads, sewe systema dmin appearance/webscins and make a new one called railroad collection web sckin and save it, an then view it.. and say edit railroad admin/editskin/wrailroad/c?n=railroad
-snd ad see the soruce.. and the tab javascript is there ubut does not work to edit rpeextant js
-so SHOULD be able to edit js, but it does allow first-time adding.. of js,
-or in tabl css stylehseet you cn come update and add yoru wons styles at bottom.. and to call the js, you need to .. or can use jqeury to attch it to onrender, or thouht the webscin you cn use or include the js here,
-so use webskin first if you want, and then look at editing infdividual olection
-iujnder admin/edit/juv/e and webskins now has the choice railroad.
-- so thse are th current webskins under which a cllection may appear, that is why youhave dupliate webscins allowed, settable.. so first one is selected if a collectio n with the x.. does not allow this.. it only comes into effect if you have webskins that are not isted in these webskins..
+we can update html headersfooters, css and javascript,
+and can also to collection level css and javascript too,
+but still more complicated, too much for a collection manager to expect to do.
+
+so back to webskins -
+can create a new webscin called railroads,
+see system admin appearance/webskins
+and make a new one called railroad collection web skin
+and save it, and then view it..
+and say edit railroad admin/editskin/wrailroad/c?n=railroad
+and see the soruce..
+and the tab javascript is there but does not work to edit pre-extant js
+so SHOULD be able to edit js (a shortfall now),
+but now it does allow first-time adding.. of js,
+or in table css stylehseet you can come update
+and add your owns styles at bottom..
+and to call the js, you need to .. or can use jqeury to attach it to on render,
+or thouht the webskin you can use or include the js here,
+
+so use webskin first if you want, and then look at editing individual olection
+under admin/edit/juv/e
+and webskins now has the choice railroad.
+
+so those are the current webskins under which a collection may appear,
+that is why you have dupliate webskins allowed, settable..
+so first one is selected if a collection with the x.. does not allow this..
+it only comes into effect if you have webskins that are not listed
+in these webskins..
+
 -t1:23
-so see admin/portals.. and see url segment entry, say it has dloc.com in the url and see field portal name is dloc and system abbrev is dLoc and default webskin is uvides say
-ad select dfrom dd list iuvi -added automatically
-and chan change purl to be ufi.dloc.com
-wo if a suer comes in and their url contains udlco.com, they go to that webskin on bottom of page of admin/portals..
-so when time to cr webskin for an inivd request, it shcekcs the url progal/sgement and it selects their default webskin, and also in url could say ?skin=someskin, it should then use that webskin..
+so see admin/portals.. and see url segment entry,
+say it has dloc.com in the url
+and see field portal name is dloc
+and system abbrev is dLoc and default webskin is uvides say
+ad select from dd list iuvi -added automatically
+and change purl to be ufi.dloc.com
+so if a user comes in and their url contains udlco.com,
+they go to that webskin on bottom of page of admin/portals..
+so when time to cr webskin for an individ request,
+it checks the url progal/segment
+and it selects their default webskin,
+and also in url could say ?skin=someskin,
+and it should then use that webskin..
 -this is a way to override
-so everyghint is a portal, but it is whetehr it  is the defaut portal on that page
+
+so everything is a portal,
+but it is whether it is the defaut portal on that page
 now to another page
-at collection level, say to l/admin/editaggr/juv/e ie under appearance tab, you can cr a js under the collectionlevel here too under appearance
-if you hit button enable and it creates a scustom tyleshee juv.css and you can edit that... so this is only for this one colection
- so here you add css, but this viwer could be better, to do css checing..
-so this is a way not using the wbsckin ailty to do it at an individual colletion level.. at this ggregation-evel css.. but the js has not made this iface eyt, but  it is there
-mvs prefers to do a websckin personally -
+at collection level, say to l/admin/editaggr/juv/e
+ie under appearance tab,
+you can cr a js under the collection level here too under appearance
+if you hit button enable and it creates a custom styleshee juv.css
+and you can edit that... so this is only for this one colection
+
+so here you add css, but this viewer could be better, to do css checking..
+so this is a way not using the webskin abilty to do it at an individual
+collection level..
+at this aggregation-level css..
+but the js has not made this iface yet, but it is there
+mvs prefers to do a webskin personally -
+
 t1328
-now 2 other ways to customize colletiosn
+now 2 other ways to customize collections
 rb has most questions
-lastly as we move toward this architecture, not there yet, but as with item laout, we will have a collection layout with collection widgents/plug-ins and injected javascript/jsquery
+
+lastly as we move toward this architecture, not there yet,
+but as with item layout,
+we will have a collection layout with collection widgents/plug-ins
+and injected javascript/jsquery
 -
 now see digital soas.ac/ud/arte page
-see page source here, see the js at websckip level script/text/javascript.. he clicked to see it at ..design/skins/SOAS/sOAS.js
+see page source here, see the js at webskin level script/text/javascript..
+he clicked to see it at ..design/skins/SOAS/sOAS.js
 -
 it uses jstree library - good
-so this is a good eg of customizeing the site using the weskin js,
-and here it expands the tree if it iexists
-and if it is an aggregation type page...then we parse the hson in the aggregation_json (see html soruce) with type "application'json", so this jil? library is i n our sytstem by default
-..and he sees facts, banners. and he sees views and searches and you see in this json in the html soruce, a buchn of chile pages, and see label About.. and so back to the js, it parses the object and see it looks at each chidlPages and if it is an bout, then it hadds an about to tha tmeu..
-..oh, we also have a diff search than tha y have so wef hhafe fnTr.. some other funciton
-so a good eg ouf using js to do a good customization at the end where a...ac.uk/arte is really the aggreg menu
-and the unchahing portions of the menu inclduees regions subejcts languages archives.. etc, and the thumbnails,e tc done mos tentirely by webskins..
-mvs - i say if these tiel images exist it should be a homepage.. now it looks for a tile subflodler and if extant it will show this...
-so we can see his copy of the agg page unde webroot/datesign/agregations/r)hg/images/TILES, a lot of jpg images.. so an admin can do this approach
--sothree ways to cusmize collections..
+
+so this is a good eg of customizing the site using the webskin js,
+and here it expands the tree if it exists
+
+and if it is an aggregation type page...
+then we parse the json in the aggregation_json (see html soruce)
+with type "application'json",
+so this jil? library is in our sytstem by default
+and he sees facets, banners.
+and he sees views and searches
+and you see in this json in the html soruce,
+a bunch of child pages,
+and see label About..
+and so back to the js, it parses the object
+and see it looks at each childPage and if it is an about,
+then it adds an about to tha tmeu..
+oh, we also have a diff search than they have so we have fnTr..
+some other function
+so a good eg of using js to do a good customization at the end
+where a...ac.uk/arte is really the aggreg menu
+and the unchanging portions of the menu includes regions, subjects, languages,
+archives.. etc,
+and the thumbnails, etc done most entirely by webskins..
+mvs - i say if these tile images exist it should be a homepage..
+now it looks for a tile subfoldler
+and if extant it will show this...
+so we can see his copy of the agg page
+under webroot/datesign/agregations/r)hg/images/TILES, a lot of jpg images.. so an admin can do this approach
+-so three ways to customize collections..
 -
 -
 t1335 rb - lets see africanfossils.org
--- rb: this is a good eg dean/ has mentioned to me previously, nd if you click on the 3d models button, we see nicd pae.. and when you click on this.. bhtese are 3dmodels, rb:the q is can this all be done with skins and js and css..
-or it is the conent page folder configu/custmomization otion..
+ rb: this is a good eg dean/ has mentioned to me previously,
+and if you click on the 3d models button, we see nice page..
+and when you click on this.. these are 3dmodels,
+
+rb:the q is can this all be done with skins and js and css..
+or it is the content page folder configu/custmomization otion..
+
 mvs - he wuould shy away from static web content pages..
-rb i would jus tuse it to iject a js app
+rb i would just use it to inject a js app
+
 mvs: i think you can so do this with a results viewer..
 rb: but they dont like the banners...
-mvs maybe need little changes to results html... and all this top part can be
-done with a results viewer.. and the default css has width stmts that can
-be overritten to pcts.. etc..
+
+mvs maybe need little changes to results html
+and all this top part can be done with a results viewer
+and the default css has width stmts that can be overwritten to pcts.. etc..
+
 mvs can work with rb to help do this.
 mvs - it depends..
---mvs - to do this right I would do custom md fo rsome of these like tool type or category type
-rb has used the darwin core factes and put in canned searches, and the tools with site industry tooltype shows6 items would be factes like protobiface,core,biface,flkaed core,hammerstone,flake.
+mvs - to do this right I would do custom md for some of these
+like tool type or category type
+
+rb has used the darwin core facets and put in canned searches,
+and the tools with site industry tooltype shows items would be facets
+like protobiface,core,biface,flaked core,hammerstone,flake.
 rb will ask mvs more individually
-now back to collectiosn customaiztion
-mvs one other thing here, and like the colelction ldevel css and javascript, you can slo create a custom html page that willbe read entirely instead of thedefault page
-see -- just the ome page of the collection can be done like this - entirley independebt html with no idea of layout and no automaitc menu.. all is custom
-and the back pages wrok fine.. eg you can put /all/ at the end of the collectio and it looks normal, but only thsi scustom collection home page is independently laid out, defined, see ..coleltion/html/home/text.html and that shows diretives bwith [%xx%] syntax
+
+now back to collections customization
+
+mvs one other thing here, and like the collection level css and javascript,
+you can also create a custom html page that will be read entirely instead
+of the default page
+see -- just the home page of the collection can be done like this
+entirley independent html with no idea of layout and no automaitc menu
+all is custom and the back pages work fine..
+eg you can put /all/ at the end of the collection and it looks normal,
+but only this scustom collection home page is independently laid out, defined,
+see ..collection/html/home/text.html and that shows directives with [%xx%] syntax
+
 -t1345
 now for items..
-customizing items
-method 1:
+
+topic method 1 of customizing items method 1:
 item changes - md updates, upload new files/images,
 behavior updates -- any any anger of item should able to do this
 
--- customizing items method 2 -
+topic method 2 of customizing items method 2 -
 web skin changes inlcude html headers/footers, css, js -
 
-customizing items method 3
+topic method3 of customizing items method 3
 is more complete, as we now have this in place including;
 item layout, udpate citation configuration and/or new citation set
 and assign it to this item, create custom citation element writers
-that wsas 3,
-METHOD 4: and 4 new item viewers/pluggg-ins
+that was 3,
+
+METHOD 4: and 4 new item viewers/plug-ins
+
 METHOD 5: and  5 can inject javascript/jquery to look at item and do certain things
-and then we can get in to robust item veiwer and citation writer infrastructure..
+and then we can get in to robust item viewer and citation writer infrastructure.
 so those are collections and items, the 2 biggies in our lib
 
 ALSO and other customizing
-1)static resources configuration.. to use your ow css, eg, and general
-plug-ins and config chagnes,
- and so this enables changes for most all customizations desired..
+
+1) static resources configuration.. to use your own css, eg,
+and general plug-ins
+and config changes,
+
+and so this enables changes for most all customizations desired..
 --
 also see middlesexcc.sobeklibrary.com (maybe nj?)
 
-t1348 - creating a new engine endpoint -
-now to engine endpoints.. we go to systemwide settings and see engine
+t1348 - topic creating a new engine endpoint -
+
+now to engine endpoints..
+we go to systemwide settings and see engine
 configuration on left, subitem engine server endpoints
 and go to aggregations/all/json
 and in url location just type localhost/engine/aggregations/alljson
 (and protobuf and jsonp etc, xml are examples of formats)
 so one thing to do was create a simple...
 well...
+
 mvs is talking with rb
 now we look at th EDS one under richard bernardy github
 a simple results endpoint..
+
 we needed to have a config file..
 sobekcm-plugin-endpoint-EDS
 this is ultimately what the plugin folder is,  a config file and a dll
-so his config file.. for the entire plugin..
-here he has extension code="EbscoServices" and will add guides in the future
-like version guid and plugin guid and has adin invo..
-and most iportantly, see the <Assembly id - and the name=somemyplugin.dll"
+so his config file, for the entire plugin,
+here he has extension code="EbscoServices"
+and will add guides in the future like version guide and plugin guid
+and has adin invo..
+and most importantly, see the <Assembly id - and the name=somemyplugin.dll">
 is most important
+
 and you only need to add assemblies with sobek code in them,
 so if you have your own dll, in the same lib, your refs are now loaded.. so easier..
 so this has not changed much.. we just have md about the plugin
-then section Engine > has actual changes
-so <Engine ClearAll="false"> and we define path segment plugisn, path segment
-ebsco, and autodoc had for docs
-and endpoints are there with method t seg Ebsco_Results_Json" prrotcol="JSON"
+then section <Engine> has actual changes
+so <Engine ClearAll="false"> and we define path segment plugins,
+path segment ebsco, and autodoc had for docs
+and endpoints are there with method seg Ebsco_Results_Json" prrotcol="JSON"
 and similar line for segment = xml, component id=EBSCO_COMP,
 method=EBSCO_Results_XML, protocol XML
 -
-mvs - actually 2 ways to show this, see his 2 endpoint tags, the verb is
-not the, so default assumption is only "GET", so annot post to this one,
-so a better way mvs will convey to allow get and post.. etc.
+mvs - actually 2 ways to show this, see his 2 endpoint tags,
+the verb is not the, so default assumption is only "GET",
+so cannot post to this one,
+
+future? so a better way mvs will convey to allow get and post.. etc.
 and the component ID appears again at bottom in section COMPONENTS.
 
-now to another eg of this config vfile... would be.. mvs looks at his vs setup
+now to another eg of this config file... would be..
+mvs looks at his vs setup
 under.. sobekcm/config/default/sobekcm_engine_co.donfig.
 and see line 178 or so path segment with autotod endopoint
 and now down to lines 362+ we see verbs
 now skip down to lines 782 seee verb mapping tag there
-in this case we have a path milestones'json, and that the tail of our
-path (engine something/milestons/json
+in this case we have a path milestones'json,
+and that the tail of our path (engine something/milestons/json
 and this is more like a rest api as we can do either a get or a post
 so here we add a milestone to a webcontent page..
 so in this eg, you config like this to support more verbs than just GET
@@ -856,29 +1118,34 @@ and see the two methods.. with HttpResponse Respons, List UrlSeegments.. etc..
 -
 mvs: so to program plugsins, it is easiest to work within SobekCM
 in the VS objects and maybe go within SobekCM_Engine_Libary/endpoints
-and create new endpoints, call it a class, simpleEnedpoitn.cs
+and create new endpoints, call it a class, simpleEndpoint.cs
 
 and we get our default using stmts and notice that it extends
-EndpointBase, it is just a peer class Endpoints.EndpintBase you
-can use, but not nec, but a helper class to give you basics
-So here define public clsass SimpleEndpoints:EndpoindBase and put code there
-and also in VS for sobek go for the config, go to sobekcm and go
-to plugisn OR just add it into the confg/usrfolder as a sepa
-config file, which we will do now.
+EndpointBase,
+it is just a peer class Endpoints.EndpintBase you can use,
+but not nec, but a helper class to give you basics
+So here define public clsass SimpleEndpoints:EndpoindBase
+and put code there
+and also in VS for sobek go for the config,
+go to sobekcm and go to plugisn
+OR just add it into the confg/usr folder as a separate config file,
+which we will do now.
 so creating new file using windows explorer first..
 
-So start with RB example plugin.. just grab his folder put it on
-your webroot and under webroot/plugins and rename it simpleEndpoint
-Services the folder,
+So start with RB example plugin..
+just grab his folder put it on your webroot
+and under webroot/plugins
+and rename it simpleEndpoint Services the folder,
 
-and rename his Ebsco ..config file to ours and we can add any number of config
-files or .config of xml files in this folder or any and all subfolders will be read..
+and rename his Ebsco ..config file to ours
+and we can add any number of config files or .config of xml files in this folder
+or any and all subfolders will be read..
 a good eg is creating custom md, and if so, you might want a subfolder for each md.
 may need a folder for the endpoint, and another for briefitem mapper, whatever
 makes your code eaiser to manage, and just put in apt config files..
 
 now we edit, our copied file we renamed simpleendpoint services.conf based
-on rb changing name="Simple endpoint servies"  version="1.0",
+on rb changing name="Simple endpoint services"  version="1.0",
 add a description... change author names
 and leave <permissions? as is
 and <assembly .. we can add our dll name (anticipated dll after we make it,
@@ -890,93 +1157,139 @@ and request type is english saying it is get only
 and under component change id to SIMPLE_COMP and change class..
 and refer to them i the prior <Endoint tagg(s)... etc and
 change the path now in the xml to plugins simple/results..
-and now he jsut copied the code into his mouse and in vs now is creating
-file under config /usr enw file templseimpleservicesconfigconfi
+and now he just copied the code into his mouse and in vs now is creating
+file under config /usr new file templseimpleservicesconfigconfi
 and now in vs is pasting in the text for our new xml.
 so we are creating this 'plugin code and config' in our entire web VS
 project just for convenience, but when we get it working, we can
 extract our two files, the dll and config and call that our plugin - nice.
 -
 
-so now we go unde sytem settings i cofnig, las titem and see it did find our new  file
-and se wolook in the reading log and we see it found our new config.. fine.
+so now we go unde sytem settings i config, last item
+and see it did find our new  file
+and so we look in the reading log and we see it found our new config.. fine.
+
 t1412
 
-and now loking at engine server endpoints..
-so now at bttom iudne plbusins/simple are ouro 2 new endpoints.. and ti shows oure compoent info in theat componetbt table of the web page under ssytem wide settings for this ... these endpoints..
+topic? and now looking at engine server endpoints..
+so now at bottom under plugins/simple are our 2 new endpoints..
+and it shows our component info in the component table of the web page
+under system wide settings for this ... these endpoints..
 -
-now we add our soruce code for the ethods..
-we just used  endointbase to help us out as it has certain methods.. to tell sobek how to invoke it.. and to define the expected signatirue per web verb, etc.. some niceities..
--so see the method argumetns.. include url segemtns, etc, and request form provides get vs post verb type.. and the protocol was given in the config file to serve..
-so nowwe go back to our config info.. and change class naem so SimpleJson
-and define the method s by exact name we said in our config file,
-and can just do a Response.Write("In Simple_results=_JSON_method"): and test it out , wthether it is getting there when url is being visited..
-and he goes out to add some usings.. using sytem.web, using system.collections.generic.. is all he needs to jsut those 2..
+now we add our source code for the methods.
+we just used  endpointbase to help us out as it has certain methods.
+to tell sobek how to invoke it..
+and to define the expected signatirue per web verb, etc.. some nicities..
+-so see the method arguments.. include url segemnts, etc,
+and request form provides get vs post verb type
+and the protocol was given in the config file to serve
+so now we go back to our config info..
+and change class name so SimpleJson
+and define the methods by exact name we said in our config file,
+and can just do a Response.Write("In Simple_results=_JSON_method"):
+and test it out, whether it is getting there when url is being visited..
+and he goes out to add some usings..
+using sytem.web, using system.collections.generic..
+is all he needs to just those 2..
 and now testing both the xml and json ..
 also added the suing System.Collections.Specialized;
 
 -
-and adds using sobckcmcore.cofnigureation.engine also
+and adds using sobckcmcore.configuration.engine also
 and system.web..
 ok now compiles and tests the url..
-so if he sets aggreagtaions /code/json/dloc/en?debug=debug.. it shows all the good trace info.. and n our code we must put a stmt to say if deug =true to shwo this trace..
+so if he sets aggregataions /code/json/dloc/en?debug=debug..
+it shows all the good trace info..
+and our code we must put a stmt to say if deug==true to show this trace..
 very useful..
 =
-now engine/plugins/simple/results trying.. no endpoint, but add to end json.. but still not found..
+now engine/plugins/simple/results trying
+no endpoint, but add to end json.. but still not found..
 so diagnosing the issue...
-look at bottom of report fo engine endpoints..
+look at bottom of report for engine endpoints..
 
 now seeking in the report for simpleendpoints...
 did have to make sure the config file was under the config/users
 and the plumbing is done...
-so now we make it DO soemthing that we want it to do besides saying I am in method x.
+so now we make it DO something that we want it to do besides saying I am in method x.
 
-ok, now .ooking in restulsservices.cs for some stuff to copy over..
+ok, now looking in resultsservices.cs for some stuff to copy over..
 -
-note DO extent class ResutlsServices (it is better than just extending endpointbase,but has more good stuff for results  helper methods) like enumerabtion info and ghe Get_Search_Statistics.. and so here we can use all the search ehlper stuff..
+note DO extend class ResutlsServices
+as it is better than just extending endpointbase,
+but has more good stuff for results  helper methods like enumerabtion info
+and Get_Search_Statistics..
+and so here we can use all the search helper stuff..
 now at line 65 in resutlsservices.cs
-mvs - so when you do a search it gets both things, the search stats tohat does not rally chane, it says te n of hits and the facets we will display -- will not change duirng listing 20 results..
+mvs - so when you do a search it gets both things,
+the search stats ohat does not really change,
+it says the number of hits
+and the facets we will display --
+they will not change during listing 20 results..
 -
-so struggle 1 is objects are a bit complicated maybe a bit deep, and the second ocmplication is to make 2 calsl to see how many items are in the results and 2 is to get the results..
+so struggle 1 is objects are a bit complicated maybe a bit deep,
+and the second complication is to make 2 calls
+to see how many items are in the results and 2 is to get the results..
 -
-- so that is explanatinoof why we are doing this now..
-so now we are implemetning something.. and tyring to implemetn what we want in our new little methdos Simple_Results_Json, and in here you can make antoehr db call, say you can do:
+so that is explanation of why we are doing this now..
+so now we are implemetning something..
+and tyring to implement what we want in our new little methods Simple_Results_Json,
+and in here you can make another db call, say you can do:
+
 using System.Data
-DataTable fromDb =new tabase.Engine_Databse.Builder_lgo_search.. whatever, intellisense gives a lot.. see could see builde rlogs or Get_All_USer_groups ro ge websckien
-butfirs tline shoudl realy be Tracer localTrace = new(Custom_Tracer();
-so now you have atracer (but do using SobekCM>tools) to use tracer):
--and now we have a trace and a DataTable.. now it is a LIst<User_Group>from d (and must do using SobekCM.Core.User
-and next linejust say Serialize(fromDb, Response, protocol< string,Empty);
-and in 3 lines you can create this enpdoing to cr tracer, get usergrups frmm db
-and call serialize..
-now test the url again lcoal/engine/pluins/simple/resutlts/json..
-cool, iet works..
+DataTable fromDb =new tabase.Engine_Databse.Builder_lgo_search..
+whatever, intellisense gives a lot..
+see could see builder logs or Get_All_User_groups to get webskin
+but first line should really be
+Tracer localTrace = new(Custom_Tracer();
+
+so now you have a tracer (but do using SobekCM>tools) to use tracer:
+and now we have a trace and a DataTable
+now it is a List<User_Group>from  (and must do using SobekCM.Core.User)
+and next line just says
+Serialize(fromDb, Response, protocol< string,Empty);
+
+and in 3 lines you can create this enpdoint
+to cr tracer, get usergrups frmm db, and call serialize..
+
+now test the url again local/engine/pluins/simple/resutlts/json..
+cool, it works..
 --
+
 t1441
 and now add lines
 List <string? names = new List<string>()
 foreach (user_group thsi user in fromDb)
 names.ad (thisuser.name)
+
 and serialize that and test the url
-and now it works with ["everyone"], only one naem.. nice.
--So simple to do smal lendpoints
-and searching is a bit mroe comples
-and always serialze soemthinga s last call in the method to serve the endpoint..
-so 2d line lshoudl have localTrace.Add_Trace("SimpleEndoings.SImple_Resutls_JSON"_;
+and now it works with ["everyone"], only one name. nice.
+
+So simple to do small endpoints
+and searching is a bit more complex
+and always serialze something as LAST call in the method to serve the endpoint..
+
+so 2d line should have localTrace.Add_Trace("SimpleEndoings.SImple_Resutls_JSON"_;
+
 so now when you use debug... so add code line
 if (isDebug){rResponse.WriteLine({debu mode detected");... etc
-or copy paste thsi...
-Resposne.CoentntType = "text/plain:
+or copy paste this...
+Response.ContentType = "text/plain:
 response.write.. etc.. and get it .. the trace..
 so this worked fine..
-the if deugg and trace clause was asdded at the bottom, same thing if you detect an exception... show the info..
-so every endpoint method has some code withthese snippets in there.
+
+the if debug and trace clause was added at the bottom,
+same thing if you detect an exception... show the info..
+so every endpoint method has some code with these snippets in there.
 - very nice!
--mvs t1445 - so the debug portion is defined as anywone who puts debug=debug or maybe debug-true..
-and so we may also add to debug an ip list of people who can sue debug.. bu now anyone can put this on the end. and se the trace..
+
+-mvs t1445 - so the debug portion is defined as anyone who puts debug=debug
+or maybe debug-true..
+and so we may also add to debug an ip list of people who can use debug..
+but now anyone can put this on the end. and see the trace..
 -
 new topic
-now look at search retults example - rb's example..
+TOPIC: now look at search results example - rb's example..
 --
 
 --
@@ -2372,12 +2685,20 @@ so we know thoe ar package level dmd ection mets:div dmd="Dm11 DS2" and so they 
 so the mapping part of the confi fiel ays when you rad the ets file and seems mdtype of therh oand othermdtype of psotcardcore, then use this writer, at lie 88 of the psocardore.xm onfig file
 and iseafualt attri eans use this, so do use this hen you hitthat in the mets
 and lines 93 we ad itto the defatul provild to read writerin line 96
-so bydefault when saing a mets file it will invoke this reader writer.. so you wcould hae diferent writing provdies too
-so this says when you ar eading use this mapoing to oaluch at lie 88 and line 96 when writing try to sue it
-and next lthing lins 105 is oregiser mapping sets, eg line 106 we hae internal, standar,cittion and we registister this in youw own mapping sed IDS and can invent your own mapoin gset IDs, and can vary what they do, so do register it
-and lines 119 you register syour citaion info to let yoru citation info know about these fields
-so the cition is wrtiten by the brief ietem so metadtTer m youwant to match what you cite in your briefitem mapper. so your metadta trm may use a postcard prefix/
-so shtis fi
+so by default when saing a mets file it will invoke this reader writer.. so you wcould hae diferent writing provdies too
+
+so this says when you are reading use this mapping to launch at line 88 and
+line 96 when writing try to use it and next thing line 105 is to register
+mapping sets, eg line 106 we hae internal, standard,citation
+and we register this in your own mapping sed IDS
+and can invent your own mapoin gset IDs,
+and can vary what they do, so do register it
+and lines 119 you register syour citation info to let your citation info
+know about these fields
+so the citation is written by the brief item so metadata Term you want to match
+what you cite in your briefitem mapper.
+so your metadta trm may use a postcard prefix/
+
 this says we add a new fieldset for id postcard and these are the
 fields that will be there.
 --t1119
@@ -2389,16 +2710,16 @@ so now go to lines 143 templateconfig - registering the template elements
 ad your type see line 151 subjec subtype postcard, and in your template you
 would have this, and when discovered, it will create an instance of this class,
 how it maps form template xml.. we are making web aware of elts that exist by
-cretating them here
+creating them here
 but still have to go to dloc template and add those fields to add to the template.
 -
-so all these things appear in our sys admin setting sw sysetmwide settings as well
+so all these things appear in our sys admin setting sw systemwide settings as well
 under md config, md search fields, they will show up here once you have data here
 and your mets reader/writer will show up in that list
 and your writing profiles will show up in those lists
 and also in ui configuration template elements as well, you would
 see your type, subtype and class..
-and it sil who up in your deault citation sets under admin/settings/ui/citation
+and it sil who up in your default citation sets under admin/settings/ui/citation
 ui configuration citation viewer
 
 and now mvs task is to create a helper.. and the helper cannot do
@@ -2406,10 +2727,10 @@ it all, but it can.. we should say to it we want to add an object that
 is a string or a list of strings, and it would generate most of this for us
 but it will not generate your ncie complex objects like postmarks sent,
 postmarks received objects, and it can generate quit a bit, especially
-for simpel custom metadata it would do maybe 70% of the work
-and it would be windowss form to generate this helper output files..
+for simple custom metadata it would do maybe 70% of the work
+and it would be windows form to generate this helper output files..
 or maybe one day a web form..
-rb: or maybe a vs plguin, but mvs says windows form will generate .cs
+rb: or maybe a vs plugin, but mvs says windows form will generate .cs
 file set to put into your vs project
 and the biggest thing is to give the field name and the type of field it is..
 t1141 - ending...
