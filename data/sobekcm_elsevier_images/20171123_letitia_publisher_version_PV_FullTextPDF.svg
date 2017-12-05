@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="144px" height="48px" viewBox="0 0 144 48" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch Beta 47 (45359) - http://www.bohemiancoding.com/sketch -->
+    <title>PV_FullTextPDF</title>
+    <desc>Created with Sketch Beta.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard" transform="translate(-496.000000, -448.000000)">
+            <g id="PV_FullTextPDF" transform="translate(496.000000, 448.000000)">
+                <polygon id="Fill-1-Copy-2" fill="#F5F5F5" points="0 48 144 48 144 0 0 0"></polygon>
+                <text id="Publisher-version-Copy-2" font-family="ElsevierWordmarkRegular, Elsevier WordmarkRegular" font-size="17.9952" font-weight="normal" fill="#E9711C">
+                    <tspan x="12.2393" y="20.1990066">Publisher version</tspan>
+                </text>
+                <text id="Full-text-PDF" font-family="ElsevierWordmarkLight, Elsevier WordmarkLight" font-size="14.996" font-weight="normal" fill="#000000">
+                    <tspan x="36" y="39">Full text PDF</tspan>
+                </text>
+            </g>
+        </g>
+    </g>
+</svg>
