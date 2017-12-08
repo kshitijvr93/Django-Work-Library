@@ -189,7 +189,7 @@ def select_elsevier_bibvid_piis(conn, ntop=3):
     d_bibvid = {}
     d_piis = {}
     for row in results:
-        #print(row)
+        #print(row)$G
         fields = row.split('\t')
         bibvid='{}_{}'.format(fields[0],fields[1])
         link_index=4
@@ -218,7 +218,7 @@ def select_elsevier_bibvid_piis(conn, ntop=3):
         obibvid = d_piis.get(pii,None)
         if obibvid is not None:
             l_messages.append(
-                "WARNING:PII {} is first associated with bibid {}."
+                "WARNING:PII '{}' is first associated with bibid {}."
                 " Ignoring its additional association with bibid={}"
                 .format(pii, obibvid, bibvid))
         else:
@@ -397,7 +397,6 @@ connection_name = 'mysql_marshal1'
 connection_name = 'silodb'
 connection_name = 'integration_sobekdb'
 connection_name = 'production_sobekdb'
-connection_name = 'integration_sobekdb'
 
 print("Starting:calling test_connection")
 
