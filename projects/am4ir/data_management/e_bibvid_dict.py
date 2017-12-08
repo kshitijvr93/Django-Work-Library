@@ -84,7 +84,7 @@ class DBConnection():
                 # Use custom package mysqlclient/module MySQLdb driver
                 # methods to open and return a connection.
                 #See https://github.com/methane/mysql-driver-benchmarks/blob/master/bench2_world.py
-                # See if it complains about extra keys... maybe ok.
+                # Extract only needed keys for MySQLdb.connect(), else it chokes.
                 d_mc = {k:d_connect[k] for k in [
                   'user','host','database','password']}
                 self.connection = MySQLdb.connect(**d_mc)
@@ -159,7 +159,7 @@ class DBConnection():
 # NOTE: The selected columns and column order are relied upon by caller,
 # so do not change them.
 
-def select_ls_bibvid_piis(conn, ntop=3):
+def select_elsevier_bibvid_piis(conn, ntop=3):
     l_messages=[]
     l_messages.append("Building d_bibvid dictionary of bibvids for Elsevier...")
     # Get ntop rows from db connection with a query herein.
@@ -253,12 +253,12 @@ def test_connect(connection_name=None):
             'host': '127.0.0.1','database': 'marshal1'
         },
         #NOTE: from RVP Desk must FIRST TURN off cisco mobile client to reach this.
-        #'production_sobekdb' : {
-        #    'db_system', 'SQL SERVER'
-        #    'driver': 'SQL SERVER',
-        #    'server': r'lib-sobekdb\SobekCM',
-        #    'database': 'SobekDB',
-        #}
+        'production_sobekdb' : {
+            'db_system', 'SQL SERVER'
+            'driver': 'SQL SERVER',
+            'server': r'lib-sobekdb\SobekCM',
+            'database': 'SobekDB',
+        }
         'silodb' : {
             'db_system': 'SQL SERVER',
             'driver': 'SQL SERVER',
@@ -326,7 +326,9 @@ def test_query(conn=None):
 
     ## MAIN WORK --  Query the UFDC Database and Create the dictionaries
 
-    l_messages,d_bibvid,query,d_pii = select_ls_bibvid_piis(conn, ntop=0)
+    l_messages,d_bibvid,query,d_pii = select_elsevier_bibvid_piis(
+      conn, ntop=0)
+
     d_log['step-001-select_ls_bibvids_piis'] = l_messages
 
     ##################
@@ -385,8 +387,21 @@ def test_query(conn=None):
 # Test connection
 connection_name = 'mysql_marshal1'
 connection_name = 'silodb'
+connection_name = 'integration_sobekdb'
+connection_name = 'production_sobekdb'
+
 print("Starting:calling test_connection")
 
-test_connect(connection_name=connection_name)
+conn=test_connect(connection_name=connection_name)
+
+print("Got conn={}: ".format(repr(conn)))
+
+#Do the bibvid query for production
+get_bibvid_piis(conn=conn)
+
+
+print("calling conn.connection.close()")
+
+conn.connection.close()
 
 print("Done")
