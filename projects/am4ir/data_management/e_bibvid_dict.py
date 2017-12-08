@@ -44,7 +44,8 @@ from collections import OrderedDict
 
 #import pypyodbc
 import pyodbc
-import mysqlclient
+#import mysqlclient
+import MySQLdb
 import datetime
 
 class DBConnection():
@@ -66,30 +67,32 @@ class DBConnection():
         if self.db_system not in d_sys_drivers.keys():
             raise ValueError("db_system = '{}' not supported"
                 .format(self.db_system))
+
         self.driver = d_connect['driver']
 
-        if driver not in d_sys_drivers[db_system.keys()]:
+        if self.driver not in d_sys_drivers[self.db_system]:
             raise ValueError("For db_system {}, driver {} not supported"
-              .format(db_system,driver))
+              .format(self.db_system,self.driver))
 
         self.d_connect = d_connect
-        self.db_system = d_connect.get('db_system','SQL SERVER 2012')
-        self.server = d_connect.get('server','localhost/SQLEXPRESS')
-        self.db = d_connect.get('database','test')
-        self.driver = d_connect.get('driver','SQL Server')
+        self.db_system = d_connect['db_system']
+        self.db = d_connect['database']
 
         if d_connect['db_system'] == 'mysql':
-            if driver == 'mysqlclient':
-                # Use custom driver methods to open and return
-                # a connection.
+            if self.driver == 'mysqlclient':
+                # Use custom package mysqlclient/module MySQLdb driver
+                # methods to open and return a connection.
                 #See https://github.com/methane/mysql-driver-benchmarks/blob/master/bench2_world.py
                 # See if it complains about extra keys... maybe ok.
-                self.connection = MySQLdb.connect(d_connect)
+                d_mc = {k:d_connect[k] for k in [
+                  'user','host','database','password']}
+                self.connection = MySQLdb.connect(**d_mc)
             else:
                 raise ValueError('Bad driver {}'.format(driver))
 
         else: # assume an sql server connection
 
+            self.server = d_connect['server']
             # NOTE: also some of these drivers might be tested later...
             # but SQL Server works OK for my UF office pc in 2017
             drivers = ['SQL Server'
@@ -236,7 +239,7 @@ def test_connect(connection_name=None):
         'mysql_marshal1' : {
             'driver' : 'mysqlclient',
             'db_system':'mysql',
-            'user':'podengo', 'password':'20MY18sql',
+            'user':'podengo', 'password':'20MY18sql!',
             'host': '127.0.0.1','database': 'marshal1'
         },
         #NOTE: from RVP Desk must FIRST TURN off cisco mobile client to reach this.
@@ -277,7 +280,7 @@ def test_connect(connection_name=None):
 
     except Exception as e:
         msg=("Failed database connection={}:\nwith exception:\n{}"
-            .format(repr(db_connection),repr(e)))
+            .format(repr(d_connect),repr(e)))
 
         raise ValueError(msg)
     return connection
@@ -370,7 +373,7 @@ def test_query(conn=None):
     rv="See output log file name='{}'".format(log_filename)
 
 # Test connection
-connection_name = 'mysql-marshal1'
+connection_name = 'mysql_marshal1'
 print("Starting:calling test_connection")
 
 test_connect(connection_name=connection_name)
