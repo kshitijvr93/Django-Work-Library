@@ -76,7 +76,8 @@ class DBConnection():
 
         self.d_connect = d_connect
         self.db_system = d_connect['db_system']
-        self.db = d_connect['database']
+        #self.db = d_connect['database']
+        self.database = d_connect['database']
 
         if d_connect['db_system'] == 'mysql':
             if self.driver == 'mysqlclient':
@@ -101,10 +102,19 @@ class DBConnection():
                       ,'SQL Server Native Client 11.0'
                       ]
             try:
-                self.cxs = ("DRIVER={};SERVER=;"
-                      "dataBASE=;Trusted_connection=yes"
-                      .format(self.driver,self.server, self.database))
+                # NOTE: correct this later... now only SQL Server driver works
+                #but NEED the literal {} wrapper.
+                #https://social.msdn.microsoft.com/Forums/en-US/1e6b9ddb-ffb3-44ff-b06d-104178cc4bfe/connect-to-sql-server-express-2012-from-python-34?forum=sqlexpress
 
+                # this part works... "DRIVER=\{SQL Server\};SERVER=;"
+                self.cxs = (
+                  "DRIVER={{{}}};SERVER={};dataBASE={};Trusted_connection=yes"
+                  .format(self.driver,self.server, self.database))
+
+                print("---\n{}: Trying pyodbc connect with self.cxs='{}'\n---"
+                  .format(me,self.cxs))
+
+                sys.stdout.flush()
                 # Open the connection for the primary cursor
                 self.connection = pyodbc.connect(self.cxs)
 
@@ -374,6 +384,7 @@ def test_query(conn=None):
 
 # Test connection
 connection_name = 'mysql_marshal1'
+connection_name = 'silodb'
 print("Starting:calling test_connection")
 
 test_connect(connection_name=connection_name)
