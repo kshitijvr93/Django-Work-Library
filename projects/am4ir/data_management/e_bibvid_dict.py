@@ -8,6 +8,7 @@ from pathlib import Path
 
 # To an lxml tree, add subelements recursively from nested python data structures
 # This is useful to register log message traces and to output into xml format at the end of a run.
+
 def add_subelements(element, subelements):
     if isinstance(subelements, dict):
         d_subelements = OrderedDict(sorted(subelements.items()))
@@ -33,6 +34,7 @@ def add_subelements(element, subelements):
 # CONNECT TO DB, RUN QUERY, BUILD RESULTS TO DICT, OUTPUT SOME RESULTS - SAMPLE
 import os
 import csv
+
 #speedup to set large field_size_limit?
 csv.field_size_limit(256789)
 #import xlrd
@@ -41,53 +43,99 @@ import inspect
 from collections import OrderedDict
 
 #import pypyodbc
+import pyodbc
+import mysqlclient
 import datetime
 
 class DBConnection():
-    def __init__(self, server='lib-sobekdb\\sobekcm',db='SobekDB',driver_index=0):
+    # sample connection strings:
+    # ("DRIVER={MySQL ODBC 3.51 Driver};SERVER=localhost;DATABASE=marshal1;""
+    # "user=podengo;password=20MY18sql!;OPTION=3;")
+    def __init__(self, d_connect=None):
+        me = 'DBConnection.__init__()'
         self.verbosity = 1
-        self.server = server
-        self.db = db
-        self.outdelim = '\t'
-        drivers = ['SQL Server'
-                  ,'SQL Server Native Client 9.0'
-                  ,'SQL Server Native Client 10.0'
-                  ,'SQL Server Native Client 11.0'
-                  ]
-        self.cxs = ("DRIVER={%s};SERVER=%s;"
-              "dataBASE=%s;Trusted_connection=yes"
-              % (drivers[driver_index],self.server, self.db))
-        try:
-            # Open the primary cursor for this connection.
-            #self.conn = pypyodbc.connect(self.cxs)
-            self.conn = pyodbc.connect(self.cxs)
 
-        except Exception as e:
-            print("Connection attempt FAILED with connection string:\n'{}',\ngot exception:\n'{}'"
-                 .format(self.cxs,repr(e)))
-            raise ValueError("{}: Error. Cannot open connection.".format(repr(self)))
+        # Supported db systems and drivers.
+        d_sys_drivers = {
+            'mysql': ['mysqlclient'],
+            'SQL SERVER': ['SQL SERVER']
+        }
+        self.db_system =  d_connect['db_system']
+        self.field_delimiter = d_connect.get('field_delimiter','\t')
 
-        if self.conn is None:
-            raise ValueError(
-              "Cannot connect using pyodbc connect string='%s'"
-              % (self.cxs) )
-        self.cursor = self.conn.cursor()
-        if self.cursor is None:
-            raise ValueError(
-              "%s: ERROR - Cannot open cursor." % repr(self))
+        if self.db_system not in d_sys_drivers.keys():
+            raise ValueError("db_system = '{}' not supported"
+                .format(self.db_system))
+        self.driver = d_connect['driver']
+
+        if driver not in d_sys_drivers[db_system.keys()]:
+            raise ValueError("For db_system {}, driver {} not supported"
+              .format(db_system,driver))
+
+        self.d_connect = d_connect
+        self.db_system = d_connect.get('db_system','SQL SERVER 2012')
+        self.server = d_connect.get('server','localhost/SQLEXPRESS')
+        self.db = d_connect.get('database','test')
+        self.driver = d_connect.get('driver','SQL Server')
+
+        if d_connect['db_system'] == 'mysql':
+            if driver == 'mysqlclient':
+                # Use custom driver methods to open and return
+                # a connection.
+                #See https://github.com/methane/mysql-driver-benchmarks/blob/master/bench2_world.py
+                # See if it complains about extra keys... maybe ok.
+                self.connection = MySQLdb.connect(d_connect)
+            else:
+                raise ValueError('Bad driver {}'.format(driver))
+
+        else: # assume an sql server connection
+
+            # NOTE: also some of these drivers might be tested later...
+            # but SQL Server works OK for my UF office pc in 2017
+            drivers = ['SQL Server'
+                      ,'SQL Server Native Client 9.0'
+                      ,'SQL Server Native Client 10.0'
+                      ,'SQL Server Native Client 11.0'
+                      ]
+            try:
+                self.cxs = ("DRIVER={};SERVER=;"
+                      "dataBASE=;Trusted_connection=yes"
+                      .format(self.driver,self.server, self.database))
+
+                # Open the connection for the primary cursor
+                self.connection = pyodbc.connect(self.cxs)
+
+            except Exception as e:
+                print(
+                  "Connection attempt FAILED with connection string:\n'{}'"
+                  ",\ngot exception:\n'{}'" .format(self.cxs,repr(e)))
+                raise ValueError(
+                  "{}: Error. Cannot open connection."
+                  .format(repr(self)))
+
+            if self.connection is None:
+                raise ValueError(
+                  "Cannot connect using pyodbc connect string='{}'"
+                  .format(self.cxs))
+            self.cursor = self.connection.cursor()
+            if self.cursor is None:
+                raise ValueError(
+                  "{}: ERROR - Cannot open cursor.".format(repr(self)))
+        # end sql server connection
+    # end  class DBConnection.__init__()
 
     def query(self, query=''):
         cur = self.cursor.execute(query)
         header = ''
         for i, field_info in enumerate(cur.description):
-            header += self.outdelim if i > 0 else ''
+            header += self.field_delimiter if i > 0 else ''
             header += field_info[0]
 
         results = []
         for row in cur.fetchall():
             result = ''
             for (i, field_value) in enumerate(row):
-                result += self.outdelim if i > 0 else ''
+                result += self.field_delimiter if i > 0 else ''
                 result += str(field_value)
             results.append(result)
         return header, results
@@ -95,16 +143,19 @@ class DBConnection():
 #end class DBConnection()
 
 #
-# NOTE: The selected columns and column order are relied upon by caller, so do not change them.
+# NOTE: The selected columns and column order are relied upon by caller,
+# so do not change them.
+
 def select_ls_bibvid_piis(conn, ntop=3):
     l_messages=[]
     l_messages.append("Building d_bibvid dictionary of bibvids for Elsevier...")
     # Get ntop rows from db connection with a query herein.
     # Return messages, a dictionary d_bibvid of results.
     # Later we will time the task of retrieving entitlement for each PII/article.
-    # NOTE: the %LS005% condition is a capitulation to the sad state that lower bib values
-    # that are BAD elsevier records haunt the SobekCM v4.9 database since january 2016 since
-    # there is not a clean and quick way to delete old records yet. Maybe in v4.10.
+    # NOTE: the %LS005% condition is a capitulation to the sad state that
+    # lower bib values that are BAD elsevier records haunt the SobekCM v4.9
+    # database since january 2016 since there is not a clean and quick way to
+    # delete old records yet. Maybe in v4.10.
     #
     top = "top({})".format(ntop) if ntop else ""
     query = '''
@@ -173,25 +224,67 @@ def ls_mets_validate(d_bibvid, resources_folder):
 
 # TEST RUN ON PRODUCTION - EBIBVID ---
 # DO the select
-if 1==1:
-    #########
-    try:
-        #test_conn = DBConnection(server='lib-ufdc-cache\ufdcprod,49352',db='SobekTest')
-        # conn = DBConnection(server='lib-ufdc-cache\\ufdcprod,49352', db= 'SobekTest')
+def test_connect(connection_name=None):
+    me = 'test_connect'
 
-        # PRODUCTION DATABASE #NOTE: from RVP Desk must FIRST TURN off cisco mobile client to reach this.
-        server = r'lib-sobekdb\SobekCM'
-        db = 'SobekDB'
-        conn = DBConnection(server=server, db=db)
-        cxs = conn.cxs
+    #print('{}: Starting with connection_name={}'.format(connection_name)))
+    d_connections = {
+        # Now using mysqlclient package
+        # Note a different python package/driver needed OPTION=3.
+        # It also needed 127.0.0.1:3306 (with port suffix)
+        # Maybe needed here too?
+        'mysql_marshal1' : {
+            'driver' : 'mysqlclient',
+            'db_system':'mysql',
+            'user':'podengo', 'password':'20MY18sql',
+            'host': '127.0.0.1','database': 'marshal1'
+        },
+        #NOTE: from RVP Desk must FIRST TURN off cisco mobile client to reach this.
+        #'production_sobekdb' : {
+        #    'db_system', 'SQL SERVER'
+        #    'driver': 'SQL SERVER',
+        #    'server': r'lib-sobekdb\SobekCM',
+        #    'database': 'SobekDB',
+        #}
+        'silodb' : {
+            'db_system': 'SQL SERVER',
+            'driver': 'SQL SERVER',
+            'server': r'localhost\SQLExpress',
+            'database': 'silodb',
+        },
+        'integration_sobekdb': {
+            'db_system': 'SQL SERVER',
+            'driver': 'SQL SERVER',
+            'server': r'lib-ufdc-cache\\ufdcprod,49352',
+            'database': 'SobekTest',
+
+        },
+    } # end d_connections
+
+    if connection_name not in d_connections.keys():
+        msg = ("{}: Invalid connection name {} given. Try one of:"
+            .format(me, repr(connection_name)))
+        for name in d_connections.keys():
+            msg += name
+            msg += ', '
+        raise ValueError(msg)
+
+    d_connect = d_connections[connection_name]
+
+    try:
+        print("Using connection='{}'".format(repr(d_connect)))
+        connection = DBConnection(d_connect=d_connect)
 
     except Exception as e:
-        print("Failed connection to server=n{},db={}:\nwith exception:\n{}".format(server,db,repr(e)))
-        raise e
+        msg=("Failed database connection={}:\nwith exception:\n{}"
+            .format(repr(db_connection),repr(e)))
 
-    #conn = test_conn
+        raise ValueError(msg)
+    return connection
+# end test)connect
 
-    ########
+def test_query(conn=None):
+
     d_log = {}
     d_params = {}
     d_log['params'] = d_params
@@ -202,7 +295,7 @@ if 1==1:
     secsz_begin = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
 
     # elsevier_base
-    elsevier_base = ('c:/rvp/elsevier')
+    elsevier_base = ('c:/rvp/data/elsevier')
     app_run = 'ebibvid/{}'.format(secsz_begin)
 
     #20160624 testing..
@@ -210,17 +303,20 @@ if 1==1:
     log_filename = '{}/logfile.xml'.format(output_folder)
 
     output_dict_pii_filename = (
-        "{}/dictionary_pii_bibvid_ou_smathers.txt".format(output_folder))
+        "{}/dictionary_pii_bibvid_out_smathers.txt".format(output_folder))
 
-    d_params['connection-string'] = conn.cxs
+    d_params['d_connect'] = repr(conn.d_connect)
     d_params['output-folder'] = output_folder
     os.makedirs(output_folder, exist_ok=True)
 
     d_params['secsz-begin'] = secsz_begin
 
-    ## MAIN WORK --  Create the dictionaries
+    ## MAIN WORK --  Query the UFDC Database and Create the dictionaries
+
     l_messages,d_bibvid,query,d_pii = select_ls_bibvid_piis(conn, ntop=0)
     d_log['step-001-select_ls_bibvids_piis'] = l_messages
+
+    ##################
 
     # Save d_pii dictionary to csv file for use by eatxml, other utilities
     # RESUME...
@@ -234,10 +330,11 @@ if 1==1:
             if i % 1000 == 0:
                 print("{}, key={}, value[]={}".format(i, repr(key), repr(value)))
             # combine bib with vid with intervening underbar for primary user, program extmets
-            print("{},{}_{},{},{},{}".format(key,value[0],value[1],value[2],value[3],value[4])
-                 ,file=outfile)
+            print("{},{}_{},{},{},{}".format(key,value[0],value[1],value[2]
+                ,value[3], value[4]) ,file=outfile)
 
-    # TODO: visit resources directories of LS bibvid named METS files and validate pii value.
+    # TODO: visit resources directories of LS bibvid named METS files and
+    # validate pii value.
     # TODO: also modify to validate pii and hash values for limited set of LS bibvids.
     # todo: add support to give option to visit ALL resource LS mets files and report any
     # that exist for which we do not have a d_bibvid entry.
@@ -252,7 +349,8 @@ if 1==1:
 
     # TODO: Or move this to its own utility that reads the d_bibvid dictionary file.
     # Validate that all bibvid-prefixed mets files in resource folder have the pii
-    # that we got from sobekcm database query as part of the SobekCM_Item table's 'link' column value.
+    # that we got from sobekcm database query as part of the SobekCM_Item
+    # table's 'link' column value.
     # l_messages, all_ok = ls_mets_validate(d_bibvid, resources_folder)
     # d_log['step-002-ls-mets-validate'] = l_messages
 
@@ -270,3 +368,11 @@ if 1==1:
         outfile.write(etree.tostring(e_root, pretty_print=True))
 
     rv="See output log file name='{}'".format(log_filename)
+
+# Test connection
+connection_name = 'mysql-marshal1'
+print("Starting:calling test_connection")
+
+test_connect(connection_name=connection_name)
+
+print("Done")
