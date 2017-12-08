@@ -176,6 +176,7 @@ def select_elsevier_bibvid_piis(conn, ntop=3):
              from sobekcm_item i, sobekcm_item_group g
              where
                i.groupid = g.groupid and g.bibid like '%LS005%'
+               and i.deleted != 1
              order by i.link
              '''.format(top)
 
@@ -226,14 +227,14 @@ def select_elsevier_bibvid_piis(conn, ntop=3):
     return l_messages,d_bibvid, query, d_piis
 # end def ls_select_bibvid
 
-def ls_mets_validate(d_bibvid, resources_folder):
+def elsevier_mets_validate(d_bibvid, resources_folder):
     all_ok = False
     l_messages = []
     l_messages.append("Starting...")
     l_messages.append("Done. all_ok={}".format(repr(all_ok)))
     return l_messages, all_ok
 
-#end ls_mets_validate
+#end elsevier_mets_validate
 
 # TEST RUN ON PRODUCTION - EBIBVID ---
 # DO the select
@@ -254,11 +255,11 @@ def test_connect(connection_name=None):
         },
         #NOTE: from RVP Desk must FIRST TURN off cisco mobile client to reach this.
         'production_sobekdb' : {
-            'db_system', 'SQL SERVER'
+            'db_system': 'SQL SERVER',
             'driver': 'SQL SERVER',
             'server': r'lib-sobekdb\SobekCM',
             'database': 'SobekDB',
-        }
+        },
         'silodb' : {
             'db_system': 'SQL SERVER',
             'driver': 'SQL SERVER',
@@ -296,7 +297,7 @@ def test_connect(connection_name=None):
     return connection
 # end test)connect
 
-def test_query(conn=None):
+def get_bibvid_piis(conn=None):
 
     d_log = {}
     d_params = {}
@@ -324,7 +325,7 @@ def test_query(conn=None):
 
     d_params['secsz-begin'] = secsz_begin
 
-    ## MAIN WORK --  Query the UFDC Database and Create the dictionaries
+    ## DATABASE - MAIN WORK --  Query the UFDC Database and Create the dictionaries
 
     l_messages,d_bibvid,query,d_pii = select_elsevier_bibvid_piis(
       conn, ntop=0)
@@ -332,14 +333,16 @@ def test_query(conn=None):
     d_log['step-001-select_ls_bibvids_piis'] = l_messages
 
     ##################
-
     # Save d_pii dictionary to csv file for use by eatxml, other utilities
     # RESUME...
 
     od_pii = OrderedDict(d_pii)
 
     d_log['output-dict-pii-filename'] = output_dict_pii_filename
-    print("printing to output_dict_pii_filename={}".format(output_dict_pii_filename))
+    print("printing to output_dict_pii_filename={}"
+      .format(output_dict_pii_filename))
+
+    # WRITE THE PII BIBVID OUPUT FILE
     with open(output_dict_pii_filename, 'w') as outfile:
         for i,(key,value) in enumerate(od_pii.items()):
             if i % 1000 == 0:
@@ -350,23 +353,25 @@ def test_query(conn=None):
 
     # TODO: visit resources directories of LS bibvid named METS files and
     # validate pii value.
-    # TODO: also modify to validate pii and hash values for limited set of LS bibvids.
-    # todo: add support to give option to visit ALL resource LS mets files and report any
-    # that exist for which we do not have a d_bibvid entry.
+    # TODO: also modify to validate pii and hash values for limited set of LS
+    # bibvids.
+    # todo: add support to give option to visit ALL resource LS mets files and
+    # report any that exist for which we do not have a d_bibvid entry.
 
-    # Set resources folder: may need to double-up on backslashes, just test it first.
+    # Set resources folder: may need to double-up on backslashes, just test it
+    # first.
     # PRODUCTION: resources_folder = '\\flvc.fs.osg.ufl.edu\flvc-ufdc\resources'
 
     # TEST SYSTEM RESOURCES FOLDER:
-    resources_folder = (
-      '\\\\osg-prod.cns-fs04.osg.ufl.edu\\uflibfs01\\DeptData\\IT\\WebDigitalUnit'
-      '\\testufdc_elsevier\\resources\\')
-
+    #resources_folder = (
+    # '\\\\osg-prod.cns-fs04.osg.ufl.edu\\uflibfs01\\DeptData\\IT\\WebDigitalUnit'
+    # '\\testufdc_elsevier\\resources\\')
+    #
     # TODO: Or move this to its own utility that reads the d_bibvid dictionary file.
     # Validate that all bibvid-prefixed mets files in resource folder have the pii
     # that we got from sobekcm database query as part of the SobekCM_Item
     # table's 'link' column value.
-    # l_messages, all_ok = ls_mets_validate(d_bibvid, resources_folder)
+    # l_messages, all_ok = elsevier_mets_validate(d_bibvid, resources_folder)
     # d_log['step-002-ls-mets-validate'] = l_messages
 
     # Final Log Output
@@ -378,17 +383,21 @@ def test_query(conn=None):
     e_root = etree.Element("uf-ebibvid")
     #add_subelements_from_dict(e_root, d_log)
     add_subelements(e_root, d_log)
-
+    # WRITE LOGIFLE
     with open(log_filename, 'wb') as outfile:
         outfile.write(etree.tostring(e_root, pretty_print=True))
 
     rv="See output log file name='{}'".format(log_filename)
+    print(rv)
+
+#end def get_bibvid_piis
 
 # Test connection
 connection_name = 'mysql_marshal1'
 connection_name = 'silodb'
 connection_name = 'integration_sobekdb'
 connection_name = 'production_sobekdb'
+connection_name = 'integration_sobekdb'
 
 print("Starting:calling test_connection")
 
