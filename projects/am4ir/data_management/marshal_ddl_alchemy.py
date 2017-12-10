@@ -37,7 +37,7 @@ def tables_create():
              comment='oadoi.org-asserted open_access status for doi'),
       Column('publisher_id', Integer,
         comment='foreign key to publisher'),
-      Column('publisher_item_id', String(150),
+      Column('publisher_item_id', String(50),
              comment='Publisher-asserted unique id for this article'),
       Column('publisher_open_access', String(16),
              comment='Publisher-asserted open_access status'),
@@ -49,17 +49,19 @@ def tables_create():
              comment="Ufdc database sobekcm_item.item_id"),
       Column('ufdc_vid', Integer,
              comment="usually a 5-digit integer"),
-      Column('update_dt6', DateTime, default=datetime.datetime.utcnow,
+      Column('embargo_end_dt', DateTime,
+             comment="DateTime public embargo ended, per publisher"),
+      Column('update_dt', DateTime, default=datetime.datetime.utcnow,
              comment="DateTime of last update to this row"),
       CheckConstraint(sqltext='ufdc_item_id = 1  or ufdc_item_id is null',
-        name='ck_article_item_ufdc_item',
-        comment='All articles must have item id value of 1 in ufdc' ),
+        name='ck_article_item_ufdc_item' ),
       ForeignKeyConstraint(
-        ['publisher_id'], ['publisher.publisher_id']),
+        ['publisher_id'], ['publisher.publisher_id'],
+        name='fk_article_item_publisher_id'),
       #Note: v1.2 sqlalchemy: UniqueConstraint does not use list datatype
-      UniqueConstraint( 'ufdc_item_id','ufdc_group_id',
+      UniqueConstraint('ufdc_item_id','ufdc_group_id',
         name='uq_article_item_uitem_ugroup'),
-      UniqueConstraint( 'doi' ,name='uq_article_item_doi' ),
+      UniqueConstraint('doi' ,name='uq_article_item_doi' ),
       comment='Table should have only article_items that are not deleted in UFDC'
       )
     tables.append(table)
@@ -70,9 +72,9 @@ def tables_create():
       'mysql+pyodbc://./MyDb': {'extension': '_mssql.sql'},
       # comment out some for now to declutter
       #'sqlite:///:memory:': {'extension': '_sqlite.sql'},
-      #'postgresql://': {'extension':'_postgresql.sql'},
+      'postgresql://': {'extension':'_postgresql.sql'},
       #'oracle+cx_oracle://': {'extension':'_oracle.sql'},
-      'mssql+pyodbc://': {'extension':'_mssql.sql'},
+      #'mssql+pyodbc://': {'extension':'_mssql.sql'},
     }
     engines = []
     for engine_name, extension in d_ename_extension.items():
@@ -94,8 +96,6 @@ def tables_create():
             print(CreateTable(table).compile(engine))
 
     print('======================================')
-
-
 
     return
 # end def tables_create()
