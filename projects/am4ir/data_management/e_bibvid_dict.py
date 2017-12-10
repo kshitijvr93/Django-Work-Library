@@ -192,6 +192,8 @@ def select_elsevier_bibvid_piis(conn, ntop=3):
         #print(row)$G
         fields = row.split('\t')
         bibvid='{}_{}'.format(fields[0],fields[1])
+        item_id = fields[2]
+        group_id = fields[3]
         link_index=4
         link = fields[link_index]
         # pii is after last slash, but before a ?, if any
@@ -216,11 +218,14 @@ def select_elsevier_bibvid_piis(conn, ntop=3):
         d_bibvid[bibvid] = fields[2:]
 
         obibvid = d_piis.get(pii,None)
+
         if obibvid is not None:
+            # This is an inconsistency within UFDC itself that will need to be
+            # corrected:
             l_messages.append(
-                "WARNING:PII '{}' is first associated with bibid {}."
-                " Ignoring its additional association with bibid={}"
-                .format(pii, obibvid, bibvid))
+                "WARNING:UFDC PII '{}' has dup bibids: first row has {}."
+                " A dup row={}"
+                .format(pii, obibvid, repr(row)))
         else:
             d_piis[pii] = fields[:]
 
@@ -310,10 +315,12 @@ def get_bibvid_piis(conn=None):
 
     # elsevier_base
     elsevier_base = ('c:/rvp/data/elsevier')
-    app_run = 'ebibvid/{}'.format(secsz_begin)
+    app = 'ebibvid/'
+    app_run = '{}/{}'.format(app,secsz_begin)
 
-    #20160624 testing..
-    output_folder = '{}/output_test/{}'.format(elsevier_base, app_run)
+    #20160624 testing.. now use app not apprun to save space
+    #output_folder = '{}/output_test/{}'.format(elsevier_base, app_run)
+    output_folder = '{}/output_test/{}'.format(elsevier_base, app)
     log_filename = '{}/logfile.xml'.format(output_folder)
 
     output_dict_pii_filename = (
