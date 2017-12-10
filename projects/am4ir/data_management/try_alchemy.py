@@ -38,5 +38,5 @@ print(users.c.name + users.c.fullname)
 for e in ['mysql://','sqlite:///:memory:']:
   print("{}:{}".format(e,(users.c.name + users.c.fullname)
     .compile(bind=create_engine(e))))
-    
+
 metadata.create_all(engine)
