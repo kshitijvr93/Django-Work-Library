@@ -25,7 +25,7 @@ def tables_create():
 
     tables.append(table)
 
-    table_name = 'article_item3'
+    table_name = 'article_item'
     table = Table(table_name, metadata,
       Column('article_item_id', Integer, primary_key=True),
       Column('digest_sha1_mets', String(150),
