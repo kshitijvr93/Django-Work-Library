@@ -31,16 +31,23 @@ def tables_create():
              comment='Hash for mets file for this item. See exoldmets.py'),
       Column('doi', String(150),
              comment='Digital Object ID known to all big publishers'),
+      Column('eid', String(30),
+             comment="eid yet another article id"),
       Column('is_am4ir', Boolean,
              comment='whether publisher provides accepted manuscript IR view'),
       Column('oadoi_open_access', String(16),
              comment='oadoi.org-asserted open_access status for doi'),
+      Column('api_create_dt', DateTime, default=datetime.datetime.utcnow,
+        comment=('DateTime this item was created at source api. Elsevier calls'
+        'it orig_load_date, Crossref api calls it deposit_date, etc'),
+      ),
       Column('publisher_id', Integer,
-        comment='foreign key to publisher'),
+             comment='Has foreign key to publisher.publisher_id'),
       Column('publisher_item_id', String(50),
              comment='Publisher-asserted unique id for this article'),
-      Column('publisher_open_access', String(16),
-             comment='Publisher-asserted open_access status'),
+      Column('publisher_open_access', String(16)),
+      Column('scopus_id', String(20),
+             comment="scopus_id owned by Elsevier as of year 2017 "),
       Column('ufdc_bibid', String(10),
              comment="2-digit prefix followed by 8-digit integer"),
       Column('ufdc_group_id', Integer,
@@ -61,11 +68,15 @@ def tables_create():
       #Note: v1.2 sqlalchemy: UniqueConstraint does not use list datatype
       UniqueConstraint('ufdc_item_id','ufdc_group_id',
         name='uq_article_item_uitem_ugroup'),
-      UniqueConstraint('doi' ,name='uq_article_item_doi' ),
-      comment='Table should have only article_items that are not deleted in UFDC'
-      )
+      UniqueConstraint('doi' ,name='uq_article_item_doi'),
+      UniqueConstraint('eid' ,name='uq_article_item_eid'),
+      UniqueConstraint('scopus_id' ,name='uq_article_item_scopus_id'),
+      UniqueConstraint('digest_sha1_mets' ,name='uq_article_item_mets'),
+      # Table-level comment
+      comment=(
+        'Table should have only article_items that are not deleted in UFDC'),
+      ) # end call to Table('article_item'...)
     tables.append(table)
-
 
     # sqlalchemy engines
     d_ename_extension = {
