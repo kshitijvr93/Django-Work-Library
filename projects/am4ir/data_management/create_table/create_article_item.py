@@ -1,7 +1,12 @@
 '''
-Create Marshaling Application Website (MAW) tables for am4ir.
-Read the output file of ebibvid, which has the ufdc item info,
-and insert it into Marshaling Application Website database tables.
+Generate and output DDL scripts to create Marshaling Application Website
+(MAW) table article_item. Uncomment the database systems of interest below.
+
+Early stages: just run this and copy paste the apt script output to
+MysqlWorkbench, SSMS Server, or an input file for your target database system
+and database name.
+
+Requires sqlalchemy version 1.2+
 '''
 import datetime
 from sqlalchemy import (
