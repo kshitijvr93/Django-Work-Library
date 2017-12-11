@@ -12,7 +12,8 @@ from collections import OrderedDict
 
 """
     class SheetDictReader(object):
-        Create and return a csv.DictReader style of iterable to read an excel sheet.
+        Create and return a csv.DictReader style of iterable to read an excel
+        sheet.
 """
 
 class SheetDictReader(object):
@@ -23,23 +24,24 @@ class SheetDictReader(object):
     Create and return a csv.DictReader style of iterable to read an excel
     sheet.
 
-    Extended Summary
+    <summary>
     ================
-    Create and return a csv.DictReader style of iterable to read an excel sheet, where the
-    column names are in row1 of the sheet, and where the sheet object is returned by xlrd
-    method workbook.get_sheet_by_name() or workbook.get_sheet_by_index.
+    Create and return a csv.DictReader style of iterable to read an excel sheet,
+    where the column names are in row1 of the sheet, and where the sheet object
+    is returned by xlrd method workbook.get_sheet_by_name() or
+    workbook.get_sheet_by_index.
+    </summary>
 
-    Params
-    ======
+    <param name='sheet'>
     sheet: sheet object ala package xlrd
-    This is the excel worksheet to read.
+    This is the name of the particular the sheet in the excel
+    worksheet/book that will be read.
+    </param>
 
-    nskip: integer
-    Integer number of initial sheet rows to skip, afterwhich is a row of column names,
-    after which are all of the data rows.
-
-    Notes
-    ======
+    <param name='nskip'>
+    Integer number of initial sheet rows to skip, after which is a row of
+    column names, after which are all of the data rows.
+    </param>
     """
     def __init__(self, sheet=None,nskip=-1):
 
@@ -60,8 +62,8 @@ class SheetDictReader(object):
             self.odict[column_name] = ""
 
     def __getitem__(self, index):
-        # Populate the dict with the sheet's next row of column values
-        # (stripped)and return the dict.
+        # Populate self.odict OrderedDictionary with the sheet's
+        # next row of column values (stripped) and return the dict.
         # We skip idx 0 (row 1) because it has the column names, already
         # read in by init.
         # So, be aware that index 0 really returns the row
@@ -83,15 +85,15 @@ class SheetDictReader(object):
         return self.odict
 
     def __repr__(self):
-        return ("%s: nrows=%s, ncols=%s, fieldnames=%s."
+        msg = ("%s: nrows=%s, ncols=%s, fieldnames=%s."
           % (self.__class__.__name__,
              repr(self.sheet.nrows),
              repr(self.sheet.ncols),
              repr(self.fieldnames),
              ))
+        return msg
 
 #end class SheetDictReader
-
 
 class PyodbcReader(object):
     """

@@ -198,8 +198,9 @@ class CitationsInspector():
     duplicates the lines in input files with the same DOI values.
     </param>
 
-    Also read the base citations that have a doi mentioned and create a dictionary
-    d_base_doi entry keyed by the doi with value being the entire line's text.
+    Also read the base citations that have a doi mentioned and create a
+    dictionary d_base_doi entry keyed by the doi with value being the entire
+    line's text.
 
     Also keep every line in the d_base dictionary, keyed by index line number
     zfilled to 10 positions.
@@ -249,9 +250,11 @@ class CitationsInspector():
             input_lines = input_file.readlines()
 
             for (index_line, line) in enumerate(input_lines):
-                # Skip the normal number of header lines of this file and any topic section line
+                # Skip the normal number of header lines of this file and any
+                # topic section line
                 if index_line < self.base_skip_lines or len(line) < 50:
-                    #print("Skipping base citations file context line='{}'".format(line))
+                    # print("Skipping base citations file context line='{}'"
+                    # .format(line))
                     continue
                 zfilled_index = str(index_line).zfill(10)
                 self.d_base_index[zfilled_index] = line
@@ -274,7 +277,8 @@ class CitationsInspector():
                     #MUST encode as below to handle printing misc chars in input
                     omsg = msg
                     print(msg.encode('ascii',errors='replace'))
-                    #print(omsg) -- would cause UnicodeEncodeError - charmap codec cant encodt '\ufffd\''
+                    #print(omsg) -- would cause UnicodeEncodeError -
+                    # charmap codec cant encodt '\ufffd\''
                 # SAVE BASE DOI to check for duplicates later
                 self.d_base_doi[doi] = line
                 n_file_citations += 1
@@ -287,13 +291,14 @@ class CitationsInspector():
     '''
     Method inspect()
 
-    <summary> Read the unit paths input files of ifas citations and inspect
-    them for problems.
-    Then write out the output worksheet to the same directory as the input
-    excel workbook, in output file named "{}.xls".format(out_book_name).
+    <summary> Read the unit paths input files (as tab-delimited rows)
+    of ifas citations, one per line, inspect them for problems.
+    Then write out the output worksheet to file named
+    "{}.xls".format(out_book_name) to the output folder.
+    It may be the same directory that holds the input file(s).
     </summary>
     <param name="input_file"> input file with multiple citations </param>
-    <param name=output_folder>ouput file to contain output excel files
+    <param name=output_folder>ouput folder to contain output excel files
     with same lines as in excel input files, with added indicators
     for violations/warnings per line/citation
     </param>
@@ -388,8 +393,8 @@ class CitationsInspector():
 
                         # DOI Dup Check  (error):
                         # check if doi already in current year
-                        # for a unit report that has just been processed earlier in this
-                        # loop over units
+                        # for a unit report that has just been processed earlier
+                        # in this loop over units
 
                         doi_current_dup = self.d_current_doi.get(doi, None)
                         if doi_current_dup is not None:
@@ -403,33 +408,38 @@ class CitationsInspector():
                               doi_current_dup))
                             d_column_style['doi'] = d_type_style['error']
                         else:
-                            # Do not reset style here for doi - keep it from prior doi check
+                            # Do not reset style here for doi - keep it from
+                            # prior doi check
                             self.d_current_doi[doi] = input_file_name
 
                         # DOI Dup Check 3 (error3):
-                        # check if doi already in previous line of this unit report that
-                        # has just been processed earlier this read loop of the input file
+                        # check if doi already in previous line of this unit
+                        # report that has just been processed earlier this read
+                        # loop of the input file
 
                         doi_unit_dup = d_unit_doi.get(doi, None)
                         if doi_unit_dup is not None:
                             n_dup_unit += 1
-                            print("ERROR: Input file {} line index={} has duplicate doi '{}'"
-                                  " to previous line {} in this unit's sheet."
+                            print(
+                              "ERROR: Input file {} line index={} has duplicate doi '{}'"
+                              " to previous line {} in this unit's sheet."
                               .format(input_file_name,index_line,doi,doi_unit_dup))
                             d_column_style['doi'] = d_type_style['error3']
                         else:
-                            # Do not reset style here for doi - keep it from prior doi check
+                            # Do not reset style here for doi - keep it from
+                            # prior doi check
                             d_unit_doi[doi] = index_line + 1
 
                     d_output['doi'] = doi
                     # end processing the doi, if any, in input line
 
                     # Parse the rest of the line that appears before the doi.
-                    #  Split the line based on the ')' that should first appear following the year that follows
-                    #  the author list
+                    # Split the line based on the ')' that should first appear
+                    # following the year that follows  the author list
                     index_base = 0
                     index_found = 0
-                    print("\n---Input file={}, index_line={}".format(input_file_name,index_line))
+                    print("\n---Input file={}, index_line={}"
+                      .format(input_file_name,index_line))
 
                     # Get the authors
                     index_found = line[index_base:].find('(')
@@ -440,7 +450,8 @@ class CitationsInspector():
                     else:
                         index_end = index_base + index_found
                         authors = line[index_base : index_end].strip()
-                        index_base = index_end + 1 # plus one to skip the '(' sentinel character )
+                        #Next +1 to skip the '(' sentinel character )
+                        index_base = index_end + 1
                         d_column_style['authors'] = d_type_style['valid']
                     print("Got authors='{}'".format(authors).encode('utf-8'))
                     d_output['authors'] = authors
@@ -456,13 +467,16 @@ class CitationsInspector():
                     else:
                         index_end = index_base + index_found
                         pub_year = line[index_base:index_end].strip()
-                        index_base = index_end + 2 # Add 1 to also skip sentinel character PLUS the following '.'.
+                        # +2 to skip sentinel character PLUS the following '.'.
+                        index_base = index_end + 2
                         d_column_style['pub_year'] = d_type_style['valid']
-                    #print("Got index_found={},index_end={},pub_year='{}'".format(index_found,index_end,pub_year))
+                    # print("Got index_found={},index_end={},pub_year='{}'"
+                    # .format(index_found,index_end,pub_year))
                     d_output['pub_year'] = pub_year
 
                     #TITLE
-                    # Accept either the first period or the first question mark to end the title.
+                    # Accept either the first period or the first question mark
+                    # to end the title.
                     index_found = line[index_base :].find('.')
                     index_found2 = line[index_base :].find('?')
                     if (index_found2 < index_found and index_found2 != -1):
@@ -478,12 +492,15 @@ class CitationsInspector():
                         title = line[index_base:index_end].strip()
                         index_base = index_end + 1
                         d_column_style['title'] = d_type_style['valid']
-                    #print("Got index_found={},end={},title='{}'".format(index_found,index_end,title))
+                    #print("Got index_found={},end={},title='{}'"
+                    # .format(index_found,index_end,title))
                     d_output['title'] = title
 
                     #JOURNAL
-                    # Seek end of journal name by finding open paren of issue then backtracking to the
-                    # 'last comma or period', the true end-sentinal, because title itself may have an arbitrary number of commas.
+                    # Seek end of journal name by finding open paren of issue
+                    # then backtracking to the 'last comma or period',
+                    # the true end-sentinel, because title itself may have an
+                    # arbitrary number of commas.
                     index_found = line[index_base:].find(',')
                     if skip_remaining_parsing == 1:
                         journal =  'Not found'
@@ -493,7 +510,8 @@ class CitationsInspector():
                         skip_remaining_parsing = 1
                     else:
                         index_end = index_base + index_found
-                        # Journal title is substring after last open paren(of year) and before last comma
+                        # Journal title is substring after last open paren(of
+                        # year) and before last comma
                         # because a title may have commas within it...
                         journal = line[index_base:index_end].strip()
                         # In this case we add to the end of index_found_open
@@ -544,12 +562,14 @@ class CitationsInspector():
                         else:
                             index_end = index_base + index_found
                             issue = line[index_base:index_end].strip()
-                            index_base = index_end + 2 # increment 2 also skips the , after the ending )
+                            # Do '+ 2' next: also skip the , after the ending )
+                            index_base = index_end + 2
                             d_column_style['issue'] = d_type_style['valid']
                         #print("Got issue = '{}'".format(issue))
                         d_output['issue'] = issue
                     if d_output.get('issue', None) == None:
-                        print("FieldISSUE:Issue not a key. Skip_issue={}".format(skip_issue))
+                        print("FieldISSUE:Issue not a key. Skip_issue={}"
+                          .format(skip_issue))
 
                     #Page Range:
                     index_found = line[index_base:].find('.')
@@ -565,7 +585,8 @@ class CitationsInspector():
                         index_base = index_end + 1
                         d_column_style['page_range'] = d_type_style['valid']
                     d_output['page_range'] = page_range
-                    print("input file {}, index {}, Calling writerow ".format(input_file_name,index))
+                    print("input file {}, index {}, Calling writerow "
+                      .format(input_file_name,index))
 
                     d_output['original_line'] = line
                     d_column_style['original_line'] = d_type_style['original']
@@ -576,7 +597,8 @@ class CitationsInspector():
             # } end with open input_file
             print("0")
             print("\n\n Inspected input file={} with {} lines and {} dois."
-              .format(input_file_name, len(input_lines), n_unit_dois ),file=sys.stdout)
+              .format(input_file_name, len(input_lines), n_unit_dois ),
+              file=sys.stdout)
 
             # Output excel workbook for this unit input file
             output_file_name = "{}/{}tmp.xls".format(path.parents[0],
