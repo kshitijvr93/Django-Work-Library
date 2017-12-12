@@ -17,6 +17,7 @@ oaidoi.org open access value.. oai_doi_open_access
 '''
 #
 import sys, os, os.path, platform
+import datetime
 
 
 def register_modules():
@@ -137,6 +138,10 @@ def am4ir_spreadsheet_to_am4ir_item(workbook_path=None,
           'embdate' : row['embdate'],
           'itemsubtype' : row['itemsubtype'],
           'issn' : row['issn'],
+          'update_dt' :
+            datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
+            #Eg if column type goes to microseconds (6 dec places)
+            #datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f"),
          } )
 
         if i % 100 == 0:
