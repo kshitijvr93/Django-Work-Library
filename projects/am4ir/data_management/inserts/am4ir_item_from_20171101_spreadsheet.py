@@ -18,6 +18,7 @@ oaidoi.org open access value.. oai_doi_open_access
 #
 import sys, os, os.path, platform
 
+
 def register_modules():
     platform_name = platform.system().lower()
     if platform_name == 'linux':
@@ -32,7 +33,6 @@ register_modules()
 
 print("sys.path={}".format(repr(sys.path)))
 
-sys.stdout.flush()
 import etl
 
 #### Sqlalechemy
@@ -68,10 +68,26 @@ def dbconnect():
 def am4ir_spreadsheet_to_am4ir_item(workbook_path=None):
 
     #initialize database connections for writing/inserting
-    engine = create_engine('mysql:///marshal1', echo=True)
-    metadata = MetaData(engine)
+    user='podengo'
+    pw='20MY18sql!'
+    dbname = 'marshal1'
 
-    
+    cxs = ('mysql+mysqldb://{}:{}@127.0.0.1:3306/{}'
+          .format(user,pw,dbname))
+
+    print("Using cxs={}".format(cxs))
+    engine = create_engine(cxs, echo=True)
+    metadata = MetaData(engine)
+    print('Connecting')
+    conn = engine.connect()
+    print('Connected with conn={}'
+      .format(repr(conn)))
+    tables = metadata.tables
+    print('Connected with conn={} to database with {} tables'
+      .format(repr(conn),len(tables)))
+    sys.stdout.flush()
+    am4ir_item = tables['am4ir_item']
+    #print('Found table am4ir_item...')
 
 
     #initialize reader
@@ -79,6 +95,8 @@ def am4ir_spreadsheet_to_am4ir_item(workbook_path=None):
     first_sheet = workbook.sheet_by_index(0)
     reader = SheetDictReader(first_sheet)
     for i,row in enumerate(reader):
+        engine.execute(am4ir_item.insert(),
+          itempii='somepiivalue{}'.format(i + 10000), )
         print(i)
 
     #Read the spreadsheet row by row
