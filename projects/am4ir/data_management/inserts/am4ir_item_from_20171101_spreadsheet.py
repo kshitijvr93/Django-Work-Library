@@ -66,15 +66,29 @@ the given database.
 def dbconnect():
     pass
 
-def am4ir_spreadsheet_to_am4ir_item(workbook_path=None):
+'''
+Connect to a database and insert spreadsheet rows to table am4ir_item
+
+<param name='workbook_path'>
+File path to an excel workbook to open, and use the first sheet as the
+data source.
+</param>
+<param name='cxs_format'>
+A python string format to use to construct the database connection string,
+along with other parameter d_format_params.
+</param>
+<param name='d_format_params'>
+Defines the names and values to use to insert into the cxs_format paramater
+string, to use to create a database connection.
+</param>
+
+'''
+def am4ir_spreadsheet_to_am4ir_item(workbook_path=None,
+  cxs_format='mysql+mysqldb://{user}:{password}@127.0.0.1:3306/{dbname}',
+  d_format_params=None):
 
     #initialize database connections for writing/inserting
-    user='podengo'
-    pw='20MY18sql!'
-    dbname = 'marshal1'
-
-    cxs = ('mysql+mysqldb://{}:{}@127.0.0.1:3306/{}'
-          .format(user,pw,dbname))
+    cxs = (cxs_format.format(**d_format_params))
 
     print("Using cxs={}".format(cxs))
     engine = create_engine(cxs, echo=True)
@@ -133,7 +147,35 @@ def am4ir_spreadsheet_to_am4ir_item(workbook_path=None):
 def run():
     workbook_path = ('C:\\rvp\\git\\citrus\\projects\\am4ir\\data\\inventory_am4ir\\'
         '20171101_from_elsevier_letitia_am4ir_masterlist.xlsx')
-    am4ir_spreadsheet_to_am4ir_item(workbook_path=workbook_path)
+    environment = 'mysql'
+    environment = 'mssql'
+
+    if environment == 'mysql':
+        cxs_format = (
+          'mysql+mysqldb://{user}:{password}@127.0.0.1:3306/{dbname}'
+          )
+        d_format_params = {}
+        d_format_params['user'] = 'podengo'
+        d_format_params['password'] = '20MY18sql!'
+        d_format_params['dbname'] = 'marshal1'
+    else: #assume sqlserver for now
+
+        # See https://stackoverflow.com/questions/24085352/how-do-i-connect-to-sql-server-via-sqlalchemy-using-windows-authentication
+        # Note: using windows authentication as we specify trusted connection
+        # Note: also had to add url-type param of driver=SQL+Server
+        cxs_format = (
+          'mssql://{server_name}\\SQLEXPRESS/{database_name}'
+          '?driver=SQL+Server'
+          '&trusted_connection=yes')
+        d_format_params = {}
+        d_format_params['server_name'] = 'localhost'
+        d_format_params['database_name'] = 'silodb'
+
+    print("Calling am4ir_spreadsheet_to_am4ir_item()....")
+    am4ir_spreadsheet_to_am4ir_item(workbook_path=workbook_path,
+      cxs_format=cxs_format,
+      d_format_params=d_format_params
+      )
     return
 
 print("Starting")

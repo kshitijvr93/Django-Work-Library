@@ -73,9 +73,9 @@ def tables_create():
       'mysql+pyodbc://./MyDb': {'extension': '_mssql.sql'},
       # comment out some for now to declutter
       #'sqlite:///:memory:': {'extension': '_sqlite.sql'},
-      'postgresql://': {'extension':'_postgresql.sql'},
+      #'postgresql://': {'extension':'_postgresql.sql'},
       #'oracle+cx_oracle://': {'extension':'_oracle.sql'},
-      #'mssql+pyodbc://': {'extension':'_mssql.sql'},
+      'mssql+pyodbc://': {'extension':'_mssql.sql'},
     }
     engines = []
     for engine_name, extension in d_ename_extension.items():
