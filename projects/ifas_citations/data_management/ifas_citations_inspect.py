@@ -226,7 +226,7 @@ class CitationsInspector():
         if len(self.input_paths) < 1:
           raise ValueError(
             "Found ZERO input files in input folder {} with glob {}"
-            .format(input_folder, input_files_glob))
+            .format(input_folder, repr(input_files_glob)))
         self.base_pubs_file_name = base_pubs_file_name
         if verbosity > 0:
             print("Using base pubs file name ='{}'"
@@ -320,6 +320,7 @@ class CitationsInspector():
         n_dup_unit = 0
         print("{}: Found {} input files".format(me,len(self.input_paths)))
         for i,path in enumerate(self.input_paths):
+
             input_file_name = "{}/{}".format(path.parents[0], path.name)
             print("Processing input file {}, name={}"
                 .format(i+1,input_file_name))
@@ -330,7 +331,12 @@ class CitationsInspector():
                 output_book_name = path.name[:dot_index]
             else:
                 output_book_name = '{}'.format(path.name).replace(' ','_')
-            print("Creating ouput workbook={}".format(output_book_name))
+
+            # TEST - limit output book name to 31 chars per excel limit
+
+            output_book_name = 'IFAS_citations_2016'
+
+            print("Creating output workbook={}".format(output_book_name))
             self.out_book_sheet = OutBookSheet(
               output_book_name=output_book_name, output_columns=self.output_columns)
             d_type_style = self.out_book_sheet.d_type_style #convenient abbreviation
@@ -595,13 +601,15 @@ class CitationsInspector():
                         d_column_style=d_column_style)
                 # } end for line in input_lines
             # } end with open input_file
-            print("0")
+
             print("\n\n Inspected input file={} with {} lines and {} dois."
               .format(input_file_name, len(input_lines), n_unit_dois ),
               file=sys.stdout)
 
+            sys.stdout.flush()
+
             # Output excel workbook for this unit input file
-            output_file_name = "{}/{}tmp.xls".format(path.parents[0],
+            output_file_name = "{}/{}_inspected.xls".format(path.parents[0],
                 output_book_name)
             sys.stdout.flush()
             print("Using output_file_name={}.".format(output_file_name))
@@ -609,11 +617,13 @@ class CitationsInspector():
             print("SAVED EXCEL WORKBOOK in EXCEL OUTPUT FILE NAMED '{}'"
               .format(output_file_name))
             sys.stdout.flush()
+        # end for path in self.input paths
 
-        # end for path in self.unit paths
         self.n_dup_old = n_dup_old
         self.n_dup_cur = n_dup_cur
         self.n_dup_unit = n_dup_unit
+        print("{}: processed {} input files. Returning."
+          .format(me,len(self.input_paths)))
         return
     # end inspect()
 # end class CitationsInspector
@@ -636,6 +646,7 @@ def run(this_year=2016, study='year_end'):
         raise ValueError(msg)
 
     base_pubs_folder = etl.data_folder(linux='/home/robert', windows='U:',
+
     data_relative_folder='/data/ifas_citations/{}/base_info/'.format(this_year))
 
     base_file_name = 'IFAS-{}-pubs_by_topic-1.txt'.format(last_year)
@@ -656,6 +667,12 @@ def run(this_year=2016, study='year_end'):
         # study is 'year_end'
         # here we use as input the yearly base_info .txt file
         input_files_glob = '{}_Master_List_Final.txt'.format(this_year)
+
+        # Manual insertion 20171212 - got new file from Suzanne to use for 2016,
+        # via email,and I copied it to windows folder assumed here
+        input_files_glob = (
+          '{}_IFAS_All_Unit_List_original_2.txt'.format(this_year))
+
         input_folder = etl.data_folder(linux='/home/robert', windows='U:',
           data_relative_folder='/data/ifas_citations/{}/base_info/'
           .format(this_year))

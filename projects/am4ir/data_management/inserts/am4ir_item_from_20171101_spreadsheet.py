@@ -153,7 +153,7 @@ def run():
     workbook_path = ('C:\\rvp\\git\\citrus\\projects\\am4ir\\data\\inventory_am4ir\\'
         '20171101_from_elsevier_letitia_am4ir_masterlist.xlsx')
     environment = 'mysql'
-    environment = 'mssql'
+    #environment = 'mssql'
 
     if environment == 'mysql':
         cxs_format = (

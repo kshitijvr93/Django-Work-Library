@@ -55,7 +55,7 @@ def tables_create():
       #status (95% say 'Uploaded', 5% "No S0 and S5 in EW/VTW" or
       #"Handled in Chorus Phases")
 
-      Column('update_dt', DateTime, default=datetime.datetime.utcnow,
+      Column('update_dt', DateTime(6), default=datetime.datetime.utcnow,
              comment="DateTime of last update to this row"),
       # Note: v1.2 sqlalchemy: UniqueConstraint does not use list datatype
       UniqueConstraint('itempii','account',
