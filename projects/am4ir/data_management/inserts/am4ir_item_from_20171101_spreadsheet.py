@@ -87,6 +87,7 @@ def am4ir_spreadsheet_to_am4ir_item(workbook_path=None):
     conn = engine.connect()
     print('Connected with conn={}'
       .format(repr(conn)))
+    metadata.reflect(engine)
     tables = metadata.tables
     print('Connected with conn={} to database with {} tables'
       .format(repr(conn),len(tables)))
