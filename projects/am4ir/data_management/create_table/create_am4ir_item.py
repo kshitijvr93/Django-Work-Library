@@ -60,7 +60,8 @@ def tables_create():
       # Note: v1.2 sqlalchemy: UniqueConstraint does not use list datatype
       UniqueConstraint('itempii','account',
         name='uq_{}_itempii_account'.format(table_name)),
-      UniqueConstraint('doi' ,name='uq_{}_doi'.format(table_name)),
+      UniqueConstraint('doi' , 'account',
+        name='uq_{}_doi_account'.format(table_name)),
       comment=(
         'Table adopts column names of source spreadsheet to simplify programs.'
         'Normalize pii before loading, and load only account Florida'),

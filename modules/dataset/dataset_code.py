@@ -19,10 +19,10 @@ from collections import OrderedDict
 class SheetDictReader(object):
 
     """
-    class SheetDictReader, constructor method def __init__ ():
+    class SheetRowsReader, constructor method def __init__ ():
 
     Create and return a csv.DictReader style of iterable to read an excel
-    sheet.
+    sheet with column names either provided or taken from a header
 
     <summary>
     ================
@@ -38,40 +38,87 @@ class SheetDictReader(object):
     worksheet/book that will be read.
     </param>
 
-    <param name='nskip'>
-    Integer number of initial sheet rows to skip, after which is a row of
-    column names, after which are all of the data rows.
+    <param name='column_names'>
+    TODO: implement this. For now this paramete must be the default value None.
+    Optional list column names (aka field or header names) in the spreadsheet.
+    If given, any value for argument header_row is ignored.
+    NOTE:
     </param>
+
+    <param name='pythonize_column_names'>
+    Whether to change all column names by:
+    (1) replace all spaces with underbars, (2) make all alphabetic characters
+    lower case.
+    </param>
+
+    <param name='row_count_header'>
+    If parameter column_names is not given, this is the header row number (starting at
+    row 1 where the header row of column is expected to be found in the spreadsheet)
+    </param>
+
+    <param name='row_count_values_start'>
+    This is the first row number (count starting at 1) in the spreadsheet with
+    values to read. All remaining rows are considered data rows.
+    Note: a future parameter might also indicate row_count_values_end if needed,
+    or a different object will be created with parameters to define readings
+    read from generic rectangular regions of spreadsheets
+    </param>
+
     """
-    def __init__(self, sheet=None,nskip=-1):
+    def __init__(self, sheet=None, pythonize_column_names=True,
+      column_names=None, row_count_header=None, row_count_values_start=1):
 
         if sheet is None:
-            # Future, maybe default to sheet 0 if no name, but error for now.
             raise ValueError("sheet is None")
-        self.sheet = sheet
-        self.odict = OrderedDict()
+        if row_count_header is None or int(row_count_header < 1):
+            msg="row_count_header must be >= 1"
+            raise ValueError(msg)
+        if row_count_values_start <= row_count_header:
+            msg="row_count_values_start is too low"
+            raise ValueError(msg)
+        if column_names is not None:
+            raise ValueError("Todo: implement optional column names")
 
-        # Also make member fieldnames[] semi-compatible with csv DictReader.
+        self.sheet = sheet
+        self.od_name_value = OrderedDict()
+
+        # Also make member field_names[] semi-compatible with csv DictReader.
         # User may query them but should not change them. Column names are 'normalized'
         # below, so there is very likely no need to change them.
-        self.fieldnames = []
+        self.column_names = []
         for col_idx in range(sheet.ncols):
-            column_name =  str(self.sheet.cell(nskip,col_idx).value)
+            column_name =  str(self.sheet.cell(row_count_header-1,col_idx).value)
             column_name = column_name.lower().replace(' ','_')
-            self.fieldnames.append(column_name)
-            self.odict[column_name] = ""
+            self.column_names.append(column_name)
+            self.od_name_value[column_name] = ""
+
+        ''' alternate way to get column names seems less efficient,
+        found in a stack overflow page - gets all column values And
+        picks one with the header..
+
+        for column_index in range(sheet.ncols):
+            #column_name =  str(self.sheet.cell(nskip,column_index).value)
+            # Assume column name is at index 0 (first row) for the column_name
+            # at column index of column_index
+            column_name = sheet.col_values(column_index)[self.header_row-1]
+
+            if pythonize_column_names:
+                column_name = column_name.lower().replace(' ','_')
+            self.field_names.append(column_name)
+            self.d_column_name_value[column_name] = ""
+        '''
+
+        print("SheetDictReader has column_names={}"
+          .format(repr(self.column_names)))
 
     def __getitem__(self, index):
-        # Populate self.odict OrderedDictionary with the sheet's
-        # next row of column values (stripped) and return the dict.
-        # We skip idx 0 (row 1) because it has the column names, already
-        # read in by init.
-        # So, be aware that index 0 really returns the row
+        # Index 0 really returns the row
         # labeled as 'row 2' of this type of excel spreadsheet.
-        #print"SheetReader: getitem: index=%d, nrows=%d" % (index, self.sheet.nrows)
+        # print"SheetReader: getitem: index=%d, nrows=%d" % (index, self.sheet.nrows)
         if index >= self.sheet.nrows -1  or index < 0:
             raise IndexError
-        for idx_col, key in enumerate(self.odict):
+        #for idx_col, key in enumerate(self.odict):
+        for idx_col, field_name in enumerate(self.column_names):
             ctype = self.sheet.cell_type(index+1,idx_col)
             cvalue = self.sheet.cell(index+1,idx_col).value
             if ctype == 1:
@@ -81,15 +128,16 @@ class SheetDictReader(object):
                 # on attempt to convert "excel float" values.
                 # Future: could do user function, eg,  to put in lower case.
                 cvalue = cvalue.strip()
-            self.odict[key] = cvalue
-        return self.odict
+            self.od_name_value[field_name] = cvalue
+        #return self.odict
+        return self.od_name_value
 
     def __repr__(self):
-        msg = ("%s: nrows=%s, ncols=%s, fieldnames=%s."
+        msg = ("%s: nrows=%s, ncols=%s, field_names=%s."
           % (self.__class__.__name__,
              repr(self.sheet.nrows),
              repr(self.sheet.ncols),
-             repr(self.fieldnames),
+             repr(self.field_names),
              ))
         return msg
 

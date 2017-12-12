@@ -99,13 +99,35 @@ def am4ir_spreadsheet_to_am4ir_item(workbook_path=None):
     #initialize reader
     workbook = xlrd.open_workbook(workbook_path)
     first_sheet = workbook.sheet_by_index(0)
-    reader = SheetDictReader(first_sheet)
-    for i,row in enumerate(reader):
-        engine.execute(am4ir_item.insert(),
-          itempii='somepiivalue{}'.format(i + 10000), )
-        print(i)
+    reader = SheetDictReader(
+      first_sheet, row_count_header=1, row_count_values_start=2)
 
-    #Read the spreadsheet row by row
+    #Read the each spreadsheet row and insert table row
+    i=0
+    for row in reader:
+        i += 1
+        print("i={}:ssrow={}".format(i,row))
+        #engine.execute(am4ir_item.insert(),
+        #  itempii='somepiivalue{}'.format(i + 10000), )
+        row['itempii'] = (row['itempii'].replace('-','')
+          .replace('(','')
+          .replace(')','')
+          )
+        engine.execute(am4ir_item.insert(), {
+          'account' : row['account'],
+          'itempii' : row['itempii'],
+          'doi' : row['doi'],
+          'itemonline' : row['itemonline'],
+          'itemvoronline' : row['itemvoronline'],
+          'embperiod' : row['embperiod'],
+          'embdate' : row['embdate'],
+          'itemsubtype' : row['itemsubtype'],
+          'issn' : row['issn'],
+         } )
+
+        if i % 100 == 0:
+           print(i)
+
     pass
 
 def run():
