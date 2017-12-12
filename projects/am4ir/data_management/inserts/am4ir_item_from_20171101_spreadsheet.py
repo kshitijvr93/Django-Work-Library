@@ -39,7 +39,8 @@ import etl
 import datetime
 from sqlalchemy import (
   Boolean, create_engine,
-  CheckConstraint, Column, Date, DateTime, ForeignKeyConstraint, Integer,
+  CheckConstraint, Column, Date, DateTime, ForeignKeyConstraint,
+  inspect, Integer,
   MetaData, String, Table, UniqueConstraint,
   )
 from sqlalchemy.schema import CreateTable
@@ -78,6 +79,10 @@ def am4ir_spreadsheet_to_am4ir_item(workbook_path=None):
     print("Using cxs={}".format(cxs))
     engine = create_engine(cxs, echo=True)
     metadata = MetaData(engine)
+    inspector = inspect(engine)
+    for table_name in inspector.get_table_names():
+        print("Got table_name={}".format(table_name))
+
     print('Connecting')
     conn = engine.connect()
     print('Connected with conn={}'
