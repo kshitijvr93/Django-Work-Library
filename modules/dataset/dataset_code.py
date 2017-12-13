@@ -2084,24 +2084,25 @@ def test_pyodbc_tsv_write_002(verbosity=0):
     return
 #end def
 
-# INVOKE TESTS
-# env1 is win7 with pyodbc/sqlserver, env2 is linux with only text files
-env = 2
-if (env == 1):
-    v = 1
-    if v == 1:
-        print("Invoking TESTS...")
-    test_pyodbc_tvp_002(verbosity=v)
-    test_tvp_tvp_001(verbosity=v)
-    test_pyodbc_tvp_001(verbosity=v)
-    test_tvp_pyodbc_001(verbosity=v)
-    test_csv_pyodbc_001(verbosity=v)
-    test_pyodbc_tsv_write_002(verbosity=v)
-elif env == 2:
-    v = 1
-    test_tvp_tvp_001(verbosity=v)
+def test_me():
+    # INVOKE TESTS
+    # env1 is win7 with pyodbc/sqlserver, env2 is linux with only text files
+    env = 2
+    if (env == 1):
+        v = 1
+        if v == 1:
+            print("Invoking TESTS...")
+        test_pyodbc_tvp_002(verbosity=v)
+        test_tvp_tvp_001(verbosity=v)
+        test_pyodbc_tvp_001(verbosity=v)
+        test_tvp_pyodbc_001(verbosity=v)
+        test_csv_pyodbc_001(verbosity=v)
+        test_pyodbc_tsv_write_002(verbosity=v)
+    elif env == 2:
+        v = 1
+        test_tvp_tvp_001(verbosity=v)
 
-print("Tests: Done!")
+    print("Tests: Done!")
 
 # test_datacheck.py follows..
 import unittest
@@ -2415,7 +2416,4 @@ class TestDatacheck(unittest.TestCase):
         print("Done run 3. All done testing test_data_001().\n")
         return
 
-'''
-if __name__ == '__main__':
-    unittest.main()
-'''
+##########

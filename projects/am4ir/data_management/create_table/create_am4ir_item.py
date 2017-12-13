@@ -81,8 +81,8 @@ def tables_create():
     for engine_name, extension in d_ename_extension.items():
         # https://stackoverflow.com/questions/870925/how-to-generate-a-file-with-ddl-in-the-engines-sql-dialect-in-sqlalchemy
         engine = create_engine(
-          engine_name, strategy='mock',
-           executor= lambda sql, *multiparams, **params:print(sql.compile(dialect=engine.dialect)))
+          engine_name, strategy='mock', executor=lambda sql, *multiparams,
+          **params:print(sql.compile(dialect=engine.dialect)))
         engines.append(engine)
 
     for table in tables:
