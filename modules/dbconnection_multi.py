@@ -143,9 +143,16 @@ def test_connect(connection_name=None):
     d_connections = {
         # Now using mysqlclient package
         # Note a different python package/driver needed OPTION=3.
+        'lib-archcoll_aspace' : {
+            'driver' : 'mysqlclient',
+            'db_system':'mysql',
+            'user':'archivesspace', 'password':'L1b-sp4c3',
+            'host': '10.241.33.139','database': 'aspace'
+            #'host': 'lib-archcoll','database': 'aspace'
+        },
         # It also needed 127.0.0.1:3306 (with port suffix)
         # Maybe needed here too?
-        'mysql_marshal1' : {
+        'local_mysql_marshal1' : {
             'driver' : 'mysqlclient',
             'db_system':'mysql',
             'user':'podengo', 'password':'20MY18sql!',
@@ -158,7 +165,7 @@ def test_connect(connection_name=None):
             'server': r'lib-sobekdb\SobekCM',
             'database': 'SobekDB',
         },
-        'silodb' : {
+        'local_silodb' : {
             'db_system': 'SQL SERVER',
             'driver': 'SQL SERVER',
             'server': r'localhost\SQLExpress',
@@ -196,10 +203,12 @@ def test_connect(connection_name=None):
 # end test)connect
 
 # Test connection
-connection_name = 'mysql_marshal1'
-connection_name = 'silodb'
+connection_name = 'local_mysql_marshal1'
+connection_name = 'local_silodb'
 connection_name = 'integration_sobekdb'
 connection_name = 'production_sobekdb'
+connection_name = 'local_silodb'
+connection_name = 'lib-archcoll_aspace'
 
 print("Starting:calling test_connection")
 
