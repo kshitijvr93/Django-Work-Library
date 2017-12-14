@@ -20,7 +20,7 @@ from collections import OrderedDict
 
 #import pypyodbc
 import pyodbc
-#import mysqlclient
+#For MySQLdb to import you must first pip in196Gstall 196Gmysqlclient
 import MySQLdb
 import datetime
 
@@ -33,9 +33,64 @@ class DBConnection():
     # sample connection strings:
     # ("DRIVER={MySQL ODBC 3.51 Driver};SERVER=localhost;DATABASE=marshal1;""
     # "user=podengo;password=20MY18sql!;OPTION=3;")
-    def __init__(self, d_connect=None):
+    def __init__(self, connection_name=None):
         me = 'DBConnection.__init__()'
         self.verbosity = 1
+        self.d_connections = {
+            # Now using mysqlclient package
+            # Note a different python package/driver needed OPTION=3.
+            'hp8570-psql_mydb' : {
+                # Note this will only connect from UF vpn
+                'driver' : 'mysqlclient',
+                'db_system':'mysql',
+                'user':'archivesspace', 'password':'L1b-sp4c3',
+                'host': '10.241.33.139','database': 'aspace'
+                #'host': 'lib-archcoll','database': 'aspace'
+            },
+            'lib-archcoll_aspace' : {
+                # Note this will only connect from UF vpn
+                'driver' : 'mysqlclient',
+                'db_system':'mysql',
+                'user':'archivesspace', 'password':'L1b-sp4c3',
+                'host': '10.241.33.139','database': 'aspace'
+                #'host': 'lib-archcoll','database': 'aspace'
+            },
+            # It also needed 127.0.0.1:3306 (with port suffix)
+            # Maybe needed here too?
+            'local_mysql_marshal1' : {
+                'driver' : 'mysqlclient',
+                'db_system':'mysql',
+                'user':'podengo', 'password':'20MY18sql!',
+                'host': '127.0.0.1','database': 'marshal1'
+            },
+            #NOTE: from RVP Desk must FIRST TURN off cisco mobile client to reach this.
+            'production_sobekdb' : {
+                'db_system': 'SQL SERVER',
+                'driver': 'SQL SERVER',
+                'server': r'lib-sobekdb\SobekCM',
+                'database': 'SobekDB',
+            },
+            'local_silodb' : {
+                'db_system': 'SQL SERVER',
+                'driver': 'SQL SERVER',
+                'server': r'localhost\SQLExpress',
+                'database': 'silodb',
+            },
+            'integration_sobekdb': {
+                'db_system': 'SQL SERVER',
+                'driver': 'SQL SERVER',
+                'server': r'lib-ufdc-cache\\ufdcprod,49352',
+                'database': 'SobekTest',
+
+            },
+        } # end d_connections
+
+        if connection_name not in self.d_connections.keys():
+            msg = ("{}: Invalid connection name {} given. Try one of:{}"
+                .format(me, connection_name, repr(d_connections.keys())))
+            raise ValueError(msg)
+
+        d_connect = self.d_connections[connection_name]
 
         # Supported db systems and drivers.
         d_sys_drivers = {
@@ -140,63 +195,14 @@ def test_connect(connection_name=None):
     me = 'test_connect'
 
     #print('{}: Starting with connection_name={}'.format(connection_name)))
-    d_connections = {
-        # Now using mysqlclient package
-        # Note a different python package/driver needed OPTION=3.
-        'lib-archcoll_aspace' : {
-            'driver' : 'mysqlclient',
-            'db_system':'mysql',
-            'user':'archivesspace', 'password':'L1b-sp4c3',
-            'host': '10.241.33.139','database': 'aspace'
-            #'host': 'lib-archcoll','database': 'aspace'
-        },
-        # It also needed 127.0.0.1:3306 (with port suffix)
-        # Maybe needed here too?
-        'local_mysql_marshal1' : {
-            'driver' : 'mysqlclient',
-            'db_system':'mysql',
-            'user':'podengo', 'password':'20MY18sql!',
-            'host': '127.0.0.1','database': 'marshal1'
-        },
-        #NOTE: from RVP Desk must FIRST TURN off cisco mobile client to reach this.
-        'production_sobekdb' : {
-            'db_system': 'SQL SERVER',
-            'driver': 'SQL SERVER',
-            'server': r'lib-sobekdb\SobekCM',
-            'database': 'SobekDB',
-        },
-        'local_silodb' : {
-            'db_system': 'SQL SERVER',
-            'driver': 'SQL SERVER',
-            'server': r'localhost\SQLExpress',
-            'database': 'silodb',
-        },
-        'integration_sobekdb': {
-            'db_system': 'SQL SERVER',
-            'driver': 'SQL SERVER',
-            'server': r'lib-ufdc-cache\\ufdcprod,49352',
-            'database': 'SobekTest',
-
-        },
-    } # end d_connections
-
-    if connection_name not in d_connections.keys():
-        msg = ("{}: Invalid connection name {} given. Try one of:"
-            .format(me, repr(connection_name)))
-        for name in d_connections.keys():
-            msg += name
-            msg += ', '
-        raise ValueError(msg)
-
-    d_connect = d_connections[connection_name]
 
     try:
-        print("Using connection='{}'".format(repr(d_connect)))
-        connection = DBConnection(d_connect=d_connect)
+        print("Using connection_name='{}'".format(repr(connection_name)))
+        connection = DBConnection(connection_name=connection_name)
 
     except Exception as e:
         msg=("Failed database connection={}:\nwith exception:\n{}"
-            .format(repr(d_connect),repr(e)))
+            .format(connection_name,repr(e)))
 
         raise ValueError(msg)
     return connection
@@ -209,6 +215,7 @@ connection_name = 'integration_sobekdb'
 connection_name = 'production_sobekdb'
 connection_name = 'local_silodb'
 connection_name = 'lib-archcoll_aspace'
+connection_name = 'hp8570-psql_mydb'
 
 print("Starting:calling test_connection")
 

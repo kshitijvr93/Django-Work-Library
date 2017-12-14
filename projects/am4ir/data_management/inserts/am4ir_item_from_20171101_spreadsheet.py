@@ -82,19 +82,19 @@ along with other parameter d_format_params.
 Defines the names and values to use to insert into the cxs_format paramater
 string, to use to create a database connection.
 </param>
-
-'''
-def am4ir_spreadsheet_to_am4ir_item(workbook_path=None,
+<note>
+Used to use next default, but keep here for reference
   cxs_format='mysql+mysqldb://{user}:{password}@127.0.0.1:3306/{dbname}',
-  d_format_params=None):
+ </note>
+'''
+def am4ir_spreadsheet_to_am4ir_item(
+  workbook_path=None, engine=None):
 
     #initialize database connections for writing/inserting
-    cxs = (cxs_format.format(**d_format_params))
 
-    print("Using cxs={}".format(cxs))
-    engine = create_engine(cxs, echo=True)
     metadata = MetaData(engine)
     inspector = inspect(engine)
+
     for table_name in inspector.get_table_names():
         print("Got table_name={}".format(table_name))
 
@@ -109,7 +109,6 @@ def am4ir_spreadsheet_to_am4ir_item(workbook_path=None,
     sys.stdout.flush()
     am4ir_item = tables['am4ir_item']
     #print('Found table am4ir_item...')
-
 
     #initialize reader
     workbook = xlrd.open_workbook(workbook_path)
@@ -149,6 +148,60 @@ def am4ir_spreadsheet_to_am4ir_item(workbook_path=None,
 
     pass
 
+def get_engine_by_name(name=None,verbosity=1):
+    me = 'get_engine_by_name'
+    d_database_spec = {
+        'mysql-marshal1': {
+            'user': 'podengo',
+            'password': '20MY18sql!',
+            'db' : 'marshal1',
+            'format' : 'mysql+mysqldb://{user}:{password}@127.0.0.1:3306/{db}',
+        },
+        'local-silodb': {
+             # Using windows authentication here so do not need user,password
+            'server_name': 'localhost',
+            'db' : 'marshal1',
+            'format' : ('mssql://{server_name}\\SQLEXPRESS/{db}'
+                       '?driver=SQL+Server&trusted_connection=yes')
+        },
+        'hp-psql': {
+             # Using windows authentication here so do not need user,password
+            'user': 'robert',
+            'password' : 'Gon82sal!',
+            'db': 'mydb',
+            'format' : (
+              'postgresql+psychopg2://{user}:{password}@localhost/{db}'
+              '?driver=SQL+Server&trusted_connection=yes')
+        },
+    }
+
+    try:
+        d_connect = d_database_spec[name]
+    except:
+        msg = "Name must be in: {}".format(repr(d_database_spec.keys()))
+        raise ValueError(msg)
+
+    engine_spec = (d_connect['format'].format(**d_connect))
+    if verbosity > 0:
+        print("{}:Using engine_spec={}".format(me,engine_spec))
+    engine = create_engine(engine_spec, echo=True)
+
+    return(engine)
+#end get_engine_by_name()
+
+def run2():
+    me='run2'
+    workbook_path = ('C:\\rvp\\git\\citrus\\projects\\am4ir\\data\\inventory_am4ir\\'
+        '20171101_from_elsevier_letitia_am4ir_masterlist.xlsx')
+
+    name = 'hp-psql'
+    name = 'mysql-marshal1'
+    name = 'local-silodb'
+    engine = get_engine_by_name(name=name)
+
+    am4ir_spreadsheet_to_am4ir_item(
+      workbook_path=workbook_path, engine=engine )
+
 def run():
     workbook_path = ('C:\\rvp\\git\\citrus\\projects\\am4ir\\data\\inventory_am4ir\\'
         '20171101_from_elsevier_letitia_am4ir_masterlist.xlsx')
@@ -156,19 +209,18 @@ def run():
     #environment = 'mssql'
 
     if environment == 'mysql':
-        cxs_format = (
+        engine_spec_format = (
           'mysql+mysqldb://{user}:{password}@127.0.0.1:3306/{dbname}'
           )
         d_format_params = {}
         d_format_params['user'] = 'podengo'
         d_format_params['password'] = '20MY18sql!'
         d_format_params['dbname'] = 'marshal1'
-    else: #assume sqlserver for now
-
+    else: #assume we are using mssql aka sql_server
         # See https://stackoverflow.com/questions/24085352/how-do-i-connect-to-sql-server-via-sqlalchemy-using-windows-authentication
         # Note: using windows authentication as we specify trusted connection
         # Note: also had to add url-type param of driver=SQL+Server
-        cxs_format = (
+        engine_spec_format = (
           'mssql://{server_name}\\SQLEXPRESS/{database_name}'
           '?driver=SQL+Server'
           '&trusted_connection=yes')
@@ -176,13 +228,15 @@ def run():
         d_format_params['server_name'] = 'localhost'
         d_format_params['database_name'] = 'silodb'
 
+    engine_spec = (engine_spec_format.format(**d_format_params))
+    print("Using engine_spec={}".format(engine_spec))
+    engine = create_engine(engine_spec, echo=True)
+
     print("Calling am4ir_spreadsheet_to_am4ir_item()....")
-    am4ir_spreadsheet_to_am4ir_item(workbook_path=workbook_path,
-      cxs_format=cxs_format,
-      d_format_params=d_format_params
-      )
+    am4ir_spreadsheet_to_am4ir_item(
+      workbook_path=workbook_path, engine=engine )
     return
 
 print("Starting")
-run()
+run2()
 print("Done!")
