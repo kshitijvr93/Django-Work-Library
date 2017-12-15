@@ -92,6 +92,63 @@ def workbook_columns(workbook_path=None):
 
     return reader.column_names
 
+'''
+Connect to a database and insert spreadsheet rows to table
+
+<param name='workbook_path'>
+File path to an excel workbook to open, and use the first sheet as the
+data source.
+</param>
+<param name='cxs_format'>
+A python string format to use to construct the database connection string,
+along with other parameter d_format_params.
+</param>
+<param name='d_format_params'>
+Defines the names and values to use to insert into the cxs_format paramater
+string, to use to create a database connection.
+</param>
+<note>
+Used to use next default, but keep here for reference
+  cxs_format='mysql+mysqldb://{user}:{password}@127.0.0.1:3306/{dbname}',
+ </note>
+'''
+
+def spreadsheet_to_table(workbook_path=None, table=None, engine=None):
+    me = 'spreadsheet_to_table'
+
+    #initialize database connections for writing/inserting
+
+    metadata = MetaData(engine)
+    inspector = inspect(engine)
+
+    print('Connecting to engine...')
+    conn = engine.connect()
+    print('Connected with conn={}'
+      .format(repr(conn)))
+
+    metadata.reflect(engine)
+    print('Connected with conn={} to database to insert into table {}'
+      .format(repr(conn),table.name))
+
+    sys.stdout.flush()
+
+    #initialize reader
+    workbook = xlrd.open_workbook(workbook_path)
+    first_sheet = workbook.sheet_by_index(0)
+    reader = SheetDictReader(
+      first_sheet, row_count_header=1, row_count_values_start=2)
+
+    #Read each spreadsheet row and insert table row
+    i = 0
+    for row in reader:
+        i += 1
+        print("reading row {}".format(i))
+        engine.execute(table.insert(), row)
+
+        if i % 100 == 0:
+           print(i)
+#end spreadsheet_to_table(workbook_path=None, table=None, engine=None):
+
 def run():
 
     workbook_path = ('C:\\rvp\\download\\'
@@ -108,6 +165,9 @@ def run():
 
     tables = [table]
     creates_run(metadata=metadata,engine=my_db_engine,tables=tables)
+
+    spreadsheet_to_table(workbook_path=workbook_path, table=table,
+       engine=my_db_engine)
 
     #Execute a create statement
 
