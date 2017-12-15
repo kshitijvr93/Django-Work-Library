@@ -11,6 +11,7 @@ from sqlalchemy import (
   inspect, Integer,
   MetaData, String, Table, UniqueConstraint,
   )
+
 from sqlalchemy.schema import CreateTable
 import MySQLdb
 
@@ -37,10 +38,9 @@ def get_db_engine_by_name(name=None,verbosity=1):
             'user': 'robert',
             'password' : 'Gon82sal!',
             'db': 'mydb',
-            'driver' : 'postgresql+psychopg2://',
+            'driver' : 'postgresql+psycopg2://',
             'format' : (
-              '{driver}{user}:{password}@localhost/{db}'
-              '?driver=SQL+Server&trusted_connection=yes')
+              '{driver}{user}:{password}@localhost/{db}')
         },
     }
 
@@ -66,6 +66,11 @@ def test_run(name=None):
 
 #end test_run
 testme=1
+env = 'linux'
+
 if testme == 1:
-    engine = test_run(name='local-silodb')
-    engine = test_run(name='mysql-marshal1')
+    if env == 'windows':
+        engine = test_run(name='local-silodb')
+        engine = test_run(name='mysql-marshal1')
+    else:
+        engine = test_run(name='hp-psql')
