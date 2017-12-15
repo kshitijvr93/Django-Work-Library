@@ -20,16 +20,19 @@ register_modules()
 print("sys.path={}".format(repr(sys.path)))
 
 import etl
+# Import slate of databases that podengo can use
+from podengo_db_engine_by_name import get_db_engine_by_name
 
-#### Sqlalechemy
+#### Sqlalchemy
 import datetime
 from sqlalchemy import (
   Boolean, create_engine,
   CheckConstraint, Column, Date, DateTime, ForeignKeyConstraint,
   inspect, Integer,
-  MetaData, String, Table, Text, UniqueConstraint,
+  MetaData, Sequence, String, Table, Text, UniqueConstraint,
   )
 from sqlalchemy.schema import CreateTable
+
 #
 from pathlib import Path
 from etl import html_escape, has_digit, has_upper, make_home_relative_folder
@@ -39,46 +42,40 @@ from xlrd import open_workbook
 #
 from dataset.dataset_code import SheetDictReader
 
-def table_creates(table_name=None, column_names=None):
-    metadata = MetaData()
-    columns = []
+def table_create(metadata=None, table_name=None, column_names=None):
+
+    columns = [Column(
+        '{}_id'.format(table_name), Integer,
+        Sequence('{}_id_seq'.format(table_name)), primary_key=True,)]
 
     for c in column_names:
         columns.append(Column('{}'.format(c),Text))
 
-    table = Table(table_name, metadata,*columns);
-    tables = [table]
+    table = Table(table_name, MetaData(),*columns);
+    print("table_create: made table {}".format(table.name))
+    return table
 
-    # sqlalchemy engines
-    d_ename_extension = {
-      'mysql+pyodbc://./MyDb': {'extension': '_mssql.sql'},
-      # comment out some for now to declutter
-      #'sqlite:///:memory:': {'extension': '_sqlite.sql'},
-      #'postgresql://': {'extension':'_postgresql.sql'},
-      #'oracle+cx_oracle://': {'extension':'_oracle.sql'},
-      'mssql+pyodbc://': {'extension':'_mssql.sql'},
-    }
-    engines = []
-    for engine_name, extension in d_ename_extension.items():
-        # https://stackoverflow.com/questions/870925/how-to-generate-a-file-with-ddl-in-the-engines-sql-dialect-in-sqlalchemy
-        engine = create_engine(
-          engine_name, strategy='mock',
-           executor= lambda sql, *multiparams, **params:print(sql.compile(dialect=engine.dialect)))
-        engines.append(engine)
+'''
+Run the creates for the given tables in the given engine.
+'''
 
+def creates_run(metadata=None,tables=None,engine=None,verbosity=1):
     for table in tables:
+        if table is None:
+            raise ValueError("Got a table value of None")
         print('\n-----------------TABLE {}----------------------------\n'
               .format(table.name))
 
-        for i,(engine_name,extension) in enumerate(d_ename_extension.items()):
-            engine = engines[i]
+        if verbosity > 0:
             print('-----------------ENGINE {}--------------------------\n'
-              .format(engine_name))
-            #print (sql.compile(dialect=engine.dialect)))
-            print(CreateTable(table).compile(engine))
+            .format(engine.name))
 
-    print('======================================')
-
+        ##print (sql.compile(dialect=engine.dialect)))
+        print(CreateTable(table).compile(engine))
+        print('======================================')
+        # Create this table in the engine
+        #table.__table__.create(engine, checkfirst=True)
+        table.create(engine, checkfirst=True)
     return
 
 def workbook_columns(workbook_path=None):
@@ -86,7 +83,8 @@ def workbook_columns(workbook_path=None):
     workbook = xlrd.open_workbook(workbook_path)
     first_sheet = workbook.sheet_by_index(0)
     reader = SheetDictReader(
-      first_sheet, row_count_header=1, row_count_values_start=2)
+      first_sheet, row_count_header=1, row_count_values_start=2,
+      verbosity=0)
 
     for column_name in reader.column_names:
         column_name = column_name.strip().lower().replace(' ', '_')
@@ -95,12 +93,24 @@ def workbook_columns(workbook_path=None):
     return reader.column_names
 
 def run():
+
     workbook_path = ('C:\\rvp\\download\\'
         'at_accessions_rvp_20171130.xlsx')
     print("Calling workbook_columns()....")
     columns = workbook_columns(workbook_path=workbook_path)
-    table_creates(table_name='test_table',
+
+    metadata = MetaData()
+    table=table_create(metadata=metadata, table_name='test_table',
         column_names=columns, )
+
+    # select a db engine
+    my_db_engine = get_db_engine_by_name('local-silodb')
+
+    tables = [table]
+    creates_run(metadata=metadata,engine=my_db_engine,tables=tables)
+
+    #Execute a create statement
+
     return
 
 print("Starting")

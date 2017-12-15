@@ -42,6 +42,10 @@ from dataset.dataset_code import SheetDictReader
 def table_creates(table_name=None, column_names=None):
     metadata = MetaData()
     columns = []
+    # 20171215 - primary key
+    column_names = [Column(
+        '{}_id'.format(table_name), Integer,
+        Sequence('{}_id_seq'.format(table_name), primary_key=True),)]
 
     for c in column_names:
         columns.append(Column('{}'.format(c),Text))
@@ -49,7 +53,7 @@ def table_creates(table_name=None, column_names=None):
     table = Table(table_name, metadata,*columns);
     tables = [table]
 
-    # sqlalchemy engines
+    # sqlalchemy engines -- maybe will do.. placeholder..
     d_ename_extension = {
       'mysql+pyodbc://./MyDb': {'extension': '_mssql.sql'},
       # comment out some for now to declutter
@@ -58,6 +62,7 @@ def table_creates(table_name=None, column_names=None):
       #'oracle+cx_oracle://': {'extension':'_oracle.sql'},
       'mssql+pyodbc://': {'extension':'_mssql.sql'},
     }
+
     engines = []
     for engine_name, extension in d_ename_extension.items():
         # https://stackoverflow.com/questions/870925/how-to-generate-a-file-with-ddl-in-the-engines-sql-dialect-in-sqlalchemy

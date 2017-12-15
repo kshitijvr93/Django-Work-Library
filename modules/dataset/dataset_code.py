@@ -66,7 +66,8 @@ class SheetDictReader(object):
 
     """
     def __init__(self, sheet=None, pythonize_column_names=True,
-      column_names=None, row_count_header=None, row_count_values_start=1):
+      column_names=None, row_count_header=None, row_count_values_start=1,
+      verbosity=0):
 
         if sheet is None:
             raise ValueError("sheet is None")
@@ -108,8 +109,9 @@ class SheetDictReader(object):
             self.d_column_name_value[column_name] = ""
         '''
 
-        print("SheetDictReader has column_names={}"
-          .format(repr(self.column_names)))
+        if verbosity > 0:
+            print("SheetDictReader has column_names={}"
+              .format(repr(self.column_names)))
 
     def __getitem__(self, index):
         # Index 0 really returns the row
