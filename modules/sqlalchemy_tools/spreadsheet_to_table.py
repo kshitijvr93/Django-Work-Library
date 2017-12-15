@@ -148,33 +148,44 @@ def spreadsheet_to_table(workbook_path=None, table=None, engine=None):
         if i % 100 == 0:
            print(i)
 #end spreadsheet_to_table(workbook_path=None, table=None, engine=None):
-
+'''
+Set workbook_path to any workbook path on local drive
+'''
 def run():
 
     workbook_path = ('C:\\rvp\\download\\'
         'at_accessions_rvp_20171130.xlsx')
+
+    table_name = "test_table2"
+    # Nick name is used by podengo_db_engine_by_bame() to get
+    # the desired engine in which to create the table and insert rows.
+    # todo: make it drop the table first, or give option to add new
+    # rows if table alread extant in the engine/database.
+
+    engine_nick_name = 'local-silodb'
+    engine_nick_name = 'mysql-marshal1'
+
     print("Calling workbook_columns()....")
     columns = workbook_columns(workbook_path=workbook_path)
 
     metadata = MetaData()
-    table=table_create(metadata=metadata, table_name='test_table',
+    table=table_create(metadata=metadata, table_name=table_name,
         column_names=columns, )
 
     # select a db engine
-    my_db_engine = get_db_engine_by_name('local-silodb')
+    my_db_engine = get_db_engine_by_name(engine_nick_name)
 
     tables = [table]
+    # todo:Change to arg of single table instead of list tables
+    # create the table if not extand
     creates_run(metadata=metadata,engine=my_db_engine,tables=tables)
 
+    #Add rows to the table from the spreadsheet
     spreadsheet_to_table(workbook_path=workbook_path, table=table,
        engine=my_db_engine)
-
-    #Execute a create statement
 
     return
 
 print("Starting")
-
 run()
-
 print("Done!")
