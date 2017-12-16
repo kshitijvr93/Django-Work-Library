@@ -82,8 +82,10 @@ def workbook_columns(workbook_path=None):
     #initialize database connections for writing/inserting
     workbook = xlrd.open_workbook(workbook_path)
     first_sheet = workbook.sheet_by_index(0)
-    reader = SheetDictReader(
-      first_sheet, row_count_header=1, row_count_values_start=2,
+    if first_sheet is None:
+      raise ValueError("Sheet is None")
+    reader = SheetDictReader(book=workbook,
+      sheet=first_sheet, row_count_header=1, row_count_values_start=2,
       verbosity=0)
 
     for column_name in reader.column_names:
@@ -140,7 +142,7 @@ def spreadsheet_to_table(
 
     first_sheet = workbook.sheet_by_index(0)
     reader = SheetDictReader(
-      first_sheet, row_count_header=1, row_count_values_start=2)
+      book=workbook,sheet=first_sheet, row_count_header=1, row_count_values_start=2)
 
     #Normalize spreadsheet column names
 
@@ -149,12 +151,17 @@ def spreadsheet_to_table(
     for row in reader:
         i += 1
         print("reading row {}".format(i))
+
+        #Check if any column in the row is a date and if so change its value
+        # to a string
+
         #engine.execute(table.insert(), row)
         d_col_val = {d_ss_table[sscol]:value for sscol,value in row.items() }
         engine.execute(table.insert(), d_col_val)
 
         if i % 100 == 0:
            print(i)
+
 #end spreadsheet_to_table(workbook_path=None, table=None, engine=None):
 '''
 Set workbook_path to any workbook path on local drive

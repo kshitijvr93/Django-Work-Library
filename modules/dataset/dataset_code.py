@@ -9,6 +9,7 @@ import xlrd
 import inspect
 import xlwt
 from collections import OrderedDict
+import datetime
 
 """
     class SheetDictReader(object):
@@ -65,7 +66,7 @@ class SheetDictReader(object):
     </param>
 
     """
-    def __init__(self, sheet=None, pythonize_column_names=True,
+    def __init__(self, book=None,sheet=None, pythonize_column_names=True,
       column_names=None, row_count_header=None, row_count_values_start=1,
       verbosity=0):
 
@@ -80,6 +81,7 @@ class SheetDictReader(object):
         if column_names is not None:
             raise ValueError("Todo: implement optional column names")
 
+        self.book = book
         self.sheet = sheet
         self.od_name_value = OrderedDict()
 
@@ -130,6 +132,13 @@ class SheetDictReader(object):
                 # on attempt to convert "excel float" values.
                 # Future: could do user function, eg,  to put in lower case.
                 cvalue = cvalue.strip()
+            elif ctype == xlrd.XL_CELL_DATE:
+              # do NOT cast into str until call xldate_as_tuple
+              cvalue = self.sheet.cell(index+1,idx_col).value
+              value_datetime =  datetime.datetime(
+                *xlrd.xldate_as_tuple(cvalue, self.book.datemode))
+              cvalue = value_datetime.strftime('%Y-%m-%d %H:%M:%S')
+
             self.od_name_value[field_name] = cvalue
         #return self.odict
         return self.od_name_value
