@@ -164,12 +164,18 @@ def spreadsheet_to_table(
 
 #end spreadsheet_to_table(workbook_path=None, table=None, engine=None):
 '''
-Set workbook_path to any workbook path on local drive
+Test linux using postgresql example
+Required:
+A workbook has been deposited at workbook_path and has at least one excel-known
+date column
+
+And the posgresql database engine is up and running and the test table does
+not exist (just drop that table before running this)
+
 '''
-def run():
-    me = 'run'
-    workbook_path = ('C:\\rvp\\download\\'
-        'at_accessions_rvp_20171130.xlsx')
+def test_linux_postgres():
+    me = 'test_linux_postgres'
+
     workbook_path = ('/home/robert/Downloads/'
         'lone_cabbage_data_janapr_2017.xlsx')
 
@@ -179,8 +185,80 @@ def run():
     # todo: make it drop the table first, or give option to add new
     # rows if table alread extant in the engine/database.
 
+    #engine_nick_name = 'local-silodb'
+    #engine_nick_name = 'mysql-marshal1'
+
+    engine_nick_name = 'hp-psql'
+
+    print("Calling workbook_columns()....")
+    ss_columns = workbook_columns(workbook_path=workbook_path)
+
+    #normalize spreadsheet column names to db table column names
+    # Consider moving this 'replace' stuff into SheetDictReader code
+    # maybe as a dictionary param or  even hard-coded there .
+    # But just do it explicitly here for now
+    d_ss_column__table_column = {}
+    for ss_column in ss_columns:
+        table_column = (
+          ss_column.replace('/','_').replace('-','_')
+          .replace('(','_').replace(')','')
+          .replace(u'\u00B5','u') #micro sign
+          .replace(u'\u03BC','u') #greek mu
+          .replace(u'\u0040','') # commercial at
+          .replace(u'\uFF20','') # fullwidth commercial at
+          .replace(u'\uFE6B','') # small commercial at
+          .replace(u'\u00B0','') # degrees symbol
+          )
+        #Todo: consider to have this replacement code detect a previous
+        # underbar andin that case do not emit a second underbar as part of
+        # the new column name
+        d_ss_column__table_column[ss_column] = table_column
+
+    print(
+      "{}: using d_ss_column__table_column={}"
+      .format(me,repr(d_ss_column__table_column)))
+
+    metadata = MetaData()
+    table=table_configure(metadata=metadata, table_name=table_name,
+        column_names=d_ss_column__table_column.values(), )
+
+    # select a db engine
+    # get_db_engine_by_name is a custom function per user who runs this
+    # test for now, with that users creds on linux or windows if windows
+    # authentication is not being used on the windows database
+    my_db_engine = get_db_engine_by_name(engine_nick_name)
+
+    tables = [table]
+    # todo:Change to arg of single table instead of list tables
+    # create the table if not extand
+    creates_run(metadata=metadata,engine=my_db_engine,tables=tables)
+
+    #Add rows to the table from the spreadsheet
+    spreadsheet_to_table(workbook_path=workbook_path, table=table,
+       engine=my_db_engine,d_ss_table=d_ss_column__table_column)
+
+    return
+# end test_linux_postgres
+
+'''
+Set workbook_path to any workbook path on local drive
+
+Required: the test workbook is at workbook_path, defined below.
+'''
+def run():
+    me = 'run'
+    workbook_path = ('C:\\rvp\\download\\'
+        'at_accessions_rvp_20171130.xlsx')
+
+    table_name = "test_table2"
+    # Nick name is used by podengo_db_engine_by_bame() to get
+    # the desired engine in which to create the table and insert rows.
+    # todo: make it drop the table first, or give option to add new
+    # rows if table alread extant in the engine/database.
+
     engine_nick_name = 'local-silodb'
     engine_nick_name = 'mysql-marshal1'
+
     engine_nick_name = 'hp-psql'
 
     print("Calling workbook_columns()....")
@@ -221,7 +299,9 @@ def run():
        engine=my_db_engine,d_ss_table=d_ss_column__table_column)
 
     return
+ # end run()
 
 print("Starting")
-run()
+#run()
+test_linux_postgres()
 print("Done!")
