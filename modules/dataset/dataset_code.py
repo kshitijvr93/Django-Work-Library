@@ -122,7 +122,7 @@ class SheetDictReader(object):
         #for idx_col, key in enumerate(self.odict):
         for idx_col, field_name in enumerate(self.column_names):
             ctype = self.sheet.cell_type(index+1,idx_col)
-            cvalue = str(self.sheet.cell(index+1,idx_col).value).encode('utf8')
+            cvalue = str(self.sheet.cell(index+1,idx_col).value)
             if ctype == 1:
                 # Excel 'text' type of value.
                 # Only if a text value, convert to str and strip it.

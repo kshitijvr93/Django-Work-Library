@@ -42,17 +42,17 @@ from xlrd import open_workbook
 #
 from dataset.dataset_code import SheetDictReader
 
-def table_create(metadata=None, table_name=None, column_names=None):
-
+def table_configure(metadata=None, table_name=None, column_names=None):
+    me = 'table_configure'
     columns = [Column(
         '{}_id'.format(table_name), Integer,
         Sequence('{}_id_seq'.format(table_name)), primary_key=True,)]
 
     for c in column_names:
-        columns.append(Column('{}'.format(c),Text))
+        columns.append(Column('{}'.format(c),String(100)))
 
     table = Table(table_name, MetaData(),*columns);
-    print("table_create: made table {}".format(table.name))
+    print("{}: configured table {}".format(me,table.name))
     return table
 
 '''
@@ -113,7 +113,9 @@ Used to use next default, but keep here for reference
  </note>
 '''
 
-def spreadsheet_to_table(workbook_path=None, table=None, engine=None):
+def spreadsheet_to_table(
+  workbook_path=None, table=None, engine=None, d_ss_table=None):
+
     me = 'spreadsheet_to_table'
 
     #initialize database connections for writing/inserting
@@ -123,6 +125,7 @@ def spreadsheet_to_table(workbook_path=None, table=None, engine=None):
 
     print('Connecting to engine...')
     conn = engine.connect()
+
     print('Connected with conn={}'
       .format(repr(conn)))
 
@@ -134,16 +137,21 @@ def spreadsheet_to_table(workbook_path=None, table=None, engine=None):
 
     #initialize reader
     workbook = xlrd.open_workbook(workbook_path)
+
     first_sheet = workbook.sheet_by_index(0)
     reader = SheetDictReader(
       first_sheet, row_count_header=1, row_count_values_start=2)
+
+    #Normalize spreadsheet column names
 
     #Read each spreadsheet row and insert table row
     i = 0
     for row in reader:
         i += 1
         print("reading row {}".format(i))
-        engine.execute(table.insert(), row)
+        #engine.execute(table.insert(), row)
+        d_col_val = {d_ss_table[sscol]:value for sscol,value in row.items() }
+        engine.execute(table.insert(), d_col_val)
 
         if i % 100 == 0:
            print(i)
@@ -152,9 +160,11 @@ def spreadsheet_to_table(workbook_path=None, table=None, engine=None):
 Set workbook_path to any workbook path on local drive
 '''
 def run():
-
+    me = 'run'
     workbook_path = ('C:\\rvp\\download\\'
         'at_accessions_rvp_20171130.xlsx')
+    workbook_path = ('/home/robert/Downloads/'
+        'lone_cabbage_data_janapr_2017.xlsx')
 
     table_name = "test_table2"
     # Nick name is used by podengo_db_engine_by_bame() to get
@@ -164,13 +174,32 @@ def run():
 
     engine_nick_name = 'local-silodb'
     engine_nick_name = 'mysql-marshal1'
+    engine_nick_name = 'hp-psql'
 
     print("Calling workbook_columns()....")
-    columns = workbook_columns(workbook_path=workbook_path)
+    ss_columns = workbook_columns(workbook_path=workbook_path)
+
+    #normalize spreadsheet column names to db table column names
+    d_ss_column__table_column = {}
+    for ss_column in ss_columns:
+        table_column = (
+          ss_column.replace('/','_').replace('-','_')
+          .replace('(','_').replace(')','')
+          .replace(u'\u00B5','u') #micro sign
+          .replace(u'\u03BC','u') #greek mu
+          .replace(u'\u0040','') # commercial at
+          .replace(u'\uFF20','') # fullwidth commercial at
+          .replace(u'\uFE6B','') # small commercial at
+          .replace(u'\u00B0','') # degrees symbol
+          )
+        d_ss_column__table_column[ss_column] = table_column
+    print(
+      "{}: using d_ss_column__table_column={}"
+      .format(me,repr(d_ss_column__table_column)))
 
     metadata = MetaData()
-    table=table_create(metadata=metadata, table_name=table_name,
-        column_names=columns, )
+    table=table_configure(metadata=metadata, table_name=table_name,
+        column_names=d_ss_column__table_column.values(), )
 
     # select a db engine
     my_db_engine = get_db_engine_by_name(engine_nick_name)
@@ -182,7 +211,7 @@ def run():
 
     #Add rows to the table from the spreadsheet
     spreadsheet_to_table(workbook_path=workbook_path, table=table,
-       engine=my_db_engine)
+       engine=my_db_engine,d_ss_table=d_ss_column__table_column)
 
     return
 
