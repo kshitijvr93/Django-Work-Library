@@ -21,7 +21,7 @@ print("sys.path={}".format(repr(sys.path)))
 
 import etl
 # Import slate of databases that podengo can use
-from podengo_db_engine_by_name import get_db_engine_by_name
+from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
 
 #### Sqlalchemy
 import datetime

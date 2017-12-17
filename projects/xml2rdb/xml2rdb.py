@@ -11,19 +11,19 @@ document.
 '''
 import sys, os, os.path, platform
 
+
 def register_modules():
     platform_name = platform.system().lower()
     if platform_name == 'linux':
-        modules_root = 'tbd'
-        raise ValueError("MISSING: Enter code here to define modules_root")
+        modules_root = '/home/robert/'
+        #raise ValueError("MISSING: Enter code here to define modules_root")
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
     sys.path.append('{}git/citrus/modules'.format(modules_root))
-print("sys.path={}".format(repr(sys.path)))
-return
-
+    return
 register_modules()
+
 
 import datetime
 import pytz

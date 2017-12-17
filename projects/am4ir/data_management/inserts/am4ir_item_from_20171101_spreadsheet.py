@@ -19,22 +19,29 @@ oaidoi.org open access value.. oai_doi_open_access
 import sys, os, os.path, platform
 import datetime
 
-
 def register_modules():
     platform_name = platform.system().lower()
     if platform_name == 'linux':
-        modules_root = '/home/robert/'
+        repo_root = '/home/robert/git/citrus/'
         #raise ValueError("MISSING: Enter code here to define modules_root")
     else:
         # assume rvp office pc running windows
-        modules_root="C:\\rvp\\"
-    sys.path.append('{}git/citrus/modules'.format(modules_root))
-    return
-register_modules()
+        repo_root = "C:\\rvp\\git\\citrus\\"
+
+    repo_modules = '{}modules/'.format(repo_root)
+    print("repo_modules = {}".format(repo_modules))
+    sys.path.append(repo_modules)
+    return repo_root
+
+
+repo_root=register_modules()
+print ("Using repo_root={}".format(repo_root))
 
 print("sys.path={}".format(repr(sys.path)))
 
 import etl
+# Import slate of databases that podengo can use
+from podengo_db_engine_by_name import get_db_engine_by_name
 
 #### Sqlalechemy
 import datetime
@@ -147,52 +154,14 @@ def am4ir_spreadsheet_to_am4ir_item(
            print(i)
 
     pass
+#end  am4ir_spreadsheet_to_am4ir_item()
 
-def get_engine_by_name(name=None,verbosity=1):
-    me = 'get_engine_by_name'
-    d_database_spec = {
-        'mysql-marshal1': {
-            'user': 'podengo',
-            'password': '20MY18sql!',
-            'db' : 'marshal1',
-            'format' : 'mysql+mysqldb://{user}:{password}@127.0.0.1:3306/{db}',
-        },
-        'local-silodb': {
-             # Using windows authentication here so do not need user,password
-            'server_name': 'localhost',
-            'db' : 'marshal1',
-            'format' : ('mssql://{server_name}\\SQLEXPRESS/{db}'
-                       '?driver=SQL+Server&trusted_connection=yes')
-        },
-        'hp-psql': {
-             # Using windows authentication here so do not need user,password
-            'user': 'robert',
-            'password' : 'Gon82sal!',
-            'db': 'mydb',
-            'format' : (
-              'postgresql+psychopg2://{user}:{password}@localhost/{db}'
-              '?driver=SQL+Server&trusted_connection=yes')
-        },
-    }
-
-    try:
-        d_connect = d_database_spec[name]
-    except:
-        msg = "Name must be in: {}".format(repr(d_database_spec.keys()))
-        raise ValueError(msg)
-
-    engine_spec = (d_connect['format'].format(**d_connect))
-    if verbosity > 0:
-        print("{}:Using engine_spec={}".format(me,engine_spec))
-    engine = create_engine(engine_spec, echo=True)
-
-    return(engine)
-#end get_engine_by_name()
-
-def run2():
+def run2(repo_root=None):
     me='run2'
     workbook_path = ('C:\\rvp\\git\\citrus\\projects\\am4ir\\data\\inventory_am4ir\\'
         '20171101_from_elsevier_letitia_am4ir_masterlist.xlsx')
+    workbook_path = ('{}projects\\am4ir\\data\\inventory_am4ir\\'
+        '20171101_from_elsevier_letitia_am4ir_masterlist.xlsx'.format(repo_root))
 
     name = 'hp-psql'
     name = 'mysql-marshal1'
@@ -238,5 +207,5 @@ def run():
     return
 
 print("Starting")
-run2()
+run2(repo_root=repo_root)
 print("Done!")
