@@ -270,10 +270,30 @@ class CitationsInspector():
                     #print("Skip line index={}, {}. No doi found"
                     #      .format(index_line,line.encode('ascii','ignore')))
                     continue
+                # Prior to 20171210 or so, the unit 'name' was not at the
+                # tail end, which was ony the doi;
+                # but now we scrape the unit name off the end, assuming
+                # the doi starts at the tail and has NO spaces, so we
+                # Parse by space, leaving the first such field as the
+                # doi value and the following as the unit name.
                 doi = line[index_doi:].replace('\n','').strip()
+                unit = ''
+                '''
+                #experimental code to use if DOI guaranteed to always exists
+                #with no spaces IN the value, followed by unit name
+                tail = line[index_doi:].replace('\n','').strip()
+                tfields = tail.split(' ')
+                doi = ''
+                unit = ''
+                if len(tfields) > 0:
+                    doi = tfields[0]
+                if len(tfields) > 1:
+                    unit = ' '.join(tfields[-1:])
+                '''
                 if verbosity > 0:
-                    msg = ("file={},line number={},Saving base_doi='{}'"
-                          .format(self.base_pubs_file_name,index_line,doi))
+                    msg = (
+                      "file={},line number={},with base_doi='{}',unit={}"
+                      .format(self.base_pubs_file_name,index_line,doi,unit))
                     #MUST encode as below to handle printing misc chars in input
                     omsg = msg
                     print(msg.encode('ascii',errors='replace'))
@@ -439,6 +459,8 @@ class CitationsInspector():
                     d_output['doi'] = doi
                     # end processing the doi, if any, in input line
 
+                    d_column_style['unit'] = d_type_style['unit']
+
                     # Parse the rest of the line that appears before the doi.
                     # Split the line based on the ')' that should first appear
                     # following the year that follows  the author list
@@ -596,6 +618,7 @@ class CitationsInspector():
 
                     d_output['original_line'] = line
                     d_column_style['original_line'] = d_type_style['original']
+
                     # Write spreadsheet row
                     self.out_book_sheet.writerow(d_output=d_output,
                         d_column_style=d_column_style)
@@ -609,8 +632,9 @@ class CitationsInspector():
             sys.stdout.flush()
 
             # Output excel workbook for this unit input file
-            output_file_name = "{}/{}_inspected.xls".format(path.parents[0],
-                output_book_name)
+            output_file_name = (
+              "{}/{}_inspected_20171218a.xls"
+              .format(path.parents[0], output_book_name))
             sys.stdout.flush()
             print("Using output_file_name={}.".format(output_file_name))
             self.out_book_sheet.work_book.save(output_file_name)

@@ -134,7 +134,11 @@ class SheetDictReader(object):
                 cvalue = cvalue.strip()
             elif ctype == xlrd.XL_CELL_DATE:
               # do NOT cast into str until call xldate_as_tuple
-              cvalue = self.sheet.cell(index+1,idx_col).value
+              # see: https://stackoverflow.com/questions/3727916/how-to-use-xlrd-xldate-as-tuple#3728176
+              # cvalue = self.sheet.cell(index+1,idx_col).value
+              #or: note BETTER - prior gives ambibuity error!
+              # keep prior alternative commented out for future WARNING
+              cvalue = self.sheet.cell_value(index+1,idx_col)
               value_datetime =  datetime.datetime(
                 *xlrd.xldate_as_tuple(cvalue, self.book.datemode))
               cvalue = value_datetime.strftime('%Y-%m-%d %H:%M:%S')
@@ -153,6 +157,48 @@ class SheetDictReader(object):
         return msg
 
 #end class SheetDictReader
+
+'''
+class BookSheetFilter(SheetDictReader):
+    Create and return an excel sheet reader that includes
+    an optional argument to list a set of column indexes
+    to filter/select from the input sheet, and for each,
+    an sqlalchemy Column() to use to output.
+
+
+
+Uses same params as SheetDictReader plus:
+<param name='sqlalchemy_columns'>
+an  ordered dictionary of column names to output as keys.
+Each paired value is a dict of:
+['index'] = index to use to retrieve a speadsheet column Value.
+['sqlachemy_column'] = sqlalchemy Column object to use to output the
+         column value.
+['todo-functions'] = (todo)list of functions to call to validate or notate
+    each input column value
+</param>
+
+<param name='workbook_path'>
+The workbook must be opened first to validate whether the column indices
+given in sqlalchemy_columns are valid.
+</param>
+
+'''
+class BookSheetFilter(SheetDictReader):
+    def __init__(self, book=None,sheet=None, pythonize_column_names=True,
+      column_names=None,row_count_header=None, row_count_values_start=1,
+      sqlalchemy_columns=None, verbosity=0):
+
+        super().__init__(
+          book=book, sheet=sheet, pythonize_column_names=pythonize_column_names
+          ,column_names=column_names, row_count_header=row_count_header
+          ,row_count_values_start=row_count_values_start)
+
+        return
+
+
+
+
 
 class PyodbcReader(object):
     """

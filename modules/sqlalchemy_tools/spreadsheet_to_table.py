@@ -40,7 +40,7 @@ import xlrd, xlwt
 from xlwt import easyxf
 from xlrd import open_workbook
 #
-from dataset.dataset_code import SheetDictReader
+from dataset.dataset_code import SheetDictReader, BookSheetFilter
 
 def table_configure(metadata=None, table_name=None, column_names=None):
     me = 'table_configure'
@@ -49,7 +49,8 @@ def table_configure(metadata=None, table_name=None, column_names=None):
         Sequence('{}_id_seq'.format(table_name)), primary_key=True,)]
 
     for c in column_names:
-        columns.append(Column('{}'.format(c),String(100)))
+        print("Column name={}",c)
+        columns.append(Column('{}'.format(c),Text))
 
     table = Table(table_name, MetaData(),*columns);
     print("{}: configured table {}".format(me,table.name))
@@ -78,15 +79,17 @@ def creates_run(metadata=None,tables=None,engine=None,verbosity=1):
         table.create(engine, checkfirst=True)
     return
 
-def workbook_columns(workbook_path=None):
+def workbook_columns(workbook_path=None,sqlalchemy_columns=None):
     #initialize database connections for writing/inserting
     workbook = xlrd.open_workbook(workbook_path)
     first_sheet = workbook.sheet_by_index(0)
     if first_sheet is None:
       raise ValueError("Sheet is None")
-    reader = SheetDictReader(book=workbook,
+    # output
+    #reader = SheetDictReader(book=workbook,
+    reader = BookSheetFilter(book=workbook,
       sheet=first_sheet, row_count_header=1, row_count_values_start=2,
-      verbosity=0)
+      sqlalchemy_columns=sqlalchemy_columns,verbosity=0)
 
     for column_name in reader.column_names:
         column_name = column_name.strip().lower().replace(' ', '_')
@@ -157,6 +160,16 @@ def spreadsheet_to_table(
 
         #engine.execute(table.insert(), row)
         d_col_val = {d_ss_table[sscol]:value for sscol,value in row.items() }
+
+        for c,v in d_col_val.items():
+            msg = ("row={}, col={}, len={},val={}".format(i,c,len(v),v))
+            # Try to avoid windows msg: UnicodeEncodeError...
+            # on prints to windows console, encode in utf-8
+            # It works FINE!
+            print(msg.encode('utf-8'))
+            #print(msg)
+            sys.stdout.flush()
+
         engine.execute(table.insert(), d_col_val)
 
         if i % 100 == 0:
@@ -183,7 +196,7 @@ def test_linux(nick_name=None):
     # Nick name is used by podengo_db_engine_by_bame() to get
     # the desired engine in which to create the table and insert rows.
     # todo: make it drop the table first, or give option to add new
-    # rows if table alread extant in the engine/database.
+    # rows if table already extant in the engine/database.
 
     #engine_nick_name = 'local-silodb'
     #engine_nick_name = 'mysql-marshal1'
@@ -247,10 +260,21 @@ Required: the test workbook is at workbook_path, defined below.
 '''
 def test_windows(nick_name=None):
     me = 'test_windows'
+    # Workbook for matthew kruse AT accessions data
     workbook_path = ('C:\\rvp\\download\\'
         'at_accessions_rvp_20171130.xlsx')
 
-    table_name = "test_table2"
+    # workbook for Suzanne Stapleton ifas citations spreadhseet
+    #
+    workbook_path = (
+      'U:\\data\\ifas_citations\\2016\\base_info\\'
+      'IFAS_citations_2016_inspected_20171218a.xls')
+    table_name = "test_inspected"
+
+    sql_alchemy_columns = {
+
+
+    }
     # Nick name is used by podengo_db_engine_by_bame() to get
     # the desired engine in which to create the table and insert rows.
     # todo: make it drop the table first, or give option to add new
@@ -297,11 +321,12 @@ def test_windows(nick_name=None):
        engine=my_db_engine,d_ss_table=d_ss_column__table_column)
 
     return
- # end test_windows()
+# end test_windows()
+
 def run(env=None):
+    me='run()'
     #NOTE set environment
     print("Starting")
-
 
     #LINUX
     nick_name = 'hp_psql'
@@ -309,9 +334,12 @@ def run(env=None):
     #test_linux(nick_name=nick_name)
 
     #WINDOWS
-    nick_name = 'local_silodb'
-    nick_name = 'mysql_marshal1'
+    nick_name = 'uf_local_silodb'
+    nick_name = 'uf_local_mysql_marshal1'
     nick_name = 'integration_sobekdb'
+
+    nick_name = 'uf_local_mysql_marshal1'
+    print("{}:Using nick_name={}".format(me,nick_name))
     test_windows(nick_name=nick_name)
 
     print("Done!")

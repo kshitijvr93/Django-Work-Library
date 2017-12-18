@@ -31,9 +31,11 @@ def get_db_engine_by_name(name=None,verbosity=1):
             'host': '127.0.0.1',
             'port': '3306',
             'dbname' : 'marshal1',
+            # NOTE: MUST SET utf8 on connections!
+            'charset': 'utf8',
             'format' : (
               '{dialect}+{driver}://{user}:{password}@'
-              '{host}:{port}/{dbname}'),
+              '{host}:{port}/{dbname}?charset={charset}'),
         },
         'lib-archcoll_aspace': {
             # Note driver mysqldb requires "include mysqlclient"
@@ -70,7 +72,7 @@ def get_db_engine_by_name(name=None,verbosity=1):
             'format' : '{driver}://{server}/{dbname}?driver={odbc_driver}',
         },
 
-        'local_silodb': {
+        'uf_local_silodb': {
              # Using windows authentication here so do not need user,password
              # I did not specify driver pyodbc here, so sqlalchemy
              # uses a working default.
@@ -125,7 +127,7 @@ if testme == 1:
         engine = test_run(name='uf_local_mysql_marshal1')
         engine = test_run(name='integration_sobekdb')
         engine = test_run(name='production_sobekdb')
-        engine = test_run(name='local_silodb')
+        engine = test_run(name='uf_local_silodb')
         engine = test_run(name='lib-archcoll_aspace')
     else:
         engine = test_run(name='hp_psql')
