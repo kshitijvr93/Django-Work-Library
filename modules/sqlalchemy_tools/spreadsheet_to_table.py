@@ -173,7 +173,7 @@ And the posgresql database engine is up and running and the test table does
 not exist (just drop that table before running this)
 
 '''
-def test_linux_postgres():
+def test_linux(nick_name=None):
     me = 'test_linux_postgres'
 
     workbook_path = ('/home/robert/Downloads/'
@@ -188,7 +188,7 @@ def test_linux_postgres():
     #engine_nick_name = 'local-silodb'
     #engine_nick_name = 'mysql-marshal1'
 
-    engine_nick_name = 'hp-psql'
+    engine_nick_name = nick_name
 
     print("Calling workbook_columns()....")
     ss_columns = workbook_columns(workbook_path=workbook_path)
@@ -238,15 +238,15 @@ def test_linux_postgres():
        engine=my_db_engine,d_ss_table=d_ss_column__table_column)
 
     return
-# end test_linux_postgres
+# end test_linux
 
 '''
 Set workbook_path to any workbook path on local drive
 
 Required: the test workbook is at workbook_path, defined below.
 '''
-def run():
-    me = 'run'
+def test_windows(nick_name=None):
+    me = 'test_windows'
     workbook_path = ('C:\\rvp\\download\\'
         'at_accessions_rvp_20171130.xlsx')
 
@@ -256,10 +256,8 @@ def run():
     # todo: make it drop the table first, or give option to add new
     # rows if table alread extant in the engine/database.
 
-    engine_nick_name = 'local-silodb'
-    engine_nick_name = 'mysql-marshal1'
-
-    engine_nick_name = 'hp-psql'
+    engine_nick_name = nick_name
+    #engine_nick_name = 'hp_psql'
 
     print("Calling workbook_columns()....")
     ss_columns = workbook_columns(workbook_path=workbook_path)
@@ -299,9 +297,28 @@ def run():
        engine=my_db_engine,d_ss_table=d_ss_column__table_column)
 
     return
- # end run()
+ # end test_windows()
+def run(env=None):
+    #NOTE set environment
+    print("Starting")
 
-print("Starting")
-#run()
-test_linux_postgres()
-print("Done!")
+
+    #LINUX
+    nick_name = 'hp_psql'
+
+    #test_linux(nick_name=nick_name)
+
+    #WINDOWS
+    nick_name = 'local_silodb'
+    nick_name = 'mysql_marshal1'
+    nick_name = 'integration_sobekdb'
+    test_windows(nick_name=nick_name)
+
+    print("Done!")
+    return
+#end run()
+
+# Test linux or windows or None
+env = 'windows'
+if env is not None:
+    run(env=env)

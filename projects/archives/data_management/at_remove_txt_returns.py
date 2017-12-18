@@ -5,7 +5,7 @@
 # save results as a .txt file... when it insists on writing newlines for certain
 #subfields of database fields.
 # CONCLUSION: this is too idiosyncratic behavior of SSMS/ SQL Server stuff, so
-# going ahead with more generally useful cod development that will do this
+# going ahead with more generally useful code development that will do this
 # by connecting to the database with python code to dump TABLES
 # to files, bypassing use of SSMS.
 # rvp - 20171129
@@ -34,7 +34,12 @@ from collections import OrderedDict
 # to possible disambiguate some cases ..
 #
 #Input file
-
+'''
+summary: get firt line of input file in arg ifile,
+delimit it by tabs, and simply return the count of the Number
+of fields.
+This program assumes that all rows must/should have that number.
+'''
 def process_first_line(ifile=None):
 
     first_line = ifile.readline()
