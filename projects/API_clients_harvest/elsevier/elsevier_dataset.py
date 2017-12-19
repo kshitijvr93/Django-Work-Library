@@ -1170,7 +1170,7 @@ del dsw,dw
                  lspec=self.lspec)
 
         elif self.dbms == 'excel_srcn':
-            dr = SheetDictReader(self.sheet)
+            dr = SheetDictReader(sheet_index=0)
         elif self.dbms == 'pyodbc':
             dr = PyodbcReader(conn=self.conn, cursor=self.cursor,
               query=self.query, table=self.table,

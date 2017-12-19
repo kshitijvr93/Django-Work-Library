@@ -66,35 +66,39 @@ def sqlalchemy_core_table(
     else: #just use columns arg
         table_columns.extend(columns)
 
-    table = Table(table_name, MetaData(),*columns);
+    core_table = Table(table_name, MetaData(),*columns);
 
-    print("{}: configured table {}".format(me,table.name))
-    return table
+    print("{}: configured table {}".format(me,core_table.name))
+    return core_table
 
 '''
-Run the creates for the given tables in the given engine.
+Just print the table creation ddl
 '''
 
-def dbtable_create (metadata=None,table_core=None,engine=None,verbosity=1):
+def engine_table_create (metadata=None,table_core=None,engine=None,verbosity=1):
 
+    me = "engine_table_create"
     if table_core is None:
-            raise ValueError("Got a table_core value of None")
-    print('\n-----------------TABLE {}----------------------------\n'
-          .format(table_core.name))
+      raise ValueError("{}:Got a table_core value of None".format(me))
 
     if verbosity > 0:
-        print('-----------------ENGINE {}--------------------------\n'
-        .format(engine.name))
+        print('\n{}:-----------------TABLE {}----------------------------\n'
+          .format(me,table_core.name))
+        print('{}:-----------------ENGINE {}--------------------------\n'
+          .format(me,engine.name))
 
     if verbosity > 0:
-        ##print (sql.compile(dialect=engine.dialect)))
+        # print the ddl to create the table
         print(CreateTable(table_core).compile(engine))
         print('======================================')
-    # Create this table in the engine
-    #table.__table__.create(engine, checkfirst=True)
-    table_core.create(engine, checkfirst=True)
-    return
 
+    # Create this table in the engine?
+    #table.__table__.create(engine, checkfirst=True)
+    engine_table = table_core.create(engine, checkfirst=True)
+    # Return None for now...just pringing the schema..
+    return engine_table
+
+# end engine_table_create
 def workbook_columns(workbook_path=None,sqlalchemy_columns=None):
     #initialize database connections for writing/inserting
     workbook = xlrd.open_workbook(workbook_path)
@@ -134,13 +138,13 @@ Used to use next default, but keep here for reference
  </note>
 '''
 
-def spreadsheet_to_table(
-  workbook_path=None, table=None, engine=None, od_index_column=None,
+def spreadsheet_to_engine_table(
+  workbook_path=None, table_core=None, engine_table=None, engine=None, od_index_column=None,
   row_count_header=1, row_count_values_start=2, verbosity=0):
 
-    me = 'spreadsheet_to_table'
+    me = 'spreadsheet_to_engine_table'
     required_args = [
-      'workbook_path', 'table', 'engine', 'od_index_column' ]
+      'workbook_path', 'table_core', 'engine', 'od_index_column' ]
 
     if not all(required_args):
       msg = "Missing some required args in {}".format(repr(required_args))
@@ -151,6 +155,7 @@ def spreadsheet_to_table(
     inspector = inspect(engine)
     conn = engine.connect()
     metadata.reflect(engine)
+
     if (verbosity > 0):
         print('Connected with conn={} to database to insert into table {}'
           .format(repr(conn),table.name))
@@ -159,11 +164,14 @@ def spreadsheet_to_table(
     #workbook
     workbook = xlrd.open_workbook(workbook_path)
     # initialize sheet reader for the workbook
-    first_sheet = workbook.sheet_by_index(0)
 
     reader = SheetDictReader(
-      book=workbook,sheet=first_sheet, row_count_header=row_count_header,
+      book=workbook,sheet_index=0, row_count_header=row_count_header,
       row_count_values_start=row_count_values_start)
+    first_sheet = workbook.sheet_by_index(reader.sheet_index)
+    print("{}: SheetDictReader with sheet_index {} has column_names={}"
+        .format(me, reader.sheet_index, repr(reader.column_names)))
+    sys.stdout.flush()
 
     #Read each spreadsheet row and insert table row
     #based on od_index_column information
@@ -171,20 +179,22 @@ def spreadsheet_to_table(
     i = 0
     for row in reader:
         i += 1
-        if (verbosity > 0):
-            print("reading row {}".format(i))
-        d_col_value = {}
+        if (verbosity > 0 or 1 == 1):
+            msg = ("{}:reading row {}={}".format(me,i,repr(row)))
+            print(msg.encode('utf-8'))
+
+        od_table_column__value = {}
+
+        # Filter out the interesting table_column value pairs for insertion
+        # into the table
         for index, column in od_index_column.items():
-          d_col_val[column.name] = row[index]
+            # Create entry in filtered dict with key of each interesting
+            # output column name paired with its  row's value
+            value = row[reader.column_names[index]]
+            od_table_column__value[column.name] = value
 
-        #Check if any column in the row is a date and if so change its value
-        # to a string
-        #engine.execute(table.insert(), row)
-        # RESUME 20171219 -- populate this
-        d_col_val = {d_ss_table[sscol]:value for sscol,value in row.items() }
-
-        for c,v in d_col_val.items():
-            msg = ("row={}, col={}, len={},val={}".format(i,c,len(v),v))
+            msg = ("row={}, index={}, column_name={}, len={},value={}"
+              .format(i,index,column.name,len(value),value))
             # Try to avoid windows msg: UnicodeEncodeError...
             # on prints to windows console, encode in utf-8
             # It works FINE!
@@ -192,12 +202,13 @@ def spreadsheet_to_table(
             #print(msg)
             sys.stdout.flush()
 
-        engine.execute(table.insert(), d_col_val)
+        #engine.execute(engine_table.insert(), od_table_column__value)
+        engine.execute(table_core.insert(), od_table_column__value)
 
         if i % 100 == 0:
            print(i)
 
-#end spreadsheet_to_table(workbook_path=None, table=None, engine=None):
+#end spreadsheet_to_engine_table(workbook_path=None, table=None, engine=None):
 '''
 Test linux using postgresql example
 Required:
@@ -208,7 +219,7 @@ And the posgresql database engine is up and running and the test table does
 not exist (just drop that table before running this)
 
 '''
-def test_linux(nick_name=None):
+def xxtest_linux(nick_name=None):
     me = 'test_linux_postgres'
 
     metadata = MetaData()
@@ -259,8 +270,8 @@ def test_linux(nick_name=None):
     creates_run(metadata=metadata,engine=my_db_engine,tables=tables)
 
     #Add rows to the table from the spreadsheet
-    spreadsheet_to_table(workbook_path=workbook_path, table=table,
-       engine=my_db_engine,d_ss_table=d_ss_column__table_column)
+    spreadsheet_to_engine_table(workbook_path=workbook_path, table=table,
+       engine=my_db_engine,od_index_column=od_index_column)
 
     return
 # end test_linux
@@ -285,8 +296,7 @@ Set workbook_path to any workbook path on local drive
 Required: the test workbook is at workbook_path, defined below.
 '''
 def test_spreadsheet_table(
-  input_workbook_path=None
-  ,od_index_column=None
+  input_workbook_path=None ,od_index_column=None
   ,engine_nick_name=None, table_name=None
   ):
 
@@ -309,14 +319,17 @@ def test_spreadsheet_table(
     table_core = sqlalchemy_core_table(
       table_name=table_name, columns=od_index_column.values())
 
-    # todo: only create the table if not extant
-    # From the core table, make a true database table object
-    table = dbtable_create(
+    # todo: only show the create ddl for the table
+    # TODO:From the table_core, create a true database table object
+
+    engine_table = engine_table_create(
       metadata=metadata, engine=my_db_engine, table_core=table_core)
 
     #Add rows to the table from the spreadsheet
-    spreadsheet_to_table(
-       workbook_path=input_workbook_path, table=table,
+
+    spreadsheet_to_engine_table(
+       workbook_path=input_workbook_path, engine_table=engine_table,
+       table_core=table_core,
        engine=my_db_engine, od_index_column=od_index_column )
 
     return
@@ -335,7 +348,9 @@ def run(env=None):
 
     if env == 'windows':
         engine_nick_name = 'uf_local_mysql_marshal1'
-        print("{}:Using engine_nick_name={}".format(me,engine_nick_name))
+        print(
+          "{}:Using env={}, engine_nick_name={}"
+          .format(me,env,engine_nick_name))
 
         '''
         workbook_path = ('C:\\rvp\\download\\'
@@ -346,25 +361,36 @@ def run(env=None):
         table_name = 'test_accessions'
         '''
 
-        workbook_path = (
+        input_workbook_path = (
           'U:\\data\\ifas_citations\\2016\\base_info\\'
           'IFAS_citations_2016_inspected_20171218a.xls')
-        table_name = "test_inspected"
 
-        test_spreadsheet_table(engine_nick_name=nick_name,table_name=table_name,
-          od_index_column=None, workbook_path=workbook_path)
+        od_index_column = OrderedDict({
+          5: Column('abc',String(1005)),
+          3: Column('def',String(1003))
+        })
+        table_name = "test_inspected5"
+
+        test_spreadsheet_table(
+          input_workbook_path=input_workbook_path,
+          od_index_column=od_index_column,
+          engine_nick_name=engine_nick_name,
+          table_name=table_name,
+         )
 
     elif env == 'linux':
         #Linux
         engine_nick_name = 'hp_psql'
-        print("{}:Using engine_nick_name={}".format(me,engine_nick_name))
+        print(
+          "{}:Using env={}, engine_nick_name={}"
+          .format(me,env,engine_nick_name))
 
         workbook_path = ('/home/robert/git/citrus/projects/lone_cabbage_2017/data/'
           'lone_cabbage_data_janapr_2017.xlsx')
         # Dont really need an ordered dict now, but keep in mind file dumps
         od_index_column = OrderedDict({
-          5: Column('abc',String(125)),
-          3: Column('def',String(123))
+          5: Column('abc',String(1005)),
+          3: Column('def',String(1003))
         })
         table_name = 'test_janapr'
 
@@ -384,5 +410,7 @@ def run(env=None):
 
 env = 'windows'
 env = 'linux'
+
+env = 'windows'
 
 run(env=env)

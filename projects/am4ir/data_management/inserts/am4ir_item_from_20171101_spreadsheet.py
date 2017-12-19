@@ -121,7 +121,7 @@ def am4ir_spreadsheet_to_am4ir_item(
     workbook = xlrd.open_workbook(workbook_path)
     first_sheet = workbook.sheet_by_index(0)
     reader = SheetDictReader(
-      first_sheet, row_count_header=1, row_count_values_start=2)
+      sheet_index=0, row_count_header=1, row_count_values_start=2)
 
     #Read the each spreadsheet row and insert table row
     i=0

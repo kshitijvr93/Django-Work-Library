@@ -65,13 +65,19 @@ class SheetDictReader(object):
     read from generic rectangular regions of spreadsheets
     </param>
 
-    """
-    def __init__(self, book=None,sheet=None, pythonize_column_names=True,
-      column_names=None, row_count_header=None, row_count_values_start=1,
-      verbosity=0):
+    <param name="sheet_index">
+    First sheet is index 0 and so on. Identifies the sheet within the workbook
+    to read.
+    </param>
 
-        if sheet is None:
-            raise ValueError("sheet is None")
+    """
+    def __init__(self, book=None, pythonize_column_names=True,
+      column_names=None, row_count_header=None, row_count_values_start=1,
+      sheet_index=0,verbosity=0):
+
+        if sheet_index is None:
+            raise ValueError("sheet_index is None")
+        self.sheet_index = sheet_index
         if row_count_header is None or int(row_count_header < 1):
             msg="row_count_header must be >= 1"
             raise ValueError(msg)
@@ -82,14 +88,14 @@ class SheetDictReader(object):
             raise ValueError("Todo: implement optional column names")
 
         self.book = book
-        self.sheet = sheet
+        self.sheet = book.sheet_by_index(sheet_index)
         self.od_name_value = OrderedDict()
 
         # Also make member field_names[] semi-compatible with csv DictReader.
         # User may query them but should not change them. Column names are 'normalized'
         # below, so there is very likely no need to change them.
         self.column_names = []
-        for col_idx in range(sheet.ncols):
+        for col_idx in range(self.sheet.ncols):
             column_name =  str(self.sheet.cell(row_count_header-1,col_idx).value)
             column_name = column_name.lower().replace(' ','_')
             self.column_names.append(column_name)
