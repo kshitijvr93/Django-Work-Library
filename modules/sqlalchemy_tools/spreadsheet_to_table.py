@@ -366,8 +366,15 @@ def run(env=None):
           'IFAS_citations_2016_inspected_20171218a.xls')
 
         od_index_column = OrderedDict({
-          5: Column('abc',String(1005)),
-          3: Column('def',String(1003))
+          0: Column('doi',String(256)),
+          1: Column('authors',Text)
+          2: Column('pub_year', String(32))
+          3: Column('title', Text)
+          4: Column('journal', Text)
+          5: Column('volume', String(26))
+          6: Column('issue', String(26))
+          7: Column('page_range', String(26))
+          6: Column('original_line', Text)
         })
         table_name = "test_inspected5"
 

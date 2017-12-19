@@ -459,8 +459,6 @@ class CitationsInspector():
                     d_output['doi'] = doi
                     # end processing the doi, if any, in input line
 
-                    d_column_style['unit'] = d_type_style['unit']
-
                     # Parse the rest of the line that appears before the doi.
                     # Split the line based on the ')' that should first appear
                     # following the year that follows  the author list
