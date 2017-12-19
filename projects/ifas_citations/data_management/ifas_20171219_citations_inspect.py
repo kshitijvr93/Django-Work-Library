@@ -390,8 +390,9 @@ class CitationsInspector():
                     if index_line == 0:
                         #first line has header names, so skip it Here
                         continue
-                        
+
                     line = line.replace('\n','')
+                    original_line=line.replace('\t','|')
                     fields = line.split('\t')
                     print("\nReading input line count {}".format(index_line))
                     d_column_output = {}
@@ -492,7 +493,7 @@ class CitationsInspector():
                         d_output[fname] = value.strip()
 
                     # Save the original line
-                    d_output['original_line'] = line
+                    d_output['original_line'] = original_line
                     d_column_style['original_line'] = d_type_style['original']
 
                     # Write spreadsheet row
