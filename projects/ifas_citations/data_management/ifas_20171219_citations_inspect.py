@@ -210,7 +210,7 @@ class CitationsInspector():
     zfilled to 10 positions.
     '''
     def __init__(self, input_folder=None, input_files_glob=None
-        , base_pubs_file_name=None, verbosity=1):
+        , base_pubs_file_name=None, verbosity=0):
         required_args = [
           'input_folder','base_pubs_file_name', 'input_file_glob']
         if not all(required_args):
@@ -385,22 +385,53 @@ class CitationsInspector():
                     'pages': 7,
                     'doi': 8,
                 }
+                # Some vars to manage partial physical lines,
+                # cf at_remove_txt_returns.py
+                nof = 0
+                nol = 0
+                logical_fields = []
                 # {
                 for index_line, line in enumerate(input_lines):
+                    original_line=line.replace('\t','|')
+                    line = line.replace('\n','')
+                    fields = line.split('\t')
+                    nif = len(fields)
                     if index_line == 0:
-                        #first line has header names, so skip it Here
+                        # First line has header names, so skip it.
+                        # Here however, it alwasy has all the fields, so
+                        # first collect the N of fields
+                        field_count = nif
                         continue
 
-                    line = line.replace('\n','')
-                    original_line=line.replace('\t','|')
-                    fields = line.split('\t')
-                    print("\nReading input line count {}".format(index_line))
+                    if nif == 1:
+                        # Handle artifact of user-inputted newlines
+                        f = fields[0]
+                        logical_fields [nof-1] = logical_fields[nof-1] + f
+                    elif nof + nif == field_count + 1:
+                        fields = fields[1:]
+                        nof += nif - 1
+                    else:
+                        logical_fields.extend(fields)
+                        nof += nif
+                        continue;
+                    # if nof equals field_count, logical_fields are full/ready
+                    if nof > field_count:
+                        msg = "Line {} adds up to too many fields."
+                        raise ValueError(msg)
+                    elif nof == field_count:
+                        nof = 0
+                        fields = logical_fields;
+                        original_line = '|'.join(fields)
+
+                    print("\nProcessing at physical input line count {}"
+                        .format(index_line))
                     d_column_output = {}
                     d_column_style = {}
 
                     # default style to unparsed
                     for column_name in self.output_columns:
                         d_column_style[column_name] = d_type_style['unparsed']
+
                     d_output = {}
                     n_file_citations += 1
 
@@ -421,6 +452,7 @@ class CitationsInspector():
                         d_column_style[fname] = d_type_style['warning']
                     else:
                         doi = value
+                        n_unit_dois += 1
                         # A DOI STRING WAS FOUND
                         # Now do three doi duplication checks:
                         # DOI Dup Check (error2):
