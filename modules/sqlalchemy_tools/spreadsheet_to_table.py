@@ -142,7 +142,10 @@ Used to use next default, but keep here for reference
 '''
 
 def spreadsheet_to_engine_table(
-  workbook_path=None, table_core=None, engine_table=None, engine=None, od_index_column=None,
+  workbook_path=None, sheet_index=0,
+  od_index_column=None,
+  table_core=None, engine_table=None,
+  engine=None,
   row_count_header=1, row_count_values_start=2, verbosity=0):
 
     me = 'spreadsheet_to_engine_table'
@@ -178,7 +181,7 @@ def spreadsheet_to_engine_table(
     # initialize sheet reader for the workbook
 
     reader = SheetDictReader(
-      book=workbook,sheet_index=0, row_count_header=row_count_header,
+      book=workbook,sheet_index=sheet_index, row_count_header=row_count_header,
       row_count_values_start=row_count_values_start)
     first_sheet = workbook.sheet_by_index(reader.sheet_index)
     print("{}: SheetDictReader with sheet_index {} has column_names={}"
@@ -314,24 +317,12 @@ def xxtest_linux(nick_name=None):
     creates_run(metadata=metadata,engine=my_db_engine,tables=tables)
 
     #Add rows to the table from the spreadsheet
-    spreadsheet_to_engine_table(workbook_path=workbook_path, table=table,
+    spreadsheet_to_engine_table(workbook_path=workbook_path,
+       sheet_index=sheet_index, table=table,
        engine=my_db_engine,od_index_column=od_index_column)
 
     return
 # end test_linux
-
-def ss_column_name_normalize(column_name=None):
-  column = (
-           column.replace('/','_').replace('-','_')
-          .replace('(','_').replace(')','')
-          .replace(u'\u00B5','u') #micro sign
-          .replace(u'\u03BC','u') #greek mu
-          .replace(u'\u0040','') # commercial at
-          .replace(u'\uFF20','') # fullwidth commercial at
-          .replace(u'\uFE6B','') # small commercial at
-          .replace(u'\u00B0','') # degrees symbol
-          )
-  return column
 
 
 '''
@@ -339,11 +330,11 @@ Set workbook_path to any workbook path on local drive
 
 Required: the test workbook is at workbook_path, defined below.
 '''
-def test_spreadsheet_table(
-  input_workbook_path=None ,od_index_column=None
-  ,engine_nick_name=None, table_name=None
+def spreadsheet_to_table(
+  input_workbook_path=None, sheet_index=0,
+  od_index_column=None,
+  engine_nick_name=None, table_name=None
   ):
-
     me = 'test_spreadsheet_table'
     required_args =[
       'input_workbook_path',
@@ -373,6 +364,7 @@ def test_spreadsheet_table(
 
     spreadsheet_to_engine_table(
        workbook_path=input_workbook_path, engine_table=engine_table,
+       sheet_index=sheet_index,
        table_core=table_core,
        engine=my_db_engine, od_index_column=od_index_column )
 
@@ -392,10 +384,6 @@ def run(env=None):
 
     if env == 'windows':
         engine_nick_name = 'uf_local_mysql_marshal1'
-        print(
-          "{}:Using env={}, engine_nick_name={}"
-          .format(me,env,engine_nick_name))
-
         '''
         workbook_path = ('C:\\rvp\\download\\'
           'at_accessions_rvp_20171130.xlsx')
@@ -408,6 +396,7 @@ def run(env=None):
         input_workbook_path = (
           'U:\\data\\ifas_citations\\2016\\base_info\\'
           'IFAS_citations_2016_inspected_20171218a.xls')
+        sheet_index = 0
 
         od_index_column = OrderedDict({
           0: Column('doi',String(256)),
@@ -421,23 +410,32 @@ def run(env=None):
           6: Column('original_line', Text),
         })
         table_name = "test_inspected5"
+    elif env == 'windows2':
+        engine_nick_name = 'uf_local_mysql_marshal1'
 
-        test_spreadsheet_table(
-          input_workbook_path=input_workbook_path,
-          od_index_column=od_index_column,
-          engine_nick_name=engine_nick_name,
-          table_name=table_name,
-         )
+        workbook_path = ('C:\\rvp\\download\\'
+          'at_accessions_rvp_20171130.xlsx')
+        sheet_index = 0
+        table_name = 'test_accessions'
+
+        od_index_column = OrderedDict({
+          0: Column('col0',String(256)),
+          1: Column('c1',Text),
+          2: Column('c2', String(32)),
+          3: Column('c3', Text),
+          4: Column('c4', Text),
+          5: Column('c5', String(26)),
+          6: Column('c6', String(26)),
+          7: Column('c7', String(26)),
+          6: Column('c8', Text),
+        })
 
     elif env == 'linux':
         #Linux
-        engine_nick_name = 'hp_psql'
-        print(
-          "{}:Using env={}, engine_nick_name={}"
-          .format(me,env,engine_nick_name))
-
         workbook_path = ('/home/robert/git/citrus/projects/lone_cabbage_2017/data/'
           'lone_cabbage_data_janapr_2017.xlsx')
+        sheet_index = 0
+        engine_nick_name = 'hp_psql'
         table_name = 'test_janapr'
         # Dont really need an ordered dict now, but keep in mind file dumps
         od_index_column = OrderedDict({
@@ -454,15 +452,46 @@ def run(env=None):
           13: Column('specific_conductance_us_cm_25_c',Float,nullable=True),
           14: Column('specific_conductance_ms_cm_25_c',Float,nullable=True),
         })
+    elif env == 'linux3':
+        engine_nick_name = 'hp_psql'
 
-        test_spreadsheet_table(
-          # Identify the workbook pathname of the input workbook
-          input_workbook_path=workbook_path,
-          # Map the input workbook first spreadsheet's row's column
-          # indices to the output table's sqlalchemy columns
-          od_index_column=od_index_column,
-          #Set the desired output engine/table_name
-          engine_nick_name=engine_nick_name,table_name=table_name,
+        workbook_path = ('/home/robert/git/citrus/projects/archives/data/'
+          'at_names_rvp_20171130.xlsx')
+        sheet_index = 0
+        table_name = 'test_names'
+
+        od_index_column = OrderedDict({
+          0: Column('nameid',Integer),
+          2: Column('last_updated',Date),
+          4: Column('last_updated_by', String(32)),
+          6: Column('name_type', Text),
+          7: Column('sort_name', Text),
+          18: Column('personal_date_range_string', String(26)),
+          19: Column('personal_fuller_form', String(26)),
+          20: Column('personal_title', Text),
+          20: Column('family_name', Text),
+          24: Column('name_source', Text),
+          29: Column('salutation', Text),
+        })
+
+
+    print(
+      "{}:Using env={},\n"
+      "workbook_path={},sheet_index={},\n"
+      "od_index_column={},\n"
+      "engine_nick_name={},table_name={}"
+      .format(me,env,workbook_path,sheet_index,
+        od_index_column,engine_nick_name,table_name))
+
+    spreadsheet_to_table(
+      # Identify the workbook pathname of the input workbook
+      input_workbook_path=workbook_path,
+      sheet_index=sheet_index,
+      # Map the input workbook first spreadsheet's row's column
+      # indices to the output table's sqlalchemy columns
+      od_index_column=od_index_column,
+      #Set the desired output engine/table_name
+      engine_nick_name=engine_nick_name,table_name=table_name,
           )
 
     print("Done!")
@@ -474,5 +503,6 @@ env = 'linux'
 env = 'linux2' #implement soon
 
 env = 'linux'
+env = 'linux3'
 
 run(env=env)
