@@ -18,7 +18,7 @@ def register_modules():
     return
 register_modules()
 
-print("sys.path={}".format(repr(sys.path)))
+print("Using sys.path={}".format(repr(sys.path)))
 
 import etl
 # Import slate of databases that podengo can use
@@ -28,11 +28,13 @@ from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
 import datetime
 from sqlalchemy import (
   Boolean, create_engine,
-  CheckConstraint, Column, Date, DateTime, ForeignKeyConstraint,
+  CheckConstraint, Column, Date, DateTime,Float, FLOAT, ForeignKeyConstraint,
   inspect, Integer,
   MetaData, Sequence, String, Table, Text, UniqueConstraint,
   )
 from sqlalchemy.schema import CreateTable
+
+import sqlalchemy.sql.sqltypes
 
 #
 from pathlib import Path
@@ -61,14 +63,14 @@ def sqlalchemy_core_table(
 
     if columns is None:
         for c in column_names:
-            print("Column name={}",c)
+            print("Using Column name={}",c)
             table_columns.append(Column('{}'.format(c),Text))
     else: #just use columns arg
         table_columns.extend(columns)
 
     core_table = Table(table_name, MetaData(),*columns);
 
-    print("{}: configured table {}".format(me,core_table.name))
+    print("{}: using configured table {}".format(me,core_table.name))
     return core_table
 
 '''
@@ -82,15 +84,16 @@ def engine_table_create (metadata=None,table_core=None,engine=None,verbosity=1):
       raise ValueError("{}:Got a table_core value of None".format(me))
 
     if verbosity > 0:
-        print('\n{}:-----------------TABLE {}----------------------------\n'
+        print('\n{}:USING-----------------TABLE {}----------------------------\n'
           .format(me,table_core.name))
-        print('{}:-----------------ENGINE {}--------------------------\n'
+        print('{}:USING-----------------ENGINE {}--------------------------\n'
           .format(me,engine.name))
 
     if verbosity > 0:
         # print the ddl to create the table
-        print(CreateTable(table_core).compile(engine))
-        print('======================================')
+        print('====== Start CreateTable(table_core.compile(engine) output ===')
+        #print(CreateTable(table_core).compile(engine))
+        print('====== End CreateTable(table_core.compile(engine) output =====')
 
     # Create this table in the engine?
     #table.__table__.create(engine, checkfirst=True)
@@ -151,10 +154,19 @@ def spreadsheet_to_engine_table(
       raise ValueError(msg)
 
     #initialize database connections for writing/inserting
-    metadata = MetaData(engine)
-    inspector = inspect(engine)
-    conn = engine.connect()
-    metadata.reflect(engine)
+
+    if verbosity > 1:
+        # Might experiment with these later...
+        print("+++++++++++= Calling Metadata(engine)")
+        metadata = MetaData(engine)
+        print("+++++++++++= Calling inspect(engine)")
+        inspector = inspect(engine)
+        print("+++++++++++= Calling inspect(engine)")
+        conn = engine.connect()
+        # Warning: this causes hundreds of lines of output in a 5-table database
+        print("+++++++++++= Calling metadata.reflect(engine)")
+        metadata.reflect(engine)
+        print("+++++++++++= Returned from metadata.reflect(engine)")
 
     if (verbosity > 0):
         print('Connected with conn={} to database to insert into table {}'
@@ -180,7 +192,7 @@ def spreadsheet_to_engine_table(
     for row in reader:
         i += 1
         if (verbosity > 0 or 1 == 1):
-            msg = ("{}:reading row {}={}".format(me,i,repr(row)))
+            msg = ("{}:reading ss row {}={}".format(me,i,repr(row)))
             print(msg.encode('utf-8'))
 
         od_table_column__value = {}
@@ -191,10 +203,40 @@ def spreadsheet_to_engine_table(
             # Create entry in filtered dict with key of each interesting
             # output column name paired with its  row's value
             value = row[reader.column_names[index]]
-            od_table_column__value[column.name] = value
 
-            msg = ("row={}, index={}, column_name={}, len={},value={}"
-              .format(i,index,column.name,len(value),value))
+            #Insert logic here -- if the column is FLOAT, and the
+            #value is empty string, then insert None (for db value NULL)
+            print(
+              "Output:index={}, col name={}, col.type={}, type(column.type)={}"
+              .format(index, column.name, column.type, type(column.type)))
+
+            if ( type(column.type) == sqlalchemy.sql.sqltypes.Float
+               or type(column.type) == sqlalchemy.sql.sqltypes.Integer
+               # Add types here as needed later if db row insertion of '' fails
+               # in this or that db engine of interest
+               ):
+                #NOTE: In postgres, do not need this replacement for integer
+                # field,  but do for Float and maybe others...
+                if value == '':
+                    value = None
+                    od_table_column__value[column.name] = value
+                else:
+                    value = float(value)
+                    od_table_column__value[column.name] = value
+                #print("Got a FLOAT set value={}".format(value))
+            elif type(column.type) == sqlalchemy.sql.sqltypes.Integer:
+                if value == '':
+                    value = None
+                    od_table_column__value[column.name] = value
+                else:
+                    value = float(value)
+                    od_table_column__value[column.name] = value
+            else:
+                od_table_column__value[column.name] = value
+
+            msg = ("index={}, column_name={}, value={}"
+              .format(i,index,column.name, value))
+
             # Try to avoid windows msg: UnicodeEncodeError...
             # on prints to windows console, encode in utf-8
             # It works FINE!
@@ -202,6 +244,8 @@ def spreadsheet_to_engine_table(
             #print(msg)
             sys.stdout.flush()
 
+        msg = ("row={}"
+          .format(od_table_column__value))
         #engine.execute(engine_table.insert(), od_table_column__value)
         engine.execute(table_core.insert(), od_table_column__value)
 
@@ -367,14 +411,14 @@ def run(env=None):
 
         od_index_column = OrderedDict({
           0: Column('doi',String(256)),
-          1: Column('authors',Text)
-          2: Column('pub_year', String(32))
-          3: Column('title', Text)
-          4: Column('journal', Text)
-          5: Column('volume', String(26))
-          6: Column('issue', String(26))
-          7: Column('page_range', String(26))
-          6: Column('original_line', Text)
+          1: Column('authors',Text),
+          2: Column('pub_year', String(32)),
+          3: Column('title', Text),
+          4: Column('journal', Text),
+          5: Column('volume', String(26)),
+          6: Column('issue', String(26)),
+          7: Column('page_range', String(26)),
+          6: Column('original_line', Text),
         })
         table_name = "test_inspected5"
 
@@ -394,12 +438,22 @@ def run(env=None):
 
         workbook_path = ('/home/robert/git/citrus/projects/lone_cabbage_2017/data/'
           'lone_cabbage_data_janapr_2017.xlsx')
+        table_name = 'test_janapr'
         # Dont really need an ordered dict now, but keep in mind file dumps
         od_index_column = OrderedDict({
-          5: Column('abc',String(1005)),
-          3: Column('def',String(1003))
+          0: Column('county',String(1005),nullable=True),
+          1: Column('lake',String(1003),nullable=True),
+          2: Column('obs_date',Date,nullable=True),
+          6: Column('station_id',Float,nullable=True),
+          7: Column('tp_ug_l',Float,nullable=True),
+          8: Column('tn_ug_l',Float,nullable=True),
+          9: Column('chl_ug_l',Float,nullable=True),
+          10: Column('secchi_ft',Float,nullable=True),
+          11: Column('secchi_2',String(30)),
+          12: Column('color_pt_co_units',Float,nullable=True),
+          13: Column('specific_conductance_us_cm_25_c',Float,nullable=True),
+          14: Column('specific_conductance_ms_cm_25_c',Float,nullable=True),
         })
-        table_name = 'test_janapr'
 
         test_spreadsheet_table(
           # Identify the workbook pathname of the input workbook
@@ -417,7 +471,8 @@ def run(env=None):
 
 env = 'windows'
 env = 'linux'
+env = 'linux2' #implement soon
 
-env = 'windows'
+env = 'linux'
 
 run(env=env)
