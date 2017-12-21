@@ -5,7 +5,7 @@ database/engine than source table's).
 
 Basic docs for sqlalchemy column, select expression, and more:
 http://docs.sqlalchemy.org/en/latest/core/tutorial.html
-  See Section on selecting... 
+  See Section on selecting...
 http://docs.sqlalchemy.org/en/latest/core/sqlelement.html
 http://docs.sqlalchemy.org/en/latest/core/selectable.html
 '''
@@ -43,3 +43,13 @@ from sqlalchemy.schema import CreateTable
 
 import sqlalchemy.sql.sqltypes
 import sqlalchemy.sql.expression
+
+''' example:
+>>> from sqlalchemy.sql import select
+>>> s = select([users])
+>>> result = conn.execute(s)
+SELECT users.id, users.name, users.fullname
+FROM users
+()
+'''
+from sqlalchemy.sql import select, and_, or_, not

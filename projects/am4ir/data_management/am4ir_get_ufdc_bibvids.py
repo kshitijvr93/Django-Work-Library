@@ -3,9 +3,9 @@ am4ir_get_ufdc_bibivids
 
 Phase1:
 With given source input database/engine and target database/engine,
-from the source, get the bibvid info for all non-deleted Elsevier items with
-PII values and, if not extant in the target, report that it is being
-added to the target table.
+from the source databse, get the bibvid info for all non-deleted
+Elsevier items with PII values and, if not extant in the target,
+report that it is being added to the target table.
 
 Phase 2: may split out to program like - am4ir_to_spatial_kml later...
 Once the items are in the target, say mysql_marshal1, proceed...
