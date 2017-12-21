@@ -18,6 +18,16 @@ import MySQLdb
 '''
 Get sqlalchemy engine by name
 
+NOTE: these engine database 'nick names' are many podengo creds across networks.
+EG, some work OK on the UF gator network, some on my home network, some on the www.
+
+I may categorized them later.
+
+This is included by code that may run to affect various databases for which
+I have creds (or a similar file would exist for another user).
+
+Due to 12-factor website issues, I'll have to move this file out of this
+repo before sharing the repo with other developers.
 '''
 def get_db_engine_by_name(name=None,verbosity=1):
     me = 'get_db_engine_by_name'

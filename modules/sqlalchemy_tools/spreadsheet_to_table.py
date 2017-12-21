@@ -328,6 +328,8 @@ the ultimate desired input spreadsheet column ordering (of course).
 Next, pass some args down to call spreadsheet_to_engine_table to
 read given spreadsheet to copy its values to the peristent database table.
 
+Refactoring note: On the input side, the od_index_column
+
 </summary>
 
 Set workbook_path to any workbook path on local drive
@@ -344,9 +346,11 @@ in the database engine.
 
 '''
 def spreadsheet_to_table(
-  od_index_column=None,
+  # Logical input and configuration parameters
+  od_index_column=None, input_workbook_path=None, sheet_index=0,
+
+  # Logical output parameters
   engine_nick_name=None, table_name=None,
-  input_workbook_path=None, sheet_index=0,
   verbosity=0,
   ):
     me = 'spreadsheet_to_table'
