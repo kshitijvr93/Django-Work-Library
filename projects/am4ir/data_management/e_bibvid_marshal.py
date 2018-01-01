@@ -88,8 +88,8 @@ def get_rows_elsevier_bibinfo(conn=None):
         )
     #
     # calculate rows from the select_columns- but only works with session.execute()
-    rows = conn.execute(select_elsevier_info)
-    return rows
+    result = conn.execute(select_elsevier_info)
+    return result.fetchall()
 
 def get_rows_test(conn=None, table=None):
     select_info = ( select([table.c.nameid])
@@ -427,8 +427,9 @@ def run_test2(engine_nick_name=None, table_name=None):
 
     print("run_test2: got rows:")
     for i, row in enumerate(rows, start=1):
-      print("{}: '{}'".format(i,row))
-
+      #print("{}: '{}'".format(i,row.items()))
+      od_row = OrderedDict(row.items())
+      print("{}: '{}'".format(i,od_row))
     return
 
 # MAIN CODE
