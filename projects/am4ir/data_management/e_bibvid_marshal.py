@@ -8,186 +8,120 @@ for use by marshaling applications.
 This is first modeled from e_bibvid_dict.py which used a pyodbc connector to
 query a sobek database and dump elsevier item to a file for use by elsevier code
 to generate 'free' bib_vid ids to use to load new elsevier items to sobek.
-
 '''
-import sys
-from lxml import etree
-import os
+import sys, os, os.path, platform
 import datetime
-import pytz
-import sys
-from pathlib import Path
-
-# To an lxml tree, add subelements recursively from nested python data structures
-# This is useful to register log message traces and to output into xml format at the end of a run.
-
-def add_subelements(element, subelements):
-    if isinstance(subelements, dict):
-        d_subelements = OrderedDict(sorted(subelements.items()))
-        for key, value in d_subelements.items():
-            # Check for valid xml tag name:
-            # http://stackoverflow.com/questions/2519845/how-to-check-if-string-is-a-valid-xml-element-name
-            # poor man's check: just prefix with Z if first character is a
-            # digit -  the only bad type of tagname encountered using various
-            # applications... so far ...
-            if key[0] >= '0' and key[0] <= '9':
-                key = 'Z' + key
-            subelement = etree.SubElement(element, key)
-            add_subelements(subelement, value)
-    elif isinstance(subelements, list):
-        # Make a dict indexed by item index/count for each value2 in the 'value' that is a list
-        for i, value in enumerate(subelements):
-            subelement = etree.SubElement(element, 'item-{}'.format(str(i+1).zfill(8)))
-            add_subelements(subelement, value)
-    else: # Assume it is a string-like value. Just set the element.text and do not recurse.
-        element.text = str(subelements)
-    return True
-# end def add_subelements()
-
-# CONNECT TO DB, RUN QUERY, BUILD RESULTS TO DICT, OUTPUT SOME RESULTS - SAMPLE
-import os
-import csv
-
-#speedup to set large field_size_limit?
-csv.field_size_limit(256789)
-#import xlrd
-import inspect
-# import xlwt
 from collections import OrderedDict
 
-#import pypyodbc
-import pyodbc
-#import mysqlclient
-import MySQLdb
+def register_modules():
+    platform_name = platform.system().lower()
+    if platform_name == 'linux':
+        modules_root = '/home/robert/'
+        #raise ValueError("MISSING: Enter code here to define modules_root")
+    else:
+        # assume rvp office pc running windows
+        modules_root="C:\\rvp\\"
+    sys.path.append('{}git/citrus/modules'.format(modules_root))
+    return
+register_modules()
+
+print("Using sys.path={}".format(repr(sys.path)))
+
+from collections import OrderedDict
 import datetime
+import etl
+from lxml import etree
+import os
+from pathlib import Path
+import pytz
 
+from sqlalchemy import (
+  Boolean, create_engine,
+  CheckConstraint, Column, Date, DateTime,
+  Float, FLOAT, ForeignKeyConstraint,
+  Integer,
+  MetaData, Sequence, String,
+  Table, Text, UniqueConstraint,
+  )
+from sqlalchemy.inspection import inspect as inspect
+from sqlalchemy.schema import CreateTable
+from sqlalchemy.sql import select, and_, or_, not_
+import sqlalchemy.sql.sqltypes
 
-class DBConnection():
-    # sample connection strings:
-    # ("DRIVER={MySQL ODBC 3.51 Driver};SERVER=localhost;DATABASE=marshal1;""
-    # "user=podengo;password=20MY18sql!;OPTION=3;")
-    def __init__(self, d_connect=None):
-        me = 'DBConnection.__init__()'
-        self.verbosity = 1
+# Import slate of databases that this user can use
+from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+import sys
 
-        # Supported db systems and drivers.
-        d_sys_drivers = {
-            'mysql': ['mysqlclient'],
-            'SQL SERVER': ['SQL SERVER']
-        }
-        self.db_system =  d_connect['db_system']
-        self.field_delimiter = d_connect.get('field_delimiter','\t')
-
-        if self.db_system not in d_sys_drivers.keys():
-            raise ValueError("db_system = '{}' not supported"
-                .format(self.db_system))
-
-        self.driver = d_connect['driver']
-
-        if self.driver not in d_sys_drivers[self.db_system]:
-            raise ValueError("For db_system {}, driver {} not supported"
-              .format(self.db_system,self.driver))
-
-        self.d_connect = d_connect
-        self.db_system = d_connect['db_system']
-        #self.db = d_connect['database']
-        self.database = d_connect['database']
-
-        if d_connect['db_system'] == 'mysql':
-            if self.driver == 'mysqlclient':
-                # Use custom package mysqlclient/module MySQLdb driver
-                # methods to open and return a connection.
-                #See https://github.com/methane/mysql-driver-benchmarks/blob/master/bench2_world.py
-                # Extract only needed keys for MySQLdb.connect(), else it chokes.
-                d_mc = {k:d_connect[k] for k in [
-                  'user','host','database','password']}
-                self.connection = MySQLdb.connect(**d_mc)
-            else:
-                raise ValueError('Bad driver {}'.format(driver))
-
-        else: # assume an sql server connection
-
-            self.server = d_connect['server']
-            # NOTE: also some of these drivers might be tested later...
-            # but SQL Server works OK for my UF office pc in 2017
-            drivers = ['SQL Server'
-                      ,'SQL Server Native Client 9.0'
-                      ,'SQL Server Native Client 10.0'
-                      ,'SQL Server Native Client 11.0'
-                      ]
-            try:
-                # NOTE: correct this later... now only SQL Server driver works
-                #but NEED the literal {} wrapper.
-                #https://social.msdn.microsoft.com/Forums/en-US/1e6b9ddb-ffb3-44ff-b06d-104178cc4bfe/connect-to-sql-server-express-2012-from-python-34?forum=sqlexpress
-
-                # this part works... "DRIVER=\{SQL Server\};SERVER=;"
-                self.cxs = (
-                  "DRIVER={{{}}};SERVER={};dataBASE={};Trusted_connection=yes"
-                  .format(self.driver,self.server, self.database))
-
-                print("---\n{}: Trying pyodbc connect with self.cxs='{}'\n---"
-                  .format(me,self.cxs))
-
-                sys.stdout.flush()
-                # Open the connection for the primary cursor
-                self.connection = pyodbc.connect(self.cxs)
-
-            except Exception as e:
-                print(
-                  "Connection attempt FAILED with connection string:\n'{}'"
-                  ",\ngot exception:\n'{}'" .format(self.cxs,repr(e)))
-                raise ValueError(
-                  "{}: Error. Cannot open connection."
-                  .format(repr(self)))
-
-            if self.connection is None:
-                raise ValueError(
-                  "Cannot connect using pyodbc connect string='{}'"
-                  .format(self.cxs))
-            self.cursor = self.connection.cursor()
-            if self.cursor is None:
-                raise ValueError(
-                  "{}: ERROR - Cannot open cursor.".format(repr(self)))
-        # end sql server connection
-    # end  class DBConnection.__init__()
-
-    def query(self, query=''):
-        cur = self.cursor.execute(query)
-        header = ''
-        for i, field_info in enumerate(cur.description):
-            header += self.field_delimiter if i > 0 else ''
-            header += field_info[0]
-
-        results = []
-        for row in cur.fetchall():
-            result = ''
-            for (i, field_value) in enumerate(row):
-                result += self.field_delimiter if i > 0 else ''
-                result += str(field_value)
-            results.append(result)
-        return header, results
-
-#end class DBConnection()
+import inspect
 
 '''
-<summary name='make_select_elsevier_bibivid_piis'>
-Construct and return an sqlalchemy Columns object that is a query
+'''
+def sa_core_elsevier_bibinfo():
+  return None
+
+
+'''
+<summary name='get_rows_elsevier_bibinfo'>
+
+Return value is a list of rows, where each row is a rowdict with key of column
+name and value of the column value from the sobekdb production db.
+
+Use sql alchemy 'core' expression language to get SobekCM production info about
+Elsevier bib items (one vid per bib, as a bib is a journal article)'
+Use sqlalchemy ORM to execute  SobekCM 4.10+  production query to return
 of a tables in a SobekCM 4.10+ database; to retrieve information
-for various UF marshaling applications.
-</summary>
-'''
 
-def make_select_elsevier_bibvid_piis():
-    s = select([
-      items.
-      ] where()
-      )
-    return select_columns
+This code uses basic sqlalchemy 'core' expresion language  of 20180101
+for sqlalchemy version 1.2, as discussed in:
+
+http://docs.sqlalchemy.org/en/latest/core/tutorial.html#sqlexpression-text
+
+'''
+def get_rows_elsevier_bibinfo(conn=None):
+    select_elsevier_info = ( select([
+          group.c.bibid, item.c.vid, item.c.groupid, item.c.link ])
+          .where( and_ (
+          item.c.groupid == group.g.groupid,
+          item.c.groupid.like('%LS%'),
+          item.c.deleted != 1 , ) )
+          .columns(bibid=String, vid=Integer, groupid=Integer, linke=String)
+        )
+    #
+    # calculate rows from the select_columns- but only works with session.execute()
+    rows = conn.execute(select_elsevier_info)
+    return rows
+
+def get_rows_test(conn=None, table=None):
+    select_info = ( select([table.c.nameid])
+        )
+    #
+    # calculate rows from the select_columns- but only works with session.execute()
+    result = conn.execute(select_info)
+    return result.fetchall()
 #
 # NOTE: The selected columns and column order are relied upon by caller,
 # so do not change them.
 
-def select_elsevier_bibvid_piis(conn, ntop=3):
+'''
+<summary>
+Given a connection to SobekCM database, select the elsevier info and
+parse out the pii values, if any, in the link column's string value.
+
+</summary>
+'''
+def translate_elsevier_bibiinfo(conn=None):
+
+    results = get_rows_elsevier_bibinfo(conn=conn)
+
+    return
+
+
+
+
+'''
+now replacing below with above
+'''
+def old_select_elsevier_bibvid_piis(conn, ntop=3):
     l_messages=[]
     l_messages.append("Building d_bibvid dictionary of bibvids for Elsevier...")
     # Get ntop rows from db connection with a query herein.
@@ -214,6 +148,7 @@ def select_elsevier_bibvid_piis(conn, ntop=3):
           .format(query, len(results)))
 
     rows = [] # result rows
+
     d_bibvid = {}
     d_piis = {}
     for row in results:
@@ -428,23 +363,76 @@ def get_bibvid_piis(conn=None):
 #end def get_bibvid_piis
 
 # Test connection
-connection_name = 'mysql_marshal1'
-connection_name = 'silodb'
-connection_name = 'integration_sobekdb'
-connection_name = 'production_sobekdb'
+def run_test():
+    connection_name = 'mysql_marshal1'
+    connection_name = 'silodb'
+    connection_name = 'integration_sobekdb'
+    connection_name = 'production_sobekdb'
 
-print("Starting:calling test_connection")
+    print("Starting:calling test_connection")
 
-conn=test_connect(connection_name=connection_name)
+    #conn=test_connect(connection_name=connection_name)
 
-print("Got conn={}: ".format(repr(conn)))
+    #print("Got conn={}: ".format(repr(conn)))
 
-#Do the bibvid query for production
-get_bibvid_piis(conn=conn)
+    #Do the bibvid query for production
+    #get_bibvid_piis(conn=conn)
 
 
-print("calling conn.connection.close()")
+    print("calling conn.connection.close()")
+    #conn.connection.close()
+    return
 
-conn.connection.close()
+def run_test2(engine_nick_name=None, table_name=None):
+    engine = get_db_engine_by_name(name=engine_nick_name)
+    print('Connecting to nick_name {}'.format(engine_nick_name))
+
+    conn = engine.connect()
+
+    print('Got conn {}, now getting MetaData'.format(repr(conn)))
+
+    ############
+
+    metadata = MetaData(engine)
+
+    print('Got metadata = {}'.format(repr(metadata)))
+
+    #Get metadata from the engine and create an inspector
+    #print('Getting inspector')
+    #inspector = inspect(engine)
+    #print('Got inspector = {}'.format(repr(inspector)))
+
+    #for table_name in inspector.get_table_names():
+    #    print("engine nick name{} has table_name={}"
+    #          .format(engine_nick_name,table_name))
+
+
+    # Another way to get db info: use reflected metadata
+    # Initialize the reflected info into the metadata
+    #metadata.reflect(engine)
+
+    #rm_tables = metadata.tables
+    #print('Got metadata.tables {}, len={}'
+    #  .format(repr(rm_tables),len(rm_tables)))
+
+    sys.stdout.flush()
+    #am4ir_item = tables['am4ir_item']
+    print("Getting table named {}".format(table_name))
+    table  = Table(table_name, metadata, autoload=True, autoload_with=engine)
+    print("Got table named {}".format(table_name))
+
+    # Note if print repr(table) it is 50 or so lines of output...
+
+    rows = get_rows_test(conn=conn, table=table)
+
+    print("run_test2: got rows:")
+    for i, row in enumerate(rows, start=1):
+      print("{}: '{}'".format(i,row))
+
+    return
+
+# MAIN CODE
+
+run_test2(engine_nick_name='hp_psql', table_name='at_name')
 
 print("Done")

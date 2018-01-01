@@ -29,7 +29,7 @@ I have creds (or a similar file would exist for another user).
 Due to 12-factor website issues, I'll have to move this file out of this
 repo before sharing the repo with other developers.
 '''
-def get_db_engine_by_name(name=None,verbosity=1):
+def get_db_engine_by_name(name=None,verbosity=0):
     me = 'get_db_engine_by_name'
     d_name__engine_db_specs = {
         'uf_local_mysql_marshal1': {
@@ -118,7 +118,9 @@ def get_db_engine_by_name(name=None,verbosity=1):
     if verbosity > 0:
         print("{}:Using engine_spec={}".format(me,engine_spec))
 
-    engine = create_engine(engine_spec, echo=True)
+    # Set echo FALSE else get a lot of output here.
+    echo = True if verbosity > 0 else False
+    engine = create_engine(engine_spec, echo=echo)
 
     return(engine)
 #end get_db_engine_by_name()

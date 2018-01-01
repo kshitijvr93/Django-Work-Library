@@ -1,6 +1,10 @@
 '''
 am4ir_get_ufdc_bibivids
 
+oops - I suspended this work and then started doing this
+in file e_bibvid_marshal.py -- so maybe delete this file...
+
+
 Phase1:
 With given source input database/engine and target database/engine,
 from the source databse, get the bibvid info for all non-deleted
