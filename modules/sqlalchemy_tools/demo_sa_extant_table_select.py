@@ -1,8 +1,7 @@
 '''
-e_bibvid_marshal.py'
+demo_sa_extant_table.py'
 
-Use sqlalchemy methods to select sobek database item info for Elsvier items
-for use by marshaling applications.
+Use sqlalchemy methods to select rows from an extant table.
 
 
 This is first modeled from e_bibvid_dict.py which used a pyodbc connector to
@@ -362,26 +361,6 @@ def get_bibvid_piis(conn=None):
 
 #end def get_bibvid_piis
 
-# Test connection
-def run_test():
-    connection_name = 'mysql_marshal1'
-    connection_name = 'silodb'
-    connection_name = 'integration_sobekdb'
-    connection_name = 'production_sobekdb'
-
-    print("Starting:calling test_connection")
-
-    #conn=test_connect(connection_name=connection_name)
-
-    #print("Got conn={}: ".format(repr(conn)))
-
-    #Do the bibvid query for production
-    #get_bibvid_piis(conn=conn)
-
-
-    print("calling conn.connection.close()")
-    #conn.connection.close()
-    return
 
 def run_test2(engine_nick_name=None, table_name=None):
     engine = get_db_engine_by_name(name=engine_nick_name)
