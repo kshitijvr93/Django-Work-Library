@@ -108,18 +108,29 @@ def get_rows_elsevier_bibinfo(engine=None, conn=None,table_name=None,verbosity=1
     result = conn.execute(select_elsevier_info)
     return result.fetchall()
 
-def get_table_name_rows(engine=None, table_name=None):
+'''
+<summary>
+For given engine and table_name, return all of its rows
+by result.fetchall(), which is via an sqlalchemy result object.
+
+</summary>
+<param name='engine table_name'>
+Parameter 'engine' is the sqlalchemy engine object whose persistent
+existing database has a table named in the paramater 'table_name'
+</param>
+'''
+def get_table_name_rows(engine=None, table_name=None,verbosity=1):
     me = 'get_table_name_rows'
     conn = engine.connect()
     metadata = MetaData(engine)
-    print("{}: For conn={},engine={},table_name={}, getting rows"
-        .format(me,repr(conn),repr(engine),table_name))
-    table  = Table(table_name, metadata, autoload=True, autoload_with=engine)
+    if verbosity > 0:
+        print("{}: For conn={},engine={},table_name={}, getting rows"
+            .format(me,repr(conn),repr(engine),table_name))
 
+    table  = Table(table_name, metadata, autoload=True, autoload_with=engine)
     select_info = ( select([table]) )
-    #
-    # calculate rows from the select_columns- but only works with session.execute()
     result = conn.execute(select_info)
+
     return result.fetchall()
 #
 # NOTE: The selected columns and column order are relied upon by caller,
@@ -132,14 +143,68 @@ parse out the pii values, if any, in the link column's string value.
 
 </summary>
 '''
-def translate_elsevier_bibiinfo(conn=None):
+def translate_elsevier_bibinfo(engine_read=None,engine_write=None,verbosity=1):
+    # Create a table to write to in the engine_write database
+    emd = MetaData(engine_write)
+    # Table item_elsevier_ufdc should hold all Elsevier items that have
+    # been loaded into UFDC
+    table_name_out = 'item_elsevier_ufdc'
+    table_core_output = Table(table_name_out, emd,
+        Column('{}_id'.format(table_name_out), Integer,
+             Sequence('{}_id_seq'.format(table_name_out)), primary_key=True),
+        Column('bibvid', String(200)),
+        UniqueConstraint('bibvid', name='{}_uix1'.format(table_name_out)),
+        Column('pii', String(200)),
+        Column('is_oac', String(200)),
+        Column('bibid', String(200)),
+        Column('vid', Integer),
+    )
 
-    results = get_rows_elsevier_bibinfo(conn=conn)
+    # May put checkfirst as an argument to this method later.
+    engine_table_out = table_core_output.create(engine_write, checkfirst=True)
+
+    l_d_col_val = []
+    fetchall = get_rows_elsevier_bibinfo(engine=engine_read)
+    for i,row in enumerate(fetchall,start=1):
+        d_col_val = {}
+        l_d_col_val.append(d_col_val)
+
+        bibid= row['BibID']
+        vid = row['VID']
+        bibvid='{}_{}'.format(bibid, vid)
+
+        d_col_val['bibid'] = bibid
+        d_col_val['vid'] = vid
+        d_col_val['bibvid'] = bibvid
+
+        link = row['Link']
+        # pii is after last slash, but before a ?, if any
+        part_qs = link.split('?')
+        is_oac = False
+        if len(part_qs) > 1:
+            part_sides = part_qs[1].split('=')
+            is_oac = False
+            if len(part_sides) > 1 and part_sides[1] == 't':
+                is_oac = True
+                if verbosity > 0:
+                  print("row {} bibvid {}, open access is True"
+                    .format(i,bibvid))
+
+        d_col_val['is_oac'] = is_oac
+
+        # link has pii value as last slash-delimited field before q mark.
+        pii = part_qs[0].split('/')[-1]
+        d_col_val['pii'] = pii
+
+        if verbosity > 0 and (i - 1) % 1000 == 0:
+            print("row {}: bibvid={}, pii={}, oac={}"
+              .format(i,bibvid, pii, is_oac))
+
+    # Now insert all the original and derived values into the output
+    # engine's table
+    engine_write.execute(table_core_output.insert(), l_d_col_val)
 
     return
-
-
-
 
 '''
 now replacing below with above
@@ -385,27 +450,6 @@ def get_bibvid_piis(conn=None):
 
 #end def get_bibvid_piis
 
-# Test connection
-def run_test():
-    connection_name = 'mysql_marshal1'
-    connection_name = 'silodb'
-    connection_name = 'integration_sobekdb'
-    connection_name = 'production_sobekdb'
-
-    print("Starting:calling test_connection")
-
-    #conn=test_connect(connection_name=connection_name)
-
-    #print("Got conn={}: ".format(repr(conn)))
-
-    #Do the bibvid query for production
-    #get_bibvid_piis(conn=conn)
-
-
-    print("calling conn.connection.close()")
-    #conn.connection.close()
-    return
-
 # This method can run from my uf office test of basic table select
 def run_test_select(engine=None,engine_nick_name=None, table_name=None):
     me = 'run_test_select'
@@ -424,13 +468,32 @@ def run_test_select(engine=None,engine_nick_name=None, table_name=None):
       print("{}: '{}'".format(i,od_row))
     return
 
-def test_elsevier_bibinfo(engine_nick_name=None):
+def test_translate(engine_nick_name=None,engine_write_nickname=None,verbosity=1):
+    me = 'test_translate'
+    if verbosity > 1:
+      print("{}: Using engine_nick_name={}, engine_write_nickname={}"
+          .format(me, engine_nick_name, engine_write_nickname))
+
+    engine_read = get_db_engine_by_name(name=engine_nick_name)
+    engine_write = get_db_engine_by_name(name=engine_nick_name)
+
+    if verbosity > 1:
+      print("{}: getting rows from engine_read={}"
+          .format(me, repr(engine_read)))
+
+    rows = translate_elsevier_bibinfo(
+      engine_read=engine_read, engine_write=engine_write)
+
+    if verbosity > 1:
+      print("{}: Got {} rows from engine={}"
+          .format(me, len(rows), repr(engine)))
+    return
+
+def test_elsevier_bibinfo(engine_nick_name=None,verbosity=1):
     me = 'test_elsevier_bibinfo'
     print("{}: Using engine_nick_name={}"
           .format(me, engine_nick_name))
-
     engine = get_db_engine_by_name(name=engine_nick_name)
-
     print("{}: getting rows from engine={}"
           .format(me, repr(engine)))
 
@@ -450,6 +513,10 @@ def test_elsevier_bibinfo(engine_nick_name=None):
 #uf office test of basic table select
 #run_test_select(engine_nick_name='uf_local_silodb', table_name='test_table2')
 
-test_elsevier_bibinfo(engine_nick_name='production_sobekdb')
+#test_elsevier_bibinfo(engine_nick_name='production_sobekdb')
+engine_write_nickname = 'uf_local_silodb'
+
+test_translate(engine_nick_name='production_sobekdb',
+   engine_write_nickname=engine_write_nickname)
 
 print("Done")
