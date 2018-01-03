@@ -254,7 +254,7 @@ def spreadsheet_to_engine_table(
     i = 0
     for row in reader:
         i += 1
-        if (verbosity > 0 or 1 == 1):
+        if (verbosity > 8 ):
             msg = ("{}:reading ss row {}={}".format(me,i,repr(row)))
             print(msg.encode('utf-8'))
 
@@ -341,8 +341,8 @@ Proceed to call spreadsheet_to_engine_table to actually read the workbook
 spreadsheet and insert the rows into the database engine's table.
 
 NOTE: If the persistent table is not extant in the engine, it will be created.
-Otherwise, the rows will be appended/inserted into the extant persistent table
-in the database engine.
+Otherwise, the rows will be appended/inserted into the extant
+persistent table in the database engine.
 
 '''
 def spreadsheet_to_table(

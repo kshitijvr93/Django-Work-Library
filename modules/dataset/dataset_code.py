@@ -130,24 +130,26 @@ class SheetDictReader(object):
         #for idx_col, key in enumerate(self.odict):
         for idx_col, field_name in enumerate(self.column_names):
             ctype = self.sheet.cell_type(index+1,idx_col)
-            cvalue = str(self.sheet.cell(index+1,idx_col).value)
+            cvalue = self.sheet.cell(index+1,idx_col).value
             if ctype == 1:
-                # Excel 'text' type of value.
+                # type 1 is the Excel 'text' type of value.
                 # Only if a text value, convert to str and strip it.
                 # Otherwise unicode conversion errors
                 # on attempt to convert "excel float" values.
                 # Future: could do user function, eg,  to put in lower case.
                 cvalue = cvalue.strip()
             elif ctype == xlrd.XL_CELL_DATE:
-              # do NOT cast into str until call xldate_as_tuple
-              # see: https://stackoverflow.com/questions/3727916/how-to-use-xlrd-xldate-as-tuple#3728176
-              # cvalue = self.sheet.cell(index+1,idx_col).value
-              #or: note BETTER - prior gives ambibuity error!
-              # keep prior alternative commented out for future WARNING
-              cvalue = self.sheet.cell_value(index+1,idx_col)
-              value_datetime =  datetime.datetime(
+                # do NOT cast into str until call xldate_as_tuple
+                # see: https://stackoverflow.com/questions/3727916/how-to-use-xlrd-xldate-as-tuple#3728176
+                # cvalue = self.sheet.cell(index+1,idx_col).value
+                #or: note BETTER - prior gives ambibuity error!
+                # keep prior alternative commented out for fut  ure WARNING
+                cvalue = self.sheet.cell_value(index+1,idx_col)
+                value_datetime =  datetime.datetime(
                 *xlrd.xldate_as_tuple(cvalue, self.book.datemode))
-              cvalue = value_datetime.strftime('%Y-%m-%d %H:%M:%S')
+                cvalue = value_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            elif ctype == xlrd.XL_CELL_NUMBER: #Float
+                cvalue = self.sheet.cell_value(index+1,idx_col)
 
             self.od_name_value[field_name] = cvalue
         #return self.odict
@@ -204,12 +206,10 @@ class BookSheetFilter(SheetDictReader):
 
 
 
-
-
 class PyodbcReader(object):
-    """
+    '''
     Create and return a csv.DictReader style of iterable to read pyodbc query results.
-    """
+    '''
     def __init__(self, conn=None, cursor=None, query=None, qparams=None,
       table=None, column_names=None, od_column_type=None, verbosity=None):
         """
