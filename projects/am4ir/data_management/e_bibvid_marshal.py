@@ -74,8 +74,14 @@ for sqlalchemy version 1.2, as discussed in:
 
 http://docs.sqlalchemy.org/en/latest/core/tutorial.html#sqlexpression-text
 
+Return a tuple of:
+
+all fetched rows,
+item table object (so can refer to its columns in the fetched rows)
+group table object (so can refer to its columns in the fetched rows)
+
 '''
-def get_rows_elsevier_bibinfo(engine=None, conn=None,table_name=None,verbosity=1):
+def get_elsevier_bibinfo(engine=None, conn=None,table_name=None,verbosity=1):
     me = 'get_rows_elsevier_bibinfo'
     if verbosity > 0:
         print("{}: Starting".format(me))
@@ -93,7 +99,8 @@ def get_rows_elsevier_bibinfo(engine=None, conn=None,table_name=None,verbosity=1
     item  = Table('SobekCM_Item', m, autoload=True, autoload_with=engine)
 
     select_elsevier_info = ( select([
-          group.c.BibID, item.c.VID, item.c.GroupID, item.c.Link ])
+          item.c.ItemID, group.c.BibID, item.c.VID, item.c.GroupID,
+          item.c.Link ])
           .where( and_ (
           item.c.GroupID == group.c.GroupID,
           group.c.BibID.like('%LS%'),
@@ -106,7 +113,7 @@ def get_rows_elsevier_bibinfo(engine=None, conn=None,table_name=None,verbosity=1
     #
     # calculate rows from the select_columns- but only works with session.execute()
     result = conn.execute(select_elsevier_info)
-    return result.fetchall()
+    return result.fetchall(), item, group
 
 '''
 <summary>
@@ -146,41 +153,62 @@ parse out the pii values, if any, in the link column's string value.
 def translate_elsevier_bibinfo(engine_read=None,engine_write=None,verbosity=1):
     me = 'translate_elsevier_bibinfo'
     # Create a table to write to in the engine_write database
-    emd = MetaData(engine_write)
+    ewmd = MetaData(engine_write)
     # Table item_elsevier_ufdc should hold all Elsevier items that have
     # been loaded into UFDC
     table_name_out = 'item_elsevier_ufdc'
-    table_core_output = Table(table_name_out, emd,
+    table_core_output = Table(table_name_out, ewmd,
         Column('{}_id'.format(table_name_out), Integer,
              Sequence('{}_id_seq'.format(table_name_out)), primary_key=True),
+        Column('ufdc_item_id', Integer),
+        Column('ufdc_group_id', Integer),
         Column('bibvid', String(30)),
         UniqueConstraint('bibvid', name='{}_uix1'.format(table_name_out)),
         Column('pii', String(30)),
-        Column('is_oac', String(20)),
+        Column('oac_elsevier', String(20)),
+        Column('oac_oadoi',String(20)),
         Column('bibid', String(20)),
         Column('vid', Integer),
+        Column('is_am4ir', String(20)),
+        Column('embargo_off_date', String(30)),
+        Column('doi', String(4096)),
+        Column('doi_source', String(16)), #Eg, elsevier_api or am4ir_ss
+        Column('issn', String(32)),
+        Column('embargo_months', Integer),
     )
 
-    # May put checkfirst as an argument to this method later.
-    try:
-        table_core_output.drop(engine_write)
-    except sqlalchemy.exc.OperationalError:
-        pass
+    # Dangerous to drop this table here.
+    drop_table = 1
+    # Instead, require 'by hand' hard code setting of drop_table above.
+    if (drop_table == 1):
+        try:
+            table_core_output.drop(engine_write)
+        except sqlalchemy.exc.OperationalError:
+            # For this app/program attempt to drop is OK if table did not exist.
+            pass
+
     engine_table_out = table_core_output.create(engine_write, checkfirst=True)
 
     l_d_col_val = []
-    fetchall = get_rows_elsevier_bibinfo(engine=engine_read)
+    fetchall, item, group = get_elsevier_bibinfo(engine=engine_read)
     for i,row in enumerate(fetchall,start=1):
         d_col_val = {}
         l_d_col_val.append(d_col_val)
 
+        ufdc_item_id = row[item.c.ItemID]
+        d_col_val['ufdc_item_id'] = ufdc_item_id
+
+        ufdc_group_id = row[item.c.GroupID]
+        d_col_val['ufdc_group_id'] = ufdc_group_id
+
         bibid= row['BibID']
+        d_col_val['bibid'] = bibid
+
         vid_str = row['VID']
         vid = int(vid_str)
-        bibvid='{}_{}'.format(bibid, vid_str)
-
-        d_col_val['bibid'] = bibid
         d_col_val['vid'] = vid
+
+        bibvid='{}_{}'.format(bibid, vid_str)
         d_col_val['bibvid'] = bibvid
 
         link = row['Link']
@@ -196,7 +224,7 @@ def translate_elsevier_bibinfo(engine_read=None,engine_write=None,verbosity=1):
                   print("row {} bibvid {}, open access is True"
                     .format(i,bibvid))
 
-        d_col_val['is_oac'] = is_oac
+        d_col_val['oac_elsevier'] = is_oac
 
         # link has pii value as last slash-delimited field before q mark.
         pii = part_qs[0].split('/')[-1]
