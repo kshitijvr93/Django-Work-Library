@@ -3,14 +3,18 @@
 #
 #Get local pythonpath of modules from 'citrus' main project directory
 import sys, os, os.path, platform
-def get_path_modules(verbosity=0):
-  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
-  path_user = os.environ.get(env_var)
-  path_modules = '{}/git/citrus/modules'.format(path_user)
-  if verbosity > 1:
-    print("Assigned path_modules='{}'".format(path_modules))
-  return path_modules
-sys.path.append(get_path_modules())
+
+def register_modules():
+    platform_name = platform.system().lower()
+    if platform_name == 'linux':
+        modules_root = '/home/robert/'
+        #raise ValueError("MISSING: Enter code here to define modules_root")
+    else:
+        # assume rvp office pc running windows
+        modules_root="C:\\rvp\\"
+    sys.path.append('{}git/citrus/modules'.format(modules_root))
+    return
+register_modules()
 
 import sys
 #import requests
@@ -23,25 +27,36 @@ from datetime import datetime
 import etl
 
 '''
-This notebook is meant to develop and test ealdxml (Elsevier Api Load Date to Xml)
-It is based on eatxml (Elsevier Api To Xml), but here revised to query for original load
-date rather than pub year, and also revised to create an output directory for every single
-day queried for a load date.
-Further, since it queries load dates day-by-day, rather than inject the orig load date
-into the xml for each article, a reader process may derive the orig load date from the
-names of the 3 nearest ancestor directories that contain each xml file.
+This is a Python 3.6 program.
 
-Ealdxml reads metadata information from the Elsevier Search API results of
-UF-Authored articles, and Ealdxml then seeks the article results from the
-Elsevier Full-text API.
-If an article is not found, Ealdxml logs an error message, otherwise it outputs
-a file named pii_{pii}.xml in the given an output folder for each article, where the
-year,month, and day of the original load date of the article are encoded in the names
+This program is ealdxml.py (Elsevier Api Load Date to Xml)
+
+It is based on eatxml (Elsevier Api To Xml), but here revised to query for
+original load date rather than pub year, and also revised to create an
+output directory for every single day queried for a load date.
+
+Further, since it queries load dates day-by-day, rather than inject the
+orig load date into the xml for each article, a file system walker/reader
+process may derive the orig load date from the names of the 3 nearest
+ancestor directories that contain each xml file.
+
+Ealdxml
+- sends requests to the Elsevier Search API for UF-affiliated articles and
+- reads metadata information from the results of UF-Authored articles,
+- for each article given from the search API, it saves its PII value and_
+- sends a request to the Elsevier full-text api for more information, and
+- reads thsoe full-text article results.
+
+If an article is not found, by the full-text api, ealdxml logs an error
+message, otherwise it outputs a file named pii_{pii}.xml in a prescribed
+output folder for each article, where the year,month,
+and day of the original load date of the article are encoded in the names
 of its three nearest ancestor folders.
 
 PII stands for Publisher Item Identifier, and it is supposed to be unique
 among Elsevier articles and other pubishers (but maybe not all publishers).
 See wikipedia - https://en.wikipedia.org/wiki/Publisher_Item_Identifier
+
 '''
 from lxml import etree
 # Note: Official Python 3.5 docs use different library, ElementTree ET
@@ -58,8 +73,10 @@ utc_now = datetime.datetime.utcnow()
 utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 '''
-For given url, decode response to utf-8 and return that in a python 3.5 unicode string
+For given url, decode response to utf-8 and return that in a
+python 3.6 unicode string
 '''
+
 def get_elsevier_api_result_by_url(url):
 
     if url is None or url=="":
@@ -110,7 +127,8 @@ def get_elsevier_api_uf_query_url_by_dates(d_run_params, verbosity):
     search_http_accept = "application/xml"
 
     query = (
-      "aff(university of florida) and orig-load-date aft {} and orig-load-date bef {}"
+      "aff(university of florida) and orig-load-date aft {} "
+      "and orig-load-date bef {}"
       .format(cymd_bef, cymd_aft))
 
     search_base_url = "http://api.elsevier.com/content/search/scidir"
@@ -122,6 +140,7 @@ def get_elsevier_api_uf_query_url_by_dates(d_run_params, verbosity):
         "apikey":api_key,
     }
     api_get_qparams = urllib.parse.urlencode(d_qparams)
+
     # print(" *** *** *** Using get_params='{}' *** *** ***".format(get_qparams))
     d_run_params.update ({
         'search-base-url': search_base_url,
@@ -455,8 +474,10 @@ def ealdxml(d_params, verbosity=0):
                 print ("Batch={}, Processing results_tree from url_search = {}".format(str(n_batch), url_search))
 
                 # PROCESS THE SEARCH RESULTS ENTRY DATA GIVEN IN results_tree FOR THIS BATCH OF ARTICLES
-                url_search, n_collected, n_excepted, l_retrievals = result_entries_collect(
-                    d_params, results_tree, d_batch)
+                url_search, n_collected, n_excepted, l_retrievals = (
+                    result_entries_collect(
+                        d_params, results_tree, d_batch)
+                    )
                 entries_collected += n_collected
                 entries_excepted += n_excepted
 
@@ -509,14 +530,16 @@ cymd_start = '20170209'
 cymd_start = '20170817'
 # EALDXML - Here, we do only one day at a time...
 cymd_end = '20170824'
+cymd_start = '20170825'
+cymd_end = '20180102'
 print("TEST SETTING: cymd_start={},cymd_end={}"
       .format(cymd_start,cymd_end))
 
 worker_threads = 1 # TODO
 # WARNING: now hardcoded, and later we may condsider to get these by programmatic introspection
 agent_creator_individual = 'UFAD\lib-adm-podengo'
-agent_creator_host = 'UFLIBS91B6D42.ad.ufl.edu'
-agent_creator_software = "ealdxml-0.1" #may add attributes programming-language, revision-date, hash ...
+agent_creator_host = 'UFLIBSHGKDND2.ad.ufl.edu'
+agent_creator_software = "ealdxml-0.2" #may add attributes programming-language, revision-date, hash ...
 # Elsevier-Dave Santucci Jan 2015 gave UF this api_key = "d91051fb976425e3b5f00750cbd33d8b"
 api_key = 'd91051fb976425e3b5f00750cbd33d8b'
 verbosity = 0

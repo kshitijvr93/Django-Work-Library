@@ -125,12 +125,12 @@ def get_db_engine_by_name(name=None,verbosity=0):
     return(engine)
 #end get_db_engine_by_name()
 
-def test_run(name=None):
+def test_run(name=None,verbosity=1):
     engine = get_db_engine_by_name(name)
     print("test_run:Got engine.name = '{}'".format(repr(engine)))
 
 #end test_run
-testme=1
+testme=0
 env = 'linux'
 env = 'windows'
 
