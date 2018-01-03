@@ -144,6 +144,7 @@ parse out the pii values, if any, in the link column's string value.
 </summary>
 '''
 def translate_elsevier_bibinfo(engine_read=None,engine_write=None,verbosity=1):
+    me = 'translate_elsevier_bibinfo'
     # Create a table to write to in the engine_write database
     emd = MetaData(engine_write)
     # Table item_elsevier_ufdc should hold all Elsevier items that have
@@ -152,15 +153,19 @@ def translate_elsevier_bibinfo(engine_read=None,engine_write=None,verbosity=1):
     table_core_output = Table(table_name_out, emd,
         Column('{}_id'.format(table_name_out), Integer,
              Sequence('{}_id_seq'.format(table_name_out)), primary_key=True),
-        Column('bibvid', String(200)),
+        Column('bibvid', String(30)),
         UniqueConstraint('bibvid', name='{}_uix1'.format(table_name_out)),
-        Column('pii', String(200)),
-        Column('is_oac', String(200)),
-        Column('bibid', String(200)),
+        Column('pii', String(30)),
+        Column('is_oac', String(20)),
+        Column('bibid', String(20)),
         Column('vid', Integer),
     )
 
     # May put checkfirst as an argument to this method later.
+    try:
+        table_core_output.drop(engine_write)
+    except sqlalchemy.exc.OperationalError:
+        pass
     engine_table_out = table_core_output.create(engine_write, checkfirst=True)
 
     l_d_col_val = []
@@ -170,8 +175,9 @@ def translate_elsevier_bibinfo(engine_read=None,engine_write=None,verbosity=1):
         l_d_col_val.append(d_col_val)
 
         bibid= row['BibID']
-        vid = row['VID']
-        bibvid='{}_{}'.format(bibid, vid)
+        vid_str = row['VID']
+        vid = int(vid_str)
+        bibvid='{}_{}'.format(bibid, vid_str)
 
         d_col_val['bibid'] = bibid
         d_col_val['vid'] = vid
@@ -197,12 +203,18 @@ def translate_elsevier_bibinfo(engine_read=None,engine_write=None,verbosity=1):
         d_col_val['pii'] = pii
 
         if verbosity > 0 and (i - 1) % 1000 == 0:
-            print("row {}: bibvid={}, pii={}, oac={}"
-              .format(i,bibvid, pii, is_oac))
+            print("{}:row {}: d_col_val={}"
+              .format(me,i,repr(d_col_val)))
 
     # Now insert all the original and derived values into the output
     # engine's table
-    engine_write.execute(table_core_output.insert(), l_d_col_val)
+    conn_write = engine_write.connect()
+    #print("{}: l_d_col_val...")
+    #for i,d in enumerate(l_d_col_val,start=1):
+    #    print("Insert row {}={}".format(i,repr(d)))
+    #    conn_write.execute(table_core_output.insert(),d)
+
+    conn_write.execute(table_core_output.insert(), l_d_col_val)
 
     return
 
@@ -351,7 +363,7 @@ def test_connect(connection_name=None):
 
         raise ValueError(msg)
     return connection
-# end test)connect
+# end test_connect
 
 def get_bibvid_piis(conn=None):
 
@@ -475,11 +487,11 @@ def test_translate(engine_nick_name=None,engine_write_nickname=None,verbosity=1)
           .format(me, engine_nick_name, engine_write_nickname))
 
     engine_read = get_db_engine_by_name(name=engine_nick_name)
-    engine_write = get_db_engine_by_name(name=engine_nick_name)
+    engine_write = get_db_engine_by_name(name=engine_write_nickname)
 
     if verbosity > 1:
-      print("{}: getting rows from engine_read={}"
-          .format(me, repr(engine_read)))
+      print("{}: getting rows from engine_read={}, writing to db engine {}"
+          .format(me, repr(engine_read, engine_write)))
 
     rows = translate_elsevier_bibinfo(
       engine_read=engine_read, engine_write=engine_write)
@@ -514,7 +526,7 @@ def test_elsevier_bibinfo(engine_nick_name=None,verbosity=1):
 #run_test_select(engine_nick_name='uf_local_silodb', table_name='test_table2')
 
 #test_elsevier_bibinfo(engine_nick_name='production_sobekdb')
-engine_write_nickname = 'uf_local_silodb'
+engine_write_nickname = 'uf_local_mysql_marshal1'
 
 test_translate(engine_nick_name='production_sobekdb',
    engine_write_nickname=engine_write_nickname)

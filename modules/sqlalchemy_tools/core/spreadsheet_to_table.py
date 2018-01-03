@@ -412,7 +412,7 @@ def run(env=None):
         table_name = 'test_accessions'
         '''
 
-        input_workbook_path = (
+        workbook_path = (
           'U:\\data\\ifas_citations\\2016\\base_info\\'
           'IFAS_citations_2016_inspected_20171218a.xls')
         sheet_index = 0
@@ -519,11 +519,11 @@ def run(env=None):
     return
 #end run()
 
-env = 'windows'
 env = 'linux'
 env = 'linux2' #implement soon
 
 env = 'linux'
 env = 'linux3'
+env = 'windows2'
 
 run(env=env)
