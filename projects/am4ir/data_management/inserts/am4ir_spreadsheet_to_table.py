@@ -1,6 +1,7 @@
 '''
 (1) Read excel am4ir spreadsheet from elsevier
-(2) and modify local mysql table article_item
+(2) and insert the colums of interest into rows of a table,
+    for example,  to default mysql table am4ir_item
 by  selecting row based on pii value and based on existence either insert or
 update a row, with the column values:
  (a) embargo_end_date,
@@ -95,7 +96,7 @@ Used to use next default, but keep here for reference
  </note>
 '''
 def am4ir_spreadsheet_to_am4ir_item(
-  workbook_path=None, engine=None):
+  workbook_path=None, engine=None, table_name='am4ir_item'):
 
     #initialize database connections for writing/inserting
 
@@ -114,7 +115,7 @@ def am4ir_spreadsheet_to_am4ir_item(
     print('Connected with conn={} to database with {} tables'
       .format(repr(conn),len(tables)))
     sys.stdout.flush()
-    am4ir_item = tables['am4ir_item']
+    am4ir_item = tables[table_name]
     #print('Found table am4ir_item...')
 
     #initialize reader
