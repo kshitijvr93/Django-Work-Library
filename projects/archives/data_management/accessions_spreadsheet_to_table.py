@@ -429,7 +429,7 @@ def run(env=None):
           6: Column('original_line', Text),
         })
         table_name = "test_inspected5"
-    elif env == 'windows2':
+    elif env == 'windows_accessions':
         engine_nick_name = 'uf_local_mysql_marshal1'
 
         workbook_path = ('C:\\rvp\\download\\'
@@ -445,7 +445,7 @@ def run(env=None):
           4: Column('c4', Text),
           5: Column('c5', String(26)),
           6: Column('c6', String(26)),
-          7: Column('c7', String(26)),
+          7: Column('c7', String(260)),
           6: Column('c8', Text),
         })
 
@@ -525,5 +525,6 @@ env = 'linux2' #implement soon
 env = 'linux'
 env = 'linux3'
 env = 'windows2'
+env = 'windows_accessions'
 
 run(env=env)

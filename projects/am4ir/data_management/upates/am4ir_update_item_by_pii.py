@@ -4,6 +4,20 @@ am4ir_update_item.py
 Read data from an input table that represents an am4ir spreadsheet,
 and use its pii value to match to rows in the output table,
 whose columns will be updated with matching input table columns
+
+NB: 20180105 - I also researched various SO pages and then found
+the most promising looking solution used the tuple_ feature and
+self_group.
+https://stackoverflow.com/questions/43518991/update-multiple-columns-from-a-subquery
+
+The SA-compiled statement looked good, probably would
+work OK in postgres and other dbs, but was a syntax error in
+MySQL 5.7, so the below works OK for now.
+Maybe revisit a way to do a multi-column correlated update (in one
+statement) later. For now, for MySQL, we use the common-denominator
+(among current popular databases) method of doing one statement
+per destination column to update.
+
 '''
 import sys, os, os.path, platform
 import datetime
@@ -66,44 +80,6 @@ def am4ir_update_by_pii(engine=None, table_name_am4ir=None,
   a = table_am4ir_item
   u = table_item_elsevier_ufdc
 
-  as0 = ( select(
-    [a.c.doi,a.c.embperiod, a.c.embdate, a.c.issn])
-    .where(a.c.itempii == u.c.pii))
-
-
-  us0 = (
-    u.update().values({
-      tuple_(u.c.doi, u.c.embargo_months ,u.c.embargo_off_date, u.c.issn)
-      .self_group()
-      : as0
-      }).where(exists(as0))
-  )
-
-  as_doi = ( select([a.c.doi])
-    .where(and_(a.c.itempii == u.c.pii, a.c.account == 'Florida')).limit(1)
-    )
-
-
-
- # Note column name is embperiod
-  as_embargo_months = ( select([a.c.embperiod])
-    .where(and_(a.c.itempii == u.c.pii, a.c.account == 'Florida')).limit(1)
-    )
-
-  as_embargo_off_date = ( select([a.c.embperiod])
-    .where(and_(a.c.itempii == u.c.pii, a.c.account == 'Florida')).limit(1)
-    )
-
-  as_issn = ( select([a.c.issn])
-    .where(and_(a.c.itempii == u.c.pii, a.c.account == 'Florida')).limit(1)
-    )
-
-
-  us_doi = (
-    u.update().values(doi=as_doi).where(exists(as_doi))
-  )
-  us2 = u.update().values({'doi':as_doi})
-
   d_colname_source = {
       'doi': a.c.doi,
       'doi_source':literal("am4ir"),
@@ -127,18 +103,10 @@ def am4ir_update_by_pii(engine=None, table_name_am4ir=None,
       ux = u.update().values({colname:a_source}).where(exists(a_source))
       if verbosity > 0:
         print("\nCOMPILED UPDATE ux='{}'".format(ux.compile(bind=engine)))
+      # Execute update for this column
       conn.execute(ux)
-
-  ux = us2
-
-  if verbosity > 0:
-    print("COMPILED UPDATE ux='{}'".format(ux.compile(bind=engine)))
-
-  # Execut the update
-
   return
 #end am4ir_update_by_pii
-
 
 # MAIN PROGRAM
 engine_nick_name = 'uf_local_mysql_marshal1'

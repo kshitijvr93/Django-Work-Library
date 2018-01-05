@@ -28,6 +28,9 @@ I have creds (or a similar file would exist for another user).
 
 Due to 12-factor website issues, I'll have to move this file out of this
 repo before sharing the repo with other developers.
+
+TODO: also add some sqllite databases to test with or for programs that only
+need temporary tables.
 '''
 def get_db_engine_by_name(name=None,verbosity=0):
     me = 'get_db_engine_by_name'
@@ -106,6 +109,10 @@ def get_db_engine_by_name(name=None,verbosity=0):
               '{dialect}+{driver}://{user}:{password}@{host}/{dbname}')
         },
     }
+    if name is None:
+        msg=( "{}: Valid names are: {}"
+          .format(me,d_name_engine_db_specs.keys()) )
+        raise(ValueError, msg)
 
     try:
         d_param_value = d_name__engine_db_specs[name]

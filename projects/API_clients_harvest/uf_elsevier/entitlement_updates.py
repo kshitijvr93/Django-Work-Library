@@ -1,4 +1,18 @@
+'''
+Python 3.6 program entitlement_updates.py, which accepts an input engine and
+table_name from which to retrieve Elevier PII values.
+This program retrieves entitlement information for each PII value.
+Also given is an output engine and table name keyed by pii, which
+this program will update with entitlement info.
 
+OK, it is not a program really that accepts those main parameters, so it
+it does not run standalone now. Instead, it hard codes the main parameters
+and calls test_run(), which does to perform this processing.
+
+Standalone OS-level execution that processes CLI parameters
+may be easily added later, if needed.
+
+'''
 import sys, os, os.path, platform
 def get_path_modules(verbosity=0):
   env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
@@ -10,6 +24,8 @@ def get_path_modules(verbosity=0):
 sys.path.append(get_path_modules())
 print("Sys.path={}".format(sys.path))
 sys.stdout.flush()
+
+
 import etl
 import time
 import urllib.parse
@@ -39,6 +55,7 @@ node_entitlement and d_namespaces context data for use by lxml methods.
 '''
 
 def gen_entitlement_nodes_by_piis(piis=None,verbosity=1):
+
     me = 'gen_entitlement_nodes_by_piis'
 
     if len(piis) == 0:
@@ -52,7 +69,7 @@ def gen_entitlement_nodes_by_piis(piis=None,verbosity=1):
         url += sep + str(pii)
         sep = ','
 
-    # UF's api key
+    # UF's api key, api_key
     #url += '?httpAccept=text/xml&apiKey=d91051fb976425e3b5f00750cbd33d8b'
 
     #url += '?httpAccept=application/xml&apiKey=d91051fb976425e3b5f00750cbd33d8b'
@@ -89,7 +106,8 @@ def gen_entitlement_nodes_by_piis(piis=None,verbosity=1):
 
 '''
 Params:
-input_file_name: name of an input file of utf8 encoding, where each line is a set of fields.
+input_file_name: name of an input file of utf8 encoding, where each line is a set
+of fields.
 delim: delimiter character that separates fields in each input file's line
 pii_index: an index specifying the field in a line that holds a pii value
 normalized: True means all pii fluff characters are removed already
@@ -194,4 +212,9 @@ def run(output_folder_name=None,verbosity=0):
 
 output_folder_name = etl.data_folder(linux='/home/robert', windows='U:',
       data_relative_folder='/data/elsevier/output_entitlement/')
-run(output_folder_name=output_folder_name)
+#old_run(output_folder_name=output_folder_name)
+
+test_run( input_engine=input_engine, input_table = input_table,
+  output_engine=output_engine, output_table=output_table)
+
+  return

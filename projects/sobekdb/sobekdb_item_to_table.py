@@ -1,8 +1,10 @@
 '''
-e_bibvid_marshal.py'
+sobekdb_item_to_table.py'
 
-Use sqlalchemy methods to select sobek database item info for Elsvier items
-for use by marshaling applications.
+Use sqlalchemy methods to select SobekCM database item info for Elsvier items
+into an output table for use by marshaling applications, for example, to
+manage UFDC bib ids in use, or assign new ones to new items to load
+into SobekCM.
 
 '''
 
