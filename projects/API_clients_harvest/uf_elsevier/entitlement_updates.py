@@ -1,6 +1,11 @@
 '''
 Python 3.6 program entitlement_updates.py, which accepts an input engine and
 table_name from which to retrieve Elevier PII values.
+The marshal table uf_elsevier_harvest is probably best, as it is a superset of
+valid pii values (some have not yet been loaded into Sobek-UFDC). However,
+once this is updated, it should immediately be used to update the open access
+info in other marshal tables and the sobekdb ufdc table with open access info.
+
 This program retrieves entitlement information for each PII value.
 Also given is an output engine and table name keyed by pii, which
 this program will update with entitlement info.
@@ -14,35 +19,60 @@ may be easily added later, if needed.
 
 '''
 import sys, os, os.path, platform
-def get_path_modules(verbosity=0):
-  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
-  path_user = os.environ.get(env_var)
-  path_modules = '{}/git/citrus/modules'.format(path_user)
-  if verbosity > 1:
-    print("Assigned path_modules='{}'".format(path_modules))
-  return path_modules
-sys.path.append(get_path_modules())
+import datetime
+from collections import OrderedDict
+def register_modules():
+    platform_name = platform.system().lower()
+    if platform_name == 'linux':
+        modules_root = '/home/robert/'
+        #raise ValueError("MISSING: Enter code here to define modules_root")
+    else:
+        # assume rvp office pc running windows
+        modules_root="C:\\rvp\\"
+    sys.path.append('{}git/citrus/modules'.format(modules_root))
+    return
+register_modules()
+print("Using sys.path={}".format(repr(sys.path)))
+from collections import OrderedDict
+import datetime
+import etl
+from lxml import etree
+import os
+from pathlib import Path
+import pytz
+from sqlalchemy import (
+  bindparam, Boolean, create_engine,
+  CheckConstraint, Column, Date, DateTime,
+  exists,
+  Float, FLOAT, ForeignKeyConstraint,
+  Integer,
+  literal_column,
+  MetaData, Sequence, String,
+  Table, Text, tuple_, UniqueConstraint,
+  )
+from sqlalchemy.sql.expression import literal, literal_column
+from sqlalchemy.inspection import inspect as inspect
+from sqlalchemy.schema import CreateTable
+from sqlalchemy.sql import select, and_, or_, not_
+import sqlalchemy.sql.sqltypes
+# Import slate of databases that this user can use
+from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+import sys
+
 print("Sys.path={}".format(sys.path))
 sys.stdout.flush()
 
-
-import etl
 import time
 import urllib.parse
-
-#import requests
 import urllib, urllib.parse
 import json
 import pprint
-from collections import OrderedDict
 from io import StringIO, BytesIO
 import shutil
 from datetime import datetime
-
 from lxml import etree
 import xml.etree.ElementTree as ET
 from pathlib import Path
-import datetime
 import pytz
 import urllib.request
 
@@ -213,6 +243,14 @@ def run(output_folder_name=None,verbosity=0):
 output_folder_name = etl.data_folder(linux='/home/robert', windows='U:',
       data_relative_folder='/data/elsevier/output_entitlement/')
 #old_run(output_folder_name=output_folder_name)
+env = 'uf'
+if env == 'uf':
+    input_nick_name = 'uf_local_mysql_marshal1'
+    input_table = uf_elsevier_harvest
+    input_engine = get_db_engine_by_name(name=input_nick_name)
+    pass
+else:
+    pass
 
 test_run( input_engine=input_engine, input_table = input_table,
   output_engine=output_engine, output_table=output_table)
