@@ -3,17 +3,22 @@
 # to METS files
 #Get local pythonpath of modules from 'citrus' main project directory
 import sys, os, os.path, platform
-
-def get_path_modules(verbosity=0):
-  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
-  path_user = os.environ.get(env_var)
-  path_modules = '{}/git/citrus/modules'.format(path_user)
-  if verbosity > 1:
-    print("Assigned path_modules='{}'".format(path_modules))
-  return path_modules
-sys.path.append(get_path_modules())
-
+import datetime
+from collections import OrderedDict
+def register_modules():
+    platform_name = platform.system().lower()
+    if platform_name == 'linux':
+        modules_root = '/home/robert/'
+        #raise ValueError("MISSING: Enter code here to define modules_root")
+    else:
+        # assume rvp office pc running windows
+        modules_root="C:\\rvp\\"
+    sys.path.append('{}git/citrus/modules'.format(modules_root))
+    return
+register_modules()
+print("Using sys.path={}".format(repr(sys.path)))
 import etl
+from uf_elsevier.utilities import uf_elsevier_item_authors
 
 # First we have some xslt strings used to transform Elsevier documents for submission
 # to SobekCM Builder as mets files.
@@ -745,9 +750,13 @@ import os
 '''
 Method uf_affiliation_value
 
-Arg gives a name, and this method:
+Given an Elsevier-asserted author affiliation name, this method:
 returns 1 - if the name identifies the university of florida
 returns 0 - otherwise
+NB: Elsevier is very good about using one of the substrings sought,
+however it will be most often be embedded in other text, hence the
+need for this method.
+
 '''
 def uf_affiliation_value(name):
     text_lower = name.lower() if name is not None else ''
@@ -766,10 +775,11 @@ Method xslt_transform_format(node_root_input, d_ns, xslt_format_str,
     d_sobek_track=None, d_sobek_vary=None)
 
 Given xslt_format_str and node_root_input, d_sobek_track, d_sobek_vary
- (1) Harvest the author-groups from the xml file if it is the serial type.
+ (1) Harvest the author-groups from the article xml file if
+     the article is the serial type.
      Create a list of values, one-for-one with authors in each author-group,
-     where each value include the author name and a role of either (author)
-     or (UF author)
+     where each value includes the author name and a role type of either author
+     or UF author
      Create a string xml_authors that represents the author information in
      xml format.
      Note: the input xslt_format_str will have a variable {xml_authors} into
@@ -831,8 +841,8 @@ def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None
     xml_authors = ''
     log_messages = []
 
-    # Start by extracting from the article's xml input file, some input file nodes
-    # and values.
+    # Start by extracting from the article's xml input file, some input file
+    # nodes and values.
     node_fulltext = node_root_input.find('.//xocs:rawtext', namespaces=d_ns)
     if node_fulltext is None:
         # fallback: try body tag for full text if xocs:rawtext was empty nothing
@@ -842,7 +852,9 @@ def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None
     d_return['node_rawtext'] = node_fulltext
 
     node_pii = node_root_input.find('.//xocs:pii-unformatted', namespaces=d_ns)
-    if node_pii is not None and len(node_pii.text) > 10:  # 10 seems like a good check
+
+    # PII min len of 11 seems like a good check
+    if node_pii is not None and len(node_pii.text) > 10:
         pii = node_pii.text
         if (pii != core_pii):
             log_messages.append("xocs:pii is {}, but using core pii ='' next."
@@ -856,8 +868,8 @@ def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None
         pii = core_pii
 
     if len(pii) < 10:
-        # Note: pii is required for an Elsevier item's mets file, so we can use that to
-        # apply future updates or deletions.
+        # Note: pii is required for an Elsevier item's mets file, so we can use
+        # that to apply future updates or deletions.
         msg = 'core_pii is also bad. No pii value found for input xml file.'
         d_return['failure_message'] = msg
         return d_return
@@ -957,6 +969,7 @@ def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None
                 # sometimes applicable in Elsever-speicific full-text xml files.
 
                 # Here, if we find that is_uf_author is 1, author has a UF affiliation.
+                # TODO ALT: Generator can return here: (is_uf_author, node_author)
                 role = 'UF author' if is_uf_author == 1 else 'author'
                 surname = ''
                 given_name = ''
@@ -1102,8 +1115,257 @@ def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None
     d_return['str_mets'] = str_mets
     return d_return
 
-#end def xslt_transform_format()
+#end def xslt_transform_format0()
 
+def xslt_transform_format2(core_pii='',node_root_input=None, d_ns=None
+    ,xslt_format_str=None, d_sobek_track=None, d_sobek_vary=None
+    ,verbosity=0):
+
+    me="xslt_transform_format2"
+    if not all(['node_root_input','d_sobek_track', 'd_sobek_vary', 'd_ns']):
+        msg = ("\n***** {}: Bad arguments!\n".format(me))
+        raise ValueError(msg)
+
+    d_return = {'sha1_hash':'', 'str_mets':'', 'node_rawtext':''
+                , 'failure_message':''};
+
+    if verbosity > 0:
+          print("\n\n{}: STARTING... with len(d_ns)='{}'".format(me,len(d_ns)))
+    # Extract author-group and author information from node_root_input.
+
+    # If an author has a cross-ref attribute refid that starts with 'af',
+    # we accept it as a cross-ref id key.
+    # 20161104 Note on pii=S0741521416000811 - it is a poster sesssion with
+    # a presented wrapper tag,
+    # and within that is a tag collaboration with an author group and authors, and the tag
+    # affiliation is within the presented tag, not in the author-group or collaboration tag,
+    # with matching ref = aff3 - this algo does not match that, leading to: ISSUE: should we ?
+    #
+    # The affiliation name of an index is scanned to determine whether it is a UF affiliation,
+    # and if so, the author will be assigned the roleterm of (UF author), otherwise just (author)
+    #
+    xml_authors = ''
+    log_messages = []
+
+    # Start by extracting from the article's xml input file, some input file
+    # nodes and values.
+    node_fulltext = node_root_input.find('.//xocs:rawtext', namespaces=d_ns)
+    if node_fulltext is None:
+        # fallback: try body tag for full text if xocs:rawtext was empty nothing
+        xpath = ".//{*}body"
+        node_fulltext = node_root_input.find(xpath, namespaces=d_ns)
+
+    d_return['node_rawtext'] = node_fulltext
+
+    node_pii = node_root_input.find('.//xocs:pii-unformatted', namespaces=d_ns)
+
+    # PII min len of 11 seems like a good check
+    if node_pii is not None and len(node_pii.text) > 10:
+        pii = node_pii.text
+        if (pii != core_pii):
+            log_messages.append("xocs:pii is {}, but using core pii ='' next."
+              .format(me,pii,core_pii))
+            d_return['log_messages'] = log_messages
+            pii = core_pii
+    else:
+        log_messages.append("{}:No xocs:pii found. Trying core pii ='{}' next."
+              .format(me,core_pii))
+        d_return['log_messages'] = log_messages
+        pii = core_pii
+
+    if len(pii) < 10:
+        # Note: pii is required for an Elsevier item's mets file, so we can use
+        # that to apply future updates or deletions.
+        msg = 'core_pii is also bad. No pii value found for input xml file.'
+        d_return['failure_message'] = msg
+        return d_return
+
+    if verbosity > 0:
+        print("{}: using pii={}".format(me,pii))
+
+    node_openaccess = node_root_input.find('.//{*}openaccess', namespaces=d_ns)
+    openaccess_suffix = ''
+    if node_openaccess is not None:
+        openaccess_text = node_openaccess.text
+        if verbosity > 1:
+            print("{}: Got openaccess='{}'"
+                  .format(me,openaccess_text))
+
+    # Start to use d_sobek_track {} to store some input values whose value
+    # changes we will want to track
+
+    #Produce the location_url, the seed for the Builder to set the SobekCM_Item.link value
+    d_sobek_track.update({ 'location_url' : (
+        'http://www.sciencedirect.com/science/article/pii/{}'.format(pii))
+        })
+
+    node_serial_item = node_root_input.find('.//xocs:serial-item', namespaces=d_ns)
+    if verbosity > 1:
+        print("{}: Got node_serial_item='{}'"
+              .format(me,rep(node_serial_item)))
+    ##new
+
+    if node_serial_item is not None:
+        #We have a serial item. For this type of item we will find any UF Authors
+        item_has_uf_author = 0
+        xml_authors = ''
+
+        for is_uf_author, node_author in uf_elsevier_item_authors(
+            node_root=node_root_input):
+
+            if is_uf_author:
+                    item_has_uf_author = 1
+            # end 'backup' method for secondary author affiliation assignment found to be
+            # sometimes applicable in Elsever-speicific full-text xml files.
+
+            # Here, if we find that is_uf_author is 1, author has a UF affiliation.
+            role = 'UF author' if is_uf_author == 1 else 'author'
+            surname = ''
+            given_name = ''
+            node = node_author.find('./ce:surname', namespaces=d_ns)
+            surname = node.text if node is not None else ''
+            node = node_author.find('./ce:given-name', namespaces=d_ns)
+            given_name = node.text if node is not None else ''
+
+            xml_authors += '''
+
+            <mods:name type="personal">
+              <mods:namePart>{}, {}</mods:namePart>
+              <mods:role>
+                <mods:roleTerm type="text">{}</mods:roleTerm>
+              </mods:role>
+            </mods:name>
+            '''.format(etl.escape_xml_text(surname), etl.escape_xml_text(given_name), role)
+
+        #end is_uf_author group loop
+
+        if item_has_uf_author(node_root=node_root_input) == 0:
+            msg = ("Serial Item has NO UF Authors.")
+            #print(msg)
+            # Reject/refuse to create UF METS file since no uf_author contributed to this article.
+            d_return['failure_message'] = msg
+            return d_return
+    # end clause if node_serial_item is not None - processing authors of serial articles
+    else:
+      # This is a non-serial, return failure, as we will not host these now
+      d_return['failure_message'] = "Non-serial item. Skipping."
+      return d_return
+
+    # Note, we are admitting all non-serial articles for now regardless of any uf_authors.
+    d_sobek_track['xml-authors'] = xml_authors
+
+    node_desc = node_root_input.find('.//dc:description', namespaces=d_ns)
+    if node_desc is None:
+        description = ''
+    else:
+        description = etree.tostring(node_desc, encoding='unicode', method='text')
+
+    if description.startswith('Abstract'):
+        #print("Removing startswith 'abstract'")
+        description = description[8:]
+    if description.startswith('Introduction'):
+        description = description[12:]
+
+    # Analysis of sampling of 30K elsevier articles 20160925 show no spanish abstracts
+    # so keep english for now. We can reload later if need a language change.
+    # Also misc < and > etc in the description must be escaped because we create xml here.
+
+    xml_description = ('<mods:abstract lang="en">'
+          + etl.escape_xml_text(description) + '</mods:abstract>')
+
+    #print("Got xml_description='{}'".format(xml_description))
+    d_sobek_track['description'] = xml_description
+
+    #--------------------------------------------------------------------------------------------#
+    # Perform the first 'python format()-based' round of variable substitution with the xslt xml
+    # template itself, on the way to  making a final output file:
+    # Apply only the variable values we want to track to detect
+    # METS files updates with 'meaningful' changes:
+    #--------------------------------------------------------------------------------------------#
+
+    # Create xslt_str2, the pass1 output xslt string of METS with the tracked variables
+    xslt_str2 = xslt_format_str.format(**d_sobek_track)
+
+    if verbosity > 0:
+      print("{}:Pass1 got formatted xslt_str2, len='{}'".format(me,len(xslt_str2)))
+
+    try:
+        # Create tree_xslt from the xslt_str2
+        tree_xslt = etree.fromstring(xslt_str2)
+    except Exception as e:
+        msg = ("Parse error='{}' etree.fromstring(xslt_str2), description='{}',xslt_str2='{}'. Skipping"
+              .format(repr(e), description, xslt_str2))
+        print(msg)
+        d_return['failure_message'] = msg
+        return d_return
+
+    try:
+        # Make this into an xsl_transform method designed to do an xslt transform for the tree_xslt
+        xsl_transform = etree.XSLT(tree_xslt)
+
+    except Exception as e:
+        print("Got exception={}".format(repr(e)))
+        print("Using xslt_str='{}'".format(xslt_str))
+        raise e
+
+    #----------------------------------------------------------------------------------- #
+    # Pass 2 or transformation 2 - to produce tree_result_doc
+
+    # Use the xsl_transform method to convert the given node_root_input to
+    # tree_result_doc here the xslt functionality is used to insert some
+    # scalar values into the tree_result_doc from the input doc.
+    tree_result_doc = xsl_transform(node_root_input)
+    #----------------------------------------------------------------------------------- #
+
+    # Translate tree_result_doc back to a string that should still contain the
+    # python formatted variable syntax and format it with d_sobek values to a
+    # result string for the article mets file.
+    # Make a sha1 hash on the result_format_str (with the python variable names,
+    # not values in the text)
+    # so we will not get a 'false alarm' on a change for timestamps and other
+    # sobek values.
+    # NOTE: lxml etee.tostring is a MISNOMER, it returns bytes, not a string,
+    # unless encoding_method is set to 'UNICODE'.
+    # But only a string has the format() method, which we need a few code
+    # lines below.
+
+    result1_bytes = etree.tostring(
+        tree_result_doc, pretty_print=True, xml_declaration=True)
+
+    # Start setting up some d_sobek_vary values that may 'vary' freely (as
+    # opposed to track variables) from harvest to harvest for an item without
+    # our wanting to ingest the record again on account of their uninteresting changes.
+    sha1_mets = hashlib.sha1()
+    sha1_mets.update(result1_bytes)
+    sha1_hexdigest = sha1_mets.hexdigest()
+    d_return['sha1_hash'] = sha1_mets.hexdigest()
+    d_sobek_vary['sha1-mets-v1'] = sha1_hexdigest.upper()
+
+    # Decode the utf-8 bytes back to normal python3 string (default output
+    # encoding after a decode() call is python3 string encoding( unicode),
+    # so we can later use format method
+    result1_str = result1_bytes.decode("utf-8")
+
+    # In results2_str , we will use format() to insert d_sobek_track variable values, so now before we do
+    # that result1 str, if printed, will reveal the d_sobek_vary variable names appearing, as in: {last_mod_date}
+    # print("Using format(**d_sobek_vary) on result1_str='{}'".format(result1_str))
+    #-----------------------------------------------------------------------------------#
+    # Now, do final 'pass3' to insert 'vary' variable values into the final rendition suitable
+    # for outputting, in result2_str_formatted.
+    #-----------------------------------------------------------------------------------#
+
+    try:
+        str_mets = result1_str.format(**d_sobek_vary)
+    except Exception as e:
+        print("result1_str='{}' produced a format error with **d_sobek_vary!".format(result1_str))
+        raise e
+
+    if verbosity > 0:
+      print("{}: returning str_mets with len={}".format(me,len(str_mets)))
+    d_return['str_mets'] = str_mets
+    return d_return
+
+#end def xslt_transform_format2()
 '''
 Method: def article_xml_to_mets_file(source=None, xslt_format_str=None,
     input_file_name=None,
@@ -1268,7 +1530,7 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
 
     #sha1_hexdigest, result_mets_str, node_rawtext, mets_failure = xslt_transform_format(
     '''
-    d_results = xslt_transform_format(core_pii=core_pii
+    d_results = xslt_transform_format2(core_pii=core_pii
         ,node_root_input=node_root_input, d_ns=d_ns, xslt_format_str=xslt_format_str
         , d_sobek_track=d_sobek_track, d_sobek_vary=d_sobek_vary)
 
@@ -2277,6 +2539,7 @@ def run():
   # given cymd_start and cymd_end values
 
   cymd_start = '20090101'
+  cymd_start = '20170820'
   cymd_end = '20170824'
 
   input_folders = []
