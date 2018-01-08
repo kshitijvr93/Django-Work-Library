@@ -2247,9 +2247,10 @@ def get_pii_reservations_from_silodb():
 
     # if not prod_conn:
     #    raise ValueError("{}: no production connection given.".format(me))
-    # Query PROD: is designed to be run on SobkeDB Production, but it is not yet done.
-    # see rvp_bibinfo below.
-    # I manually ran query_prod on production db, early October 2016, and the results
+    # Query PROD: is designed to be run on SobkeDB Production, but it is not
+    # yet done.  see rvp_bibinfo below.
+    # I manually ran query_prod on production db, early October 2016, and the
+    # results
     # were copied to local rvp machine's sqlexpress database, table rvp_bibinfo.
     # As final development of this program nears, we will probably query
     # production directly instead of using this intermediate local table.
@@ -2259,7 +2260,8 @@ def get_pii_reservations_from_silodb():
     # Get reservations selected data from the database
     header, pii_rows = db_conn.query(query_local)
 
-    print("{}: got {} production bibinfo reservation rows".format(me,len(pii_rows)))
+    print("{}: got {} production bibinfo reservation rows"
+      .format(me,len(pii_rows)))
 
     od_pii_bibvid = OrderedDict()
     od_pii_reservation = OrderedDict()
@@ -2285,7 +2287,8 @@ def get_pii_reservations_from_silodb():
         columns = line.split(delim)
         if bibvid_index >= len(columns):
             raise ValueError(
-                "Result row='{}', delim='{}', len(parts)={}, bibvid_index={} is too big for this row"
+                "Result row='{}', delim='{}', len(parts)={}, bibvid_index={}"
+                " is too big for this row"
                 .format(line,delim,len(columns),bibvid_index))
 
         #Set variables for the query column values:
@@ -2295,14 +2298,17 @@ def get_pii_reservations_from_silodb():
         tickler_pack = columns[tickler_index]
         deleted = columns[deleted_index]
 
-        # Ticklers are packed into one large value with 'space-pipe-space' delimiters,
-        # starting with the delimiter, so the first one is always a throwaway. Also the last one
-        # is always the current one to use. Historical ones are traditionally kept in SobekCM
+        # Ticklers are packed into one large value with 'space-pipe-space'
+        # delimiters, starting with the delimiter, so the first one is always
+        # a throwaway.
+        # Also the last one is always the current one to use.
+        # Historical ones are traditionally kept in SobekCM
         # for some reason that may be worth reconsidering.
         ticklers = tickler_pack.split('|')
-        # Parse the most recent tickler value...still must discard the space characters
-        # left over from the legacy delimiter convention.
-        # The last tickler is maintained as the stored_sha1_hexdigest, assigned below
+        # Parse the most recent tickler value...still must discard the space
+        # characters left over from the legacy delimiter convention.
+        # The last tickler is maintained as the stored_sha1_hexdigest,
+        # assigned below
         tickler = ticklers[-1].replace(' ','')
 
         # Check validity of some column values
@@ -2311,7 +2317,8 @@ def get_pii_reservations_from_silodb():
                 .format(bibvid))
             raise ValueError(msg)
 
-        # Store info on all reserved PIIs known to source system columns in parts[]
+        # Store info on all reserved PIIs known to source system columns
+        # in parts[]
         reservation=OrderedDict()
         reservation['bibvid'] = bibvid
 
@@ -2323,12 +2330,14 @@ def get_pii_reservations_from_silodb():
         reservation['deleted'] = deleted
         reservation['stored_sha1_hexdigest'] = tickler.upper()
 
-        # Raise errors: If pii and deleted == 0 combo value is duplicated it is an error to resolve
-        # in the production database.
+        # Raise errors: If pii and deleted == 0 combo value is duplicated
+        # it is an error to resolve in the production database.
         if (pii in od_pii_reservation and deleted == '0'
            and od_pii_reservation[pii]['deleted'] == '0'):
-            msg = ("{}:ERROR: pii={} has dup bibvids={},{} both with deleted value 0."
-                   #" Please update the SobekDB data to have at most one row for this pii with deleted=0"
+            msg = ("{}:ERROR: pii={} has dup bibvids={},{}"
+                " both with deleted value 0."
+                # "Please update the SobekDB data to have at most one row for
+                # this pii with deleted=0"
                   .format(me,pii,od_pii_reservation[pii]['bibvid'], bibvid))
             dup_piis += 1
             print(msg)
@@ -2341,10 +2350,12 @@ def get_pii_reservations_from_silodb():
     # end for line in pii_rows
 
     print(
-      "{}: from db_conn={},Found {} Elsevier bibvids that are not deleted, {} that are deleted."
+      "{}: from db_conn={},Found {} Elsevier bibvids that are not deleted,"
+      " {} that are deleted."
       .format(me, repr(db_conn), count_not_deleted, count_deleted))
     if dup_piis > 0:
-        msg = ("{}:Fatal error. Found {} duplicate items (see bibvids listed above) that are not deleted"
+        msg = ("{}:Fatal error. Found {} duplicate items (see bibvids listed"
+            " above) that are not deleted"
             .format(me,dup_piis))
         print(msg)
         # raise ValueError(msg)
@@ -2361,7 +2372,8 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
     xslt_sources = ['full', 'entry', 'tested']
     bibvid_prefix = 'LS'
 
-    print("{}:Running for xml files under {} input_folders".format(me,len(input_folders)))
+    print("{}:Running for xml files under {} input_folders"
+      .format(me,len(input_folders)))
     sys.stdout.flush
 
     # skip_extant=True means skip creating new METS file if the PII is exant in the dict_pii
