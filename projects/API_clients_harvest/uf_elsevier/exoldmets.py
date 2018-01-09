@@ -20,6 +20,22 @@ print("Using sys.path={}".format(repr(sys.path)))
 import etl
 from uf_elsevier.utilities import uf_elsevier_item_authors
 
+from sqlalchemy import (
+  Boolean, create_engine,
+  CheckConstraint, Column, Date, DateTime,
+  Float, FLOAT, ForeignKeyConstraint,
+  Integer,
+  MetaData, Sequence, String,
+  Table, Text, UniqueConstraint,
+  )
+from sqlalchemy.inspection import inspect as inspect
+from sqlalchemy.schema import CreateTable
+from sqlalchemy.sql import select, and_, or_, not_
+import sqlalchemy.sql.sqltypes
+
+# Import slate of databases that this user can use
+from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+
 # First we have some xslt strings used to transform Elsevier documents for submission
 # to SobekCM Builder as mets files.
 if 1 == 1:
@@ -452,31 +468,38 @@ def get_d_xslt():
     return d_xslt
 
 '''
-This is originally python 3.5.1 code
-This is program 'exoldmets'.
+This is program 'exoldmets' which is python 3.x code.
 
-Required input parameter 'input_base_directory' is an input directory name that is
-the output directory (a git repo, actually) with output data from
-one or more prior separate 'ealdxml' program runs.
-See UF elseveir program ealdxml.py for more details.
+Required input parameter 'input_base_directory' is our input directory name.
+For background, that is the output directory (a git repo, actually) with
+output data from one or more prior separate 'ealdxml' program runs.
 
-We look into subfolder hierarchy of YYYY/MM/DD directories to find at the lowest level
-files named as 'pii_{}.xml'.format(pii), where pii is the publisher item identifier use by
-Elsevier to label articles.
+See UF elsevier program ealdxml.py for more details.
 
-The pii file may contain the root tag 'failure' in which case we skip that file.
-That means that an attempt to retrieve the full text for that pii failed by the
-precursor program ealdxml. Such a file is preserved in case we want to review the errors.
+Program exoldmets.py looks into the subfolder hierarchy of YYYY/MM/DD
+directories to find at the lowest level all files named as
+'pii_{}.xml'.format(pii), where pii is the 'publisher item identifier (pii)'
+used by Elsevier.
+
+The pii file may contain the root xml tag 'failure' in which case we
+stop processing for that file.
+A 'failure' tag means that an attempt to retrieve the full text for
+that pii failed by the precursor program ealdxml.
+Such a file is preserved in case we want to review the errors.
 
 Otherwise, the pii file has Elsevier 'full-text' metadata for an article.
 
-Ealdxml will always use the pii to compare it to a 'pii_bibid' table that is keyed by
-the complete list of elsevier pii articles already contained in UFDC or the target SobekCM system
-for the METS files that ealdxml.py produces.
+Ealdxml will always use the pii to compare it to the marshal database
+'item_elsevier_ufdc' table that includes the complete set of Elsevier
+pii articles already contained in the target SobekCM system (eg UFDC production
+integration test, or a local test database) for the METS files that
+ealdxml.py produces.
 
-In the pii_bibid table, one of the column values is bibid, with string values like
-'LS00012345_0001' if the pii of an input pii file is already in that
-pii_bibid table, we preserve and honor the bibid value for it.
+In the item_elseiver_ufdc table, one of the column values is bibid, with string
+values like 'LS00012345_0001'.
+If the pii of an input pii file is already in that item_elsevier_ufdc table,
+we preserve/reserve and honor the established bibid value for it, and we only
+prescribe 'new' bibids to load into UFDC for 'new' pii-identified articles.
 
 --- rest of this docstring is under revision---
 
@@ -488,7 +511,8 @@ fatal error)
 
 Once we have a good commit hash, we invoke a git command to find all contained files
 that were changed by that commit
-(see url http://stackoverflow.com/questions/424071/how-to-list-all-the-files-in-a-commit)
+(see url
+http://stackoverflow.com/questions/424071/how-to-list-all-the-files-in-a-commit)
  $ git show --pretty="format:" --name-only bd61ad98
 We use only the pii files in that list that are also under the 'full' sub-folder
 that comprise the list of input pii fiiles
@@ -1894,6 +1918,7 @@ class PiiReservations(object):
         self.d_bib_reservation = OrderedDict()
         self.d_pii_reservation = OrderedDict()
         self.max_bibint = -1
+        self.bib_dup_count = 0
 
         # Create entries for inverse dictionary using bibvid as the key, value is reservation
         for pii, reservation in d_pii_reservation.items():
@@ -1912,11 +1937,20 @@ class PiiReservations(object):
             reservation['pii'] = pii # If already present, just silently overwrite pii
 
             if self.d_bib_reservation.get(bibvid, None) is not None:
-                # Allow duplicate bibvids only if they are marked as deleted in source system.
+                # Consider to: Allow duplicate bibvids only if they are
+                # marked as deleted in source system.
+                # for now let them go here. Another process can detect and clean
+                # them.
                 if deleted == 0:
-                    raise(ValueError("Duplicate bib='{}' in source. Duplicates Error.".format(bib)))
-            # Add entry to 'inverse' bibvid-keyed dictionary of pii reservations
-            self.d_bib_reservation[bibvid] = reservation
+                    msg = (
+                        "{}:Duplicate bib='{}' in source. Duplicates Error."
+                        .format(me,bibvid))
+                    self.bib_dup_count += 1
+                    # Just print a warning message here...
+                    print(msg)
+            else:
+                # Add entry to 'inverse' bibvid-keyed dictionary of pii reservations
+                self.d_bib_reservation[bibvid] = reservation
 
         # for convenience, save as a sorted dict
         self.d_bib_reservation = OrderedDict(sorted(self.d_bib_reservation.items()))
@@ -2176,65 +2210,31 @@ Method get_pii_reservations_from_silodb():
 See below PREREQUISITES:
 
 Arguments:
-- REVIVE LATER - NOT USED: db_conn: db connection to UFDC SobekCM production database from which to read the in-use
-  pii-bibids for Elsevier articles in the SobekCM production database/system
+- REVIVE LATER - NOT USED: db_conn: db connection to UFDC SobekCM
+  production database from which to read the in-use pii-bibids for Elsevier
+  articles in the SobekCM production database/system
 
 Instantiate and return a PiiReservations object given the db connection to the
 UFDC SobekCM production database.
 
 Returns:
 - log_messages: dict with various log messages
-- pii_reservations: instance of PiiReservations object with the in-use pii-bibids in a SobekCM database
+
+- pii_reservations: instance of PiiReservations object with the
+  pii-bibids currently in use by a SobekCM database.
   -- It will contain:
-     -- a dictionary of pii to reservations
+     -- a dictionary of pii to bibid reservations
      -- and another dict keyed by bibid to reservation objects
      -- a next_bibid member
      -- a last_bib_int value (last used integer for an in use bibid)
-     -- bibroot: will always be 'LS' for Elsever
+     -- bibroot: will always be 'LS' for Elsevier
 
 PREREQUISITES:
-FIRST: run the following query on production db, save to file and then copy to silodb rvp_bibinfo
 
-use [sobekdb];
-SELECT
-i.itemid, i.groupid, g.bibid + '_00001' as bibid, i.vid, substring(i.link,50,99) as pii
-, m.Tickler, i.deleted as prod_deleted
-FROM SobekCM_Item i, SobekCM_Item_group g,SobekCM_Metadata_Basic_Search_Table m
-WITH(NOLOCK)
-WHERE i.groupid = g.groupid$G
-AND g.bibid like 'LS%'
-AND i.ItemID = m.itemid
-ORDER BY i.deleted, g.BibID, i.vid
-
-Submit that to SSMS sql query execution and in the results grid right click and copy to a file, then
-use the following in the silodb to insert that file:
-
-use [silodb];
-    IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'rvp_bibinfo')
-        TRUNCATE TABLE rvp_bibinfo;
-    IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'rvp_bibinfo')
-        drop table rvp_bibinfo;
--- NOTE: 201612223 - had to convert some INTs in itemid, deleted, etc to nvarchar(x) types below , else got 4864 errors
-    create table rvp_bibinfo (
-    itemid nvarchar(100),
-    groupid nvarchar(100),
-    bibid nvarchar(3500),
-    vid nvarchar(100),
-    pii nvarchar(3500),
-    tickler nvarchar(3500),
-    deleted nvarchar(3500)
-    constraint pk_rvp_bibinfo primary key(itemid)
-    );
-  GO
-  bulk insert rvp_bibinfo
-  from 'c:/rvp/data/sobekdb_prod_bibinfo_20170828.txt.csv'
-  with (fieldterminator = ',', rowterminator = '\n');
-
-  GO
-
-  NOTE: on 20170825 before a SobekCM load of METS files, the highest LS bibid:
-  LS00590862
-
+FIRST: run the python project sobekdb program sobek_item_to_table.py
+to copy needed SobekDB item information to the marshal database table
+'item_elsevier_ufdc'. No new Elsevier items should be loaded to UFDC after
+that program is run until after this program exoldmets is run.
 '''
 
 def get_pii_reservations_from_silodb():
@@ -2363,30 +2363,131 @@ def get_pii_reservations_from_silodb():
 
 # end def get_pii_reservations()
 
+def get_pii_reservations_from_marshaldb(engine_ufdc=None,table_ufdc=None,verbosity=1):
+    me = "get_pii_reservations_from_marshaldb"
+
+    conn = engine_ufdc.connect()
+
+    rows_item_elsevier_ufdc = (conn.execute(select([table_ufdc])
+      .where( and_ (
+      table_ufdc.c.ufdc_deleted == 0,
+      table_ufdc.c.bibvid.like('%LS%'),
+      ) ))
+    .fetchall())
+
+    od_pii_bibvid = OrderedDict()
+    od_pii_reservation = OrderedDict()
+
+    count_deleted = 0
+    count_not_deleted = 0
+    dup_piis = 0
+
+    bibvid_index = 2
+    pii_index = 4
+    tickler_index = 5
+    deleted_index = 6
+
+    for row in rows_item_elsevier_ufdc:
+
+        bibvid = row['bibvid'] # [:10]
+        pii = row['pii'].upper()
+        tickler_pack = row['tickler']
+        deleted = row['ufdc_deleted']
+
+        # Ticklers are packed into one large value with 'space-pipe-space'
+        # delimiters, starting with the delimiter, so the first one is always
+        # a throwaway.
+        # Also the last one is always the current one to use.
+        # Historical ones are traditionally kept in SobekCM
+        # for some reason that may be worth reconsidering.
+        ticklers = tickler_pack.split('|')
+        # Parse the most recent tickler value...still must discard the space
+        # characters left over from the legacy delimiter convention.
+        # The last tickler is maintained as the stored_sha1_hexdigest,
+        # assigned below
+        tickler = ticklers[-1].replace(' ','')
+
+        # Check validity of some column values
+        if len(bibvid) > 16:
+            msg = ("Error: OOPS got string value too long for a bibvid:'{}'. "
+                .format(bibvid))
+            raise ValueError(msg)
+
+        # Store info on all reserved PIIs known to source system columns
+        # in parts[]
+        reservation=OrderedDict()
+        reservation['bibvid'] = bibvid
+
+        if bibvid in reservation.keys():
+            msg = ("Error: OOPS duplicate bibvid:'{}'. "
+                .format(bibvid))
+            raise ValueError(msg)
+
+        reservation['deleted'] = deleted
+        reservation['stored_sha1_hexdigest'] = tickler.upper()
+
+        # Raise errors: If pii and deleted == 0 combo value is duplicated
+        # it is an error to resolve in the production database.
+        if (pii in od_pii_reservation and deleted == '0'
+           and od_pii_reservation[pii]['deleted'] == '0'):
+            msg = ("{}:ERROR: pii={} has dup bibvids={},{}"
+                " both with deleted value 0."
+                # "Please update the SobekDB data to have at most one row for
+                # this pii with deleted=0"
+                  .format(me,pii,od_pii_reservation[pii]['bibvid'], bibvid))
+            dup_piis += 1
+            print(msg)
+
+        if deleted is not None and str(deleted)== '0':
+            count_not_deleted += 1
+        else:
+            count_deleted += 1
+        od_pii_reservation[pii] = reservation
+    # end for row ...
+
+    conn.close()
+
+    if verbosity > (-1) :
+        print(
+          "{}: Found {} Elsevier bibvids that are not deleted,"
+          " {} that are deleted."
+          .format(me,  count_not_deleted, count_deleted))
+
+    if dup_piis > 0:
+        msg = ("{}:Fatal error. Found {} duplicate items (see bibvids listed"
+            " above) that are not deleted"
+            .format(me,dup_piis))
+        print(msg)
+        # raise ValueError(msg)
+    return PiiReservations(od_pii_reservation)
+#end get_pii_reservations_from_marshaldb
+
+
+import shutil
+
 # SET more RUN PARAMS AND RUN
-def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
-    import shutil
+def exoldmets_run(env='test', engine_ufdc=None,table_ufdc=None,
+    data_elsevier_folder=None, input_folders=None):
+
     me='exoldmets_run'
+
     d_log = OrderedDict()
     d_params = OrderedDict()
+
+    # Hard-codes
     xslt_sources = ['full', 'entry', 'tested']
     bibvid_prefix = 'LS'
 
-    print("{}:Running for xml files under {} input_folders"
+    print("{}:Running for xml input files under {} input_folders"
       .format(me,len(input_folders)))
     sys.stdout.flush
-
-    # skip_extant=True means skip creating new METS file if the PII is exant in the dict_pii
-    skip_extant = False # True means skip creating new METS file if the PII is exant in the dict_pii
-
-    # skip_nonserial = True means skip making new METS file if the PII starts with 'B', meaning nonserial
-    skip_nonserial = True #skip making new METS file if the PII starts with 'B', meaning nonserial
-
-    # 'tested' is the current best xslt transform to apply.
-    xslt_source_name='tested' # used to select the xslt transform template
-
-    # if skip_pii_new, we only want to create METS files for PII values that have already
-    # been assigned to bibids in the input dictionary od_pii_bibid*
+    # skip_extant=True => don't create new METS file if PII is in ufdc.
+    skip_extant = False
+    # skip_nonserial=True ==>don't create new METS file if the PII
+    # starts with 'B', meaning nonserial, usually a Book
+    skip_nonserial = True
+    # If skip_pii_new ==> we only want to create METS files for PII values
+    # that are already in use by UFDC
     skip_pii_new = True
 
     utc_now = datetime.datetime.utcnow()
@@ -2398,8 +2499,8 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
     utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     # secsz_start = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-    # We also use secsz_start as part of a filename, and windows chokes on ':', so use
-    # all hyphens for delimiters
+    # We also use secsz_start as part of a filename, and windows chokes on ':',
+    # so use all hyphens for delimiters
     secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
     secsz_str = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
 
@@ -2411,10 +2512,13 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
     # completely removed to preserve the integrity of new bibvids to be
     # generated on this run.
 
-    # Otherwise, it is possible that filenames linger with obsolete bibvids are
-    # used, if these files are not all removed, then wrong PII values may exist
-    # in old bibvids that have not been, for any reason, successfully loaded into the sobekcm
-    # databse by the SobekCM Builder.
+    # Otherwise, if these files are not all removed, it is possible that
+    # filenames lingering here with obsolete bibvids are later used (loaded to ufdc),
+    #  If so, those wrong PII values may exist in old bibvids that have not
+    # been, for any reason, successfully loaded
+    # into the sobekcm databse by the SobekCM Builder.
+    # Maybe we forgot to try to load them or we did but the builder was down
+    # and did not create good error messages about a failure to load them,
     # Maybe they failed or we did not even try to load them.
 
     os.makedirs(output_base_folder, exist_ok=True)
@@ -2423,36 +2527,43 @@ def exoldmets_run(env='test', data_elsevier_folder=None, input_folders=None):
     os.makedirs(output_logs_folder, exist_ok=True)
 
     d_xslt = get_d_xslt()
-    xslt_format_str = d_xslt[xslt_source_name]
 
-    # NOTE: dict_conn is not used yet pending more testing.
-    # Instead we use manual procedures to populate local sqlexpress, db silodb, rvp_bibinfo,
-    # with instructions to create in comments of this file.
+    # 'tested' is the current best xslt transform to apply.
+    xslt_source_name='tested'
+    xslt_format_str = d_xslt[xslt_source_name]
 
     if 1 == 1:
         input_files_low_index  = None
         input_files_high_index = None
-        # Authoritative server to link PII values to BIBVIDs
-        # dict_conn = DBConnection(server='lib-sobekdb\\sobekCM',db='SobekDB')
         # REVIEW: make sure this db has the most recent bibids before running env of prod
         print("{}: Connecting to SQLEXPRESS database 'silodb'".format(me))
         sys.stdout.flush
-        dict_conn = DBConnection(server=r'.\SQLEXPRESS', db='silodb')
 
-        #target_conn = dict_conn
         load_selection = 'all_new_or_changed'
 
     # Object to manage pii to bibvid reserved pairings for METS file outputs.
     # Call with arg prod conn later
 
-    print("{}: Got env={}, dict_conn is {}. dict_conn.server={}, dict_conn.db={}, cxs='{}'. Done."
-          .format(me,env, repr(dict_conn), dict_conn.server, dict_conn.db, dict_conn.cxs))
+    print("{}: Using env={}.".format(me,env))
     sys.stdout.flush
 
     print("{}: Getting pii reservations...".format(me))
     sys.stdout.flush
+
     #pii_reservations = get_pii_reservations(dict_conn)
-    pii_reservations = get_pii_reservations_from_silodb()
+    pii_reservations = get_pii_reservations_from_marshaldb(
+        engine_ufdc=engine_ufdc, table_ufdc=table_ufdc)
+
+
+    print("pii_reservations creation found {} duplicate bibs - ignored"
+        .format(pii_reservations.bib_dup_count))
+    msg="Early Test exit"
+    print("Early Test exit")
+    raise ValueError(msg)
+    sys.stdout.flush
+
+
+    #pii_reservations = get_pii_reservations_from_silodb()
 
     print("{}: got the pii reservations...".format(me))
     #raise Exception("Test EXIT 20161223")
@@ -2571,13 +2682,24 @@ def run():
     # see def exoldmets_run and see comments on database info on bibvids.
     # Note: legal envs = ['prod','local','test']
 
+  # Settings for UFDC elsevier item info
+  engine_ufdc = get_db_engine_by_name(name='uf_local_mysql_marshal1')
+  eumd = MetaData(engine_ufdc)
+  table_ufdc = Table('item_elsevier_ufdc', eumd, autoload=True,
+      autoload_with=engine_ufdc)
+
   log_filename, used_input_file_paths, pii_reservations = exoldmets_run(
-      env='test', data_elsevier_folder=data_elsevier_folder, input_folders=input_folders
+          engine_ufdc=engine_ufdc,
+          table_ufdc=table_ufdc,
+          env='test',
+          data_elsevier_folder=data_elsevier_folder,
+          input_folders=input_folders
   )
 
   if used_input_file_paths:
-      print("Done with exoldmets() run using {} input files from {} to {} under{}."
-        .format(len(used_input_file_paths),cymd_start,cymd_end,data_elsevier_folder))
+      print("Done with exoldmets() using {} input files from {} to {} under{}."
+        .format(len(used_input_file_paths),cymd_start,
+        cymd_end,data_elsevier_folder))
 
   print("See logfile={}".format(log_filename))
   utc_now = datetime.datetime.utcnow()

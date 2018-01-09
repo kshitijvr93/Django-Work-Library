@@ -12,7 +12,6 @@ from sqlalchemy import (
   MetaData, String, Table, UniqueConstraint,
   )
 
-from sqlalchemy.schema import CreateTable
 import MySQLdb
 
 '''

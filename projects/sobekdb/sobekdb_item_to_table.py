@@ -28,6 +28,7 @@ register_modules()
 print("Using sys.path={}".format(repr(sys.path)))
 
 from collections import OrderedDict
+import inspect
 import datetime
 import etl
 from lxml import etree
@@ -50,8 +51,6 @@ import sqlalchemy.sql.sqltypes
 
 # Import slate of databases that this user can use
 from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
-import sys
-import inspect
 
 '''
 <summary name='get_rows_elsevier_bibinfo'>
@@ -102,7 +101,6 @@ def get_elsevier_bibinfo(engine=None, conn=None,table_name=None,verbosity=1):
           item.c.ItemID == basic.c.ItemID,
           item.c.GroupID == group.c.GroupID,
           group.c.BibID.like('%LS%'),
-          # item.c.Deleted != 1 , -- Now get this column too just in case.
           ) )
           #.columns(bibid=String, vid=Integer, groupid=Integer, link=String)
         )
