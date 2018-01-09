@@ -92,11 +92,14 @@ def get_elsevier_bibinfo(engine=None, conn=None,table_name=None,verbosity=1):
 
     group = Table('SobekCM_Item_Group', m, autoload=True, autoload_with=engine)
     item  = Table('SobekCM_Item', m, autoload=True, autoload_with=engine)
+    basic = Table('SobekCM_Metadata_Basic_Search_Table'
+                  , m, autoload=True, autoload_with=engine)
 
     select_elsevier_info = ( select([
           item.c.ItemID, group.c.BibID, item.c.VID, item.c.GroupID,
-          item.c.Deleted, item.c.Link ])
+          item.c.Deleted, item.c.Link, basic.c.Tickler ])
           .where( and_ (
+          item.c.ItemID == basic.c.ItemID,
           item.c.GroupID == group.c.GroupID,
           group.c.BibID.like('%LS%'),
           # item.c.Deleted != 1 , -- Now get this column too just in case.
@@ -139,6 +142,7 @@ def translate_elsevier_bibinfo(engine_read=None,engine_write=None,verbosity=1):
         Column('pii', String(300), index=True),
         Column('oac_elsevier', String(20)),
         Column('oac_oadoi',String(20)),
+        Column('tickler',Text),
         Column('bibid', String(20)),
         Column('vid', Integer),
         Column('is_am4ir', String(20)),
@@ -185,6 +189,9 @@ def translate_elsevier_bibinfo(engine_read=None,engine_write=None,verbosity=1):
 
         bibvid='{}_{}'.format(bibid, vid_str)
         d_col_val['bibvid'] = bibvid
+
+        tickler = row['Tickler']
+        d_col_val['tickler'] = tickler
 
         link = row['Link']
         # pii is after last slash, but before a ?, if any
