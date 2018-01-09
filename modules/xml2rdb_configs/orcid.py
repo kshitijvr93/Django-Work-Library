@@ -1,6 +1,7 @@
 import sys, os, os.path, platform
 import datetime
 from collections import OrderedDict
+
 def register_modules():
     platform_name = platform.system().lower()
     if platform_name == 'linux':
@@ -14,11 +15,14 @@ def register_modules():
 register_modules()
 from collections import OrderedDict
 from mappers import make_date
+
 '''
 Method sql_mining_params
 
 See https://github.com/ORCID/ORCID-Source/tree/master/orcid-model/src/main/resources/record_2.0
-and its links for xsd information to assist in creating ORCID db schema and mining maps.
+and its links for xsd information to assist in creating ORCID db schema and
+mining maps.
+
 '''
 def sql_mining_params():
 
