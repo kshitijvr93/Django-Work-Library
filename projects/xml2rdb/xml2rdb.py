@@ -10,6 +10,7 @@ Each input xml file has xml-coded information pertaining to a single xml
 document.
 '''
 import sys, os, os.path, platform
+from collections import OrderedDict
 
 
 def register_modules():
@@ -1047,7 +1048,7 @@ def run(study=None):
     ]
 
     # Study selection KEEP ONLY ONE LINE next
-    study = 'ccila'
+    study = 'orcid'
     if study not in study_choices:
         raise ValueError("Unknown study='{}'".format(repr(study)))
 
@@ -1068,9 +1069,11 @@ def run(study=None):
     # Define a redo_rel_prefix for this study
     rel_prefix = 'crawd2017b_'
     rel_prefix = 'cr201711_'
+    rel_prefix = 'orcid_'
 
     # Select the rel_prefix
     rel_prefix = 'ccila_'
+    rel_prefix = 'orcid_'
 
     if rel_prefix == 'crawd2017b_':
         import xml2rdb_configs.crossref as config
@@ -1165,8 +1168,43 @@ def run(study=None):
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
         file_count_first = 0
         file_count_span = 0
+    # MIGRATING...
+    elif rel_prefix == 'orcid_':
+        # ORCID id data
+        import xml2rdb_configs.orcid as config
+
+        input_folder = '{}/output_orpubtxml'.format(data_elsevier_folder)
+        input_folders = [ input_folder]
+        input_path_glob = '**/orcid_*.xml'
+
+        xxin_folder_name = etl.data_folder(linux='/home/robert/git/',
+            windows='C:/rvp/data/', data_relative_folder='outputs/marcxml/UCRiverside/')
+
+        output_folder_include_secsz = False
+
+        #windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
+        folder_output_base = etl.data_folder(linux='/home/robert/git/'
+            , windows='C:/rvp/data/'
+            , data_relative_folder=('outputs/xml2rdb/{}/'.format(study)))
+
+        print("study {}, using folder_output_base={}".format(study,folder_output_base))
+
+        # This must be the match highest level table dbname in od_rel_datacolumns
+        doc_rel_name = 'person'
+
+        # Must be the highest xml element in xml input files
+        doc_root_xpath = ".//{*}record"
+
+        input_path_list = list(Path(input_folder).glob(input_path_glob))
+        d_xml_params['attribute_text'] = 'text'
+
+        print("STUDY={}, got {} input files under {}"
+              .format(study, len(input_path_list),input_folder))
+        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+        file_count_first = 0
     else:
-         raise ValueError("Unknown rel_prefix = {}. Exit.".format(redo_rel_prefix))
+         raise ValueError("Unknown rel_prefix = '{}'. Exit.".format(rel_prefix))
 
 
     # migrate rest of these

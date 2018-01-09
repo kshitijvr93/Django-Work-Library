@@ -50,7 +50,7 @@ def get_db_engine_by_name(name=None,verbosity=0):
               '{dialect}+{driver}://{user}:{password}@'
               '{host}:{port}/{dbname}?charset={charset}'),
         },
-        'lib-archcoll_aspace': {
+        'lib_archcoll_aspace': {
             # Note driver mysqldb requires "include mysqlclient"
             'dialect': 'mysql',
             # had had mysqlclient as driver?
@@ -63,6 +63,21 @@ def get_db_engine_by_name(name=None,verbosity=0):
             'format' : (
               '{dialect}+{driver}://{user}:{password}@'
               '{host}:{port}/{dbname}'),
+        },
+        'lib_ill_at': {
+            # UF Archivists toolkit database limping along for scavenging
+            # data for manual updates to aspace in early 2018...
+            'driver': 'mssql+pyodbc',
+            # odbc_driver see: https://stackoverflow.com/questions/40332319/no-driver-name-specified-writing-pandas-data-frame-into-sql-server-table
+            'odbc_driver': 'SQL+Server+Native+Client+11.0',
+            'server' : r'lib-ill\\ariel',
+            'dbname': 'archiviststoolkit',
+            # This db uses windows authentication, so no user/password
+            # but it must be accessed from UF windows vpn
+            # by login with credentials
+            #'user': 'podengo',
+            #'password': '20MY18sql!',
+            'format' : '{driver}://{server}/{dbname}?driver={odbc_driver}',
         },
         'integration_sobekdb': {
             'driver': 'mssql+pyodbc',
@@ -147,6 +162,7 @@ if testme == 1:
         engine = test_run(name='integration_sobekdb')
         engine = test_run(name='production_sobekdb')
         engine = test_run(name='uf_local_silodb')
-        engine = test_run(name='lib-archcoll_aspace')
+        engine = test_run(name='lib_archcoll_aspace')
+        engine = test_run(name='lib_ill_archiviststoolkit')
     else:
         engine = test_run(name='hp_psql')

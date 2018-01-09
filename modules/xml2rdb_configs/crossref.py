@@ -1,13 +1,17 @@
 import sys, os, os.path, platform
-def get_path_modules(verbosity=0):
-  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
-  path_user = os.environ.get(env_var)
-  path_modules = '{}/git/citrus/modules'.format(path_user)
-  if verbosity > 1:
-    print("Assigned path_modules='{}'".format(path_modules))
-  return path_modules
-sys.path.append(get_path_modules())
-
+import datetime
+from collections import OrderedDict
+def register_modules():
+    platform_name = platform.system().lower()
+    if platform_name == 'linux':
+        modules_root = '/home/robert/'
+        #raise ValueError("MISSING: Enter code here to define modules_root")
+    else:
+        # assume rvp office pc running windows
+        modules_root="C:\\rvp\\"
+    sys.path.append('{}git/citrus/modules'.format(modules_root))
+    return
+register_modules()
 from collections import OrderedDict
 import mappers
 
