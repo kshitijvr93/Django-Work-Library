@@ -53,9 +53,9 @@ Each squence member/iteration is a tuple:
 </return>
 '''
 
-def uf_elsevier_item_authors(node_root_input=None, verbosity=0):
+def uf_elsevier_item_authors(node_root_input=None, namespaces=None, verbosity=0):
     me = 'uf_elsevier_item_authors()'
-
+    d_ns = namespaces
     node_serial_item = node_root_input.find(
         './/xocs:serial-item', namespaces=d_ns)
     if verbosity > 1:

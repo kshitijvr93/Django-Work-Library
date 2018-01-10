@@ -1235,7 +1235,7 @@ def xslt_transform_format2(core_pii='',node_root_input=None, d_ns=None
         xml_authors = ''
 
         for is_uf_author, node_author in uf_elsevier_item_authors(
-            node_root=node_root_input):
+            node_root_input=node_root_input, namespaces=d_ns):
 
             if is_uf_author:
                     item_has_uf_author = 1
@@ -1263,7 +1263,7 @@ def xslt_transform_format2(core_pii='',node_root_input=None, d_ns=None
 
         #end is_uf_author group loop
 
-        if item_has_uf_author(node_root=node_root_input) == 0:
+        if item_has_uf_author == 0:
             msg = ("Serial Item has NO UF Authors.")
             #print(msg)
             # Reject/refuse to create UF METS file since no uf_author contributed to this article.
@@ -1909,8 +1909,9 @@ class PiiReservations(object):
     - data members:
       -- bibroot: set to 'LS' - may later accept argument value
     '''
-    def __init__(self, d_pii_reservation):
+    def __init__(self, d_pii_reservation, verbosity=0):
         me = "PiiReservations.__init__"
+
         self.d_pii_reservation = d_pii_reservation
         # maybe set bibroot by argument when support generic bibroots.
         self.bibroot='LS'
@@ -1919,6 +1920,7 @@ class PiiReservations(object):
         self.d_pii_reservation = OrderedDict()
         self.max_bibint = -1
         self.bib_dup_count = 0
+        self.bib_new_count = 0
 
         # Create entries for inverse dictionary using bibvid as the key, value is reservation
         for pii, reservation in d_pii_reservation.items():
@@ -1941,18 +1943,21 @@ class PiiReservations(object):
                 # marked as deleted in source system.
                 # for now let them go here. Another process can detect and clean
                 # them.
-                if deleted == 0:
-                    msg = (
-                        "{}:Duplicate bib='{}' in source. Duplicates Error."
-                        .format(me,bibvid))
+                if str(deleted) == '0':
                     self.bib_dup_count += 1
-                    # Just print a warning message here...
-                    print(msg)
+                    # Just print a verbose warning message here...
+                    if verbosity > 0:
+                        msg = (
+                            "{}:Source bib '{}' is already in UFDC."
+                            .format(me,bibvid))
+                        print(msg)
             else:
                 # Add entry to 'inverse' bibvid-keyed dictionary of pii reservations
+                self.bib_new_count += 1
                 self.d_bib_reservation[bibvid] = reservation
 
-        # for convenience, save as a sorted dict
+        # end: for each d_pii_reservation item
+
         self.d_bib_reservation = OrderedDict(sorted(self.d_bib_reservation.items()))
         # Simple algo for now: set the next candidate bibid_next
         # Can improve on this method because this way ignores gaps in lower bibids, though.
@@ -2205,17 +2210,26 @@ class PiiReservations(object):
 # end class PiiReservations
 
 '''
-Method get_pii_reservations_from_silodb():
+Method get_pii_reservations_from_marshaldb():
 
-See below PREREQUISITES:
+Also See below PREREQUISITES:
 
 Arguments:
-- REVIVE LATER - NOT USED: db_conn: db connection to UFDC SobekCM
-  production database from which to read the in-use pii-bibids for Elsevier
-  articles in the SobekCM production database/system
 
-Instantiate and return a PiiReservations object given the db connection to the
-UFDC SobekCM production database.
+- engine_ufdc and table_ufdc:
+  The SqlALchemy engine and table object for a table with the expected columns:
+  bibvid, pii, tickler, is_deleted.
+
+  The rows are assumed to include one for every Elsevier article item known
+  in the UFDC/SobekCm database.
+  The bibvid is required to be be a unique key, but PII values may be duplicated,
+  though any dups with the same is_deleted value should probably be resolved, by
+  removing all but the 'best' one - a task for another program.
+
+
+- Processing:
+  Instantiate and return a PiiReservations object given the
+  UFDC information.
 
 Returns:
 - log_messages: dict with various log messages
@@ -2223,152 +2237,39 @@ Returns:
 - pii_reservations: instance of PiiReservations object with the
   pii-bibids currently in use by a SobekCM database.
   -- It will contain:
-     -- a dictionary of pii to bibid reservations
-     -- and another dict keyed by bibid to reservation objects
+     -- a dictionary of pii to bibid aka bibvid reservations
+     -- and another dict keyed by bibid aka bibvid to reservation objects
      -- a next_bibid member
-     -- a last_bib_int value (last used integer for an in use bibid)
+     -- a last_bib_int value (integer component of the last(highest) used
+        bibid aka bibvid found in UFDC)
      -- bibroot: will always be 'LS' for Elsevier
 
 PREREQUISITES:
 
 FIRST: run the python project sobekdb program sobek_item_to_table.py
 to copy needed SobekDB item information to the marshal database table
-'item_elsevier_ufdc'. No new Elsevier items should be loaded to UFDC after
+'item_elsevier_ufdc', because that is the expected table name for ufdc
+production. Use a different engine or  table name for ufdc integration or local
+test environments, as produced by program sobek_item_item_to_table.py when
+it is run on either the integration test or a local environment.
+
+No new Elsevier items should be loaded to the UFDC environment after
 that program is run until after this program exoldmets is run.
+
+After exoldmets is run, the created METS files in the staging directory
+may be loaded safely into the UFDC environment at issue.
+
+For each row, store its  bibvid, pii, is_deleted and tickler values
 '''
 
-def get_pii_reservations_from_silodb():
-    me = "get_pii_reservations_from_silodb"
-    print("{}: Connecting to SQLEXPRESS database 'silodb'".format(me))
-    sys.stdout.flush
-    db_conn = DBConnection(server=r'.\SQLEXPRESS', db='silodb')
-    if db_conn is None:
-      raise ValueError("db_conn is None")
+def get_pii_reservations_from_marshaldb(
+    engine_ufdc=None, table_ufdc=None, verbosity=1):
 
-    # if not prod_conn:
-    #    raise ValueError("{}: no production connection given.".format(me))
-    # Query PROD: is designed to be run on SobkeDB Production, but it is not
-    # yet done.  see rvp_bibinfo below.
-    # I manually ran query_prod on production db, early October 2016, and the
-    # results
-    # were copied to local rvp machine's sqlexpress database, table rvp_bibinfo.
-    # As final development of this program nears, we will probably query
-    # production directly instead of using this intermediate local table.
-    query_local = 'select * from rvp_bibinfo'
-    print("{}:running select = {}".format(me,query_local))
-
-    # Get reservations selected data from the database
-    header, pii_rows = db_conn.query(query_local)
-
-    print("{}: got {} production bibinfo reservation rows"
-      .format(me,len(pii_rows)))
-
-    od_pii_bibvid = OrderedDict()
-    od_pii_reservation = OrderedDict()
-
-    count_deleted = 0
-    count_not_deleted = 0
-    dup_piis = 0
-
-    bibvid_index = 2
-    pii_index = 4
-    tickler_index = 5
-    deleted_index = 6
-
-    delim='\t'
-    for i, line in enumerate(pii_rows, start=1):
-        # line.rstrip('\n')   # does NOT work on windows, nor '\r' nor '\r\n'
-        # Either of next 2 'line = x' lines DO work, but use replace() because
-        # it should  also work (not cause problems) on both windows and
-        # linux platforms...
-        line = line.replace('\n','')
-        #print("Got line='{}'".format(line))
-        #line = line[:-1]
-        columns = line.split(delim)
-        if bibvid_index >= len(columns):
-            raise ValueError(
-                "Result row='{}', delim='{}', len(parts)={}, bibvid_index={}"
-                " is too big for this row"
-                .format(line,delim,len(columns),bibvid_index))
-
-        #Set variables for the query column values:
-
-        bibvid = columns[bibvid_index]
-        pii = columns[pii_index].upper()
-        tickler_pack = columns[tickler_index]
-        deleted = columns[deleted_index]
-
-        # Ticklers are packed into one large value with 'space-pipe-space'
-        # delimiters, starting with the delimiter, so the first one is always
-        # a throwaway.
-        # Also the last one is always the current one to use.
-        # Historical ones are traditionally kept in SobekCM
-        # for some reason that may be worth reconsidering.
-        ticklers = tickler_pack.split('|')
-        # Parse the most recent tickler value...still must discard the space
-        # characters left over from the legacy delimiter convention.
-        # The last tickler is maintained as the stored_sha1_hexdigest,
-        # assigned below
-        tickler = ticklers[-1].replace(' ','')
-
-        # Check validity of some column values
-        if len(bibvid) > 16:
-            msg = ("Error: OOPS got string value too long for a bibvid:'{}'. "
-                .format(bibvid))
-            raise ValueError(msg)
-
-        # Store info on all reserved PIIs known to source system columns
-        # in parts[]
-        reservation=OrderedDict()
-        reservation['bibvid'] = bibvid
-
-        if bibvid in reservation.keys():
-            msg = ("Error: OOPS duplicate bibvid:'{}'. "
-                .format(bibvid))
-            raise ValueError(msg)
-
-        reservation['deleted'] = deleted
-        reservation['stored_sha1_hexdigest'] = tickler.upper()
-
-        # Raise errors: If pii and deleted == 0 combo value is duplicated
-        # it is an error to resolve in the production database.
-        if (pii in od_pii_reservation and deleted == '0'
-           and od_pii_reservation[pii]['deleted'] == '0'):
-            msg = ("{}:ERROR: pii={} has dup bibvids={},{}"
-                " both with deleted value 0."
-                # "Please update the SobekDB data to have at most one row for
-                # this pii with deleted=0"
-                  .format(me,pii,od_pii_reservation[pii]['bibvid'], bibvid))
-            dup_piis += 1
-            print(msg)
-
-        if deleted == '0':
-            count_not_deleted += 1
-        else:
-            count_deleted += 1
-        od_pii_reservation[pii] = reservation
-    # end for line in pii_rows
-
-    print(
-      "{}: from db_conn={},Found {} Elsevier bibvids that are not deleted,"
-      " {} that are deleted."
-      .format(me, repr(db_conn), count_not_deleted, count_deleted))
-    if dup_piis > 0:
-        msg = ("{}:Fatal error. Found {} duplicate items (see bibvids listed"
-            " above) that are not deleted"
-            .format(me,dup_piis))
-        print(msg)
-        # raise ValueError(msg)
-    return PiiReservations(od_pii_reservation)
-
-# end def get_pii_reservations()
-
-def get_pii_reservations_from_marshaldb(engine_ufdc=None,table_ufdc=None,verbosity=1):
     me = "get_pii_reservations_from_marshaldb"
 
-    conn = engine_ufdc.connect()
+    conn_ufdc = engine_ufdc.connect()
 
-    rows_item_elsevier_ufdc = (conn.execute(select([table_ufdc])
+    rows_item_elsevier_ufdc = (conn_ufdc.execute(select([table_ufdc])
       .where( and_ (
       table_ufdc.c.ufdc_deleted == 0,
       table_ufdc.c.bibvid.like('%LS%'),
@@ -2407,30 +2308,32 @@ def get_pii_reservations_from_marshaldb(engine_ufdc=None,table_ufdc=None,verbosi
         # assigned below
         tickler = ticklers[-1].replace(' ','')
 
-        # Check validity of some column values
+        # Check validity of some column values.
         if len(bibvid) > 16:
             msg = ("Error: OOPS got string value too long for a bibvid:'{}'. "
                 .format(bibvid))
             raise ValueError(msg)
 
-        # Store info on all reserved PIIs known to source system columns
-        # in parts[]
-        reservation=OrderedDict()
-        reservation['bibvid'] = bibvid
-
-        if bibvid in reservation.keys():
+        # Object reservation exists for each pii, and it has
+        # three key-values for keys:
+        # (1) bibvid (the bibvid reserved for the pii),
+        # (2) deleted (whether UFDC sees this pii's bibvid as deleted),
+        # (3) stored_sha1_hexdigest () - the bibvid's METS file's hash code
+        reservation = OrderedDict()
+        if bibvid in reservation.values():
             msg = ("Error: OOPS duplicate bibvid:'{}'. "
                 .format(bibvid))
             raise ValueError(msg)
+        reservation['bibvid'] = bibvid
 
         reservation['deleted'] = deleted
         reservation['stored_sha1_hexdigest'] = tickler.upper()
 
-        # Raise errors: If pii and deleted == 0 combo value is duplicated
+        # Raise warnings: If pii and deleted == 0 combo value is duplicated
         # it is an error to resolve in the production database.
-        if (pii in od_pii_reservation and deleted == '0'
+        if (pii in od_pii_reservation.keys() and str(deleted) == '0'
            and od_pii_reservation[pii]['deleted'] == '0'):
-            msg = ("{}:ERROR: pii={} has dup bibvids={},{}"
+            msg = ("\n***\n{}:Warning: pii={} has dup bibvids={},{}"
                 " both with deleted value 0."
                 # "Please update the SobekDB data to have at most one row for
                 # this pii with deleted=0"
@@ -2438,14 +2341,14 @@ def get_pii_reservations_from_marshaldb(engine_ufdc=None,table_ufdc=None,verbosi
             dup_piis += 1
             print(msg)
 
-        if deleted is not None and str(deleted)== '0':
+        if deleted is not None and str(deleted) == '0':
             count_not_deleted += 1
         else:
             count_deleted += 1
         od_pii_reservation[pii] = reservation
     # end for row ...
 
-    conn.close()
+    conn_ufdc.close()
 
     if verbosity > (-1) :
         print(
@@ -2454,14 +2357,18 @@ def get_pii_reservations_from_marshaldb(engine_ufdc=None,table_ufdc=None,verbosi
           .format(me,  count_not_deleted, count_deleted))
 
     if dup_piis > 0:
-        msg = ("{}:Fatal error. Found {} duplicate items (see bibvids listed"
+        msg = ("{}:Fatal error. Found {} duplicate pii items (see bibvids listed"
             " above) that are not deleted"
             .format(me,dup_piis))
         print(msg)
         # raise ValueError(msg)
+    # Create a PiiReservations object and return it
+    # It is designed to containe for a single pii key a reservation object
+    # of 3 values.
+    # Consider later making the od_pii_reservation value
+    # a simple 3-tuple instead  of a dictionary, but it works OK as is.
     return PiiReservations(od_pii_reservation)
 #end get_pii_reservations_from_marshaldb
-
 
 import shutil
 
@@ -2550,22 +2457,22 @@ def exoldmets_run(env='test', engine_ufdc=None,table_ufdc=None,
     print("{}: Getting pii reservations...".format(me))
     sys.stdout.flush
 
-    #pii_reservations = get_pii_reservations(dict_conn)
     pii_reservations = get_pii_reservations_from_marshaldb(
         engine_ufdc=engine_ufdc, table_ufdc=table_ufdc)
 
+    p = pii_reservations
+    print(
+      "pii_reservations found {} bibs, {} new, {} in ufdc."
+      .format(p.bib_dup_count+p.bib_new_count, p.bib_new_count,
+       p.bib_dup_count))
 
-    print("pii_reservations creation found {} duplicate bibs - ignored"
-        .format(pii_reservations.bib_dup_count))
     msg="Early Test exit"
-    print("Early Test exit")
-    raise ValueError(msg)
+    #raise ValueError(msg)
     sys.stdout.flush
-
 
     #pii_reservations = get_pii_reservations_from_silodb()
 
-    print("{}: got the pii reservations...".format(me))
+    print("{}: got the exiting UFDC pii reservations...".format(me))
     #raise Exception("Test EXIT 20161223")
 
     d_params.update({
@@ -2580,13 +2487,14 @@ def exoldmets_run(env='test', engine_ufdc=None,table_ufdc=None,
 
     d_log['run_parameters'] = d_params
 
-    #That's all we need from dict_conn
-    dict_conn.close()
     #log_source_xml_messages = ""
     all_input_file_paths = []
     d_result_counts = {}
 
     # Loop through the input_folders by year:
+    print("Reading pii*xml files from {} input folders"
+       .format(len(input_folders)))
+
     for i, input_folder in enumerate(input_folders):
         # Get list of 'Elsevier FULL-API'-based input files, first few for testing,
         # from 'per-day' folders under output_ealdxml
@@ -2602,7 +2510,7 @@ def exoldmets_run(env='test', engine_ufdc=None,table_ufdc=None,
         sys.stdout.flush
 
         # use ealdxml's filenames
-        print("Processing input_folder={} with {} input files that were output by ealdxml."
+        print("Processing input_folder={} reading {} files that were output by ealdxml."
              .format(repr(input_folder),len(input_file_paths)))
         sys.stdout.flush
 

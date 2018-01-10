@@ -1,19 +1,25 @@
 '''
 20170502 program orpubtxml (ORchid PUBlic records To XML)
 
-Program orpubtxml queries the orcid public api for all public record holders with a UF
-affiliation, then it reads the api for the public information for each record 
-holder (identified by orcid id value) and outputs each record holder'
-s info to the given output directory with a file name of the form 
+Program orpubtxml
+(1) queries the orcid public api for all public record holders
+with a UF affiliation,
+(2) then it reads the api for the public information for
+each record holder (identified by orcid id value) and outputs each record
+holder's info to the given output directory with a file name of the form
 orcid_<orcid id value>.xml.
 
-Program orpubtxml: 
+Program orpubtxml:
 (1) first uses the ORCID search API to get ids for records of interest,
 (2) and for each, it uses a second API to to get more detailed info pertaining to the id,
 (3) and then it saves individual xml files, one per id, in an output folder.
 
-That output is ready to be processed by xml2rdb using study name 'orpub' (see xml2rdb code),
+That output is ready to be processed by xml2rdb using study name 'orcid' (see xml2rdb code),
 which produces related tables in a relational database.
+
+After that, the sky's the limit to produce various reports, charts, graphs, etc.
+That is left for now as an exercise for the interested to do or ask me to do.
+
 
 '''
 import os, sys
@@ -25,7 +31,8 @@ import urllib
 import etl
 d_orcid = {}
 '''
-d_orcid holds the key information used to make requests of the orcid search and detailed record apis
+d_orcid holds the key information used to make requests of the orcid search
+and detailed record apis
 '''
 d_orcid = {
     'pub_search': {
@@ -70,12 +77,17 @@ d_orcid = {
 client_id = 'APP-FVQZJZUJ9FX3FO35'
 client_secret = 'd61ee138-4da7-40a5-9f32-3410ad88da0a'
 
-def orcid_production_get_search_token(client_id=None,client_secret=None, scope="/read-public"):
+def orcid_production_get_search_token(
+    client_id=None,client_secret=None, scope="/read-public"):
+    me='orcid_production_get_search_token'
+
     if client_id is None or client_secret is None or scope is None:
         raise ValueError('get_search_token: client_id or client_secret or scope is None')
+
     scopes = ['/read-public', '/webhook', '/read-limited','/authenticate']
     if scope not in scopes:
         raise ValueError("Argument scopes must be in '{}'".format(repr(scopes)))
+
     # request a search token
     '''
     https://sandbox.orcid.org/oauth/token
@@ -190,26 +202,6 @@ from datetime import datetime
 
 '''
 This notebook is meant to develop and test orpubtxml (ORcid PUBlic records to XML)
-
-It is based on eatxml (Elsevier Api To Xml), but here revised to query for original load
-date rather than pub year, and also revised to create an output directory for every single
-day queried for a load date.
-
-Further, since it queries load dates day-by-day, rather than inject the orig load date
-into the xml for each article, a reader process may derive the orig load date from the
-names of the 3 nearest ancestor directories that contain each xml file.
-
-Ealdxml reads metadata information from the Elsevier Search API results of
-UF-Authored articles, and Ealdxml then seeks the article results from the
-Elsevier Full-text API.
-If an article is not found, Ealdxml logs an error message, otherwise it outputs
-a file named pii_{pii}.xml in the given an output folder for each article, where the
-year,month, and day of the original load date of the article are encoded in the names
-of its three nearest ancestor folders.
-
-PII stands for Publisher Item Identifier, and it is supposed to be unique
-among Elsevier articles and other pubishers (but maybe not all publishers).
-See wikipedia - https://en.wikipedia.org/wiki/Publisher_Item_Identifier
 '''
 from lxml import etree
 # Note: Official Python 3.5 docs use different library, ElementTree ET
@@ -288,18 +280,15 @@ def orcid_result_entries_collect(d_search, d_params, nodes_result, d_batch, n_ba
 '''
 Method orpubtxml:
 
-Based on program ealdxml 20170502: Elsevier Api Load Date to XML -
-Read the Elsevier Search API for UF-Authored
-articles and use the 'self' link URL along with the api_key to get XML Metadata
-for each Elsevier article and save it to a file named pii_{pii}.xml under the
-given output directory.
-
-Here, we read the Orcid Search results to extract the orcid id of the returned record holders.
-The caller can then search the individual public record for a given orcid id.
+Here, we read the Orcid Search results to extract the orcid id of the
+returned record holders.
+The caller can then search the individual public record for a given
+orcid id.
 
 TODO: Params cymd_lo and hi are load date ranges for the search API use.
-For example, the lo value or perhaps both may be used to limit search results by the orcid
-search field: profile-last-modified date (see 20170502 https://members.orcid.org/api/tutorial/search-orcid-registry)
+For example, the lo value or perhaps both may be used to limit search results
+by the orcid search field: profile-last-modified date
+(see 20170502 https://members.orcid.org/api/tutorial/search-orcid-registry)
 orcid records have been recently modified)
 '''
 def orpubtxml(d_orcid, d_params, verbosity=0):
