@@ -25,16 +25,22 @@ NB: Elsevier is very good about using one of the substrings sought,
 however it will be most often be embedded in other text, hence the
 need for this simple method.
 '''
-def uf_affiliation_value(name):
+def uf_affiliation_value(name,verbosity=0):
+    me = 'uf_affiliation_value'
     text_lower = name.lower() if name is not None else ''
-    #print("Using affil argument text={}".format(repr(text)))
+    if verbosity > 0:
+        print("{}:Using affil argument name={}".format(me,repr(name)))
     for match in ['university of florida','univ.fl','univ. fl'
         ,'univ fl' ,'univ of florida'
         ,'u. of florida','u of florida']:
         if text_lower.find(match) != -1:
-            #print("Match")
+            if verbosity > 0:
+                stars = '***************************'
+                print("\n{}\nMatch='{}'\n{}"
+                  .format(stars, text_lower,stars))
             return 1
-    #print("NO Match")
+    if verbosity > 0:
+        print("NO Match")
     return 0
 
 '''
@@ -53,28 +59,40 @@ Each squence member/iteration is a tuple:
 </return>
 '''
 
-def uf_elsevier_item_authors(node_root_input=None, namespaces=None, verbosity=0):
+def uf_elsevier_item_authors(node_root_input=None, namespaces=None,
+    verbosity=0):
+
     me = 'uf_elsevier_item_authors()'
     d_ns = namespaces
+
     node_serial_item = node_root_input.find(
         './/xocs:serial-item', namespaces=d_ns)
-    if verbosity > 1:
+    if verbosity > 0:
         print("{}: Got node_serial_item='{}'"
-              .format(me,rep(node_serial_item)))
+              .format(me,repr(node_serial_item)))
 
         # For each author_group of this doc serial item, assign any UF Authors.
         # We'll build up a chunk of target XML into a variable to xml-authors
         # to stuff into the output string as format() arguments later.
-
-        for node_ag in node_serial_item.findall(
-          './/ce:author-group', namespaces=d_ns):
+        nodes_ag = node_serial_item.findall(
+          './/ce:author-group', namespaces=d_ns)
+        if (verbosity > 0):
+            print("{}: scanning {} author-group nodes"
+              .format(me,len(nodes_ag)))
+        for node_ag in nodes_ag:
             # d_id_aff: key is string for attribute id for an affiliation,
             # value is its lxml node
             d_id_aff = {}
             #print('Got an author group, getting affiliations')
 
             # Save all child affiliation nodes keyed by their id
-            for node_aff in node_ag.findall('./ce:affiliation', namespaces=d_ns):
+            nodes_aff = node_ag.findall(
+              './ce:affiliation', namespaces=d_ns)
+            if verbosity > 0:
+                print("{}: Author group has {} affiliation nodes"
+                  .format(me,len(nodes_aff)))
+
+            for node_aff in nodes_aff:
                 #print('Got affiliation ')
                 if 'id' in node_aff.attrib:
                     #print("Got affiliation with id={}".format(id))
@@ -88,7 +106,9 @@ def uf_elsevier_item_authors(node_root_input=None, namespaces=None, verbosity=0)
             # Generate xml with a list of the authors, also indicating whether
             # each is a UF author.
             #print("Getting authors")
-            for node_author in node_ag.findall('./ce:author', namespaces=d_ns):
+            nodes_author = node_ag.findall(
+                './ce:author', namespaces=d_ns)
+            for node_author in nodes_author:
                 #print("got an author")
                 is_uf_author = 0
                 author_has_ref_aff = None
@@ -115,8 +135,12 @@ def uf_elsevier_item_authors(node_root_input=None, namespaces=None, verbosity=0)
                               '\t',' ').replace('\n',' ').strip()
                             #print("Found affiliation={}".format(node_text))
                             # set to 1 if this is a UF affiliation, else 0.
-                            is_uf_author = uf_affiliation_value(node_text)
-                            #print("For this affiliation, is_uf_author={}".format(is_uf_author))
+                            is_uf_author = uf_affiliation_value(node_text,verbosity=verbosity)
+                            if (verbosity > 0):
+                                msg = ("For {}, is_uf_author={}"
+                                  .format(repr(node_text),is_uf_author))
+                                msg = msg.encode('ascii',errors='replace')
+                                print(msg)
                             if is_uf_author:
                                 break
                         #end if refid.startswith('af')
@@ -131,8 +155,9 @@ def uf_elsevier_item_authors(node_root_input=None, namespaces=None, verbosity=0)
                           node_aff, encoding='unicode', method='text')
                         node_text = node_text.replace('\t',' ').replace(
                           '\n',' ').strip()
-                        is_uf_author = uf_affiliation_value(node_text)
-                        #print("For this affiliation, is_uf_author={}".format(is_uf_author))
+                        is_uf_author = uf_affiliation_value(node_tex,verbosity=verbosityt)
+                        #print("For this affiliation, is_uf_author={}"
+                        # .format(is_uf_author))
                 #end if not author_has_ref_aff
                 yield is_uf_author, node_author
             #for node_author in findall()
