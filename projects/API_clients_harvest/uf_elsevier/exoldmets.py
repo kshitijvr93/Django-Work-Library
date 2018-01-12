@@ -1342,8 +1342,8 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
 
     ### OUTPUT THE bib's METS.XML FILE
     print(
-      "DISPOSITION: WRITING METS: {}:Bibvid={}, pii={}: filename={}"
-        .format(me,bibvid, core_pii,out_bib_fn))
+      "DISPOSITION:{}, PII={}\n\tWRITING METS file {}, bibvid={}"
+        .format(input_file_name,core_pii, out_bib_fn,bibvid))
     if verbosity > 0:
         print(
           "\n\t{}:New hexdigest='{}', old='{}'\n"
@@ -1588,9 +1588,9 @@ def articles_xml_to_mets(source=None
             # to the top of this loop so that we do not reserve (a bibvid for) the PII.
             # No mets file could be generated this time.
 
-            msg = ("DISPOSITION:For this input file's PII {}, did not make METS file. "
+            msg = ("DISPOSITION:{}, PII {}\n\tDid NOT make METS file. "
                  "failure_message='{}'. Bibvid {} is still unused."
-                  .format(pii,failure_message,bibvid))
+                  .format(input_file_name,pii,failure_message,bibvid))
             print(msg)
             x_msg += msg + failure_message
             skip_mets += 1
@@ -2369,8 +2369,8 @@ def run(verbosity=0, cymd_start=None, cymd_end=None, items_elsevier_engine=None)
 # RUN
 
 verbosity=0
-cymd_start = '20170922'
-cymd_end = '20170922'
+cymd_start = '20170101'
+cymd_end = '20180111'
 items_elsevier_engine_name='uf_local_mysql_marshal1'
 #items_elsevier_engine_name='hp_psql'
 
