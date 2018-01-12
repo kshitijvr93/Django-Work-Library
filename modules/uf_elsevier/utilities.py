@@ -51,8 +51,9 @@ This method is a sequence/generator that is initialized
 with a full-text article root xml lxml node.
 </summary>
 
-<return> A sequence of tuples is returned.
-Each squence member/iteration is a tuple:
+<return> The generator is returned, and over success calls it returns:
+
+A sequence, where each squence member/iteration is a tuple:
 0 = True or False - whether this author for this main item/article is a UF author
 1 = node_author - the xml node for this author within the full-text xml
     document result for this item/article from Elsevier.
@@ -202,7 +203,8 @@ and it recursively visit all directories for that pattern (must end with .xml)
 and expect to find xml full-text article
 file.
 
-For each file, parse its xml and assess whether it has a UF author. and if so, return the
+For each file, parse its xml and assess whether it has a UF author.
+
 Yield here a tuple:
 0 = True or False whether the article has one or more UF authors
 1 = The lxml root node for the item.

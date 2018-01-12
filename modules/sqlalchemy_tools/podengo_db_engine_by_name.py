@@ -20,7 +20,7 @@ Get sqlalchemy engine by name
 NOTE: these engine database 'nick names' are many podengo creds across networks.
 EG, some work OK on the UF gator network, some on my home network, some on the www.
 
-I may categorized them later.
+I may categorize them later.
 
 This is included by code that may run to affect various databases for which
 I have creds (or a similar file would exist for another user).

@@ -992,7 +992,8 @@ def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None
     xslt_str2 = xslt_format_str.format(**d_sobek_track)
 
     if verbosity > 0:
-      print("{}:Pass1 got formatted xslt_str2, len='{}'".format(me,len(xslt_str2)))
+      print("{}:Pass1 got formatted xslt_str2, len='{}'"
+        .format(me,len(xslt_str2)))
 
     try:
         # Create tree_xslt from the xslt_str2
@@ -1070,7 +1071,7 @@ def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None
         raise e
 
     if verbosity > 0:
-      print("{}: returning str_mets with len={}".format(me,len(str_mets)))
+        print("{}: returning str_mets with len={}".format(me,len(str_mets)))
     d_return['str_mets'] = str_mets
     return d_return
 
@@ -1199,7 +1200,7 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
 
         if verbosity > 0:
             print("{}:{}".format(me, msg))
-        sys.stdout.flush
+            sys.stdout.flush
         d_return['failure_message'] = ('{}:Input xml file {} shows Elsevier full-text '
             'retrieval by ealdxml failed. Skipping.'.format(me,input_file_name))
         d_return['log_messages'] = log_messages
@@ -1318,8 +1319,8 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
         log_messages.append(msg)
         print(msg)
     else:
-      if verbosity > 0:
-        print("{}: using node_rawtext={}".format(me,node_rawtext))
+        if verbosity > 0:
+            print("{}: using node_rawtext={}".format(me,node_rawtext))
 
     if verbosity > 0:
         # Report the article's hexdigest hash value
@@ -1531,7 +1532,7 @@ def articles_xml_to_mets(source=None
         # end if reservation...
         else:
             # This is a new article/pii that may need to reserve a bib, if METS file creation goes OK.
-            if verbosity > 1:
+            if verbosity > 0:
                 print("\n---------\n{}:core_pii {} is new to ufdc".format(me,pii))
             bibid_type = 'new'
             # Note: This is a new bibvid because the if-condition catches old ones
@@ -2095,9 +2096,9 @@ def get_pii_reservations_from_marshaldb(
 
     if verbosity > (-1) :
         print(
-          "{}: Found {} Elsevier bibvids that are not deleted,"
-          " {} that are deleted."
-          .format(me,  count_not_deleted, count_deleted))
+            "{}: Found {} Elsevier bibvids that are not deleted,"
+            " {} that are deleted."
+            .format(me,  count_not_deleted, count_deleted))
 
     if dup_piis > 0:
         msg = ("{}:Fatal error. Found {} duplicate pii items (see bibvids listed"
@@ -2130,7 +2131,7 @@ def exoldmets_run(env='test', engine_ufdc=None,table_ufdc=None,
     if verbosity > 0:
         print("{}:Running for xml input files under {} input_folders"
           .format(me,len(input_folders)))
-    sys.stdout.flush
+        sys.stdout.flush
     # skip_extant=True => don't create new METS file if PII is in ufdc.
     skip_extant = False
     # skip_nonserial=True ==>don't create new METS file if the PII
@@ -2300,7 +2301,7 @@ def exoldmets_run(env='test', engine_ufdc=None,table_ufdc=None,
 
 #MAIN  PARAMETER SETTINGS AND RUN
 
-def run(verbosity=0, cymd_start=None, cymd_end=None):
+def run(verbosity=0, cymd_start=None, cymd_end=None, items_elsevier_engine=None):
   #RUN - Create METS files from input...
   #input_subfolders = ['2016','2015','2014','2015','2014','2013','2012']
 
@@ -2332,7 +2333,8 @@ def run(verbosity=0, cymd_start=None, cymd_end=None):
     # Note: legal envs = ['prod','local','test']
 
   # Settings for UFDC elsevier item info
-  engine_ufdc = get_db_engine_by_name(name='uf_local_mysql_marshal1',
+  # eg 'uf_local_mysql_marshal1',
+  engine_ufdc = get_db_engine_by_name(name=items_elsevier_engine_name,
     verbosity=verbosity)
   eumd = MetaData(engine_ufdc)
   table_ufdc = Table('item_elsevier_ufdc', eumd, autoload=True,
@@ -2363,5 +2365,7 @@ def run(verbosity=0, cymd_start=None, cymd_end=None):
 verbosity=0
 cymd_start = '20170922'
 cymd_end = '20170922'
+items_elsevier_engine_name='uf_local_mysql_marshal1'
+items_elsevier_engine_name='hp_psql'
 
 run(verbosity=verbosity,cymd_start=cymd_start,cymd_end=cymd_end)
