@@ -72,97 +72,97 @@ def uf_elsevier_item_authors(node_root_input=None, namespaces=None,
         print("{}: Got node_serial_item='{}'"
               .format(me,repr(node_serial_item)))
 
-        # For each author_group of this doc serial item, assign any UF Authors.
-        # We'll build up a chunk of target XML into a variable to xml-authors
-        # to stuff into the output string as format() arguments later.
-        nodes_ag = node_serial_item.findall(
-          './/ce:author-group', namespaces=d_ns)
-        if (verbosity > 0):
-            print("{}: scanning {} author-group nodes"
-              .format(me,len(nodes_ag)))
-        for node_ag in nodes_ag:
-            # d_id_aff: key is string for attribute id for an affiliation,
-            # value is its lxml node
-            d_id_aff = {}
-            #print('Got an author group, getting affiliations')
+    # For each author_group of this doc serial item, assign any UF Authors.
+    # We'll build up a chunk of target XML into a variable to xml-authors
+    # to stuff into the output string as format() arguments later.
+    nodes_ag = node_serial_item.findall(
+      './/ce:author-group', namespaces=d_ns)
+    if (verbosity > 0):
+        print("{}: scanning {} author-group nodes"
+          .format(me,len(nodes_ag)))
+    for node_ag in nodes_ag:
+        # d_id_aff: key is string for attribute id for an affiliation,
+        # value is its lxml node
+        d_id_aff = {}
+        #print('Got an author group, getting affiliations')
 
-            # Save all child affiliation nodes keyed by their id
-            nodes_aff = node_ag.findall(
-              './ce:affiliation', namespaces=d_ns)
-            if verbosity > 0:
-                print("{}: Author group has {} affiliation nodes"
-                  .format(me,len(nodes_aff)))
+        # Save all child affiliation nodes keyed by their id
+        nodes_aff = node_ag.findall(
+          './ce:affiliation', namespaces=d_ns)
+        if verbosity > 0:
+            print("{}: Author group has {} affiliation nodes"
+              .format(me,len(nodes_aff)))
 
-            for node_aff in nodes_aff:
-                #print('Got affiliation ')
-                if 'id' in node_aff.attrib:
-                    #print("Got affiliation with id={}".format(id))
-                    d_id_aff[node_aff.attrib['id']] = node_aff
-                else:
-                    #Uuse empty string as ID - support author-groups all with
-                    # single affiliation, where neither author refid nor
-                    # affiliation id attributes are needed or used.
-                    d_id_aff[''] = node_aff
+        for node_aff in nodes_aff:
+            #print('Got affiliation ')
+            if 'id' in node_aff.attrib:
+                #print("Got affiliation with id={}".format(id))
+                d_id_aff[node_aff.attrib['id']] = node_aff
+            else:
+                #Uuse empty string as ID - support author-groups all with
+                # single affiliation, where neither author refid nor
+                # affiliation id attributes are needed or used.
+                d_id_aff[''] = node_aff
 
-            # Generate xml with a list of the authors, also indicating whether
-            # each is a UF author.
-            #print("Getting authors")
-            nodes_author = node_ag.findall(
-                './ce:author', namespaces=d_ns)
-            for node_author in nodes_author:
-                #print("got an author")
-                is_uf_author = 0
-                author_has_ref_aff = None
-                node_refs = node_author.findall(
-                  './ce:cross-ref', namespaces=d_ns)
-                for node_ref in node_refs:
-                    #print("got a cross-ref")
-                    if 'refid' in node_ref.attrib:
-                        refid = node_ref.attrib['refid']
-                        #print("got a refid={}".format(refid))
-                        if refid.startswith('af') and refid in d_id_aff:
-                            author_has_ref_aff = 1
-                            if refid not in d_id_aff:
-                                print("WARN: Author has refid={}, but no"
-                                     " affiliation has that id"
-                                     .format(refid))
-                            node_aff = d_id_aff[refid]
-                            node_text = etree.tostring(
-                              node_aff, encoding='unicode', method='text')
-                            # Must replace text tabs with spaces, used as bulk
-                            # load delimiter, else bulk insert msgs appear 4832
-                            # and 7399 and inserts fail.
-                            node_text = node_text.replace(
-                              '\t',' ').replace('\n',' ').strip()
-                            #print("Found affiliation={}".format(node_text))
-                            # set to 1 if this is a UF affiliation, else 0.
-                            is_uf_author = uf_affiliation_value(node_text,verbosity=verbosity)
-                            if (verbosity > 0):
-                                msg = ("For {}, is_uf_author={}"
-                                  .format(repr(node_text),is_uf_author))
-                                msg = msg.encode('ascii',errors='replace')
-                                print(msg)
-                            if is_uf_author:
-                                break
-                        #end if refid.startswith('af')
-                    #end if 'refid' in node_ref.attrib
-                # end node_refs (cross-refs) for this author
-                if not author_has_ref_aff:
-                    # Still found no affiliation for this author, so use empty
-                    # string for refid
-                    node_aff = d_id_aff.get('',None)
-                    if node_aff is not None:
+        # Generate xml with a list of the authors, also indicating whether
+        # each is a UF author.
+        #print("Getting authors")
+        nodes_author = node_ag.findall(
+            './ce:author', namespaces=d_ns)
+        for node_author in nodes_author:
+            #print("got an author")
+            is_uf_author = 0
+            author_has_ref_aff = None
+            node_refs = node_author.findall(
+              './ce:cross-ref', namespaces=d_ns)
+            for node_ref in node_refs:
+                #print("got a cross-ref")
+                if 'refid' in node_ref.attrib:
+                    refid = node_ref.attrib['refid']
+                    #print("got a refid={}".format(refid))
+                    if refid.startswith('af') and refid in d_id_aff:
+                        author_has_ref_aff = 1
+                        if refid not in d_id_aff:
+                            print("WARN: Author has refid={}, but no"
+                                 " affiliation has that id"
+                                 .format(refid))
+                        node_aff = d_id_aff[refid]
                         node_text = etree.tostring(
                           node_aff, encoding='unicode', method='text')
-                        node_text = node_text.replace('\t',' ').replace(
-                          '\n',' ').strip()
-                        is_uf_author = uf_affiliation_value(node_tex,verbosity=verbosityt)
-                        #print("For this affiliation, is_uf_author={}"
-                        # .format(is_uf_author))
-                #end if not author_has_ref_aff
-                yield is_uf_author, node_author
-            #for node_author in findall()
-        #end author group
+                        # Must replace text tabs with spaces, used as bulk
+                        # load delimiter, else bulk insert msgs appear 4832
+                        # and 7399 and inserts fail.
+                        node_text = node_text.replace(
+                          '\t',' ').replace('\n',' ').strip()
+                        #print("Found affiliation={}".format(node_text))
+                        # set to 1 if this is a UF affiliation, else 0.
+                        is_uf_author = uf_affiliation_value(node_text,verbosity=verbosity)
+                        if (verbosity > 0):
+                            msg = ("For {}, is_uf_author={}"
+                              .format(repr(node_text),is_uf_author))
+                            msg = msg.encode('ascii',errors='replace')
+                            print(msg)
+                        if is_uf_author:
+                            break
+                    #end if refid.startswith('af')
+                #end if 'refid' in node_ref.attrib
+            # end node_refs (cross-refs) for this author
+            if not author_has_ref_aff:
+                # Still found no affiliation for this author, so use empty
+                # string for refid
+                node_aff = d_id_aff.get('',None)
+                if node_aff is not None:
+                    node_text = etree.tostring(
+                      node_aff, encoding='unicode', method='text')
+                    node_text = node_text.replace('\t',' ').replace(
+                      '\n',' ').strip()
+                    is_uf_author = uf_affiliation_value(node_tex,verbosity=verbosityt)
+                    #print("For this affiliation, is_uf_author={}"
+                    # .format(is_uf_author))
+            #end if not author_has_ref_aff
+            yield is_uf_author, node_author
+        #for node_author in findall authors
+    #end for author group in author_groups
     return
 #end uf_elsevier_item_authors(node_root_input=None)
 

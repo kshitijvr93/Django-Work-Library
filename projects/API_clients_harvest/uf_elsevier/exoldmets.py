@@ -1148,7 +1148,8 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
     msg = ("{}:using input_file_name={} and\n\tstored_sha1_hexdigest={}"
       .format(me,input_file_name,stored_sha1_hexdigest))
 
-    print("++++++++++{}:{}".format(me,msg))
+    if verbosity > 0:
+        print("++++++++++{}:{}".format(me,msg))
 
     # Return value is tuple of the following three variables. Initialize them.
     log_messages = []
@@ -1341,8 +1342,12 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
 
     ### OUTPUT THE bib's METS.XML FILE
     print(
-      "\n***** WRITING METS: {}:Bibvid={}, pii={}: filename={}\n\tNew hexdigest='{}', old='{}'\n"
-        .format(me,bibvid, core_pii,out_bib_fn,sha1_hash, stored_sha1_hexdigest))
+      "DISPOSITION: WRITING METS: {}:Bibvid={}, pii={}: filename={}"
+        .format(me,bibvid, core_pii,out_bib_fn))
+    if verbosity > 0:
+        print(
+          "\n\t{}:New hexdigest='{}', old='{}'\n"
+            .format(me,sha1_hash, stored_sha1_hexdigest))
 
     #log_message.append("Outputting bib's mets info to filename {}".format(out_bib_fn))
     msg=("Outputting bib's mets info to filename {}".format(out_bib_fn))
@@ -1558,7 +1563,8 @@ def articles_xml_to_mets(source=None
                 continue
 
         # Try to create mets.xml output for the input article
-        print("--------------CALLING ARTICLE_XML_TO_METS_FILE")
+        if verbosity > 0:
+            print("--------------CALLING ARTICLE_XML_TO_METS_FILE")
         d_results = article_xml_to_mets_file(source=source
             , xslt_format_str=xslt_format_str
             , core_pii=pii #pii in filename (orig from dublin core pii xml tag)
@@ -1583,7 +1589,7 @@ def articles_xml_to_mets(source=None
             # No mets file could be generated this time.
 
             msg = ("DISPOSITION:For this input file's PII {}, did not make METS file. "
-                 "failure_message='{}'. Bibvid {} is still unused.\n"
+                 "failure_message='{}'. Bibvid {} is still unused."
                   .format(pii,failure_message,bibvid))
             print(msg)
             x_msg += msg + failure_message
@@ -2366,6 +2372,6 @@ verbosity=0
 cymd_start = '20170922'
 cymd_end = '20170922'
 items_elsevier_engine_name='uf_local_mysql_marshal1'
-items_elsevier_engine_name='hp_psql'
+#items_elsevier_engine_name='hp_psql'
 
 run(verbosity=verbosity,cymd_start=cymd_start,cymd_end=cymd_end)
