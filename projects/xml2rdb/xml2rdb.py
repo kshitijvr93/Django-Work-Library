@@ -190,7 +190,7 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
         od_column[db_name] = 'integer'
         # ... and also a primary key column called by the name of the db_name itself
         pkey_columns +="{}{}".format(sep, db_name)
-        od_rel_info['pkey'] = pkey_columns
+        od_rel_info['pkey_columns'] = pkey_columns
 
         # For datacolumns, set the SQL datatypes. Set all to nvarchar(MAX), which seems OK for now.
         # Could also encode data types into user inputs for convenience by adding fields to the input
@@ -616,16 +616,19 @@ def xml_doc_rdb(
 # end def xml_doc_rdb():
 
 '''
-Method xml_paths_rdb():
+<summary> Method xml_paths_rdb():
+
 Loop through all the input xml files in a slice of the input_path_list,
 and call xml_doc_rdb to create relational database table output rows
 for each input xml doc.
 
+</summary>
+
 '''
 def xml_paths_rdb(
-      input_path_list=None
-    , doc_root_xpath=None
-    , rel_prefix=None
+      input_path_list=None #List of paths of all input files
+    , doc_root_xpath=None #xml tag that is used as document root
+    , rel_prefix=None  # Prefix string for all relatinship names
     , doc_rel_name=None
     , d_node_params=None
     , od_rel_datacolumns=None
@@ -638,6 +641,7 @@ def xml_paths_rdb(
     ):
     me = "xml_paths_rdb"
     bad = 0
+
     if not (output_folder):
         bad = 1
     elif not (rel_prefix)and rel_prefix != '':
@@ -660,7 +664,7 @@ def xml_paths_rdb(
         bad = 10
 
     if bad > 0:
-        raise Exception("Bad args. code={}".format(bad))
+        raise Exception("Bad args. See source for Bad code={}".format(bad))
 
     log_messages = []
     msg = ("{}:START with file_count_first={} among total file count={}"
@@ -763,27 +767,45 @@ def xml_paths_rdb(
     # end with open() as output_file
     print ("{}:Finished processing through file_count={}".format(me,file_count))
 
-    #### CREATE THE RDB INSERT COMMANDS - HERE USING SQL THAT WORKS WITH MSOFT SQL
-    # SERVER 2008, maybe 2008+
-
-    sql_filename = "{}/sql_server_creates.sql".format(output_folder)
-    use_setting = 'use [{}];\n'.format(use_db)
-    msg = ("Database sql create statements file name: {}".format(sql_filename))
     log_messages.append(msg)
     print(msg)
 
-    with open(sql_filename, mode='w', encoding='utf-8') as sql_file:
+    #### CREATE THE RDB INSERT COMMANDS - HERE USING SQL THAT WORKS WITH MSOFT SQL
+    # SERVER 2008, maybe 2008+
+
+    # For MSSQL or SQL SERVER databases
+    sql_filename = "{}/sql_server_creates.sql".format(output_folder)
+    use_setting = 'use [{}];\n'.format(use_db)
+
+    # MYSQL databases
+    mysql_filename = "{}/mysql_creates.sql".format(output_folder)
+
+    with open(sql_filename, mode='w', encoding='utf-8') as sql_file, \
+      open(mysql_filename, mode='w', encoding='utf-8') as mysql_file :
+
         print(use_setting, file=sql_file)
+
         #TEST OUTPUT create table statements for sql server...
         print('begin transaction;', file=sql_file)
+        print('start transaction;', file=mysql_file)
         for rel_key, d_relinfo in od_relation.items():
             relation = '{}{}'.format(rel_prefix,rel_key)
 
-            print(("IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{}') "
-                   "TRUNCATE TABLE {}").format(relation,relation), file=sql_file)
+            # MSSQL
+            print(
+              "IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES"
+              " WHERE TABLE_NAME = '{}') TRUNCATE TABLE {}"
+              .format(relation,relation), file=sql_file)
 
-            print(("IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{}') "
-                   "drop table {}").format(relation,relation), file=sql_file)
+            print(
+               "IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES"
+               " WHERE TABLE_NAME = '{}') drop table {}"
+               .format(relation,relation), file=sql_file)
+
+            # MySQL
+            print("DROP TABLE IF EXISTS {};"
+              .format(relation,relation), file=mysql_file)
+
 
         for rel_key, d_relinfo in od_relation.items():
             relation = '{}{}'.format(rel_prefix,rel_key)
@@ -800,8 +822,9 @@ def xml_paths_rdb(
                     "file were found.".format(me,relation,repr(d_relinfo.keys())))
                 continue
 
-            # SQL CREATE SYNTAX FOR COLUMNS
+            # CREATE SYNTAX FOR COLUMNS
             print('create table {}('.format(relation), file=sql_file)
+            print('create table {}('.format(relation), file=mysql_file)
 
             d_column_type = d_relinfo['attrib_column']
             # Create serial number, sn column for every table
@@ -811,6 +834,7 @@ def xml_paths_rdb(
             if d_column_type is None:
                 tsf_file.close()
                 raise Exception("Table {}, d_column_type is None".format(relation))
+
             for i,(column, ctype) in enumerate(d_column_type.items()):
                 #print("Column index {}".format(i))
                 import sys
@@ -824,22 +848,36 @@ def xml_paths_rdb(
 
                 print('{}{} {}'.format(sep,column.replace('-','_'),ctype)
                     ,file=sql_file)
+
+                print('{}{} {}'.format(sep,column.replace('-','_'),'text')
+                    ,file=mysql_file)
+
                 #Build the csv fieldnames file, hence extension tsf
                 print('{}{}'.format(tsep,column.replace('-','_'))
                       ,file=tsf_file, end='')
                 tsep = '\t'
                 sep = ','
+            # end loop over relation column ddl outputs
             print('', file=tsf_file)
             tsf_file.close()
+
             #PRIMARY KEY eg: CONSTRAINT pk_PersonID PRIMARY KEY (P_Id,LastName)
-            print('CONSTRAINT pk_{} PRIMARY KEY({})'.format(relation, d_relinfo['pkey'])
-                 , file=sql_file)
+            print(
+              'CONSTRAINT pk_{} PRIMARY KEY({})'
+              .format(relation, d_relinfo['pkey_columns']) , file=sql_file)
+
+            #use alter table for mysql
+            #print(
+            #  'CONSTRAINT pk_{} PRIMARY KEY({})'
+            #  .format(relation, d_relinfo['pkey_columns']) , file=mysql_file)
 
             #End table schema definition
             print(');', file=sql_file)
+            print(');', file=mysql_file)
 
-        # loop over relations
+        # end: for rel_key, d_relinfo in od_relation.items()
         print("\nCOMMIT transaction;", file=sql_file)
+        print("\ncommit;", file=mysql_file)
 
         ############### WRITE BULK INSERTS STATEMENTS TO SQL_FILE
 
@@ -848,23 +886,50 @@ def xml_paths_rdb(
             # longitudinal studies.
             relation = '{}{}'.format(rel_prefix,rel_key)
 
-            #bulk insert statement
+            #bulk insert statement for MSSQL
             print('begin transaction;', file=sql_file)
 
             print("\nBULK INSERT {}".format(relation), file=sql_file)
             print("FROM '{}{}.txt'".format(output_folder,rel_key), file=sql_file)
-            # print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '\\n');\n", file=sql_file)
-            # Next works better -- else may get bulk insert error # 4866
-            print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '0x0A');\n", file=sql_file)
+            # NOTE: this failed: ROWTERMINATOR = '\\n'
+            # Next works fine -- else may get bulk insert error # 4866
+            print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '0x0A');\n",
+              file=sql_file)
             print("\nCOMMIT transaction;", file=sql_file)
-            print('begin transaction;', file=sql_file)
 
-            # AFTER loading data for this relation, now add the sn column.
+            #bulk insert statement for MySQL
+            print('\nSTART TRANSACTION;', file=mysql_file)
+            #Per SO posts for MYSL need "LOCAL" to read network drives
+            print("\nLOAD DATA LOCAL INFILE '{}{}.txt'".format(output_folder, rel_key),
+               file=mysql_file)
+            print("INTO TABLE {}".format(relation), file=mysql_file)
+            print("CHARACTER SET latin1 FIELDS TERMINATED BY '\\t'", file=mysql_file)
+            # MySQL chokes on hex notation REQUIRED by mssql, so
+            # here use '\\n'
+            print("LINES TERMINATED BY '\\n';", file=mysql_file)
+            print("COMMIT;", file=mysql_file)
+
+            # ADD SN COLUMN - MSSQL AFTER loading data for this relation
             print("ALTER TABLE {} ADD sn INT IDENTITY;"
                   .format(relation), file=sql_file)
             print("CREATE UNIQUE INDEX ux_{}_sn on {}(sn);"
                   .format(relation,relation), file=sql_file)
-            print("\nCOMMIT transaction;", file=sql_file)
+
+            #MYSQL - we had to reserve the primary key for the SN
+            #add-on column due to MySQL constraints, so here we
+            #add a unique index on the composite
+            #hierarchical columns for fast queries
+            print("CREATE UNIQUE INDEX ux1_{} ON {}({});"
+                  .format(relation,relation,d_relinfo['pkey_columns']),
+                  file=mysql_file)
+            # ADD SN COLUMN - MySQL AFTER loading data for this relation
+
+            print("ALTER TABLE {} ADD sn INT PRIMARY KEY NULL AUTO_INCREMENT;"
+                  .format(relation), file=mysql_file)
+            print("CREATE UNIQUE INDEX ux_{}_sn on {}(sn);"
+                  .format(relation,relation), file=mysql_file)
+            print("\nCOMMIT;", file=mysql_file)
+
         # end statements for bulk inserts
     # end sql output
 
