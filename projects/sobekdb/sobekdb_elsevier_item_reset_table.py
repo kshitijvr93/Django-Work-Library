@@ -1,10 +1,35 @@
 '''
-sobekdb_item_to_table.py'
+sobekdb_elsevier_item_reset_table.py'
 
-Use sqlalchemy methods to select SobekCM database item info for Elsvier items
-into an output table for use by marshaling applications, for example, to
+Use sqlalchemy methods to select SobekCM database item info for Elsvier items.
+DROP the output table in the output/write engine and recreate it with the
+SobekCM/selected information for use by marshaling applications, for example, to
 manage UFDC bib ids in use, or assign new ones to new items to load
 into SobekCM.
+
+
+NOTE: Since this program starts by dropping the output table, we may
+change it to name the output table as a parameter, for example:
+table_output_name = 'x_ufdc_production_elsevier_item'
+where the x indicates that this table is programmatically created/destroyed
+by an external process. So do not assume one could try to add data columns
+to it and populate them or add rows and expect they will persist in that table.
+Will add a special network of 'user accounts' with their own permissions
+on such tables later. But the x prefix maybe a a good feature to keep to speed
+up ad hoc queries and informal analysis, prevent some head-scratchings.
+This is off-the-cuff speculation -- add some more thought later as needed.
+
+Having an output table name parameter, this program can run meaningfully in
+various sobedb production, integration test and local test systems.
+
+So only THIS program should/would add columns or rows to this output table.
+The comments here  should also probably list below the external applications
+that rely upon the output table's data format, content, and update timings.
+
+On the output database's, side, as needed, other projects/processes can
+create new tables in that database with extra info and only use this output
+table in other processes to update those new/other tables as needed.
+
 
 '''
 
@@ -122,13 +147,14 @@ Output the translated rows to the engine_write engine,
 into table item_slevier_ufdc.
 </summary>
 '''
-def translate_elsevier_bibinfo(engine_read=None,engine_write=None,verbosity=1):
+def translate_elsevier_bibinfo(engine_read=None,engine_write=None
+    ,table_name_out=None,verbosity=1):
+
     me = 'translate_elsevier_bibinfo'
     # Create a table to write to in the engine_write database
     ewmd = MetaData(engine_write)
     # Table item_elsevier_ufdc should hold all Elsevier items that have
     # been loaded into UFDC
-    table_name_out = 'item_elsevier_ufdc'
     table_core_output = Table(table_name_out, ewmd,
         Column('{}_id'.format(table_name_out), Integer,
              Sequence('{}_id_seq'.format(table_name_out)), primary_key=True),
@@ -234,7 +260,8 @@ def translate_elsevier_bibinfo(engine_read=None,engine_write=None,verbosity=1):
 # end def translate_elsevier_bibinfo()
 
 def test_translate(
-  engine_nick_name=None, engine_write_nickname=None, verbosity=1):
+  engine_nick_name=None, engine_write_nickname=None,
+  table_name_out=None, verbosity=1):
     me = 'test_translate'
 
     if verbosity > 1:
@@ -249,7 +276,8 @@ def test_translate(
           .format(me, repr(engine_read, engine_write)))
 
     rows = translate_elsevier_bibinfo(
-      engine_read=engine_read, engine_write=engine_write)
+      engine_read=engine_read, engine_write=engine_write,
+      table_name_out = table_name_out)
 
     if verbosity > 1:
       print("{}: Got {} rows from engine={}"
@@ -259,8 +287,10 @@ def test_translate(
 
 # MAIN CODE
 engine_write_nickname = 'uf_local_mysql_marshal1'
+table_name_out = 'x_ufdc_production_elsevier_item'
 
 test_translate(engine_nick_name='production_sobekdb',
-   engine_write_nickname=engine_write_nickname)
+   engine_write_nickname=engine_write_nickname,
+   table_name_out=table_name_out)
 
 print("Done")
