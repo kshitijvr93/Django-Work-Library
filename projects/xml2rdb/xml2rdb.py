@@ -812,7 +812,7 @@ def xml_paths_rdb(
 
             # psql
             print("DROP TABLE IF EXISTS {};"
-              .format(relation,relation), file=mysql_file)
+              .format(relation,relation), file=psql_file)
             # }
 
         # CREATE TABLE - DB VERSIONS
@@ -867,7 +867,7 @@ def xml_paths_rdb(
 
                 # DATA COLUMNS - DB VERSIONS
                 data_column_tuples = [
-                 (sql_file, 'integer'),(mysql_file,'integer'),(psql_file,'int')]
+                 (sql_file, 'nvarchar(4555)'),(mysql_file,'text'),(psql_file,'text')]
 
                 for dct in data_column_tuples:
                     print('{}{} {}'
@@ -897,16 +897,16 @@ def xml_paths_rdb(
             # use alter table
 
             # FOR POSTGRES SQL
-            # eg: CONSTRAINT pk_PersonID PRIMARY KEY (P_Id,LastName)
+            # End table ddl and create index
+            print(');', file=psql_file)
             print(
-              'CREATE INDEX {}_UXK on {}({});'
+              'create index {}_UXK on {}({});'
               .format(relation, relation, d_relinfo['pkey_columns'])
               , file=psql_file)
 
             #End table schema definition for DB VERSIONS
             print(');', file=sql_file)
             print(');', file=mysql_file)
-            print(');', file=psql_file)
 
 
         # WRITE BULK INSERTS STATEMENT and new column SN TO SQL_FILE
@@ -938,7 +938,7 @@ def xml_paths_rdb(
             #copy tmpt1 from '/home/robert/tmpf.txt' ( FORMAT CSV, DELIMITER(E'\t') );
             print("\nCOPY {} FROM '{}{}.txt'"
                .format(relation, output_folder, rel_key), file=psql_file)
-            print("( FORMAT CSV, DELIMITER(E'\t') );", file=psql_file)
+            print("( FORMAT CSV, DELIMITER(E'\\t') );", file=psql_file)
 
             # print("CHARACTER SET latin1 FIELDS TERMINATED BY '\\t'", file=mysql_file)
 
@@ -968,10 +968,8 @@ def xml_paths_rdb(
                   .format(relation,relation), file=mysql_file)
 
             # ADD SN FOR DB POSTGRES SQL
-            print("ALTER TABLE {} ADD sn INT PRIMARY KEY NULL AUTO_INCREMENT;"
+            print("ALTER TABLE {} ADD sn SERIAL PRIMARY KEY;"
                   .format(relation), file=psql_file)
-            print("CREATE UNIQUE INDEX ux_{}_sn on {}(sn);"
-                  .format(relation,relation), file=psql_file)
 
             #FINAL COMMIT FOR DB VERSIONS
             print("\nCOMMIT TRANSACTION;", file=sql_file)
