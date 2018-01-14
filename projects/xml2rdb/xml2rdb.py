@@ -845,6 +845,10 @@ def xml_paths_rdb(
                 tsf_file.close()
                 raise Exception("Table {}, d_column_type is None".format(relation))
 
+            key_columns = d_relinfo['pkey_columns'].split(',')
+
+            #print("Got key_columns={}".format(repr(key_columns)))
+
             for i,(column, ctype) in enumerate(d_column_type.items()):
                 #print("Column index {}".format(i))
                 import sys
@@ -858,7 +862,7 @@ def xml_paths_rdb(
 
                 # HIERARCHICAL KEY COLUMNS - DB VERSIONS
                 if column in key_columns:
-                    print('{}{} {}'.format(sep,column.replace('-','_'),integer)
+                    print('{}{} integer'.format(sep,column.replace('-','_'))
                         ,file=sql_file)
 
                 # DATA COLUMNS - DB VERSIONS
@@ -1126,7 +1130,7 @@ def xml2rdb( input_path_list=None,
     return log_filename, pretty_log
 # end def xml2rdb
 
-def run(study=None):
+def run(study=None,run_prefix='e20170922_'):
     ''' SET UP MAIN ENVIRONMENT PARAMETERS FOR A RUN OF XML2RDB
     Now all these parameters are 'hard-coded' here, but they could go into
     a configuration file later for common usage.
@@ -1157,7 +1161,7 @@ def run(study=None):
     ]
 
     # Study selection KEEP ONLY ONE LINE next
-    study = 'orcid'
+    study = 'ccila'
     if study not in study_choices:
         raise ValueError("Unknown study='{}'".format(repr(study)))
 
@@ -1181,8 +1185,11 @@ def run(study=None):
     rel_prefix = 'orcid_'
 
     # Select the rel_prefix
-    rel_prefix = 'ccila_'
     rel_prefix = 'orcid_'
+    rel_prefix = 'ccila_'
+    rel_prefix = 'e20170922_'
+
+    print("Using rel_prefix-'{}'".format(rel_prefix))
 
     if rel_prefix == 'crawd2017b_':
         import xml2rdb_configs.crossref as config
@@ -1256,7 +1263,8 @@ def run(study=None):
         #windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
         folder_output_base = etl.data_folder(linux='/home/robert/git/'
             , windows='C:/rvp/data/'
-            , data_relative_folder=('outputs/xml2rdb/{}/'.format(study)))
+            , data_relative_folder=(
+              'outputs/xml2rdb/{}/'.format(study)))
 
         print("study {}, using folder_output_base={}".format(study,folder_output_base))
 
@@ -1312,9 +1320,32 @@ def run(study=None):
         # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
         file_count_first = 0
+
+    elif rel_prefix == 'e20170922_':
+        import xml2rdb_configs.elsevier as config
+
+        print("Setting parameters for rel_prefix-'{}'".format(rel_prefix))
+        file_count_first = 0
+        file_count_span = 0
+        input_path_glob = '**/pii_*.xml'
+
+        input_folders = []
+        for year in range(2017, 2018):
+            input_folder =('{}/output_ealdxml/{}/'
+               .format(data_elsevier_folder,year))
+            print("Got rel_prefix={}, input_folder={}"
+              .format(rel_prefix,input_folder)
+            )
+            input_folders.append(input_folder)
+
+        doc_rel_name = 'doc'
+        doc_root_xpath = './{*}full-text-retrieval-response'
+
+        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+
     else:
          raise ValueError("Unknown rel_prefix = '{}'. Exit.".format(rel_prefix))
-
 
     # migrate rest of these
     '''
@@ -1585,7 +1616,8 @@ def run(study=None):
                 .format(me,study,input_folder))
             input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
 
-    # If input_folders not defined in a study, define it by putting the single input folder into this list
+    # If input_folders not defined in a study, define it by putting the single
+    # input folder into this list
     if input_folders is None:
         input_folders = []
         input_folders.append(input_folder)
@@ -1625,7 +1657,13 @@ def run(study=None):
         file_count_span=file_count_span,
         d_xml_params=d_xml_params)
 
-    print("Done.")
+    print("{}: Returned from xml2rdb with d_params=:".format(me))
+
+    for key, val in d_params.items():
+        print("{}={}".format(key, val))
+
+
+    print("{}:Done.".format(me))
 #end def run()
 #
 print("Starting!")
