@@ -779,18 +779,22 @@ def xml_paths_rdb(
 
     # MYSQL databases
     mysql_filename = "{}/mysql_creates.sql".format(output_folder)
+    psql_filename = "{}/psql_creates.sql".format(output_folder)
 
     with open(sql_filename, mode='w', encoding='utf-8') as sql_file, \
-      open(mysql_filename, mode='w', encoding='utf-8') as mysql_file :
+      open(mysql_filename, mode='w', encoding='utf-8') as mysql_file, \
+      open(psql_filename, mode='w', encoding='utf-8') as psql_file:
 
         print(use_setting, file=sql_file)
 
-        #TEST OUTPUT create table statements for sql server...
+        # BEGIN/START TRANSACTION DB VERSIONS
         print('begin transaction;', file=sql_file)
         print('start transaction;', file=mysql_file)
+        print('start transaction;', file=psql_file)
         for rel_key, d_relinfo in od_relation.items():
             relation = '{}{}'.format(rel_prefix,rel_key)
 
+            # { DROP TABLE DB VERSIONS
             # MSSQL
             print(
               "IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES"
@@ -806,7 +810,12 @@ def xml_paths_rdb(
             print("DROP TABLE IF EXISTS {};"
               .format(relation,relation), file=mysql_file)
 
+            # psql
+            print("DROP TABLE IF EXISTS {};"
+              .format(relation,relation), file=mysql_file)
+            # }
 
+        # CREATE TABLE - DB VERSIONS
         for rel_key, d_relinfo in od_relation.items():
             relation = '{}{}'.format(rel_prefix,rel_key)
 
@@ -825,6 +834,7 @@ def xml_paths_rdb(
             # CREATE SYNTAX FOR COLUMNS
             print('create table {}('.format(relation), file=sql_file)
             print('create table {}('.format(relation), file=mysql_file)
+            print('create table {}('.format(relation), file=psql_file)
 
             d_column_type = d_relinfo['attrib_column']
             # Create serial number, sn column for every table
@@ -846,59 +856,70 @@ def xml_paths_rdb(
                 if column is None:
                     raise Exception("Table {} has a None column".format(relation))
 
-                print('{}{} {}'.format(sep,column.replace('-','_'),ctype)
-                    ,file=sql_file)
+                # HIERARCHICAL KEY COLUMNS - DB VERSIONS
+                if column in key_columns:
+                    print('{}{} {}'.format(sep,column.replace('-','_'),integer)
+                        ,file=sql_file)
 
-                print('{}{} {}'.format(sep,column.replace('-','_'),'text')
-                    ,file=mysql_file)
+                # DATA COLUMNS - DB VERSIONS
+                data_column_tuples = [
+                 (sql_file, 'integer'),(mysql_file,'integer'),(psql_file,'int')]
 
-                #Build the csv fieldnames file, hence extension tsf
+                for dct in data_column_tuples:
+                    print('{}{} {}'
+                        .format(sep,column.replace('-','_'),dct[1])
+                        ,file=dct[0])
+
+                # Build the tab-separated fieldnames (tsf) file,
+                # hence extension tsf
                 print('{}{}'.format(tsep,column.replace('-','_'))
                       ,file=tsf_file, end='')
+
                 tsep = '\t'
                 sep = ','
             # end loop over relation column ddl outputs
             print('', file=tsf_file)
             tsf_file.close()
 
-            #PRIMARY KEY eg: CONSTRAINT pk_PersonID PRIMARY KEY (P_Id,LastName)
+            # UNIQUE CONSTRAINT FOR KEY COLUMNS
+
+            # FOR MSSQL use a PRIMARY KEY
+            # eg: CONSTRAINT pk_PersonID PRIMARY KEY (P_Id,LastName)
             print(
               'CONSTRAINT pk_{} PRIMARY KEY({})'
               .format(relation, d_relinfo['pkey_columns']) , file=sql_file)
 
-            #use alter table for mysql
-            #print(
-            #  'CONSTRAINT pk_{} PRIMARY KEY({})'
-            #  .format(relation, d_relinfo['pkey_columns']) , file=mysql_file)
+            #FOR MYSQL UNIQUE KEY COLUMNS, BELOW WE WILL
+            # use alter table
 
-            #End table schema definition
+            # FOR POSTGRES SQL
+            # eg: CONSTRAINT pk_PersonID PRIMARY KEY (P_Id,LastName)
+            print(
+              'CREATE INDEX {}_UXK on {}({});'
+              .format(relation, relation, d_relinfo['pkey_columns'])
+              , file=psql_file)
+
+            #End table schema definition for DB VERSIONS
             print(');', file=sql_file)
             print(');', file=mysql_file)
+            print(');', file=psql_file)
 
-        # end: for rel_key, d_relinfo in od_relation.items()
-        print("\nCOMMIT transaction;", file=sql_file)
-        print("\ncommit;", file=mysql_file)
 
-        ############### WRITE BULK INSERTS STATEMENTS TO SQL_FILE
+        # WRITE BULK INSERTS STATEMENT and new column SN TO SQL_FILE
 
         for rel_key, d_relinfo in od_relation.items():
-            # Allow a prefix for all table names. Sometimes useful for
-            # longitudinal studies.
+            # Prepend the prefix to make this table/relation name.
             relation = '{}{}'.format(rel_prefix,rel_key)
 
-            #bulk insert statement for MSSQL
-            print('begin transaction;', file=sql_file)
-
+            # Bulk insert processing for MSSQL
             print("\nBULK INSERT {}".format(relation), file=sql_file)
             print("FROM '{}{}.txt'".format(output_folder,rel_key), file=sql_file)
             # NOTE: this failed: ROWTERMINATOR = '\\n'
             # Next works fine -- else may get bulk insert error # 4866
             print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '0x0A');\n",
               file=sql_file)
-            print("\nCOMMIT transaction;", file=sql_file)
 
-            #bulk insert statement for MySQL
-            print('\nSTART TRANSACTION;', file=mysql_file)
+            # Bulk insert processing for MySQL
             #Per SO posts for MYSL need "LOCAL" to read network drives
             print("\nLOAD DATA LOCAL INFILE '{}{}.txt'".format(output_folder, rel_key),
                file=mysql_file)
@@ -907,28 +928,51 @@ def xml_paths_rdb(
             # MySQL chokes on hex notation REQUIRED by mssql, so
             # here use '\\n'
             print("LINES TERMINATED BY '\\n';", file=mysql_file)
-            print("COMMIT;", file=mysql_file)
 
-            # ADD SN COLUMN - MSSQL AFTER loading data for this relation
+            #BULK INSERT PROCESSING FOR psql
+
+            #copy tmpt1 from '/home/robert/tmpf.txt' ( FORMAT CSV, DELIMITER(E'\t') );
+            print("\nCOPY {} FROM '{}{}.txt'"
+               .format(relation, output_folder, rel_key), file=psql_file)
+            print("( FORMAT CSV, DELIMITER(E'\t') );", file=psql_file)
+
+            # print("CHARACTER SET latin1 FIELDS TERMINATED BY '\\t'", file=mysql_file)
+
+            # END TABLE BULK INSERTS/LOADING ROW STATEMENTS IN EACH DB
+
+            # ADD SN COLUMN FOR DB VERSIONS
+            # ADD SN FOR DB MSSQL
             print("ALTER TABLE {} ADD sn INT IDENTITY;"
                   .format(relation), file=sql_file)
             print("CREATE UNIQUE INDEX ux_{}_sn on {}(sn);"
                   .format(relation,relation), file=sql_file)
 
-            #MYSQL - we had to reserve the primary key for the SN
-            #add-on column due to MySQL constraints, so here we
-            #add a unique index on the composite
-            #hierarchical columns for fast queries
+            # ADD SN FOR DB MySQL, BUT FIRST CREATE UNIQUE INDEX FOR KEYS
+            # MYSQL - we had to reserve the primary key for the SN
+            # add-on column due to MySQL constraints, so since earlier
+            # we did NOT create a primary key for them, here we
+            # add a unique index on the composite
+            # hierarchical columns for fast queries
             print("CREATE UNIQUE INDEX ux1_{} ON {}({});"
                   .format(relation,relation,d_relinfo['pkey_columns']),
                   file=mysql_file)
-            # ADD SN COLUMN - MySQL AFTER loading data for this relation
 
             print("ALTER TABLE {} ADD sn INT PRIMARY KEY NULL AUTO_INCREMENT;"
                   .format(relation), file=mysql_file)
+
             print("CREATE UNIQUE INDEX ux_{}_sn on {}(sn);"
                   .format(relation,relation), file=mysql_file)
+
+            # ADD SN FOR DB POSTGRES SQL
+            print("ALTER TABLE {} ADD sn INT PRIMARY KEY NULL AUTO_INCREMENT;"
+                  .format(relation), file=psql_file)
+            print("CREATE UNIQUE INDEX ux_{}_sn on {}(sn);"
+                  .format(relation,relation), file=psql_file)
+
+            #FINAL COMMIT FOR DB VERSIONS
+            print("\nCOMMIT TRANSACTION;", file=sql_file)
             print("\nCOMMIT;", file=mysql_file)
+            print("\nCOMMIT;", file=psql_file)
 
         # end statements for bulk inserts
     # end sql output
