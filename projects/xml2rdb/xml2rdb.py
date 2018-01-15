@@ -971,13 +971,14 @@ def xml_paths_rdb(
             print("ALTER TABLE {} ADD sn SERIAL PRIMARY KEY;"
                   .format(relation), file=psql_file)
 
-            #FINAL COMMIT FOR DB VERSIONS
-            print("\nCOMMIT TRANSACTION;", file=sql_file)
-            print("\nCOMMIT;", file=mysql_file)
-            print("\nCOMMIT;", file=psql_file)
+            # end statements for bulk insert for this relations
+        # end relations loop statements for bulk inserts
 
-        # end statements for bulk inserts
-    # end sql output
+        #FINAL COMMIT FOR DB VERSIONS
+        print("\nCOMMIT TRANSACTION;", file=sql_file)
+        print("\nCOMMIT;", file=mysql_file)
+        print("\nCOMMIT;", file=psql_file)
+    # end 'with opens' loop over db versions
 
     # Close all the table data output files in od_relation
     for d_info in od_relation.values():
