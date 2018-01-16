@@ -1,21 +1,28 @@
 '''
 Python 3.6 program entitlement_updates.py, which accepts an input engine and
 table_name from which to retrieve Elevier PII values.
-The marshal table uf_elsevier_harvest is probably best, as it is a superset of
-valid pii values (some have not yet been loaded into Sobek-UFDC). However,
-once this is updated, it should immediately be used to update the open access
-info in other marshal tables and the sobekdb ufdc table with open access info.
+
+A marshal table name elsevier_api_entitlement may be best, a table dedicated to
+maintaining the entitlement info garnered/update through this sole API.
+SQL can use this to update the pii values loaded in ufdc. This may contain
+a superset of UFDC Piis as usually some may need to be loaded into Sobek-UFDC.
+The update date from the exeuction of this specific program may be kept in this
+table or any other data to not confound it with other related data.
+
+
+Once the subject/related  table elsevier_api_entitlement is updated, it may
+(no reason to wait) immediately be used to update the open access info in
+other marshal tables and any sobekdb ufdc table with open access info.
 
 This program retrieves entitlement information for each PII value.
 Also given is an output engine and table name keyed by pii, which
 this program will update with entitlement info.
 
-OK, it is not a program really that accepts those main parameters, so it
-it does not run standalone now. Instead, it hard codes the main parameters
-and calls test_run(), which does to perform this processing.
-
 Standalone OS-level execution that processes CLI parameters
 may be easily added later, if needed.
+
+NB: this code also contains the method create_eap() that creates the
+elsevier api entitlement table in a target database.
 
 '''
 import sys, os, os.path, platform
