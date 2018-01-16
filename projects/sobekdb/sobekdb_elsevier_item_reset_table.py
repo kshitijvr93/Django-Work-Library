@@ -144,7 +144,9 @@ Given a connection to SobekCM database, select the elsevier info and
 parse out the pii values, if any, in the link column's string value.
 
 Output the translated rows to the engine_write engine,
-into table item_slevier_ufdc.
+into table item_elsevier_ufdc.
+
+Drop the table first (checkfirst=True)
 </summary>
 '''
 def translate_elsevier_bibinfo(engine_read=None,engine_write=None

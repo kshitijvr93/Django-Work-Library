@@ -52,4 +52,5 @@ SELECT users.id, users.name, users.fullname
 FROM users
 ()
 '''
-from sqlalchemy.sql import select, and_, or_, not
+
+from sqlalchemy.sql import select, and_, or_, not_

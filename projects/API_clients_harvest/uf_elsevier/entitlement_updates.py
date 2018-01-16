@@ -1,8 +1,41 @@
 '''
-Python 3.6 program entitlement_updates.py, which accepts an input engine and
-table_name from which to retrieve Elevier PII values.
+Initial functionality here: just provide a method to create a
+database table to contain Elsevier entitlement responses so far.
 
-A marshal table name elsevier_api_entitlement may be best, a table dedicated to
+Todo:  conduct the elsevier entitlment requests and fill the table to
+analyze UF-open access stats, eg to show the N of 'open access' articles in UFDC.
+Ie, the N that would be accessible.
+This data can also be used in UFDC sobek applicaiton processing to avoid
+or speed up some processing of the  entitlement api because the open access
+nature will not depend on the identity or VPN of the IP of the requestor.
+Open access means open to all.
+
+
+Python 3.6 program entitlement_updates.py, which accepts an input engine and
+table_name for which to insert retrieve Elevier PII values.
+
+STEPS:
+
+(1) A method is included here to create the table into which the Elsevier
+entitlement info will be depositied.
+
+(2) That table must first have rows, each with
+a pii value. The caller may have used any means to populate the table.
+EG, if the same database (as in the marshal db) has table (mysql syntax):
+
+insert into elsevier_entitlement_uf(pii)
+    select h.pii
+    from uf_elsevier_harvest h;
+
+
+(3) This program will use the pii in each row of the table to find the
+Elsevier entitlement info for that pii and for the IP address from which
+this program is run, and for each row in the table, all columns except
+PII will be overwritten with the response from the Elsevier Entitlment API.
+
+
+
+A marshal table name elsevier_api_uf_entitlement may be best, a table dedicated to
 maintaining the entitlement info garnered/update through this sole API.
 SQL can use this to update the pii values loaded in ufdc. This may contain
 a superset of UFDC Piis as usually some may need to be loaded into Sobek-UFDC.
@@ -21,13 +54,17 @@ this program will update with entitlement info.
 Standalone OS-level execution that processes CLI parameters
 may be easily added later, if needed.
 
-NB: this code also contains the method create_eap() that creates the
-elsevier api entitlement table in a target database.
+NB: this code also contains a method that creates the
+elsevier api uf entitlement table in a target database.
+
+NB: This should be run ONLY from the UF vpn, as it stores a value uf_entitlment
+for each PII, to indicate whether a user on the UF VPN would be entitled.
+At some point, I should add code to raise an exception if this program is
+accidentally NOT run from the UF vpn.
 
 '''
 import sys, os, os.path, platform
-import datetime
-from collections import OrderedDict
+
 def register_modules():
     platform_name = platform.system().lower()
     if platform_name == 'linux':
@@ -39,12 +76,14 @@ def register_modules():
     sys.path.append('{}git/citrus/modules'.format(modules_root))
     return
 register_modules()
+
 print("Using sys.path={}".format(repr(sys.path)))
-from collections import OrderedDict
+
 import datetime
+from collections import OrderedDict
 import etl
+
 from lxml import etree
-import os
 from pathlib import Path
 import pytz
 from sqlalchemy import (
@@ -60,11 +99,11 @@ from sqlalchemy import (
 from sqlalchemy.sql.expression import literal, literal_column
 from sqlalchemy.inspection import inspect as inspect
 from sqlalchemy.schema import CreateTable
-from sqlalchemy.sql import select, and_, or_, not_
+from sqlalchemy.sql import ( select, and_, or_, not_,)
 import sqlalchemy.sql.sqltypes
-# Import slate of databases that this user can use
+
+# Import slate of databases that podengo can use
 from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
-import sys
 
 print("Sys.path={}".format(sys.path))
 sys.stdout.flush()
@@ -76,16 +115,79 @@ import json
 import pprint
 from io import StringIO, BytesIO
 import shutil
-from datetime import datetime
 from lxml import etree
 import xml.etree.ElementTree as ET
 from pathlib import Path
 import pytz
 import urllib.request
 
-'''
-def gen_entitlment_nodes_by_piis:
+''' create_table_elsevier_api_entitlement
 
+<param name='engine'>
+This is an sql_alchemy engine that in which the 'elsevier_entitlement_uf'
+table will be created.
+If multiple developers need such a table for independent manipulations/testing
+in the same engine, then they should give different table names, of course.
+</param>
+
+'''
+def create_table_elsevier_entitlement_uf(
+    engine=None, table_name='elsevier_entitlement_uf'
+    ):
+
+    me = 'create_table_elsevier_entitlement_uf'
+    table_name = table_name
+    metadata = MetaData(engine)
+
+    new_table = Table(table_name, metadata,
+      Column('{}_id'.format(table_name), Integer, primary_key=True),
+
+      Column('pii', String(30),
+             comment="Normalized pii value (no fluff)"),
+
+      # Note: v1.2 sqlalchemy: UniqueConstraint does not use list datatype
+      UniqueConstraint('pii',
+        name='uq_{}_pii_account'.format(table_name)),
+
+      # Note: for UF purposes, a unique PII is paramount. Though other ids are
+      # claimed to be unique, do not ruin loading of unique piis if they have
+      # duplicates. Create normal indexes on some others to speed up queries.
+
+
+      Column('entitled_uf', String(30),
+             comment="Elsevier entitled value for UF vpn. Values evolving."),
+
+      Column('eid', String(30), index=True,
+             comment="EID, electronic identity code, article ID used by "
+                     "Elsevier, maybe others like Crossref others"),
+
+      Column('upconf_dt', DateTime(6), default=datetime.datetime.utcnow,
+             comment="DateTime of last update or confirmation of this row"),
+
+      Column('scopus_id', String(30), index=True,
+             comment="Another article ID used by Elsevier Publishers"
+                     "and maybe others"),
+
+      Column('pubmed_id', String(25), index = True,
+             comment='Article ID used by Elsevier, maybe other medical publishers.'),
+
+      Column('doi', String(150), index=True,
+             comment='Digital Object ID known to all big publishers'),
+
+
+      Column('doi_url', String(250),index=True,
+             comment='Digital Object ID known to all big publishers'),
+
+      ) # end call to Table('article_item'...)
+    conn_write = engine.connect()
+    engine_table = new_table.create(engine, checkfirst=True)
+    conn_write.close()
+    return engine_table
+
+#end create_table_elsevier_entitlment_uf
+
+
+''''
 From a list of pii values (with a  maximum of 100 in the list),
 generate an Elsevier entitlement request and yield a tuple of
 node_entitlement and d_namespaces context data for use by lxml methods.
@@ -203,7 +305,7 @@ def gen_entitlement_nodes_by_input_file(input_file_name=None, pii_index=2
     return
 
 
-''' RUN()
+''' RUN_0()
    PREREQUISITE - input file is current and in place with name set by run()
 '''
 
@@ -246,20 +348,35 @@ def run(output_folder_name=None,verbosity=0):
 
 # end run()
 
-
-output_folder_name = etl.data_folder(linux='/home/robert', windows='U:',
+def run1():
+    output_folder_name = etl.data_folder(linux='/home/robert', windows='U:',
       data_relative_folder='/data/elsevier/output_entitlement/')
-#old_run(output_folder_name=output_folder_name)
-env = 'uf'
-if env == 'uf':
-    input_nick_name = 'uf_local_mysql_marshal1'
-    input_table = uf_elsevier_harvest
-    input_engine = get_db_engine_by_name(name=input_nick_name)
-    pass
-else:
-    pass
 
-test_run( input_engine=input_engine, input_table = input_table,
-  output_engine=output_engine, output_table=output_table)
 
-  return
+    #old_run(output_folder_name=output_folder_name)
+    env = 'uf'
+    if env == 'uf':
+        input_nick_name = 'uf_local_mysql_marshal1'
+        input_table = uf_elsevier_harvest
+        input_engine = get_db_engine_by_name(name=input_nick_name)
+        pass
+    else:
+        pass
+    #test_run( input_engine=input_engine, input_table = input_table,
+    #  output_engine=output_engine, output_table=output_table)
+    return
+
+#
+def  test_create_elsevier_entitlement_uf(env=None):
+    if env == 'uf':
+        #engine_name = 'local-silodb'
+        engine_name = 'uf_local_mysql_marshal1'
+    else:
+        engine_name = 'hp_psql'
+
+    engine = get_db_engine_by_name(name=engine_name)
+    create_table_elsevier_entitlement_uf(engine=engine)
+    return
+
+#RUN A TEST
+test_create_elsevier_entitlement_uf(env='uf')

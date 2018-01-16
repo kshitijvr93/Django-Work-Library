@@ -2893,15 +2893,15 @@ and under impelmetned-emenlments objct see tens or dozens, add for each md item 
 so you may have crete elemetn with simpleetxt bosx,
 or cretor comples elt with name and hsi ddlist name of a role
 or elet creator ffixedrole - nd youcan give only fixed role.
-and creator notes may be cretro and fiels
-so you can choose which cretor type
+and creator notes may be creator and files
+so you can choose which creator type
 you want to use, so there ar many
-aslso see cox objec tnonstanard leemtns, see name_form_element.cs a fith way to crete, as you start tyoing this form pops up,.. good to show and oedtoit creator ne
+also see cox objec tnonstanard leemtns, see name_form_element.cs a fith way to crete, as you start tyoing this form pops up,.. good to show and oedtoit creator ne
 in an extant item mostly
 so bulk of non-stander elemetns ar mformes that pop up at you
 or the serial heirarcy paenal oe haccepts iteger and oea txbtbo. there ar a lot of hee by ddefault
-and this is he ost edious part of the etediso
-so we hafe to cret an elt fo reach one of these
+and this is the most tedious part of the etediso
+so we have to creat an elt fo reach one of these
 so see era_element.s in postacrd core
 so line 22 can define not repeatable or also can define in config file
 and a couple of required methods at lines 25,31, 53

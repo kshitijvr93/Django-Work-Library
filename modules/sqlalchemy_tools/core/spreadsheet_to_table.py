@@ -300,15 +300,15 @@ def spreadsheet_to_engine_table(
             msg = ("index={}, column_name={}, value={}"
               .format(i,index,column.name, value))
 
-            # Try to avoid windows msg: UnicodeEncodeError...
-            # on prints to windows console, encode in utf-8
-            # It works FINE!
-            print(msg.encode('utf-8'))
-            #print(msg)
-            sys.stdout.flush()
+            if verbosity > 0:
+                # Trick to avoid windows msg: UnicodeEncodeError...
+                # on prints to windows console, encode in utf-8
+                print(msg.encode('utf-8'))
+                #print(msg)
+                sys.stdout.flush()
 
-        msg = ("row={}"
-          .format(od_table_column__value))
+        #msg = ("row={}"
+        #  .format(od_table_column__value))
         #engine.execute(engine_table.insert(), od_table_column__value)
         engine.execute(table_core.insert(), od_table_column__value)
 
