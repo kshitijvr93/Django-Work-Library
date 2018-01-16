@@ -372,5 +372,25 @@ def  done_create_elsevier_entitlement_uf(env=None):
     create_table_elsevier_entitlement_uf(engine=engine)
     return
 
-#RUN A TEST - Note d
-#test_create_elsevier_entitlement_uf(env='uf')
+'''
+<summary>
+Select rows from the given table, and for each pii of a row,
+get its Elsevier entitlement info for the current process.
+NOTE: this should be run from a machine on the UF vpn.
+
+Update each row in the table with the API results.
+</summary>
+'''
+
+def get_elsevier_api_entitlements(table=table):
+
+    piis = sequence_piis(table);
+    return
+
+def get_entitlements():
+    engine_name = 'uf_local_mysql_marshal1'
+    tables = 
+    return
+
+
+#end def get_elsevier_api_entitlements
