@@ -19,7 +19,7 @@ STEPS:
 (1) A method is included here to create the table into which the Elsevier
 entitlement info will be depositied.
 
-(2) That table must first have rows, each with
+(2) That table will need some rows, initally each just with
 a pii value. The caller may have used any means to populate the table.
 EG, if the same database (as in the marshal db) has table (mysql syntax):
 
@@ -27,21 +27,14 @@ insert into elsevier_entitlement_uf(pii)
     select h.pii
     from uf_elsevier_harvest h;
 
+This may contain
+a superset of UFDC Items with piis, as usually some may yet need to be loaded
+into Sobek-UFDC.
 
-(3) This program will use the pii in each row of the table to find the
+(3) This program will (a) use the pii in each row of the table to find the
 Elsevier entitlement info for that pii and for the IP address from which
-this program is run, and for each row in the table, all columns except
-PII will be overwritten with the response from the Elsevier Entitlment API.
-
-
-
-A marshal table name elsevier_api_uf_entitlement may be best, a table dedicated to
-maintaining the entitlement info garnered/update through this sole API.
-SQL can use this to update the pii values loaded in ufdc. This may contain
-a superset of UFDC Piis as usually some may need to be loaded into Sobek-UFDC.
-The update date from the exeuction of this specific program may be kept in this
-table or any other data to not confound it with other related data.
-
+this program is run, and (b) for each row in the table, all columns except
+PII will be overwritten with the response data from the Elsevier Entitlment API.
 
 Once the subject/related  table elsevier_api_entitlement is updated, it may
 (no reason to wait) immediately be used to update the open access info in
@@ -51,16 +44,17 @@ This program retrieves entitlement information for each PII value.
 Also given is an output engine and table name keyed by pii, which
 this program will update with entitlement info.
 
-Standalone OS-level execution that processes CLI parameters
-may be easily added later, if needed.
-
 NB: this code also contains a method that creates the
 elsevier api uf entitlement table in a target database.
 
-NB: This should be run ONLY from the UF vpn, as it stores a value uf_entitlment
+NB: The part of the code that queries the Elsevier Entitlment API
+should be run ONLY from the UF vpn, as it stores a value uf_entitlement
 for each PII, to indicate whether a user on the UF VPN would be entitled.
 At some point, I should add code to raise an exception if this program is
 accidentally NOT run from the UF vpn.
+
+Standalone OS-level execution that processes CLI parameters
+may be easily added later, if needed.
 
 '''
 import sys, os, os.path, platform
@@ -367,7 +361,7 @@ def run1():
     return
 
 #
-def  test_create_elsevier_entitlement_uf(env=None):
+def  done_create_elsevier_entitlement_uf(env=None):
     if env == 'uf':
         #engine_name = 'local-silodb'
         engine_name = 'uf_local_mysql_marshal1'
@@ -378,5 +372,5 @@ def  test_create_elsevier_entitlement_uf(env=None):
     create_table_elsevier_entitlement_uf(engine=engine)
     return
 
-#RUN A TEST
-test_create_elsevier_entitlement_uf(env='uf')
+#RUN A TEST - Note d
+#test_create_elsevier_entitlement_uf(env='uf')

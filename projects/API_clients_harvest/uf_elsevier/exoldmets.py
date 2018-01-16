@@ -2369,8 +2369,8 @@ def run(verbosity=0, cymd_start=None, cymd_end=None, items_elsevier_engine=None)
 # RUN
 
 verbosity=0
-cymd_start = '20170101'
-cymd_end = '20180111'
+cymd_start = '20190112'
+cymd_end = '20180114'
 items_elsevier_engine_name='uf_local_mysql_marshal1'
 #items_elsevier_engine_name='hp_psql'
 
