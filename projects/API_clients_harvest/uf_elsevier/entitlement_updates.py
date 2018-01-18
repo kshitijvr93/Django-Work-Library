@@ -233,30 +233,6 @@ def sequence_rows_by_table(conn=None, engine=None, table=None, verbosity=1):
     return
 #end def sequence_rows_by_table
 
-'''
-<summary name='sa_sequence_select'>
-For given table or select, return generate a python sequence for its table
-rows.
-</summary>
-20170118 to be tested...
-'''
-def sequence_select(engine=None, conn=None, select=None, verbosity=0):
-    me = 'sequence_select'
-    if not select:
-        raise ValueError("Arg select must be given")
-    if not any(conn, engine):
-        raise ValueError("Either arg conn or engine must be given")
-
-    if conn is None:
-        conn = table.engine.connect()
-    while(1):
-        result = select.fetchone()
-        if not result:
-            break;
-        else:
-            yield result
-    #end while loop
-
 ''''
 <summary name='sequence_entitlements'>
 This is a generator method:
@@ -308,9 +284,6 @@ def sequence_entitlements(sequence_rows=None, batch_size=100, verbosity=1):
     for  row in sequence_rows:
         index_pii += 1
         pii = row['pii']
-        # TEST break
-        if index_pii > 10:
-            return
         if verbosity > 0:
             print("{}: Got row='{}',sep='{}'".format(me,repr(row),sep))
         url += sep + pii
@@ -323,7 +296,20 @@ def sequence_entitlements(sequence_rows=None, batch_size=100, verbosity=1):
             if verbosity > 0:
                 print("{}: sending url='{}'".format(me,url))
 
-            result = get_api_result_by_url(url=url, verbosity=verbosity)
+            # Loop to retry on timeout/network slowdowns
+            tries = 0
+            done = 0
+            while(done == 0 and tries < 10):
+                tries += 1
+                try:
+                    result = get_api_result_by_url(url=url, verbosity=verbosity)
+                    done = 1
+                except Exception as e:
+                    msg=("{}:url={}, try={}, exception={}"
+                        .format(me,url, tries, repr(e)))
+                    print(msg)
+                    pass
+            # end while
             if 1 == 1:
                 # Extract xml information expected per the Elsevier Entitlment API.
                 # results_tree =
@@ -339,22 +325,37 @@ def sequence_entitlements(sequence_rows=None, batch_size=100, verbosity=1):
                 # Parse the result with multiple entitlements, and yield a
                 # dictionary 'row' of key-value pairs for each entitlement
                 for node_entitlement in result_tree.findall('{*}document-entitlement'):
+                    #d_row will be the 'values' argument to update destination
+                    # table.
+                    # The column names are set below to match the
+                    # destination tble
                     d_row = {}
 
                     node_pii = node_entitlement.find('{*}pii-norm')
                     d_row['pii'] = node_pii.text
 
                     node_entitled = node_entitlement.find('{*}entitled')
-                    d_row['entitled'] = node_entitled.text
+                    d_row['entitled_uf'] = node_entitled.text
+
+                    node_eid = node_entitlement.find('{*}eid')
+                    t = node_eid.text if node_eid is not None else ''
+                    d_row['eid'] = node_eid.text
+
+                    node_scopus_id = node_entitlement.find('{*}scopus_id')
+                    t = node_scopus_id.text if node_scopus_id is not None else ''
+                    d_row['scopus_id'] = t
+
+                    node_pubmed_id = node_entitlement.find('{*}pubmed_id')
+                    t = node_pubmed_id.text if node_pubmed_id is not None else ''
+
+                    d_row['pubmed_id'] = t
 
                     node_doi = node_entitlement.find('{*}doi')
                     d_row['doi'] = node_doi.text
 
-                    node_eid = node_entitlement.find('{*}eid')
-                    d_row['eid'] = node_eid.text
-
-                    node_scopus_id = node_entitlement.find('{*}scopus_id')
-                    d_row['scopus_id'] = node_scopus_id.text
+                    node_doi_url = node_entitlement.find('{prism}url')
+                    text = node_doi_url.text if node_doi_url is not None else ''
+                    d_row['doi_url'] = text
 
                     if verbosity > 0:
                         print("{}: yielding row={}".format(me,d_row))
@@ -409,7 +410,7 @@ elsevier_entitlment_updaes() performed to reflect seq_entitlements.
 </summary>
 '''
 
-def run_elsevier_entitlement_updates(env='uf',verbosity=1):
+def run_elsevier_entitlement_updates(env='uf',max_updates=None,verbosity=1):
     me = 'run_elsevier_entitlement_updates'
     #old_run(output_folder_name=output_folder_name)
     env = 'uf'
@@ -445,7 +446,7 @@ def run_elsevier_entitlement_updates(env='uf',verbosity=1):
     if verbosity > 0:
         seq_rows = sequence_rows_by_table(
             engine=engine, table=update_table, verbosity=1);
-        print("{}: verbosely showing some seq_rows")
+        print("{}: verbosely showing some seq_rows".format(me))
         index = 0
         for seq_row in seq_rows:
             index += 1
@@ -464,17 +465,28 @@ def run_elsevier_entitlement_updates(env='uf',verbosity=1):
         print("{}: calling sequence_entitlements()".format(me))
     # Get sequence of all entitlement results
     seq_entitlements = sequence_entitlements(
-      sequence_rows=seq_rows, batch_size=2);
+      sequence_rows=seq_rows, batch_size=10, verbosity=verbosity);
 
     #For each entitlement, update the database table
-    for i, row_entitlement in enumerate(seq_entitlements, start=1):
+    i = 0
+    for row_entitlement in seq_entitlements:
+        i += 1
         if verbosity > 0 :
             print('{}: Entitlement row received="{}"'
                 .format(me,repr(row_entitlement)))
-        # BREAK FOR TESTING...
-        if i > 6:
-            break;
+        if max_updates is not None and i > max_updates:
+            break
 
+        for colname, value in row_entitlement.items():
+            if colname == 'pii':
+                print("{}:got pii = {}".format(me,value))
+
+        #update_table.update
+        # Update the table with the additional information
+
+        # BREAK FOR TESTING...
+
+    print("{}:run_elsevier_entitlement_updates: returning".format(me))
     #  output_engine=output_engine, output_table=output_table)
     return
 
@@ -502,5 +514,5 @@ def  create_elsevier_entitlement_uf(env=None):
 # MAIN PROGRAM  - call the main method...
 
 if 1 == 1:
-   run_elsevier_entitlement_updates(env='uf')
+   run_elsevier_entitlement_updates(env='uf', max_updates=10)
    print("Done!")
