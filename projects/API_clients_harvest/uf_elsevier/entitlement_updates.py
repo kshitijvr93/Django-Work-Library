@@ -10,7 +10,6 @@ or speed up some processing of the  entitlement api because the open access
 nature will not depend on the identity or VPN of the IP of the requestor.
 Open access means open to all.
 
-
 Python 3.6 program entitlement_updates.py, which accepts an input engine and
 table_name for which to insert retrieve Elevier PII values.
 
@@ -115,7 +114,12 @@ from pathlib import Path
 import pytz
 import urllib.request
 
-''' create_table_elsevier_api_entitlement
+
+''' method create_table_elsevier_api_entitlement_uf
+
+<summary> In given engine with given (or default) table_name, create a
+table designed to contain rows of entitlement results from elsevier.
+</summary>
 
 <param name='engine'>
 This is an sql_alchemy engine that in which the 'elsevier_entitlement_uf'
@@ -146,7 +150,6 @@ def create_table_elsevier_entitlement_uf(
       # Note: for UF purposes, a unique PII is paramount. Though other ids are
       # claimed to be unique, do not ruin loading of unique piis if they have
       # duplicates. Create normal indexes on some others to speed up queries.
-
 
       Column('entitled_uf', String(30),
              comment="Elsevier entitled value for UF vpn. Values evolving."),
@@ -180,19 +183,59 @@ def create_table_elsevier_entitlement_uf(
 
 #end create_table_elsevier_entitlment_uf
 
+'''
+<summary name='sa_sequence_select'>
+For given table or select, return generate a python sequence for its table
+rows.
+</summary>
+'''
+def sa_sequence_select(engine=engine, table=table):
+    me = 'sequence_table_rows'
 
 ''''
-From a list of pii values (with a  maximum of 100 in the list),
-generate an Elsevier entitlement request and yield a tuple of
-node_entitlement and d_namespaces context data for use by lxml methods.
+<summary name='sequence_entitlements'>
+This is a generator method:
+
+Given a sequence of pii values:
+
+(1) For each pii in the sequence:
+    Accumulate the pii to a list for a batch of size 100 by default.
+
+(2) For each batch, generate a url that is an entitlement request specifying
+    each of the piis of the batch,
+
+(3) Receive the Elsevier API entitlement response and parse the xml result
+
+(4) For the result for each specific pii, yield the sequence
+    value, which is:  a dictionary keyed
+    by column name, which is a row of entitlement info/results for the pii.
+</summary>
+
+<param name=sequence_piis>
+A sequence of items, each being a pii string value to use to request
+an Elsevier entitlement API result.
+</param>
+<return>
+A sequence, where each item is:
+A dictionary (key is column name, value is value) API row result.
+</return>
+
 '''
 
-def gen_entitlement_nodes_by_piis(piis=None,verbosity=1):
+def sequence_entitlements(sequence_piis=None, batch_size=100, verbosity=1):
 
-    me = 'gen_entitlement_nodes_by_piis'
+    me = 'sequence_entitlements'
 
-    if len(piis) == 0:
-      return #OK, Done.
+    if verbosity > 0:
+        print('{}: With batch_size={}, generating a sequence of entitlements"
+            .format(me, batch_size )
+
+    if batch_size < 1:
+      raise ValueError("Parameter batch_size must be 1 or greater.")
+
+    url = "http://http://api.elsevier.com/content/article/entitlement/pii/"
+    for index_pii, pii in enumerate(sequence_pii, start=1:
+
     if len(piis) > 100:
       raise ValueError('ERROR: piis list has {}, over max of 100'
                        .format(len(piis)))
@@ -238,130 +281,69 @@ def gen_entitlement_nodes_by_piis(piis=None,verbosity=1):
     return None
 
 '''
-Params:
-input_file_name: name of an input file of utf8 encoding, where each line is a set
-of fields.
-delim: delimiter character that separates fields in each input file's line
-pii_index: an index specifying the field in a line that holds a pii value
-normalized: True means all pii fluff characters are removed already
-            False means fluff characters could exist in the pii value
-'''
-def gen_entitlement_nodes_by_input_file(input_file_name=None, pii_index=2
-    , delim='\t', normalized=True, max_batch_piis=20, verbosity=0):
-    me = 'gen_entitlement_nodes_by_input_file'
-    if verbosity > 0:
-      print("{}: using input_file_name={}, delim='{}'".format(me,input_file_name,delim))
-    n_line = 0
-    batch_piis = []
-    with open (input_file_name, "r") as input_file:
-      #lines = input_file.readlines()
-      #for input_line in lines:
-      for input_line in input_file:
-        input_line = input_line.replace('\n','')
-        n_line += 1
-        fields = input_line.split(delim)
-        # if deleted field, field 6 has a 1, skip it. Don't care about its entitlement.
-        # print("fields[6]='{}'".format(fields[6]))
-        if fields[6] == '1':
-          print('Skip pii on deleted n_line={}'.format(n_line))
-          continue
-        try:
-          pii = fields[pii_index]
-          pii = pii.replace('?oac=t','') # ignore open access sentinel
-        except IndexError as ex:
-          raise IndexError("File {}, delim='{}', line {}, number {} lacks field with index {}"
-                .format(input_file_name,delim,input_line,n_line, pii_index))
-        if (normalized == False):
-          pii = pii.replace('(','').replace(')','').replace('-','').replace('.','')
-        if verbosity > 0:
-          print("n_line={}, appending pii={}".format(n_line,pii))
-        batch_piis.append(pii)
-        if n_line % max_batch_piis == 0:
-          #print("n_line={} mod {} == 0, appending pii={}".format(n_line,max_batch_piis,pii))
-          for node_entitlement, d_namespaces in gen_entitlement_nodes_by_piis(batch_piis):
-              # Check sentinel value for bad syntax in api response...
-              if node_entitlement == -1:
-                continue
-              yield node_entitlement, d_namespaces
-          batch_piis = []
-        # end yields for a batch of piis
-      # end processing input file line with pii value
-    # end  with open... input_file
-    if verbosity > 0:
-      print('{}: input file {} had {} lines'.format(me,input_file_name,n_line))
-    #Get last batch
-    for node_entitlement, d_namespaces in gen_entitlement_nodes_by_piis(batch_piis):
-        # Check sentinel value for bad syntax in api response...
-        if node_entitlement == -1:
-          break
-        yield node_entitlement, d_namespaces
+<summary name='run_elsevier_entitlment_updates'>
+Use the given env to select the db engine and update_table_name.
 
-    return
+From SA, get the update_table of the given update table name
+
+Step 1:
+Call seq_piis = sequence_piis(update_table)
+
+where seq_piis is a sequence of the piis in the update_table for which to retrieve
+Elsevier entitlment information from its API.
+
+Step 2:
+seq_entitlements = sequence_elsevier_entitlements(seq_piis)
+
+where seq_entitlemetns is a sequece of dictionaries, where each has a key
+for a 'pii' and other columns with info about that pii such as open access, doi,
+and all the columns that are in the update_table.
+
+Step 3:
+result = elsevier_entitlement_updates(seq_entitlments)
+
+Where result has some information about the updated rows in the update table that
+elsevier_entitlment_updaes() performed to reflect seq_entitlements.
 
 
-''' RUN_0()
-   PREREQUISITE - input file is current and in place with name set by run()
+</summary>
 '''
 
-def run(output_folder_name=None,verbosity=0):
-
-    me = "run"
-    print('{}: making output folder {}'.format(me,output_folder_name))
-    os.makedirs(output_folder_name, exist_ok=True)
-    # Create known input file_name - of source bibinfo data stored in this git project
-    input_data_folder = etl.data_folder(linux="/home/robert/"
-        , windows='C:/users/podengo/'
-        , data_relative_folder='git/citrus/data/sobekcm/')
-
-    input_file_name = '{}sobekdb_prod_bibinfo.txt'.format(input_data_folder)
-
-    #CAUTION: 20170918 - atom cannot detect tabs in input files... so I changed all tabs
-    # to ! characters after verifying that no ! characters existed in this input file!
-    for node_entitlement, d_namespaces in gen_entitlement_nodes_by_input_file(
-        input_file_name=input_file_name, delim='\t', pii_index=4
-        ):
-
-        # Print the pii and open access value
-        node_pii = node_entitlement.find("./pii-norm",namespaces=d_namespaces)
-        if node_pii is None:
-          print("Cannot node_pii {} has no text in an entitlment... skipping"
-                .format(repr(node_pii)))
-          continue
-        if verbosity > 0:
-          print("Got node_pii= {}".format(repr(node_pii)))
-        pii = node_pii.text
-
-        entitled = node_entitlement.find("./entitled",namespaces=d_namespaces).text
-
-        if verbosity > 0:
-            print("{}:From entitlement, pii-norm={}, entitled={}"
-              .format(me,pii,entitled))
-
-        with open ("{}pii_{}.xml".format(output_folder_name,node_pii.text), 'wb') as outfile:
-            outfile.write(etree.tostring(node_entitlement, pretty_print=True))
-
-# end run()
-
-def run1():
-    output_folder_name = etl.data_folder(linux='/home/robert', windows='U:',
-      data_relative_folder='/data/elsevier/output_entitlement/')
-
+def run_elsevier_entitlement_updates(env='uf'):
 
     #old_run(output_folder_name=output_folder_name)
     env = 'uf'
     if env == 'uf':
-        input_nick_name = 'uf_local_mysql_marshal1'
-        input_table = uf_elsevier_harvest
-        input_engine = get_db_engine_by_name(name=input_nick_name)
+        engine_nick_name = 'uf_local_mysql_marshal1'
+        update = get_db_engine_by_name(name=engine_nick_name)
+        update_table_name = 'elsevier_entitlement_uf'
         pass
     else:
+        raise ValueError("Not implemented")
         pass
-    #test_run( input_engine=input_engine, input_table = input_table,
+
+
+    # Get the sequence of all piis to request entitlment info
+    seq_piis = sequence_piis(update_table);
+
+    # Get sequence of all entitlement results
+    seq_entitlements = sequence_entitlements(seq_piis);
+
+    result = elsevier_entitlement_updates(update_table,seq_entitlements)
+
     #  output_engine=output_engine, output_table=output_table)
     return
 
-#
-def  done_create_elsevier_entitlement_uf(env=None):
+
+'''
+<summary name='create_elsevier_entitlement_uf'>
+Create the database table
+</summary>
+NB: I already "DID" this method in some or all databases of
+nterest, so only rerun it when on a database with this table
+when ready to overwrite database contents!
+'''
+def  create_elsevier_entitlement_uf(env=None):
     if env == 'uf':
         #engine_name = 'local-silodb'
         engine_name = 'uf_local_mysql_marshal1'
@@ -373,24 +355,30 @@ def  done_create_elsevier_entitlement_uf(env=None):
     return
 
 '''
-<summary>
-Select rows from the given table, and for each pii of a row,
-get its Elsevier entitlement info for the current process.
-NOTE: this should be run from a machine on the UF vpn.
+<summary name="get_elsevier_api_entitlments">
+Select the pii value from the rows of the given table,
+and for each pii of a row, get its Elsevier entitlement info for
+the requesting IP of the current process.
+
+NOTE: this method should be run from a machine on the UF vpn.
 
 Update each row in the table with the API results.
 </summary>
 '''
 
-def get_elsevier_api_entitlements(table=table):
+def get_elsevier_api_entitlements(engine=engine, table=table):
 
     piis = sequence_piis(table);
     return
 
 def get_entitlements():
     engine_name = 'uf_local_mysql_marshal1'
-    tables = 
+    tables =
     return
 
 
 #end def get_elsevier_api_entitlements
+
+# MAIN PROGRAM  - call the main method...
+
+run_elsevier_entitlement_updates(env='uf'):

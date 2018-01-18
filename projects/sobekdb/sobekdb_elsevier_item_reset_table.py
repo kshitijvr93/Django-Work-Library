@@ -127,7 +127,6 @@ def get_elsevier_bibinfo(engine=None, conn=None,table_name=None,verbosity=1):
           item.c.GroupID == group.c.GroupID,
           group.c.BibID.like('%LS%'),
           ) )
-          #.columns(bibid=String, vid=Integer, groupid=Integer, link=String)
         )
     if verbosity > 0:
       compiled = select_elsevier_info.compile()
