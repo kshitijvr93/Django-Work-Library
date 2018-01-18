@@ -89,7 +89,8 @@ from sqlalchemy import (
   MetaData, Sequence, String,
   Table, Text, tuple_, UniqueConstraint,
   )
-from sqlalchemy.sql.expression import literal, literal_column
+from sqlalchemy.sql.expression import (
+   delete, insert, literal, literal_column, update, )
 from sqlalchemy.inspection import inspect as inspect
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.sql import ( select, and_, or_, not_,)
@@ -97,6 +98,7 @@ import sqlalchemy.sql.sqltypes
 
 # Import slate of databases that podengo can use
 from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+from api.utilities import get_api_result_by_url
 
 print("Sys.path={}".format(sys.path))
 sys.stdout.flush()
@@ -176,39 +178,105 @@ def create_table_elsevier_entitlement_uf(
              comment='Digital Object ID known to all big publishers'),
 
       ) # end call to Table('article_item'...)
+
+    # Now create the actual persistent table in a db engine
     conn_write = engine.connect()
     engine_table = new_table.create(engine, checkfirst=True)
     conn_write.close()
     return engine_table
 
 #end create_table_elsevier_entitlment_uf
+'''
+fetchall_rows_by_table()
+<summary name='fetchall_table_rows'>
+Candidate method to adopt in sqlalchemy core tools.
+Given an SA table object and return fetchall() of all of its rows.
+If conn is given, it is used, else arg engine is used to get a connection.
+
+See also sequence_rows_by_table() which returns a sequence of individual rows.
+'''
+def fetchall_rows_by_table(conn=None, engine=None, table=None, verbosity=0):
+    if not table:
+        raise ValueError("Arg table must be given")
+    if not any(conn, engine):
+        raise ValueError("Either arg conn or engine must be given")
+
+    conn = table.engine.connect();
+    return conn.execute(select([table]).fetchall())
+
+def sequence_rows_by_table(conn=None, engine=None, table=None, verbosity=1):
+    me = "sequence_rows_by_table"
+
+    if table is None:
+        raise ValueError("Arg table must be given")
+    if not any([conn, engine]):
+        raise ValueError("Either arg conn or engine must be given")
+
+    if verbosity > 0:
+        print("{}: generating row sequence for table '{}'"
+          .format(me, table.name))
+
+    if conn is None:
+        conn = engine.connect()
+
+    results = select([table]).execute()
+    while(1):
+        result = results.fetchone()
+        if verbosity > 0:
+            print("{}: got result='{}',pii={},entitled_uf={}"
+              .format(me,result,result['pii'], result['entitled_uf']))
+        if not result:
+            break;
+        else:
+            yield result
+    #end while loop
+    return
+#end def sequence_rows_by_table
 
 '''
 <summary name='sa_sequence_select'>
 For given table or select, return generate a python sequence for its table
 rows.
 </summary>
+20170118 to be tested...
 '''
-def sa_sequence_select(engine=engine, table=table):
-    me = 'sequence_table_rows'
+def sequence_select(engine=None, conn=None, select=None, verbosity=0):
+    me = 'sequence_select'
+    if not select:
+        raise ValueError("Arg select must be given")
+    if not any(conn, engine):
+        raise ValueError("Either arg conn or engine must be given")
+
+    if conn is None:
+        conn = table.engine.connect()
+    while(1):
+        result = select.fetchone()
+        if not result:
+            break;
+        else:
+            yield result
+    #end while loop
 
 ''''
 <summary name='sequence_entitlements'>
 This is a generator method:
 
-Given a sequence of pii values:
+Given a sequence of row values:
 
-(1) For each pii in the sequence:
-    Accumulate the pii to a list for a batch of size 100 by default.
+(1) For each row in the sequence,
+    (a) expect/extract the 'pii' value and expect it to be normalized
+        i.e., no fluff characters ( '-', '(', ')' )
+    (b) Accumulate the pii to a list for a batch of size 100 by default.
 
-(2) For each batch, generate a url that is an entitlement request specifying
+(2) For each pii batch, generate a url that is an entitlement request specifying
     each of the piis of the batch,
 
 (3) Receive the Elsevier API entitlement response and parse the xml result
 
 (4) For the result for each specific pii, yield the sequence
     value, which is:  a dictionary keyed
-    by column name, which is a row of entitlement info/results for the pii.
+    by column name, which represents a row of entitlement info/results for
+    the pii. The caller must expect/know the column names in the row.
 </summary>
 
 <param name=sequence_piis>
@@ -222,78 +290,92 @@ A dictionary (key is column name, value is value) API row result.
 
 '''
 
-def sequence_entitlements(sequence_piis=None, batch_size=100, verbosity=1):
-
+def sequence_entitlements(sequence_rows=None, batch_size=100, verbosity=1):
     me = 'sequence_entitlements'
 
+    sys.stdout.flush()
     if verbosity > 0:
-        print('{}: With batch_size={}, generating a sequence of entitlements"
-            .format(me, batch_size )
+        print('{}: STARTING with batch_size={}, generating a sequence of entitlements'
+            .format(me, batch_size ))
 
-    if batch_size < 1:
-      raise ValueError("Parameter batch_size must be 1 or greater.")
-    url_base = "http://http://api.elsevier.com/content/article/entitlement/pii/"
+    if (batch_size < 1) or (batch_size > 100) :
+      raise ValueError("Parameter batch_size must be 1-100.")
+
+    url_base = "http://api.elsevier.com/content/article/entitlement/pii/"
     url = url_base
     sep = ''
-    for index_pii, pii in enumerate(sequence_pii, start=1):
+    index_pii = 0
+    for  row in sequence_rows:
+        index_pii += 1
+        pii = row['pii']
+        # TEST break
+        if index_pii > 10:
+            return
+        if verbosity > 0:
+            print("{}: Got row='{}',sep='{}'".format(me,repr(row),sep))
         url += sep + pii
+        sep = ","
         if index_pii % batch_size == 0:
             #Make an Elsevier API entitlement request
+            # Append the UF Elsevier apiKey
+            url += '?httpAccept=application/xml&apiKey=d91051fb976425e3b5f00750cbd33d8b'
+            sep = ''
             if verbosity > 0:
-                print('{}: sending {}'.format(me,url))
-            result = get_elsevier_api_result_by_url(
-                url=url, verbosity=verbosity)
+                print("{}: sending url='{}'".format(me,url))
 
+            result = get_api_result_by_url(url=url, verbosity=verbosity)
+            if 1 == 1:
+                # Extract xml information expected per the Elsevier Entitlment API.
+                # results_tree =
+                try:
+                    # Note: Per lxml docs, results_tree is an ElementTree object,
+                    # and 'root' is an element object.
+                    result_tree = etree.parse(url)
+                except Exception as e:
+                    print("{}: cannot parse results for url='{}. e='{}'"
+                       .format(me,url_,repr(e)))
+                    continue
+
+                # Parse the result with multiple entitlements, and yield a
+                # dictionary 'row' of key-value pairs for each entitlement
+                for node_entitlement in result_tree.findall('{*}document-entitlement'):
+                    d_row = {}
+
+                    node_pii = node_entitlement.find('{*}pii-norm')
+                    d_row['pii'] = node_pii.text
+
+                    node_entitled = node_entitlement.find('{*}entitled')
+                    d_row['entitled'] = node_entitled.text
+
+                    node_doi = node_entitlement.find('{*}doi')
+                    d_row['doi'] = node_doi.text
+
+                    node_eid = node_entitlement.find('{*}eid')
+                    d_row['eid'] = node_eid.text
+
+                    node_scopus_id = node_entitlement.find('{*}scopus_id')
+                    d_row['scopus_id'] = node_scopus_id.text
+
+                    if verbosity > 0:
+                        print("{}: yielding row={}".format(me,d_row))
+                    yield d_row
+                # for each entitlement, yield a row
+            # yield result
             url = url_base
             sep = ''
-    # end loop over piis to use for entitlement requests
-
-    if len(piis) > 100:
-      raise ValueError('ERROR: piis list has {}, over max of 100'
-                       .format(len(piis)))
-    url = 'http://api.elsevier.com/content/article/entitlement/pii/'
-    sep = ''
-    for pii in piis:
-        url += sep + str(pii)
-        sep = ','
-
-    # UF's api key, api_key
-    #url += '?httpAccept=text/xml&apiKey=d91051fb976425e3b5f00750cbd33d8b'
-
-    #url += '?httpAccept=application/xml&apiKey=d91051fb976425e3b5f00750cbd33d8b'
-    url += '?httpAccept=application/xml&apiKey=d91051fb976425e3b5f00750cbd33d8b'
-    if verbosity > 0:
-      print('{}:got {} piis, using url={}'.format(me,len(piis),url))
-
-    try:
-      xml_tree = etree.parse(url)
-    except Exception as ex:
-      print("For url='{}' got lxml error='{}'. Skipping this url."
-            .format(me,url,repr(ex)))
-      yield -1, -1 #Sentinel to caller to skip, but try again...
-    else:
-      node_root_input = xml_tree.getroot()
-      input_xml_str =  etree.tostring(node_root_input, pretty_print=True)
-
-      if verbosity > 0:
-        print("{}:got input xml string={}".format(me,input_xml_str))
-
-      d_namespaces = {key:value
-              for key,value in dict(node_root_input.nsmap).items()
-              if key is not None}
-      nodes_entitlement = node_root_input.findall(
-          'document-entitlement', namespaces=d_namespaces)
-
-      print('{}: got {} piis, made entitlement request {}, and got {} nodes_entitlement'
-            .format(me,len(piis),url,len(nodes_entitlement)))
-
-      for node_entitlement in nodes_entitlement:
-          yield node_entitlement, d_namespaces
-
-    return None
+        # end yields from this batch
+    # end loop over rows with piis used for entitlement requests
+    return
 #end sequence_entitlements
 
-def sequence_piis(update_table)
+'''
+<summary name="sequence_piis">
+</summary>
+<param name='update_table'>
+The sqlalchemy table object that will be used...
+</param>
+'''
+def sequence_piis(update_table, verbosity=''):
     stmt = select()
     return
 # end sequence_piis()
@@ -327,8 +409,8 @@ elsevier_entitlment_updaes() performed to reflect seq_entitlements.
 </summary>
 '''
 
-def run_elsevier_entitlement_updates(env='uf'):
-
+def run_elsevier_entitlement_updates(env='uf',verbosity=1):
+    me = 'run_elsevier_entitlement_updates'
     #old_run(output_folder_name=output_folder_name)
     env = 'uf'
     if env == 'uf':
@@ -340,21 +422,61 @@ def run_elsevier_entitlement_updates(env='uf'):
         raise ValueError("Not implemented")
         pass
 
-    #Get table to update
+    if verbosity > 0:
+        print("{}: using engine_nick_name='{}', table '{}'"
+          .format(me, engine_nick_name, update_table_name))
+    # Get engine with extra variables to get table to update
+    # TODO: make a module with an derived object 'EngineReflected()',
+    # or something to capture all this auxiliary engine info up front,
+    # plus an engine.inspector, at init time.
+    # It's a bit convoluted to make all these calls, though I guess separation
+    # saves some time and space, not usually a win-win for UF Library apps.
     engine = get_db_engine_by_name(name=engine_nick_name)
-
+    metadata = MetaData(engine)
+    #Use reflection to get the tables
+    metadata.reflect(engine)
+    tables = metadata.tables
+    update_table = tables[update_table_name]
 
     # Get the sequence of all piis to request entitlment info
-    seq_piis = sequence_piis(update_table);
+    if verbosity > 0:
+        print("Calling sequence_rows")
 
+    if verbosity > 0:
+        seq_rows = sequence_rows_by_table(
+            engine=engine, table=update_table, verbosity=1);
+        print("{}: verbosely showing some seq_rows")
+        index = 0
+        for seq_row in seq_rows:
+            index += 1
+            if index > 10:
+                break;
+            print("{}:sequence item {} seq_row={}".format(me,index,seq_row))
+        # end sample loop
+
+    print("{}: calling sequence_rows_by_table()".format(me))
+    # end verbose output
+
+    seq_rows = sequence_rows_by_table(
+        engine=engine, table=update_table, verbosity=1);
+
+    if verbosity > 0:
+        print("{}: calling sequence_entitlements()".format(me))
     # Get sequence of all entitlement results
-    seq_entitlements = sequence_entitlements(seq_piis);
+    seq_entitlements = sequence_entitlements(
+      sequence_rows=seq_rows, batch_size=2);
 
-    result = elsevier_entitlement_updates(update_table,seq_entitlements)
+    #For each entitlement, update the database table
+    for i, row_entitlement in enumerate(seq_entitlements, start=1):
+        if verbosity > 0 :
+            print('{}: Entitlement row received="{}"'
+                .format(me,repr(row_entitlement)))
+        # BREAK FOR TESTING...
+        if i > 6:
+            break;
 
     #  output_engine=output_engine, output_table=output_table)
     return
-
 
 '''
 <summary name='create_elsevier_entitlement_uf'>
@@ -375,31 +497,10 @@ def  create_elsevier_entitlement_uf(env=None):
     create_table_elsevier_entitlement_uf(engine=engine)
     return
 
-'''
-<summary name="get_elsevier_api_entitlments">
-Select the pii value from the rows of the given table,
-and for each pii of a row, get its Elsevier entitlement info for
-the requesting IP of the current process.
-
-NOTE: this method should be run from a machine on the UF vpn.
-
-Update each row in the table with the API results.
-</summary>
-'''
-
-def get_elsevier_api_entitlements(engine=engine, table=table):
-
-    piis = sequence_piis(table);
-    return
-
-def get_entitlements():
-    engine_name = 'uf_local_mysql_marshal1'
-    tables =
-    return
-
-
-#end def get_elsevier_api_entitlements
+#end def create_elsevier_api_entitlements
 
 # MAIN PROGRAM  - call the main method...
 
-run_elsevier_entitlement_updates(env='uf'):
+if 1 == 1:
+   run_elsevier_entitlement_updates(env='uf')
+   print("Done!")
