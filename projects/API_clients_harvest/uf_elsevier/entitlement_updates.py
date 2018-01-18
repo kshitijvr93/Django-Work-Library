@@ -266,7 +266,7 @@ A dictionary (key is column name, value is value) API row result.
 
 '''
 
-def sequence_entitlements(sequence_rows=None, batch_size=100, verbosity=1):
+def sequence_entitlements(sequence_rows=None, max_piis=None,batch_size=100, verbosity=1):
     me = 'sequence_entitlements'
 
     sys.stdout.flush()
@@ -283,6 +283,9 @@ def sequence_entitlements(sequence_rows=None, batch_size=100, verbosity=1):
     index_pii = 0
     for  row in sequence_rows:
         index_pii += 1
+        if index_pii is not None and index_pii > max_piis:
+            print("{}: piis exceeded max={}. Breaking".format(me,max_piis))
+            break
         pii = row['pii']
         if verbosity > 0:
             print("{}: Got row='{}',sep='{}'".format(me,repr(row),sep))
@@ -410,7 +413,7 @@ elsevier_entitlment_updaes() performed to reflect seq_entitlements.
 </summary>
 '''
 
-def run_elsevier_entitlement_updates(env='uf',max_updates=None,verbosity=1):
+def run_elsevier_entitlement_updates(env='uf',max_piis=100, max_updates=None,verbosity=1):
     me = 'run_elsevier_entitlement_updates'
     #old_run(output_folder_name=output_folder_name)
     env = 'uf'
@@ -450,7 +453,8 @@ def run_elsevier_entitlement_updates(env='uf',max_updates=None,verbosity=1):
         index = 0
         for seq_row in seq_rows:
             index += 1
-            if index > 10:
+            if index > max_piis:
+                print("{}: pii index > {}. Breaking".format(me,max_piis))
                 break;
             print("{}:sequence item {} seq_row={}".format(me,index,seq_row))
         # end sample loop
@@ -465,24 +469,33 @@ def run_elsevier_entitlement_updates(env='uf',max_updates=None,verbosity=1):
         print("{}: calling sequence_entitlements()".format(me))
     # Get sequence of all entitlement results
     seq_entitlements = sequence_entitlements(
-      sequence_rows=seq_rows, batch_size=10, verbosity=verbosity);
+      sequence_rows=seq_rows, max_piis=max_piis, batch_size=10, verbosity=verbosity);
 
     #For each entitlement, update the database table
-    i = 0
+    i_entitlement = 0
     for row_entitlement in seq_entitlements:
-        i += 1
+        i_entitlement += 1
         if verbosity > 0 :
-            print('{}: Entitlement row received="{}"'
-                .format(me,repr(row_entitlement)))
-        if max_updates is not None and i > max_updates:
+            print('{}: Received entitlement row {}="{}"'
+                .format(me,i_entitlement, repr(row_entitlement)))
+
+        if max_updates is not None and i_entitlement > max_updates:
+            print(
+              "{}: Got i_entitlement={} > max_updates = {}. Breaking out."
+              .format(me,i_entitlement, max_updates))
             break
 
         for colname, value in row_entitlement.items():
             if colname == 'pii':
                 print("{}:got pii = {}".format(me,value))
 
-        #update_table.update
-        # Update the table with the additional information
+        pii = row_entitlement['pii']
+        u = update_table
+        if verbosity > 0:
+            print("{}: Doing update with values={}".format(me,repr(row_entitlement)))
+        ux = u.update().values(row_entitlement).where(u.c.pii == pii)
+        if verbosity > 0:
+            print("{}: From update got ux={}".format(me,repr(ux)))
 
         # BREAK FOR TESTING...
 
@@ -514,5 +527,5 @@ def  create_elsevier_entitlement_uf(env=None):
 # MAIN PROGRAM  - call the main method...
 
 if 1 == 1:
-   run_elsevier_entitlement_updates(env='uf', max_updates=10)
+   run_elsevier_entitlement_updates(env='uf', max_piis=20, max_updates=10)
    print("Done!")
