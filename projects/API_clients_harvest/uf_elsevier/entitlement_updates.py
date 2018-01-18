@@ -232,9 +232,21 @@ def sequence_entitlements(sequence_piis=None, batch_size=100, verbosity=1):
 
     if batch_size < 1:
       raise ValueError("Parameter batch_size must be 1 or greater.")
+    url_base = "http://http://api.elsevier.com/content/article/entitlement/pii/"
+    url = url_base
+    sep = ''
+    for index_pii, pii in enumerate(sequence_pii, start=1):
+        url += sep + pii
+        if index_pii % batch_size == 0:
+            #Make an Elsevier API entitlement request
+            if verbosity > 0:
+                print('{}: sending {}'.format(me,url))
+            result = get_elsevier_api_result_by_url(
+                url=url, verbosity=verbosity)
 
-    url = "http://http://api.elsevier.com/content/article/entitlement/pii/"
-    for index_pii, pii in enumerate(sequence_pii, start=1:
+            url = url_base
+            sep = ''
+    # end loop over piis to use for entitlement requests
 
     if len(piis) > 100:
       raise ValueError('ERROR: piis list has {}, over max of 100'
@@ -279,6 +291,12 @@ def sequence_entitlements(sequence_piis=None, batch_size=100, verbosity=1):
           yield node_entitlement, d_namespaces
 
     return None
+#end sequence_entitlements
+
+def sequence_piis(update_table)
+    stmt = select()
+    return
+# end sequence_piis()
 
 '''
 <summary name='run_elsevier_entitlment_updates'>
@@ -321,6 +339,9 @@ def run_elsevier_entitlement_updates(env='uf'):
     else:
         raise ValueError("Not implemented")
         pass
+
+    #Get table to update
+    engine = get_db_engine_by_name(name=engine_nick_name)
 
 
     # Get the sequence of all piis to request entitlment info
