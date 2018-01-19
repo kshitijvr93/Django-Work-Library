@@ -327,8 +327,8 @@ def sequence_entitlements(
                     # and 'root' is an element object.
                     result_tree = etree.parse(url)
                 except Exception as e:
-                    print("{}: cannot parse results for url='{}. e='{}'"
-                       .format(me,url_,repr(e)))
+                    print("{}: for url='{}. e='{}', result={}"
+                       .format(me,url,repr(e),))
                     continue
 
                 # Parse the result with multiple entitlements, and yield a
@@ -542,5 +542,5 @@ def run_elsevier_entitlement_updates(
 
 if 1 == 1:
    run_elsevier_entitlement_updates(
-     env='uf', batch_size=5, max_updates=20, verbosity=0)
+     env='uf', batch_size=100, max_updates=1000000, verbosity=0)
    print("Done!")
