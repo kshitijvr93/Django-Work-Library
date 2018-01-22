@@ -1,35 +1,43 @@
 '''
 sobekdb_elsevier_item_reset_table.py'
 
-Use sqlalchemy methods to select SobekCM database item info for Elsvier items.
-DROP the output table in the output/write engine and recreate it with the
-SobekCM/selected information for use by marshaling applications, for example, to
+Parameters define a connection to a SobekCM input database which this program
+mines/queries for Elsevier item data, using sqlalchemy methods.
+Parameters also define an output engine database and table names,
+while this program defines the output columns.
+
+Processing does:
+
+(1) DROP the output table in the output/write engine,
+(2) recreate it in the 'input' engine database, and
+(3) populate the output table from the inputted SobekCM/selected information.
+
+The word 'reset' should be used in this program name to preserve the meaning
+that this program drops and entirely resets/repopulates the output table
+when it is run.
+
+Purposes:
+The output is for use by UF marshaling applications, for example, to
 manage UFDC bib ids in use, or assign new ones to new items to load
 into SobekCM.
 
+The caller should not assume one could try to add data columns
+to the output table and populate them another way and survive another
+run of this process.
+The caller should not assume that rows may be inserted to the output
+table other than with this program and expect they will persist in that table.
 
-NOTE: Since this program starts by dropping the output table, we may
-change it to name the output table as a parameter, for example:
-table_output_name = 'x_ufdc_production_elsevier_item'
-where the x indicates that this table is programmatically created/destroyed
-by an external process. So do not assume one could try to add data columns
-to it and populate them or add rows and expect they will persist in that table.
-Will add a special network of 'user accounts' with their own permissions
-on such tables later. But the x prefix maybe a a good feature to keep to speed
-up ad hoc queries and informal analysis, prevent some head-scratchings.
-This is off-the-cuff speculation -- add some more thought later as needed.
+To consider:
+Add a parameter to define the output table name parameter, allowing this
+program to run meaningfully for various sobedb production, integration test
+and local test systems  to create tables in the same output database engine,
+with table name differences that are meaningful to the caller for broader
+purposes.
 
-Having an output table name parameter, this program can run meaningfully in
-various sobedb production, integration test and local test systems.
-
-So only THIS program should/would add columns or rows to this output table.
-The comments here  should also probably list below the external applications
-that rely upon the output table's data format, content, and update timings.
-
-On the output database's, side, as needed, other projects/processes can
-create new tables in that database with extra info and only use this output
-table in other processes to update those new/other tables as needed.
-
+On the output database's, side, as needed, it is expected that other
+projects/processes can and will manage/new other tables in that database
+and only use the output table from this process for reading by other
+processes to update those new/other tables as needed.
 
 '''
 
@@ -78,22 +86,27 @@ import sqlalchemy.sql.sqltypes
 from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
 
 '''
-<summary name='get_rows_elsevier_bibinfo'>
+<summary name='get_elsevier_bibinfo'>
 
-Return value is a list of rows, where each row is a rowdict with key of column
-name and value of the column value from the sobekdb production db.
+Return value is a list of rows, where each row is an sqlqlchemu result rows
+that can be accessed like a rowdict (result.items() or result['xxx'])
+with key of column name and value of the column value from the sobekdb
+production db.
 
-Use sql alchemy 'core' expression language to get SobekCM production info about
-Elsevier bib items (one vid per bib, as a bib is a journal article)'
-Use sqlalchemy ORM to execute  SobekCM 4.10+  production query to return
+Use sql alchemy 'core' expression language to get SobekCM production
+info about Elsevier bib items (which always have exactly one vid per bib,
+as a bib is a journal article).
+Use sqlalchemy core to execute  SobekCM 4.10+  production query to return
 of a tables in a SobekCM 4.10+ database; to retrieve information
 
-This code uses basic sqlalchemy 'core' expresion language  of 20180101
+This code uses basic sqlalchemy 'core' expresion language of 20180101
 for sqlalchemy version 1.2, as discussed in:
 
 http://docs.sqlalchemy.org/en/latest/core/tutorial.html#sqlexpression-text
 
-Return a tuple of:
+Return a list of SA result objects via a call to result.fetchall(),
+and each item is a SA result object that acts similar to a python dictionary
+with .items() method, access via value = x['yyy'], etc.
 
 all fetched rows,
 item table object (so can refer to its columns in the fetched rows)

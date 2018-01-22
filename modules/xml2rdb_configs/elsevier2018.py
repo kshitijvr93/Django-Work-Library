@@ -1,3 +1,18 @@
+'''
+This is a placeholder configuration for future development.
+
+The Elsevier UF Article API has in 2017 or so, started adding
+some new fields
+that have not yet been configured for xml2rdb conversion, however,
+to date UF Libraries have not needed them, for example open_access_sponsor
+name or type or specific open access license, which are relatively new
+fields observed in the xml files.
+
+Also if an automatic xml2rdb option is implemented that imports
+all xml fields by default, then this development of a new
+xml2rdb configuration for Elsevier metadata will not be needed.
+
+'''
 #
 import sys, os, os.path, platform
 def get_path_modules(verbosity=0):
@@ -108,6 +123,15 @@ def sql_mining_params():
             ('first_author_surname',''),
             ('first_author_initial',''),
             ('open_access','0'),
+            # Start new in 2017 - do we want?
+            #('open_access_article','0'),
+            #('open_access_type','0'),
+            #('open_archive_article','0'),
+            #('open_access_sponsor_name','0'),
+            #('open_access_sponsor_type','0'),
+            #('open_access_user_license','0'),
+            # copyright, publisher, description
+            # end new in 2017
             ('cover_year',''),
             ('cover_date',''),
             ('title',''),

@@ -542,7 +542,7 @@ import inspect
 import pypyodbc
 import etl
 
-class DBConnection():
+class xxDBConnection():
     def __init__(self, server='lib-sobekdb\\sobekcm',db='SobekDB'):
         self.verbosity = 1
         self.server = server

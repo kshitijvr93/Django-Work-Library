@@ -58,14 +58,12 @@ import etl
     hierarchical structure, and glean all of the XML input into relational
     tables for a consistent set of structured XML files.
 
-
     It will infer names for tables and columns from the xml tags and attribute
     names as well.
 
     However the user configuration will remain useful mainly to simplify and
-    target creation
-
-    of SQL data to simplify and abbreviate the outputted SQL database.
+    target creation of SQL data to simplify and abbreviate the outputted SQL
+    database.
     That would make some studies easier to follow and faster to create and run
     selected sub-analyses of the entire pool of xml data.
 '''
@@ -104,8 +102,8 @@ The actual index values are not important here, but the parent relation
 names are important so that the primary key column names for them can be
 assigned to the given db_name relation.
 This need only be done once, and coincidentally, the writable file handle
-for the relation need only
-be created once, and so it is also done within this routine.
+for the relation need only be created once, and so it is also done within
+this routine.
 
 Given a db_name of interest and od_relation of all relation names,
 we get od_rel_info as the ordered dictionary value of od_relation[db_name].
@@ -1303,7 +1301,8 @@ def run(study=None,run_prefix='e20170922_'):
             , windows='C:/rvp/data/'
             , data_relative_folder=('outputs/xml2rdb/{}/'.format(study)))
 
-        print("study {}, using folder_output_base={}".format(study,folder_output_base))
+        print("study {}, using folder_output_base={}"
+             .format(study,folder_output_base))
 
         # This must be the match highest level table dbname in od_rel_datacolumns
         doc_rel_name = 'person'
