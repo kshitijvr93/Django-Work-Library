@@ -1,7 +1,19 @@
 '''
 elsevier_updates.py
 
-This program queries Elsevier apis to update the Marshaling Application
+This program has quickly fallen into deprecation.
+
+Rather, xml2rdb can be and is used to translate uf elsevier
+harvestd MD info to MAW or other db tables, due to
+2018 January improvements to xml2rdb to also do bulk inserts
+for mysql and postgresql.
+
+NOTE: Since xml2rdb is still simple to launch/run by hand,
+there is no simple utility (yet) embodied in the MAW project
+to launch this particular converson/insertion option.
+I'll probably call it 'elsevier_api_to_rdb.py'
+
+This queries Elsevier apis to update the Marshaling Application
 Website (MAW) database, aka the UF Library UFDC Marshaling database.
 
 The MAW database itself may reside on another server than the
