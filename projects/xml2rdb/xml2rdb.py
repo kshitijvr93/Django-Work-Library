@@ -707,7 +707,7 @@ def xml_paths_rdb(
             utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
             msg = ("{}: At {}, processed through input file count = {} so far."
                    .format(me,utc_secs_z, file_count))
-            print(msg)
+            print(msg, flush=True)
             #log_messages.append(msg)
             # Flush all the output files in od_relation
             for relation, d_info in od_relation.items():
@@ -763,7 +763,8 @@ def xml_paths_rdb(
                  )
         # end for i, fname in input_file_list
     # end with open() as output_file
-    print ("{}:Finished processing through file_count={}".format(me,file_count))
+    print ("{}:Finished processing through file_count={}"
+        .format(me,file_count), flush=True)
 
     log_messages.append(msg)
     print(msg)
@@ -790,7 +791,8 @@ def xml_paths_rdb(
         print('start transaction;', file=mysql_file)
         print('start transaction;', file=psql_file)
         for rel_key, d_relinfo in od_relation.items():
-            relation = '{}{}'.format(rel_prefix,rel_key)
+            #Insert a '_' separator after rel_prefix for clarity in table name.
+            relation = '{}_{}'.format(rel_prefix,rel_key)
 
             # { DROP TABLE DB VERSIONS
             # MSSQL
@@ -815,7 +817,7 @@ def xml_paths_rdb(
 
         # CREATE TABLE - DB VERSIONS
         for rel_key, d_relinfo in od_relation.items():
-            relation = '{}{}'.format(rel_prefix,rel_key)
+            relation = '{}_{}'.format(rel_prefix,rel_key)
 
             # The tsf_filename is one line of comma-separated field names
             # which are useful to csv DictReader follow-on processes
@@ -917,7 +919,7 @@ def xml_paths_rdb(
 
         for rel_key, d_relinfo in od_relation.items():
             # Prepend the prefix to make this table/relation name.
-            relation = '{}{}'.format(rel_prefix,rel_key)
+            relation = '{}_{}'.format(rel_prefix,rel_key)
 
             # Bulk insert processing for MSSQL
             print("\nBULK INSERT {}".format(relation), file=sql_file)
@@ -1186,18 +1188,18 @@ def run(study=None,rel_prefix='e2018_'):
 
     if rel_prefix is None:
         # Define a redo_rel_prefix for this study
-        rel_prefix = 'crawd2017b_'
-        rel_prefix = 'cr201711_'
-        rel_prefix = 'orcid_'
+        rel_prefix = 'crawd2017b'
+        rel_prefix = 'cr201711'
+        rel_prefix = 'orcid'
 
         # Select the rel_prefix
-        rel_prefix = 'orcid_'
-        rel_prefix = 'ccila_'
-        rel_prefix = 'e201710_17_'
+        rel_prefix = 'orcid'
+        rel_prefix = 'ccila'
+        rel_prefix = 'e201710_17'
 
     print("Using rel_prefix-'{}'".format(rel_prefix))
 
-    if rel_prefix == 'crawd2017b_':
+    if rel_prefix == 'crawd2017b':
         import xml2rdb_configs.crossref as config
         study = 'crawd'
         input_folder = 'u:/data/outputs/crawdxml/run/2017-11-16T15-41-59Z/doi'
@@ -1219,10 +1221,10 @@ def run(study=None,rel_prefix='e2018_'):
         file_count_first = 0
         file_count_span = 0
 
-    elif rel_prefix == 'cr201711_':
+    elif rel_prefix == 'cr201711':
         import xml2rdb_configs.crossref as config
         # Note- input folder is/was populated via program crafdtxml
-        rel_prefix = 'cr201711_'
+        rel_prefix = 'cr201711'
         # NOTE LIMIT INPUT FOLDER for now...
         # Set input_folders to sequence of study_days to map
         cymd_start = '20171101'
@@ -1257,7 +1259,7 @@ def run(study=None,rel_prefix='e2018_'):
         file_count_first = 0
         file_count_span = 0
 
-    elif rel_prefix == 'ccila_': #ccila is cuban collection i? latin america
+    elif rel_prefix == 'ccila': #ccila is cuban collection i? latin america
         import xml2rdb_configs.marcxml as config
         output_folder_include_secsz = False
 
@@ -1292,7 +1294,7 @@ def run(study=None,rel_prefix='e2018_'):
         file_count_first = 0
         file_count_span = 0
     # MIGRATING...
-    elif rel_prefix == 'orcid_':
+    elif rel_prefix == 'orcid':
         # ORCID id data
         import xml2rdb_configs.orcid as config
 
@@ -1328,13 +1330,15 @@ def run(study=None,rel_prefix='e2018_'):
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
         file_count_first = 0
 
-    elif rel_prefix == 'e2018b_':
+    elif rel_prefix == 'e2018':
         import xml2rdb_configs.elsevier as config
 
         print("Setting parameters for rel_prefix-'{}'".format(rel_prefix))
         file_count_first = 0
         file_count_span = 0
         input_path_glob = '**/pii_*.xml'
+        # rel_prefix e2017 used 20180124 with range(2010,2018)
+        # rel_prefix e2017 used 20180124 with range(2018,2019)
 
         input_folders = []
         for year in range(2018, 2019):
@@ -1412,7 +1416,7 @@ def run(study=None,rel_prefix='e2018_'):
 
     elif study in [ 'entitlement' ] : #
         import xml2rdb_configs.entitlement as config
-        rel_prefix = 'enttl_'
+        rel_prefix = 'enttl'
 
         # This is where the precursor program marc2xml leaves its marcxml data for ccila UCRiverside
         # items
@@ -1673,6 +1677,8 @@ def run(study=None,rel_prefix='e2018_'):
     print("{}:Done.".format(me))
 #end def run()
 #
-print("Starting!")
-run(rel_prefix='e2018b_')
+# Flush STDOUT for this print
+print("Starting!",flush=True)
+sys.stdout.flush()
+run(rel_prefix='e2018')
 print("Done!")

@@ -2,8 +2,10 @@
 program uf_elsevier_harvest_load_dates.py
 
 Find all elsevier pii_xxx_.py files loaded from the root directory,
-given it has a yyyy/mm/dd hierarcy, and the files are in the dd level.
-This is the folder structure populated by the uf ealdxml.py program as
+given it has a yyyy/mm/dd hierarchy, and the files are in the dd level,
+in the date range between and including params cymd_start and cymd_end.
+
+That is the folder structure populated by the uf ealdxml.py program as
 it queries Elsevier APIs for metadata about UF-authored articles.
 
 For every 'pii_' file found, insert a row into the output table,
@@ -11,7 +13,7 @@ whose primary key is pii, along with the load_date, that is the
 yyyy,mm,dd of the parent folders
 and a date value based on that.
 
-This program is needed because Elevier article metadata has no Official
+This program is needed because Elevier article metadata has no official
 field or xml tag that includes the load date, and I did not want to
 invent one and stick it in the xml output file of ealdxml, though I might
 change my mind one day.
