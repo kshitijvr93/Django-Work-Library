@@ -1,4 +1,7 @@
 '''
+vei_mon_file_reader.py
+
+
 Python 3.6+ code
 
 
@@ -98,3 +101,54 @@ def import_files():
 # end import_files()
 
 '''
+import sys, os, os.path, platform
+
+
+def register_modules():
+    platform_name = platform.system().lower()
+    if platform_name == 'linux':
+        modules_root = '/home/robert/'
+        #raise ValueError("MISSING: Enter code here to define modules_root")
+    else:
+        # assume rvp office pc running windows
+        modules_root="C:\\rvp\\"
+    sys.path.append('{}git/citrus/modules'.format(modules_root))
+    return
+register_modules()
+
+import etl
+from pathlib import Path
+from collections import OrderedDict
+
+'''
+<summary name='mon_file_parse'>
+
+Assumption: the output table is just inserted into, and has already
+been created:
+
+</summary>
+
+'''
+def mon_file_parse(engine_write=None, input_file_name=None):
+    me='mon_file_parse'
+    with open(input_file_name,'r', encoding='utf-8') as ifile:
+        for line_index, line in enumerate(ifile, start = 1):
+            print("{}: Line {}='{}'".format(me,line_index,line),flush=True)
+    return
+
+def run():
+    me='run'
+    glob = 'vei*MON'
+    input_folder=(
+      '/C:/rvp/git/citrus/projects/lone_cabbage_2017/data_management')
+    print("Using input folder='{}',glob='{}'"
+       .format(input_folder,glob))
+    input_path_list = list(Path(input_folder).glob(glob))
+    count = 0
+    for count,path in enumerate(input_path_list, start=1):
+        mon_file_parse(engine_write=None,input_file_name=path.name)
+    print("Processed count={} input files.".format(count
+    ))
+    return
+
+run()
