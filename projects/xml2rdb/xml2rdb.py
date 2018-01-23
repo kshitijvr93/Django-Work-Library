@@ -841,7 +841,8 @@ def xml_paths_rdb(
             #print("{}:Getting columns for relation '{}'".format(me,relation))
             if d_column_type is None:
                 tsf_file.close()
-                raise Exception("Table {}, d_column_type is None".format(relation))
+                raise Exception("Table {}, d_column_type is None"
+                    .format(relation))
 
             key_columns = d_relinfo['pkey_columns'].split(',')
 
@@ -860,20 +861,25 @@ def xml_paths_rdb(
 
                 # HIERARCHICAL KEY COLUMNS - DB VERSIONS
                 if column in key_columns:
-                    print('{}{} integer'.format(sep,column.replace('-','_'))
-                        ,file=sql_file)
+                    for file in [sql_file,mysql_file,psql_file]:
+                      print('{}{} integer'.format(sep,column.replace('-','_'))
+                          ,file=file)
+                else:
 
-                # DATA COLUMNS - DB VERSIONS
-                data_column_tuples = [
-                 (sql_file, 'nvarchar(4555)'),(mysql_file,'text'),(psql_file,'text')]
+                    # DATA COLUMNS - DB VERSIONS
+                    data_column_tuples = [
+                        (sql_file, 'nvarchar(4555)'),(mysql_file,'text'),
+                        (psql_file,'text')]
 
-                for dct in data_column_tuples:
-                    print('{}{} {}'
-                        .format(sep,column.replace('-','_'),dct[1])
-                        ,file=dct[0])
+                    for dct in data_column_tuples:
+                        print('{}{} {}'
+                            .format(sep,column.replace('-','_'),dct[1])
+                            ,file=dct[0])
+
+                # Done: wrote line to define this column
 
                 # Build the tab-separated fieldnames (tsf) file,
-                # hence extension tsf
+                # hence extension tsf, by printing this column name
                 print('{}{}'.format(tsep,column.replace('-','_'))
                       ,file=tsf_file, end='')
 
@@ -883,7 +889,7 @@ def xml_paths_rdb(
             print('', file=tsf_file)
             tsf_file.close()
 
-            # UNIQUE CONSTRAINT FOR KEY COLUMNS
+            # UNIQUE CONSTRAINT FOR COMPOSITE KEY (pkey) COLUMNS
 
             # FOR MSSQL use a PRIMARY KEY
             # eg: CONSTRAINT pk_PersonID PRIMARY KEY (P_Id,LastName)
@@ -891,7 +897,7 @@ def xml_paths_rdb(
               'CONSTRAINT pk_{} PRIMARY KEY({})'
               .format(relation, d_relinfo['pkey_columns']) , file=sql_file)
 
-            #FOR MYSQL UNIQUE KEY COLUMNS, BELOW WE WILL
+            # FOR MYSQL UNIQUE KEY COLUMNS, BELOW WE WILL
             # use alter table
 
             # FOR POSTGRES SQL
@@ -959,8 +965,10 @@ def xml_paths_rdb(
                   .format(relation,relation,d_relinfo['pkey_columns']),
                   file=mysql_file)
 
-            print("ALTER TABLE {} ADD sn INT PRIMARY KEY NULL AUTO_INCREMENT;"
-                  .format(relation), file=mysql_file)
+            print(
+                "ALTER TABLE {} ADD sn "
+                "INT PRIMARY KEY NOT NULL AUTO_INCREMENT;"
+                .format(relation), file=mysql_file)
 
             print("CREATE UNIQUE INDEX ux_{}_sn on {}(sn);"
                   .format(relation,relation), file=mysql_file)
@@ -1127,7 +1135,7 @@ def xml2rdb( input_path_list=None,
     return log_filename, pretty_log
 # end def xml2rdb
 
-def run(study=None,run_prefix='e20170922_'):
+def run(study=None,rel_prefix='e2018_'):
     ''' SET UP MAIN ENVIRONMENT PARAMETERS FOR A RUN OF XML2RDB
     Now all these parameters are 'hard-coded' here, but they could go into
     a configuration file later for common usage.
@@ -1176,15 +1184,16 @@ def run(study=None,run_prefix='e20170922_'):
     folder_output_base = None
     output_folder_include_secsz = False
 
-    # Define a redo_rel_prefix for this study
-    rel_prefix = 'crawd2017b_'
-    rel_prefix = 'cr201711_'
-    rel_prefix = 'orcid_'
+    if rel_prefix is None:
+        # Define a redo_rel_prefix for this study
+        rel_prefix = 'crawd2017b_'
+        rel_prefix = 'cr201711_'
+        rel_prefix = 'orcid_'
 
-    # Select the rel_prefix
-    rel_prefix = 'orcid_'
-    rel_prefix = 'ccila_'
-    rel_prefix = 'e20170922_'
+        # Select the rel_prefix
+        rel_prefix = 'orcid_'
+        rel_prefix = 'ccila_'
+        rel_prefix = 'e201710_17_'
 
     print("Using rel_prefix-'{}'".format(rel_prefix))
 
@@ -1319,7 +1328,7 @@ def run(study=None,run_prefix='e20170922_'):
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
         file_count_first = 0
 
-    elif rel_prefix == 'e20170922_':
+    elif rel_prefix == 'e2018b_':
         import xml2rdb_configs.elsevier as config
 
         print("Setting parameters for rel_prefix-'{}'".format(rel_prefix))
@@ -1328,7 +1337,7 @@ def run(study=None,run_prefix='e20170922_'):
         input_path_glob = '**/pii_*.xml'
 
         input_folders = []
-        for year in range(2017, 2018):
+        for year in range(2018, 2019):
             input_folder =('{}/output_ealdxml/{}/'
                .format(data_elsevier_folder,year))
             print("Got rel_prefix={}, input_folder={}"
@@ -1665,5 +1674,5 @@ def run(study=None,run_prefix='e20170922_'):
 #end def run()
 #
 print("Starting!")
-run('ccila')
+run(rel_prefix='e2018b_')
 print("Done!")
