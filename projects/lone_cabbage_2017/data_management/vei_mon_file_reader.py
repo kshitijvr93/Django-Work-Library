@@ -131,7 +131,7 @@ been created:
 '''
 def mon_file_parse(engine_write=None, input_file_name=None):
     me='mon_file_parse'
-    with open(input_file_name,'r', encoding='utf-8') as ifile:
+    with open(input_file_name,'r', encoding='latin1') as ifile:
         for line_index, line in enumerate(ifile, start = 1):
             print("{}: Line {}='{}'".format(me,line_index,line),flush=True)
     return
@@ -141,12 +141,16 @@ def run():
     glob = 'vei*MON'
     input_folder=(
       '/C:/rvp/git/citrus/projects/lone_cabbage_2017/data_management')
+    input_folder=( '/home/robert/git/citrus/projects'
+        '/lone_cabbage_2017/data_management/')
     print("Using input folder='{}',glob='{}'"
        .format(input_folder,glob))
     input_path_list = list(Path(input_folder).glob(glob))
     count = 0
     for count,path in enumerate(input_path_list, start=1):
-        mon_file_parse(engine_write=None,input_file_name=path.name)
+        input_file_name="{}{}".format(input_folder,path.name)
+        print("{}:opening input file {}".format(me,input_file_name))
+        mon_file_parse(engine_write=None,input_file_name=input_file_name)
     print("Processed count={} input files.".format(count
     ))
     return
