@@ -1,9 +1,16 @@
 '''
-sobekdb_elsevier_item_reset_table.py'
+item_elsevier_ufdc_reset.py'
+
+This should be run against a sobekcm database as soon as the SobekCM builder
+finishes processing an entire a set of "LS" mets files, as it will reflect the
+Elsevier items and their already-used bibids. The output table will be used
+by a process to create a new set of LS METS files for new items, using new,
+that is not-used LS bibids.
 
 Parameters define a connection to a SobekCM input database which this program
 mines/queries for Elsevier item data, using sqlalchemy methods.
-Parameters also define an output engine database and table names,
+Parameters also define an output engine database and table name, designed
+to be used by the MAW applications,
 while this program defines the output columns.
 
 Processing does:
@@ -301,7 +308,8 @@ def test_translate(
 
 # MAIN CODE
 engine_write_nickname = 'uf_local_mysql_marshal1'
-table_name_out = 'x_ufdc_production_elsevier_item'
+#table_name_out = 'x_ufdc_production_elsevier_item'
+table_name_out = 'item_elsevier_ufdc'
 
 test_translate(engine_nick_name='production_sobekdb',
    engine_write_nickname=engine_write_nickname,
