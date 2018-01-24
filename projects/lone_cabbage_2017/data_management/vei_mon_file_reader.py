@@ -126,31 +126,80 @@ from collections import OrderedDict
 Assumption: the output table is just inserted into, and has already
 been created:
 
+The given file is a 'diver sensor' file of measurement data, which
+adheres to the strict format expected here.
+
 </summary>
 
 '''
-def mon_file_parse(engine_write=None, input_file_name=None):
+import re
+
+def mon_file_parse(engine_write=None, input_file_name=None,
+    verbosity=1):
+
     me='mon_file_parse'
+    n_obs = 0;
+    l_rows = []
+    re_measurements = ''
+    pd = re.compile('\d+')
+    # Diver files are best read as latin1 encoded files
     with open(input_file_name,'r', encoding='latin1') as ifile:
         for line_index, line in enumerate(ifile, start = 1):
-            print("{}: Line {}='{}'".format(me,line_index,line),flush=True)
+            line = line[:len(line)-1]
+            if line_index >= 66:
+              d_row = {}
+              l_rows.append(d_row)
+              n_obs += 1
+              fields = line.split(' ')
+              date_str = fields[0]
+              time_str = fields[1]
+
+              # Use re pd to get the measurements
+              float_strs = pd.findall(fields[2])
+
+              n_meas = len(float_strs)
+              if n_meas != 3:
+                  msg=("{}: line {} has {} measurements, not 3"
+                     .format(me,line,n_meas))
+                  print(msg, flush=True)
+                  raise ValueError(msg)
+
+              pressure = float(float_strs[0])
+              temp = float(float_strs[1])
+              cond = float(float_strs[2])
+
+              if verbosity > 0:
+                  print("{}: n_obs={}, file line {}='{}'"
+                      .format(me,n_obs,line_index,line),flush=True)
+                  print("----- date={},time={},pressure={},temp={},cond={}"
+                      .format(date_str,time_str,pressure,temp,cond))
+
+              # For this 'diver' line, parse the three float values
+
+        # end processing data line
+
     return
 
-def run():
+def run(env=None):
     me='run'
-    glob = 'vei*MON'
-    input_folder=(
-      '/C:/rvp/git/citrus/projects/lone_cabbage_2017/data_management')
-    input_folder=( '/home/robert/git/citrus/projects'
+
+    if env == 'windows':
+      input_folder=(
+        '/C:/rvp/git/citrus/projects/lone_cabbage_2017/data_management')
+    else:
+      input_folder=( '/home/robert/git/citrus/projects'
         '/lone_cabbage_2017/data_management/')
+
+    glob = 'vei*MON'
     print("Using input folder='{}',glob='{}'"
        .format(input_folder,glob))
     input_path_list = list(Path(input_folder).glob(glob))
     count = 0
     for count,path in enumerate(input_path_list, start=1):
         input_file_name="{}{}".format(input_folder,path.name)
-        print("{}:opening input file {}".format(me,input_file_name))
-        mon_file_parse(engine_write=None,input_file_name=input_file_name)
+        print("{}:Reading input file {}".format(me,input_file_name))
+        result = mon_file_parse(
+            engine_write=None,input_file_name=input_file_name)
     print("Processed count={} input files.".format(count
     ))
     return
