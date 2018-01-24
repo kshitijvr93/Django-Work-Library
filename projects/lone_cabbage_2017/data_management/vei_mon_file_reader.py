@@ -126,6 +126,9 @@ from collections import OrderedDict
 Assumption: the output table is just inserted into, and has already
 been created:
 
+The given file is a 'diver sensor' file of measurement data, which
+adheres to the strict format expected here.
+
 </summary>
 
 '''
