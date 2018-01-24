@@ -129,26 +129,53 @@ been created:
 </summary>
 
 '''
-def mon_file_parse(engine_write=None, input_file_name=None):
+import re
+def mon_file_parse(engine_write=None, input_file_name=None,verbosity=1):
     me='mon_file_parse'
+    rx_floats = r"(?<![a-zA-Z:])[-+]?\d*\.?\d+"
+    rp_floats = re.compile(rx_floats)
+    float_names = ['pressure_cm', 'temperature_c', 'conductivity_mS_cm']
+    l_rows = []
     with open(input_file_name,'r', encoding='utf-8') as ifile:
         for line_index, line in enumerate(ifile, start = 1):
-            print("{}: Line {}='{}'".format(me,line_index,line),flush=True)
-    return
+            if verbosity > 0:
+              print("{}: input line {}='{}'"
+                    .format(me,line_index,line),flush=True)
 
-def run():
+            l_matches = rp.findall(source_str)
+            n_measures = len(l_matches)
+            if len(l_matches != 3):
+                msg=("{}: file={}, line {} has {} measurements, Not 3."
+                    .format(me,input_file_name,line_index,n_measrues))
+                raise ValueError(msg)
+            d_row = {}
+            l_rows.append(d_row)
+            for float_index,m in enumerate(l_matches, start=0):
+                #ms = m.group() #method group() returns the match string
+                if verbosity > 0:
+                    print("Got match ='{}'".format(m),flush=True)
+                d_row[float_names[float_index]] = float(m)
+        # end line in input file
+    # end with open.. input file_name
+    return l_rows
+
+def run(verbosity=1):
     me='run'
-    glob = 'vei*MON'
+    glob = '*'
     input_folder=(
-      '/C:/rvp/git/citrus/projects/lone_cabbage_2017/data_management')
+      '/c/rvp/git/citrus/projects/lone_cabbage_2017/data_management')
     print("Using input folder='{}',glob='{}'"
-       .format(input_folder,glob))
+       .format(input_folder,glob), flush=True)
     input_path_list = list(Path(input_folder).glob(glob))
     count = 0
     for count,path in enumerate(input_path_list, start=1):
-        mon_file_parse(engine_write=None,input_file_name=path.name)
-    print("Processed count={} input files.".format(count
-    ))
-    return
+        mon_file_parse(engine_write=None,input_file_name=path.name
+            ,verbosity=verbosity)
+    if verbosity > 0:
+        print("{}:Processed count={} input files."
+           .format(me, count), flush=True)
+    return count
 
-run()
+testme = 1
+if testme == 1:
+    run()
