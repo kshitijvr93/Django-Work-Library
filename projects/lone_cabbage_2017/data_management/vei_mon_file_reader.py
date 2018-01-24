@@ -58,7 +58,6 @@ def mon_file_parse(connection=None, input_file_name=None):
     return d_header, d_data
 #end mon_file_parse
 
-
 def mon_file_dispose(connection, input_file_names):
     for input_file in input_file_names:
         d_header, d_log, d_data = (
@@ -139,46 +138,79 @@ def mon_file_parse(engine_write=None, input_file_name=None,verbosity=1):
     rp_floats = re.compile(rx_floats)
     float_names = ['pressure_cm', 'temperature_c', 'conductivity_mS_cm']
     l_rows = []
-    with open(input_file_name,'r', encoding='utf-8') as ifile:
+    with open(input_file_name, 'r', encoding='latin1') as ifile:
         for line_index, line in enumerate(ifile, start = 1):
+            line = line[:len(line)-1]
+            if line.startswith('END OF') :
+                # Expected end of data LINES
+                break
+            if line_index < 66:
+                #Skip constant sensor header information
+                continue
+
+            d_row = {}
+            l_rows.append(d_row)
             if verbosity > 0:
               print("{}: input line {}='{}'"
                     .format(me,line_index,line),flush=True)
+            fields = line.split(' ');
+            date_str = fields[0]
+            time_str = fields[1]
+            floats_str = ' '.join(fields[2:])
+            if verbosity > 0:
+                print("{}: got date='{}', time='{}', floats='{}'"
+                    .format(me,date_str,time_str,floats_str))
 
-            l_matches = rp.findall(source_str)
+            l_matches = rp_floats.findall(floats_str)
             n_measures = len(l_matches)
-            if len(l_matches != 3):
+            if len(l_matches) != 3:
                 msg=("{}: file={}, line {} has {} measurements, Not 3."
-                    .format(me,input_file_name,line_index,n_measrues))
+                    .format(me,input_file_name,line_index,n_measures))
+                print("Error {}:".format(msg), flush=True)
                 raise ValueError(msg)
-            d_row = {}
-            l_rows.append(d_row)
             for float_index,m in enumerate(l_matches, start=0):
                 #ms = m.group() #method group() returns the match string
-                if verbosity > 0:
+                if verbosity > 1:
                     print("Got match ='{}'".format(m),flush=True)
                 d_row[float_names[float_index]] = float(m)
         # end line in input file
     # end with open.. input file_name
+    if verbosity > 0:
+        print("{}:Parsed file {},returning {} rows:"
+            .format(me,input_file_name, line_index-1))
+        for d_row in l_rows:
+            print("{}".format(d_row),flush=True)
     return l_rows
+
+#end def mon_file_parse()
 
 def run(verbosity=1):
     me='run'
-    glob = '*'
+    glob = '*.MON'
     input_folder=(
-      '/c/rvp/git/citrus/projects/lone_cabbage_2017/data_management')
+      'C:\\rvp\\git\\citrus\\projects\\lone_cabbage_2017\\data_management\\' )
     print("Using input folder='{}',glob='{}'"
        .format(input_folder,glob), flush=True)
     input_path_list = list(Path(input_folder).glob(glob))
     count = 0
     for count,path in enumerate(input_path_list, start=1):
-        mon_file_parse(engine_write=None,input_file_name=path.name
+        input_file_name = "{}{}".format(input_folder,path.name)
+        if verbosity > 0:
+            print("{}: parsing input file '{}'".format(me,input_file_name)
+                ,flush=True)
+        mon_file_parse(engine_write=None,input_file_name=input_file_name
             ,verbosity=verbosity)
+        if verbosity > 0:
+            print("{}: Parsed file {} = {}".format(me, count, input_file_name))
+
     if verbosity > 0:
         print("{}:Processed count={} input files."
            .format(me, count), flush=True)
     return count
 
+#end def run()
+
 testme = 1
 if testme == 1:
     run()
+    print("Done",flush=True)
