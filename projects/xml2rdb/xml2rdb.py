@@ -10,7 +10,6 @@ Each input xml file has xml-coded information pertaining to a single xml
 document.
 '''
 import sys, os, os.path, platform
-from collections import OrderedDict
 
 
 def register_modules():
@@ -25,20 +24,16 @@ def register_modules():
     return
 register_modules()
 
+import etl
+from pathlib import Path
+from collections import OrderedDict
 
 import datetime
 import pytz
-import os
-import sys
-from collections import OrderedDict
-
-from pathlib import Path
 import hashlib
 
 from lxml import etree
 from lxml.etree import tostring
-from pathlib import Path
-import etl
 
 '''
     Note: I also envision a revision of this program to do an initial
@@ -715,7 +710,8 @@ def xml_paths_rdb(
                 if file is not None:
                     file.flush()
 
-        # Try to read the article's input full-text xml file and accrue its statistics
+        # Try to read the article's input full-text xml file and accrue
+        # its statistics.
         with open(str(input_file_name), "r", encoding='utf-8') as input_file:
             try:
                 input_xml_str = input_file.read().replace('\n','')

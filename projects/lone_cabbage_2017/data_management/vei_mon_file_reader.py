@@ -125,7 +125,7 @@ from collections import OrderedDict
 Assumption: the output table is just inserted into, and has already
 been created:
 
-The given file is a 'diver sensor' file of measurement data, which
+The given file is a 'diver sensor' file of readings data, which
 adheres to the strict format expected here.
 
 </summary>
@@ -156,16 +156,19 @@ def mon_file_parse(engine_write=None, input_file_name=None,verbosity=1):
             fields = line.split(' ');
             date_str = fields[0]
             time_str = fields[1]
+            d_row['date_str'] = date_str
+            d_row['time_str'] = time_str
             floats_str = ' '.join(fields[2:])
+            #d_row['time_str'] = time_str
             if verbosity > 0:
                 print("{}: got date='{}', time='{}', floats='{}'"
                     .format(me,date_str,time_str,floats_str))
 
             l_matches = rp_floats.findall(floats_str)
-            n_measures = len(l_matches)
+            n_readings = len(l_matches)
             if len(l_matches) != 3:
-                msg=("{}: file={}, line {} has {} measurements, Not 3."
-                    .format(me,input_file_name,line_index,n_measures))
+                msg=("{}: file={}, line {} has {} readings, Not 3."
+                    .format(me,input_file_name,line_index,n_readings))
                 print("Error {}:".format(msg), flush=True)
                 raise ValueError(msg)
             for float_index,m in enumerate(l_matches, start=0):
@@ -184,6 +187,92 @@ def mon_file_parse(engine_write=None, input_file_name=None,verbosity=1):
 
 #end def mon_file_parse()
 
+'''
+The diver files are like windows 'ini' files, so use python 3.6
+package configparser
+'''
+import configparser
+def mon_file_parse2(engine_write=None, input_file_name=None,verbosity=1):
+    me='mon_file_parse'
+    rx_floats = r"(?<![a-zA-Z:])[-+]?\d*\.?\d+"
+    rp_floats = re.compile(rx_floats)
+    float_names = ['pressure_cm', 'temperature_c', 'conductivity_mS_cm']
+    l_rows = []
+    config_parser = configparser.ConfigParser()
+    config_string = ''
+    config_parsing = 0
+
+    with open(input_file_name, 'r', encoding='latin1') as ifile:
+        for line_index, line in enumerate(ifile, start = 1):
+            if line.startswith('END OF') :
+                # Expected end of data LINES
+                break
+            if line.startswith('[Data]'):
+                #end of config sections that configparser will use
+                config_parsing = 0
+                if verbosity > 0:
+                    print("{}:Got config sections of interest:\n{}"
+                        .format(me,config_string))
+
+                config_parser.read_string(config_string)
+
+                # todo store all the config INFORMATION
+                serial_number = (
+                  config_parser['Series settings']['Serial number'] )
+                if verbosity > 0:
+                    print("{}: Serial number='{}'".format(me,serial_number))
+            if config_parsing == 1:
+                config_string += line
+
+            if line.startswith('[Logger settings]'):
+                # We are in config sections to mine with
+                # configparser, so set sentinel
+                config_string = line
+                config_parsing = 1
+
+            if line_index < 66:
+                #Skip constant sensor header information
+                continue
+
+            line = line[:len(line)-1]
+
+            d_row = {}
+            l_rows.append(d_row)
+            if verbosity > 1:
+              print("{}: input line {}='{}'"
+                    .format(me,line_index,line),flush=True)
+            fields = line.split(' ');
+            date_str = fields[0]
+            time_str = fields[1]
+            d_row['date_str'] = date_str
+            d_row['time_str'] = time_str
+            floats_str = ' '.join(fields[2:])
+            if verbosity > 1:
+                print("{}: got date='{}', time='{}', floats='{}'"
+                    .format(me,date_str,time_str,floats_str))
+
+            l_matches = rp_floats.findall(floats_str)
+            n_readings = len(l_matches)
+            if len(l_matches) != 3:
+                msg=("{}: file={}, line {} has {} readings, Not 3."
+                    .format(me,input_file_name,line_index,n_readings))
+                print("Error {}:".format(msg), flush=True)
+                raise ValueError(msg)
+            for float_index,m in enumerate(l_matches, start=0):
+                #ms = m.group() #method group() returns the match string
+                if verbosity > 2:
+                    print("{}:Got float match='{}'".format(me,m),flush=True)
+                d_row[float_names[float_index]] = float(m)
+        # end line in input file
+    # end with open.. input file_name
+    if verbosity > 0:
+        print("{}:Parsed file {},returning {} rows:"
+            .format(me,input_file_name, line_index-1))
+        for count,d_row in enumerate(l_rows, start=1):
+            print("{}\t{}".format(count,d_row),flush=True)
+    return l_rows
+#end def mon_file_parse2
+
 def run(verbosity=1):
     me='run'
     glob = '*.MON'
@@ -198,10 +287,11 @@ def run(verbosity=1):
         if verbosity > 0:
             print("{}: parsing input file '{}'".format(me,input_file_name)
                 ,flush=True)
-        mon_file_parse(engine_write=None,input_file_name=input_file_name
+        l_rows=mon_file_parse2(engine_write=None,input_file_name=input_file_name
             ,verbosity=verbosity)
         if verbosity > 0:
-            print("{}: Parsed file {} = {}".format(me, count, input_file_name))
+            print("{}: Parsed file {} = {} with {} reading rows"
+                .format(me, count, input_file_name,len(l_rows)))
 
     if verbosity > 0:
         print("{}:Processed count={} input files."
@@ -214,3 +304,6 @@ testme = 1
 if testme == 1:
     run()
     print("Done",flush=True)
+else:
+    config = configparser.ConfigParser()
+    config.sections()
