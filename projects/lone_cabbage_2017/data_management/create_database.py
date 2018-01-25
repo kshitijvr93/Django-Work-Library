@@ -2,53 +2,145 @@
 python 3.6 code to create the lone cabbage oyster project database tables
 as of January 2018 or so...
 '''
+import sys, os, os.path, platform
+
+def register_modules():
+    platform_name = platform.system().lower()
+    if platform_name == 'linux':
+        modules_root = '/home/robert/'
+        #raise ValueError("MISSING: Enter code here to define modules_root")
+    else:
+        # assume rvp office pc running windows
+        modules_root="C:\\rvp\\"
+    sys.path.append('{}git/citrus/modules'.format(modules_root))
+    return
+register_modules()
+import etl
+
+print("Using sys.path={}".format(repr(sys.path)))
+
 import datetime
+from collections import OrderedDict
+# Import slate of databases that podengo can use
+from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+
+#### Sqlalchemy
 from sqlalchemy import (
   Boolean, create_engine,
-  CheckConstraint, Column, DateTime, ForeignKeyConstraint, Integer,
-  MetaData, String, Table, UniqueConstraint,
+  CheckConstraint, Column,
+  Date, DateTime,Float, FLOAT, ForeignKeyConstraint,
+  inspect, Integer,
+  MetaData, Sequence, String, Table, Text, UniqueConstraint,
   )
+
 from sqlalchemy.schema import CreateTable
 
+import sqlalchemy.sql.sqltypes
+
+#
+from pathlib import Path
 from sqlalchemy.dialects.postgresql import ARRAY
+
+'''
+<summary name='table_project_create'>
+Create or forcibly drop and re-create table project.
+And insert stock rows into it.
+
+</summary>'
+'''
+def table_project_create(engine=None):
+    table_name = 'project'
+    me = '{}_create'.format(table_name)
+
+    metadata = MetaData(engine)
+
+    # Create SA relation 'table object', and later we will use
+    # it to create a 'd__engine_table' in a databse engine
+    table_object =  Table(table_name, metadata,
+      Column('{}_id'.format(table_name), Integer,
+          # NOTE do NOT use Sequence here for mysql?
+          primary_key=True,default=1,
+          comment='Automatically incremented row id.'),
+      Column('name', String(200), primary_key=True,
+             comment='Project name.'),
+      Column('start_date', DateTime),
+      )
+
+    # Create db_table in the db engine
+    db_engine_table = table_object.create(engine, checkfirst=True)
+
+    l_rows = [
+        {
+          'name':'Lone Cabbage Oyster',
+          'start_date':'2017/08/11',
+          'status':'GO',
+          'primary_investigator':'Dr. Bill Pine'
+        },
+        {
+          'name':'Lone Cabbage Fish 1',
+          'start_date':'2018/01/01',
+          'status':'GO',
+          'primary_investigator':'TBD'
+        },
+        {
+          'name':'Lone Cabbage Fish 2',
+          'start_date':'2018/01/01',
+          'status':'GO',
+          'primary_investigator':'TBD'
+        },
+    ]
+
+    #insert the l_rows
+    for row in l_rows:
+        engine.execute(table_object.insert(), row)
+
+    return
+#end def table_project_create
+
+def table_sensor_create():
+    l_sensor = [
+        {1:2},
+
+    ]
+    table_sensor =  Table('sensor', metadata,
+      Column('sensor_id', Integer, primary_key=True,
+             comment='Automatically incremented row id.'),
+      Column('project_id', String(250)),
+      Column('manufacturer', String(150)),
+      Column('serial_number', String(150)),
+      Column('model_type', String(150)),
+      Column('manufacture_date', DateTime),
+      Column('battery_expiration_date', DateTime),
+      Column('observation_period_unit', String(50),
+           comment="Minute, Hour, Day, etc"),
+      Column('observation_period_unit_count', String(50),
+           comment="The count of observation_period_units in one period."),
+      Column('status_observation', String(150),
+          comment="Sensor observed status. Short note."),
+      Column('status_observation_date', DateTime),
+      Column('meters_above_seafloor', DateTime),
+      )
+    return
 
 def tables_create():
     metadata = MetaData()
     tables = []
     #
 
-    table_sensor =  Table('sensor', metadata,
-      Column('sensor_id', Integer, primary_key=True,
-             comment='Automatically incremented row id.'),
-      Column('project_id', String(250),
-      Column('manufacturer', String(150)),
-      Column('serial_number', String(150))
-      Column('model_type', String(150))
-      Column('manufacture_date', DateTime)
-      Column('battery_expiration_date', DateTime)
-      Column('observation_period_unit', String(50),
-           comment="Minute, Hour, Day, etc")
-      Column('observation_period_unit_count', String(50),
-           comment="The count of observation_period_units in one period.")
-      Column('status_observation', String(150),
-          comment="Sensor observed status. Short note.")
-      Column('status_observation_date', DateTime)
-      Column('meters_above_seafloor', DateTime)
-      )
 
     table_sensor_placement =  Table('sensor_placement', metadata,
       Column('sensor_placement_id', Integer, primary_key=True,
              comment='Automatically incremented row id.'),
-      Column('sensor_id', String(250),
+      Column('sensor_id', String(250)),
       Column('location_name', String(150)),
-      Column('placement_start_date', DateTime)
-      Column('placement_end_date', DateTime)
-      Column('manufacture_date', DateTime)
-      Column('battery_expiration_date', DateTime)
+      Column('placement_start_date', DateTime),
+      Column('placement_end_date', DateTime),
+      Column('manufacture_date', DateTime),
+      Column('battery_expiration_date', DateTime),
       )
 
 
-     water_observation =  Table(
+    water_observation =  Table(
       Column('obervation_id', Integer, primary_key=True,
              comment='Automatically incremented row id.'),
 
@@ -147,3 +239,8 @@ def tables_create():
 
     return
 # end def tables_create()
+
+engine_nick_name = 'uf_local_mysql_marshal1'
+engine = get_db_engine_by_name(name=engine_nick_name)
+
+table_project_create(engine=engine)
