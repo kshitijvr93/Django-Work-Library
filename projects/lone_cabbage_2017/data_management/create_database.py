@@ -59,30 +59,43 @@ def table_project_create(engine=None):
     table_object =  Table(table_name, metadata,
       Column('{}_id'.format(table_name), Integer,
           # NOTE do NOT use Sequence here for mysql?
-          primary_key=True,default=1,
+          Sequence('{}_id_seq'.format(table_name)),
+          primary_key=True,
           comment='Automatically incremented row id.'),
       Column('name', String(200), primary_key=True,
              comment='Project name.'),
       Column('start_date', DateTime),
       )
 
+    # Drop table if skip_extant
+    conn = engine.raw_connection()
+    cursor = conn.cursor()
+    command = "drop table if exists {};".format(table_name)
+    cursor.execute(command)
+    conn.commit()
+    cursor.close()
     # Create db_table in the db engine
     db_engine_table = table_object.create(engine, checkfirst=True)
 
     l_rows = [
         {
+          'project_id': 1,
           'name':'Lone Cabbage Oyster',
           'start_date':'2017/08/11',
           'status':'GO',
           'primary_investigator':'Dr. Bill Pine'
         },
         {
+          'project_id': 2,
+          'name':'Lone Cabbage Oyster',
           'name':'Lone Cabbage Fish 1',
           'start_date':'2018/01/01',
           'status':'GO',
           'primary_investigator':'TBD'
         },
         {
+          'project_id': 3,
+          'name':'Lone Cabbage Oyster',
           'name':'Lone Cabbage Fish 2',
           'start_date':'2018/01/01',
           'status':'GO',
