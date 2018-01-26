@@ -260,6 +260,7 @@ def tables_create():
 
 engine_nick_name = 'uf_local_mysql_marshal1'
 engine_nick_name = 'hp_psql'
+engine_nick_name = 'hp_mysql'
 engine = get_db_engine_by_name(name=engine_nick_name)
 
 table_project_create(engine=engine)

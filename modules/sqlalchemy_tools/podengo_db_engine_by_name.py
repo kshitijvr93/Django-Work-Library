@@ -122,6 +122,21 @@ def get_db_engine_by_name(name=None,verbosity=0):
             'format' : (
               '{dialect}+{driver}://{user}:{password}@{host}/{dbname}')
         },
+        'hp_mysql': {
+            # Note driver mysqldb requires "include mysqlclient"
+            'dialect': 'mysql',
+            'driver': 'mysqldb',
+            'user': 'robert',
+            'password': 'Lep71rev!',
+            'host': '127.0.0.1',
+            'port': '3306',
+            'dbname' : 'marshal1',
+            # NOTE: MUST SET utf8 on connections!
+            'charset': 'utf8',
+            'format' : (
+              '{dialect}+{driver}://{user}:{password}@'
+              '{host}:{port}/{dbname}?charset={charset}'),
+        },
     }
     if name is None:
         msg=( "{}: Valid names are: {}"
