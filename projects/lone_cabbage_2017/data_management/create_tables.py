@@ -160,6 +160,8 @@ def table_location_populate(engine=None, table_object=None):
         { 'name':'LCR Buoy Seven', },
         { 'name':'LCR Buoy Eight', },
         { 'name':'LCR Buoy Nine', },
+        { 'name':'Unknown', },
+
     ]
 
     #insert the l_rows
