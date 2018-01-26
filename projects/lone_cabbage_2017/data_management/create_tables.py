@@ -289,7 +289,7 @@ def table_water_observation_create(metadata=None):
           primary_key=True, autoincrement=True,
           comment='Automatically incremented row id.'),
       Column('sensor_id', Integer),
-      Column('observation_dateime', DateTime),
+      Column('observation_datetime', DateTime),
       # location_id can be derived, maybe no need to populate via imports?
       Column('location_id', Integer, default=1),
       Column('phosphorus_ug', Float),
