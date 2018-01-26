@@ -34,6 +34,21 @@ need temporary tables.
 def get_db_engine_by_name(name=None,verbosity=0):
     me = 'get_db_engine_by_name'
     d_name__engine_db_specs = {
+        'uf_local_mysql_lcroyster1': {
+            # Note driver mysqldb requires "include mysqlclient"
+            'dialect': 'mysql',
+            'driver': 'mysqldb',
+            'user': 'podengo',
+            'password': '20MY18sql!',
+            'host': '127.0.0.1',
+            'port': '3306',
+            'dbname' : 'lcroyster1',
+            # NOTE: MUST SET utf8 on connections!
+            'charset': 'utf8',
+            'format' : (
+              '{dialect}+{driver}://{user}:{password}@'
+              '{host}:{port}/{dbname}?charset={charset}'),
+        },
         'uf_local_mysql_marshal1': {
             # Note driver mysqldb requires "include mysqlclient"
             'dialect': 'mysql',

@@ -57,10 +57,10 @@ Generate:
     "{}_id".format(table_name) and with an automatic sequence
 (2) the list of remaining table columns is the given list of columns
 
-Else, consult given argument column_names and create a Text column for
-each one named.
+Else (not given argument 'columns'),
+consult given argument column_names and create a Text column for each one named.
 
-Create the sqlalchemy core table.
+Create the sqlalchemy core table (not a persistent databse object yet).
 Note that it is just an sqlalchemy core table definition.
 It is not represented yet in any database/engine).
 Return the core table.
@@ -306,6 +306,8 @@ def spreadsheet_to_engine_table(
                 print(msg.encode('utf-8'))
                 #print(msg)
                 sys.stdout.flush()
+
+            # end reading and inserting this row
 
         #msg = ("row={}"
         #  .format(od_table_column__value))
