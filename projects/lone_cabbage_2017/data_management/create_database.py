@@ -110,6 +110,11 @@ def table_project_create(engine=None):
     return
 #end def table_project_create
 
+'''table_sensor_create():
+
+Depends on execution of table_project_create()
+
+'''
 def table_sensor_create():
     l_sensor = [
         {1:2},
@@ -254,6 +259,7 @@ def tables_create():
 # end def tables_create()
 
 engine_nick_name = 'uf_local_mysql_marshal1'
+engine_nick_name = 'hp_psql'
 engine = get_db_engine_by_name(name=engine_nick_name)
 
 table_project_create(engine=engine)

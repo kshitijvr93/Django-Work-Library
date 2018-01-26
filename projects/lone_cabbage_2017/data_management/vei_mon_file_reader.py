@@ -273,14 +273,23 @@ def mon_file_parse2(engine_write=None, input_file_name=None,verbosity=1):
     return l_rows
 #end def mon_file_parse2
 
-def run(verbosity=1):
+def run(env=None,verbosity=1):
     me='run'
+
     glob = '*.MON'
-    input_folder=(
-      'C:\\rvp\\git\\citrus\\projects\\lone_cabbage_2017\\data_management\\' )
-    print("Using input folder='{}',glob='{}'"
-       .format(input_folder,glob), flush=True)
+    if env == 'uf':
+        input_folder=(
+          'C:\\rvp\\git\\citrus\\projects\\lone_cabbage_2017\\data_management\\' )
+        print("Using input folder='{}',glob='{}'"
+           .format(input_folder,glob), flush=True)
+    else:
+        input_folder=(
+          '/home/robert/git/citrus/projects/lone_cabbage_2017/data_management/' )
+        print("Using input folder='{}',glob='{}'"
+           .format(input_folder,glob), flush=True)
+
     input_path_list = list(Path(input_folder).glob(glob))
+
     count = 0
     for count,path in enumerate(input_path_list, start=1):
         input_file_name = "{}{}".format(input_folder,path.name)
@@ -302,7 +311,10 @@ def run(verbosity=1):
 
 testme = 1
 if testme == 1:
-    run()
+
+    env = 'home'
+
+    run(env=env, verbosity=1)
     print("Done",flush=True)
 else:
     config = configparser.ConfigParser()
