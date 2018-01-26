@@ -363,13 +363,14 @@ def tables_populate(engine=None, metadata=None,d_name_table=None):
 
 # MAIN CODE
 def run(env=None):
-    if env != 'uf':
+    if env == 'uf':
         #something all messet up.. THIS works for UF! using env of uf...
         engine_nick_name = 'uf_local_mysql_marshal1'
         engine_nick_name = 'uf_local_mysql_lcroyster1'
     else:
         engine_nick_name = 'hp_psql'
         engine_nick_name = 'hp_mysql'
+        engine_nick_name = 'hp_mysql_lcroyster1'
 
     engine = get_db_engine_by_name(name=engine_nick_name)
     metadata = MetaData()
@@ -381,4 +382,5 @@ def run(env=None):
 test = 1
 if test == 1 :
     env = 'uf'
-    run()
+    env = 'home'
+    run(env=env)
