@@ -40,10 +40,9 @@ print("Using sys.path={}".format(repr(sys.path)))
 def run(env=None):
     if env == 'uf':
         engine_nick_name = 'uf_local_mysql_marshal1'
-        engine_nick_name = 'uf_local_mysql_lcroyster1'
     else:
-        engine_nick_name = 'hp_psql'
-        engine_nick_name = 'hp_mysql'
+        engine_nick_name = 'uf_local_mysql_lcroyster1'
+        engine_nick_name = 'uf_local_psql_lcroyster1'
 
     engine = get_db_engine_by_name(name=engine_nick_name)
     metadata = MetaData(engine)
@@ -65,5 +64,5 @@ def run(env=None):
         table.drop(engine)
 
 # run
-env = 'uf'
+env = 'home'
 run(env=env)

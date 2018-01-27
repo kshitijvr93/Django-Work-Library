@@ -373,6 +373,7 @@ def run(env=None):
         engine_nick_name = 'hp_psql'
         engine_nick_name = 'hp_mysql'
         engine_nick_name = 'hp_mysql_lcroyster1'
+        engine_nick_name = 'hp_psql_lcroyster1'
 
     engine = get_db_engine_by_name(name=engine_nick_name)
     metadata = MetaData()
