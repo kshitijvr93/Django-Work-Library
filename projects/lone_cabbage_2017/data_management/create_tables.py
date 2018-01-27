@@ -73,11 +73,13 @@ def table_project_create(metadata=None,engine=None):
     table_object =  Table(table_name, metadata,
       Column('{}_id'.format(table_name), Integer,
           # NOTE do NOT use Sequence here for mysql?
-          Sequence('{}_id_seq'.format(table_name)),
+          #Sequence('{}_id_seq'.format(table_name), metadata=metadata),
           primary_key=True, autoincrement=True,
           comment='Automatically incremented row id.'),
+      UniqueConstraint('{}_id'.format(table_name),
+          name='uq1_{}'.format(table_name) ),
       Column('name', String(200), primary_key=True,
-             comment='Project name.'),
+          comment='Project name.'),
       Column('start_date', DateTime),
       )
     return table_object
@@ -133,9 +135,11 @@ def table_location_create(metadata=None):
     table_object =  Table(table_name, metadata,
       Column('{}_id'.format(table_name), Integer,
           # NOTE do NOT use Sequence here for mysql?
-          Sequence('{}_id_seq'.format(table_name)),
+          #Sequence('{}_id_seq'.format(table_name), metadata=metadata),
           primary_key=True, autoincrement=True,
           comment='Automatically incremented row id.'),
+      UniqueConstraint('{}_id'.format(table_name),
+          name='uq1_{}'.format(table_name) ),
       Column('tile_id', Integer),
       Column('latitude', Float),
       Column('longitude', Float),
@@ -177,8 +181,11 @@ def table_sensor_create(metadata=None):
     # Create SA relation 'table object', and later we will use
     table_object =  Table('{}'.format(table_name), metadata,
       Column('{}_id'.format(table_name), Integer,
-             primary_key=True, autoincrement=True,
-             comment='Automatically incremented row id.'),
+          #Sequence('{}_id_seq'.format(table_name), metadata=metadata),
+          primary_key=True, autoincrement=True,
+          comment='Automatically incremented row id.'),
+      UniqueConstraint('{}_id'.format(table_name),
+          name='uq1_{}'.format(table_name) ),
       Column('project_id', Integer),
       Column('location_id', Integer),
       Column('manufacturer', String(150)),
@@ -234,6 +241,8 @@ def table_sensor_history_create(metadata=None):
       Column('{}_id'.format(table_name), Integer,
              primary_key=True, autoincrement=True,
              comment='Automatically incremented row id.'),
+      UniqueConstraint('{}_id'.format(table_name),
+          name='uq1_{}'.format(table_name) ),
       Column('sensor_id', Integer),
       Column('location_id', Integer),
       Column('event_type', String(150)), #Empty string means PLACEMENT
@@ -287,9 +296,11 @@ def table_water_observation_create(metadata=None):
     table_object =  Table(table_name, metadata,
       Column('{}_id'.format(table_name), Integer,
           # NOTE do NOT use Sequence here for mysql?
-          Sequence('{}_id_seq'.format(table_name)),
+          #Sequence('{}_id_seq'.format(table_name), metadata=metadata),
           primary_key=True, autoincrement=True,
           comment='Automatically incremented row id.'),
+      UniqueConstraint('{}_id'.format(table_name),
+          name='uq1_{}'.format(table_name) ),
       Column('sensor_id', Integer),
       Column('observation_datetime', DateTime),
       # location_id can be derived, maybe no need to populate via imports?

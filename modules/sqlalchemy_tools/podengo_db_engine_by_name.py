@@ -167,6 +167,17 @@ def get_db_engine_by_name(name=None,verbosity=0):
               '{dialect}+{driver}://{user}:{password}@'
               '{host}:{port}/{dbname}?charset={charset}'),
         },
+        'hp_psql_lcroyster1': {
+             # hp postgresql installation
+            'dialect' : 'postgresql',
+            'driver' : 'psycopg2',
+            'user': 'robert',
+            'password' : 'Gon82sal!',
+            'host': 'localhost',
+            'dbname': 'lcroyster1',
+            'format' : (
+              '{dialect}+{driver}://{user}:{password}@{host}/{dbname}')
+        },
     }
     if name is None:
         msg=( "{}: Valid names are: {}"
