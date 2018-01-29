@@ -41,6 +41,7 @@ def run(env=None):
 
     if env == 'uf':
         engine_nick_name = 'uf_local_mysql_marshal1'
+        engine_nick_name = 'uf_local_mysql_lcroyster1'
     else:
         engine_nick_name = 'hp_mysql_lcroyster1'
         engine_nick_name = 'hp_psql_lcroyster1'
@@ -68,4 +69,5 @@ def run(env=None):
 
 # run
 env = 'home'
+env = 'uf'
 run(env=env)

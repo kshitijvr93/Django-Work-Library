@@ -303,6 +303,8 @@ def table_water_observation_create(metadata=None):
           name='uq1_{}'.format(table_name) ),
       Column('sensor_id', Integer),
       Column('observation_datetime', DateTime),
+      UniqueConstraint('sensor_id','observation_datetime',
+          name='uq2_{}'.format(table_name) ),
       # location_id can be derived, maybe no need to populate via imports?
       Column('location_id', Integer, default=1),
       Column('phosphorus_ug', Float),
@@ -396,4 +398,5 @@ test = 1
 if test == 1 :
     env = 'uf'
     env = 'home'
+    env = 'uf'
     run(env=env)
