@@ -185,14 +185,14 @@ def translate_elsevier_bibinfo(engine_read=None,engine_write=None
         Column('ufdc_deleted', Integer),
         Column('bibvid', String(30)),
         UniqueConstraint('bibvid', name='{}_uix1'.format(table_name_out)),
-        Column('pii', String(300), index=True),
+        Column('pii', String(30), index=True),
         Column('oac_elsevier', String(20)),
         Column('oac_oadoi',String(20)),
-        Column('tickler',Text),
+        Column('tickler', String(200)),
         Column('bibid', String(20)),
         Column('vid', Integer),
         Column('is_am4ir', String(20)),
-        Column('embargo_off_date', String(30)),
+        Column('embargo_off_date', Date ),
         Column('doi', String(4096)), #max key for index is 3072 bytes, exceeded
         Column('doi_source', String(16)), #Eg, elsevier_api or am4ir_ss
         Column('issn', String(32)),
@@ -236,8 +236,11 @@ def translate_elsevier_bibinfo(engine_read=None,engine_write=None
         bibvid='{}_{}'.format(bibid, vid_str)
         d_col_val['bibvid'] = bibvid
 
+        # Sobekcm column 'tickler' accumulate history, in pipe-delimited
+        # segments, but we need only the last one
         tickler = row['Tickler']
-        d_col_val['tickler'] = tickler
+        parts = tickler.split('|')
+        d_col_val['tickler'] = parts[len(parts) - 1]
 
         link = row['Link']
         # pii is after last slash, but before a ?, if any
