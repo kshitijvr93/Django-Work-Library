@@ -97,7 +97,10 @@ if 1 == 1:
     # Gather the rows in a dictionary - use fetchmany until a need arises for
     # fetch of one at a time..
     conn = engine_source.connect()
-    source_rows = conn.execute(select([table_source])).fetchall()
+    s = table_source
+    source_rows = conn.execute(
+        select([s]).where(s.c.ufdc_deleted == 1)
+        ).fetchall()
 
     for row in source_rows:
         engine_dest.execute(table_dest_core.insert(),row)
