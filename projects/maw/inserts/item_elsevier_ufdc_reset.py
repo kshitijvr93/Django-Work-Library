@@ -153,6 +153,7 @@ def get_elsevier_bibinfo(engine=None, conn=None,table_name=None,verbosity=1):
       print("{}:compiled select={}".format(me,compiled))
     #
     # calculate rows from the select_columns- but only works with session.execute()
+    # Note: does conn close on deletion?
     result = conn.execute(select_elsevier_info)
     return result.fetchall(), item, group
 #end get_elsevier_bibinfo()

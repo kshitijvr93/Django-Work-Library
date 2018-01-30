@@ -13,9 +13,9 @@ https://stackoverflow.com/questions/43518991/update-multiple-columns-from-a-subq
 The SA-compiled statement looked good, probably would
 work OK in postgres and other dbs, but was a syntax error in
 MySQL 5.7, so the below works OK for now.
-Maybe revisit a way to do a multi-column correlated update (in one
-statement) later. For now, for MySQL, we use the common-denominator
-(among current popular databases) method of doing one statement
+Maybe revisit a way to use SA to do a multi-column correlated update (in one
+statement) later. For now, for MySQL, we must use the common-denominator
+(among current popular databases) SA method of doing one statement
 per destination column to update.
 '''
 import sys, os, os.path, platform
@@ -103,8 +103,9 @@ def am4ir_update_by_pii(engine=None, table_name_am4ir=None,
 #end am4ir_update_by_pii
 
 # MAIN PROGRAM
-engine_write_name = 'uf_local_mysql_marshal1'
-engine_write = get_db_engine_by_name(name=engine_write_name)
+engine_nick_name = 'uf_local_mysql_marshal1'
+
+engine_write = get_db_engine_by_name(name=engine_nick_name)
 
 table_name_am4ir = 'am4ir_item'
 table_name_write = 'item_elsevier_ufdc'

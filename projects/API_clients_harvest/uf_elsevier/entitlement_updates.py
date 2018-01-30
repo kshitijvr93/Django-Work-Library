@@ -202,6 +202,7 @@ def fetchall_rows_by_table(conn=None, engine=None, table=None, verbosity=0):
         raise ValueError("Either arg conn or engine must be given")
 
     conn = table.engine.connect();
+    # Code review: todo - return conn too, so caller can close it!
     return conn.execute(select([table]).fetchall())
 
 def sequence_rows_by_table(conn=None, engine=None, table=None, verbosity=0):

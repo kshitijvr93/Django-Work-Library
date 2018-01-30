@@ -1,7 +1,7 @@
 '''
 am4ir_get_ufdc_bibivids
 
-oops - I suspended this work and then started doing this
+NB - I suspended this work and then started doing this
 in file e_bibvid_marshal.py -- so maybe delete this file...
 
 
