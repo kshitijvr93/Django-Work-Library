@@ -114,6 +114,18 @@ def get_db_engine_by_name(name=None,verbosity=0):
             'format' : '{driver}://{server}/{dbname}?driver={odbc_driver}',
         },
 
+        'uf_local_rvp_test_sobekdb': {
+             # Using windows authentication here so do not need user,password
+             # I did not specify driver pyodbc here, so sqlalchemy
+             # uses a working default.
+            'dialect' :  'mssql',
+            'server_host': 'localhost',
+            'server_instance': 'SQLEXPRESS',
+            'dbname' : 'rvp_test_sobekdb',
+            'format' : (
+              '{dialect}://{server_host}\\{server_instance}/{dbname}'
+              '?driver=SQL+Server&trusted_connection=yes')
+        },
         'uf_local_silodb': {
              # Using windows authentication here so do not need user,password
              # I did not specify driver pyodbc here, so sqlalchemy

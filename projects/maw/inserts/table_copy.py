@@ -75,8 +75,11 @@ if 1 == 1:
     table_name_dest = 'item_ufdc2'
 
     if env == 'uf':
+
       engine_nick_name_source = 'uf_local_mysql_marshal1'
+
       engine_nick_name_dest = 'uf_local_mysql_marshal1'
+      engine_nick_name_dest = 'uf_local_rvp_test_sobekdb'
 
       engine_source = get_db_engine_by_name(engine_nick_name_source)
       engine_dest = get_db_engine_by_name(engine_nick_name_dest)
