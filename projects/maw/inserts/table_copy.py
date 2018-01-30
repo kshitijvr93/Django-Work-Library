@@ -3,6 +3,12 @@ Given a source engine and table, expect the table to exist in the engine,
 collect its columns and indexes (not foreign keys), create the table to an output
 table name in a given destination engine, and copy all the rows from the a_source
 table and insert them into the destination table
+
+First application - copy a table to put into sobekdb production_sobekdb
+warning -- a hack was made for this specific table with a where() condition.
+TODO: back it out and move back to a more general utility to eventually put
+under ...modules/sqlalchemy_tools folder.
+
 '''
 import sys, os, os.path, platform
 
@@ -99,7 +105,7 @@ if 1 == 1:
     conn = engine_source.connect()
     s = table_source
     source_rows = conn.execute(
-        select([s]).where(s.c.ufdc_deleted == 1)
+        select([s]).where(s.c.ufdc_deleted == 0)
         ).fetchall()
 
     for row in source_rows:
