@@ -45,7 +45,7 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from pathlib import Path
 
 
-def create_engine_table_dest(engine_source=None, table_name_source=None,
+def create_table_dest_core(engine_source=None, table_name_source=None,
    engine_dest=None, table_name_dest=None, verbosity=0):
 
    meta_source = MetaData(engine_source)
@@ -61,9 +61,10 @@ def create_engine_table_dest(engine_source=None, table_name_source=None,
 
    # Create persistent database dable in engine destination
    # But use checkFirst=True to require that it not already exist there.
-   engine_table_dest = table_dest_core.create(engine_dest, checkfirst=True)
 
-   return engine_table_dest
+   table_dest_core.create(engine_dest, checkfirst=True)
+
+   return table_dest_core
 
 # MAIN
 
@@ -86,16 +87,17 @@ if 1 == 1:
       table_name_source, meta_source, autoload=True, autoload_with=engine_source)
 
     # Create destination engine table to receive the copied rows
-    engine_table_dest = create_engine_table_dest(
+    table_dest_core = create_table_dest_core(
       engine_source=engine_source, table_name_source=table_name_source,
-      engine_dest = engine_dest, table_name_dest=table_name_dest, verbosity=1)
+      engine_dest=engine_dest, table_name_dest=table_name_dest, verbosity=1)
 
     # Gather the rows in a dictionary - use fetchmany until a need arises for
     # fetch of one at a time..
     conn = engine_source.connect()
     source_rows = conn.execute(select([table_source])).fetchall()
+
+    for row in source_rows:
+        engine_dest.execute(table_dest_core.insert(),row)
+
     l = len(source_rows)
-
-    #print("Ending with source_rows={}".format(repr(source_rows)),flush=True)
-
     print("Got {} source rows, first is: {}!".format(l,source_rows[0]))

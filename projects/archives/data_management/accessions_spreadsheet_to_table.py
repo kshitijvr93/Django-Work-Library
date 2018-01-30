@@ -306,7 +306,7 @@ def spreadsheet_to_engine_table(
             print(msg.encode('utf-8'))
             #print(msg)
             sys.stdout.flush()
-
+        # For index, column in (row)
         msg = ("row={}"
           .format(od_table_column__value))
         #engine.execute(engine_table.insert(), od_table_column__value)
@@ -315,6 +315,7 @@ def spreadsheet_to_engine_table(
         if i % 100 == 0:
            print(i)
 
+    #end: for row in reader
 #end spreadsheet_to_engine_table(workbook_path=None, table=None, engine=None):
 
 '''
