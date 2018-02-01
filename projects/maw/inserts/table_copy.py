@@ -51,6 +51,11 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from pathlib import Path
 
 
+'''
+    # Consider rename: create_table_dest_by_table_source() and alter
+    #params to: table_name_dest, table_source, verbosity
+'''
+
 def create_table_dest_core(engine_source=None, table_name_source=None,
    engine_dest=None, table_name_dest=None, verbosity=0):
 
@@ -78,7 +83,7 @@ if 1 == 1:
     env = 'uf'
 
     table_name_source = 'item_elsevier_ufdc'
-    table_name_dest = 'item_ufdc2'
+    table_name_dest = 'elsevier_item'
 
     if env == 'uf':
 
@@ -96,6 +101,8 @@ if 1 == 1:
       table_name_source, meta_source, autoload=True, autoload_with=engine_source)
 
     # Create destination engine table to receive the copied rows
+    # Consider rename: create_table_dest_by_table_source() and alter
+    #params to: table_name_dest, table_source, verbosity
     table_dest_core = create_table_dest_core(
       engine_source=engine_source, table_name_source=table_name_source,
       engine_dest=engine_dest, table_name_dest=table_name_dest, verbosity=1)
