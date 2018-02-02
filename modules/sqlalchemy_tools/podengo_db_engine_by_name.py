@@ -13,6 +13,7 @@ from sqlalchemy import (
   )
 
 import MySQLdb
+# import pysqlite
 
 '''
 Get sqlalchemy engine by name
@@ -34,6 +35,12 @@ need temporary tables.
 def get_db_engine_by_name(name=None,verbosity=0):
     me = 'get_db_engine_by_name'
     d_name__engine_db_specs = {
+        'uf_local_sqlite_lcroyster1': {
+            'dialect': 'sqlite',
+            'dbname' : 'lcroyster1',
+            'format' : (
+              '{dialect}:///U:\\data\\sqlite\\{dbname}' ),
+        },
         'uf_local_mysql_lcroyster1': {
             # Note driver mysqldb requires "include mysqlclient"
             'dialect': 'mysql',
@@ -225,11 +232,12 @@ env = 'windows'
 
 if testme == 1:
     if env == 'windows':
+        engine = test_run(name='uf_local_sqlite_lcroyster1')
         engine = test_run(name='uf_local_mysql_marshal1')
         engine = test_run(name='integration_sobekdb')
         engine = test_run(name='production_sobekdb')
         engine = test_run(name='uf_local_silodb')
         engine = test_run(name='lib_archcoll_aspace')
-        engine = test_run(name='lib_ill_archiviststoolkit')
+        engine = test_run(name='lib_ill_at')
     else:
         engine = test_run(name='hp_psql')

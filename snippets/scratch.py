@@ -1,4 +1,20 @@
-total_results_count = 20001
-n_batch_rows = 1000
-total_batch_count = int((total_results_count -1) / 1000 + 1)
-print(total_batch_count)
+'''
+test sqlite connection
+
+'sqlite:////U:\\data\\sqlite\\lcroyster1'
+
+'''
+# import pysqlite
+
+def test():
+    cs = 'sqlite:////U:\\data\\sqlite\\lcroyster1'
+
+
+#end test_translate
+
+testme=1
+
+if testme ==1:
+  print("Start")
+  test()
+  print("Done")

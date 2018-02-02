@@ -382,6 +382,9 @@ def run(env=None):
         #something all messet up.. THIS works for UF! using env of uf...
         engine_nick_name = 'uf_local_mysql_marshal1'
         engine_nick_name = 'uf_local_mysql_lcroyster1'
+        # sqlite FAIL: "SQLite does not support autoincrement for
+        #   composite primary keys"
+        # engine_nick_name = 'uf_local_sqlite_lcroyster1'
     else:
         engine_nick_name = 'hp_mysql_lcroyster1'
         engine_nick_name = 'hp_psql_lcroyster1'
