@@ -26,45 +26,17 @@ import codecs
 from collections import OrderedDict
 
 l_unit = [
-    'ABE',
     'AgEd',
     'Agron',
     'Citrus_REC',
     'Custom 8',
-    'EntNem',
-    'EnvHort',
-    'Everglades_REC',
-    'FYCS',
-    'FLMedEnt',
     'FRED',
-    'FoodSci',
-    'FtLauder_REC',
-    'Gulf_REC',
-    'HortSci',
-    'IndianRiv_REC',
-    'MicroCell',
-    'MidFL_REC',
-    'NoFL_REC',
-    'PlantPath',
-    'Range_REC',
-    'SFRC',
-    'SoilWater',
-    'SW_REC',
-    'Trop_REC',
-    'West_REC',
-    'WildEco',
-    'IFAS_Global',
 ]
 '''
 summary: get first line of input file in arg ifile,
 delimit it by tabs, and simply return the count of the Number
 of fields.
-This program assumes that all rows must/should have that number or less
-as some 'txt' input file lines, in practice do have less, because this
-program monitors each field value and considers the end of a logical line
-to be where a l_unit value resides. All fields after such a value on a
-physical input line are ignored, and if a unit name appears in a column
-that is not the column count column, a warning is issued.
+This program assumes that all rows must/should have that number.
 '''
 def process_first_line(ifile=None,ofile=None,delim='\t'):
 
@@ -91,21 +63,14 @@ Return the iline when the total field count equals the field count param.
 Add check: only try to mend line if output field count is 4 title
 or 5 journal
 '''
-def  mend_line(ifile=None, nil=None,output_fields=None, field_count=None,
-    delim='\t', verbosity=1):
-
+def  mend_line(ifile=None, output_fields=None, field_count=None, delim='\t'):
     me = 'mend_line'
     nof = len(output_fields)
-    if verbosity > 0:
-        print("{}:nil={} nof={} output_fields={}"
-            .format(me,nil,nof,output_fields))
+    print("{} Got arg {} output_fields={}".format(me,nof,output_fields))
 
     if nof < 1 :
-        msg = "{}: rejecting line {} with no fields".format(me,nil)
-        raise ValueError(msg)
+        raise ValueError("mend_line rejects lines with no fields")
     elif nof >= field_count:
-        msg = ("{}: line {} should have {} fields, reject line with {} fields"
-            .format(me,nil,field_count,nof))
         raise ValueError("With field_count {}, reject line with {} fields"
             .format(field_count,nof))
 
@@ -113,15 +78,6 @@ def  mend_line(ifile=None, nil=None,output_fields=None, field_count=None,
     # only mend output field count 4 or 5
     while (1):
         next_line = ifile.readline()
-        if next_line == '':
-            # either end of file or just a blank line.....
-            # we'll assume EOF, because we don't have a choice with the
-            # while loop
-            break
-        nil += 1
-        if nil > 10000:
-            #safeguard
-            break;
         if next_line is None:
             break
         next_line = next_line[:len(next_line)-1] #kill newline
@@ -133,16 +89,13 @@ def  mend_line(ifile=None, nil=None,output_fields=None, field_count=None,
         # Consider: if nof == 5 or nof==4 and nif[1](journal) is not empty
         if ( nof == 4 or nof ==5 ):
             n_trailing_empty_fields = 0
-            reversed_fields = input_fields[::-1]
+            reverse_fields = input_fields[::-1]
 
             for i in range(nif):
-                rv = reversed_fields[i]
+                rv = reverse_fields[i]
                 #if len(rv) > 0 and not rv.startswith("Manually"):
-                if len(rv) > 0 and rv in l_units:
-                      #found the citatino's final logical fields
-                      if nif -i < field_count -1:
-                          msg = ('ERROR:Line {}: unit in column {}, not {}'
-                              .format(nil,nif -i + 1, field_count))
+                if len(rv) > 0 and not rv.startswith('Manually'):
+                      #found the final field with a non-empty value
                       break;
                 n_trailing_empty_fields += 1
 
@@ -183,16 +136,14 @@ def  mend_line(ifile=None, nil=None,output_fields=None, field_count=None,
 Only mend breaks if the current nof is 4 or 5, as those are the Only
 fields that can have breaks now.
 '''
-def mend_breaks(input_file_name="c:/rvp/downloads/2018_test4.txt",
-   output_file_name='c:/rvp/downloads/unbroken.txt',delim='\t',
-   verbosity=1):
+def mend_breaks(input_file_name="c:/rvp/downloads/broken_lines.txt",
+   output_file_name='c:/rvp/downloads/unbroken.txt',delim='\t'):
 
     me = 'mend_breaks'
     ifn = input_file_name
     ofn = output_file_name
 
-    if verbosity > 0:
-        print("{}: using input file={}, output file={}".format(me,ifn,ofn))
+    print("{}: using input file={}, output file={}".format(me,ifn,ofn))
 
     ifile = open(ifn, mode="r", encoding='utf-8-sig',  errors='ignore')
     with open(ofn, mode="w" ) as ofile:
@@ -208,34 +159,26 @@ def mend_breaks(input_file_name="c:/rvp/downloads/2018_test4.txt",
       nil = 1 # start at 1 because process_first_line already read that.
       while (1):
           iline = ifile.readline()
-          if iline ==  '':
-              break;
-
+          if iline is None:
+              break
           nil += 1
           iline = iline[:len(iline)-1]  #kill newline
-          fields = iline.split(delim)
+          fields = iline.split('\t')
           nif = len(fields)
           n_trailing_empty_fields = 0;
-          # Reverse fields to seek a unit_name from the back, the
-          # somewhat more frequent case for input lines
-          reversed_fields = fields[::-1]
-          has_unit = 0
-          unit_index = -1
+          reverse_fields = fields[::-1]
+
           for i in range(nif):
-              value = reversed_fields[i]
-              if value in l_unit:
-                  has_unit = 1
-                  unit_index = nif - i
-              if len(value) > 0:
+              if len(reverse_fields[i]) > 0:
                   #found the final field with a non-empty value
                   break;
               n_trailing_empty_fields += 1
 
-          if  n_trailing_empty_fields  > 0:
-              # This is really a partial line that has been artificially
-              # padded with columns on the end, an artifact found in the
-              # input files.
-              # Cut off the emptry trailing fields:
+          if n_trailing_empty_fields  > 4:
+
+              # empirically good for ifas ciations data
+              # this is really a partial line that has been artificially
+              # padded. Cut off the emptry trailing fields:
               print("Line {} has {} trailing empty fields of {} fields,line line='{}'"
                   .format(nil, n_trailing_empty_fields, nif,iline))
               # new fields  - remove the trailing empty fields
@@ -245,36 +188,28 @@ def mend_breaks(input_file_name="c:/rvp/downloads/2018_test4.txt",
 
           print("Input Line {} has {} fields: '{}'".format(nil,nif,fields))
 
-          if has_unit == 0:
+          if nif < field_count:
+              if nif == 1 and len(field[0]) == 0:
+                  break; # last line
               print(
                 "Got broken input line number {} of {} fields='{}'"
                 .format(nil,nif,fields))
 
-             # iline = mend_line(ifile=ifile, nil=nil,output_fields=fields,
-             #   field_count=field_count, delim=delim)
+              iline = mend_line(ifile=ifile, output_fields=fields,
+                field_count=field_count, delim=delim)
 
               print("Mended input line {}='{}'\n --- iline {} with nif={}"
                 .format(nil,iline,nil,nif))
               fields = iline.split('\t')
 
               print(delim.join(fields),file=ofile)
-          else:
-              #Got an ifas unit on this line, not broken.
-              if unit_index != field_count -1:
-                  print("Error: line {} has unit in column {}, not {}"
-                      .format(nil,unit_index+1, field_count))
-              print(delim.join(fields),file=ofile)
         #endfor nil,iline
       print("Finished reading {} logical lines from {}".format(iline,ifn))
       #end while
     ifile.close()
 # end def mend_breaks()
-input_file_name="c:/rvp/downloads/2018_test4.txt"
-input_file_name="/home/robert/Downloads/2018_test4.txt"
 
-output_file_name="c:/rvp/downloads/unbroken.txt"
-output_file_name="/home/robert/Downloads/unbroken.txt"
-mend_breaks(input_file_name=input_file_name,output_file_name=output_file_name)
+mend_breaks()
 
 print("done!")
 sys.stdout.flush()
