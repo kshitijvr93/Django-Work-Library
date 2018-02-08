@@ -73,7 +73,7 @@ physical input line are ignored, and if a unit name appears in a column
 that is not the column count column, a warning is issued.
 '''
 def process_first_line(ifile=None,ofile=None,delim='\t'):
-
+    me = process_first_line
     first_line = ifile.readline()
     first_line = first_line[:-1]
 
@@ -81,7 +81,23 @@ def process_first_line(ifile=None,ofile=None,delim='\t'):
     #remove trailing newline
 
     field_names = first_line.split(delim)
-    return field_names
+    ifas_unit_field_count = 0;
+    for i,name in enumerate(field_names, start=1):
+        if name.lower() == 'ifas unit':
+            ifas_unit_field_count = i;
+            break;
+
+    #end for field_names
+
+    if ifas_unit_field_count == 0:
+        msg = (
+            "{}: FATAL ERROR: No 'IFAS Unit' field found in first line."
+            .format(me))
+        raise ValueError(msg)
+
+    # Enforce that IFAS Unit name is the last field
+    return field_names[:ifas_unit_field_count]
+#end def process_first_line
 
 '''
 Given a line with fewer than field_count fields, keep reading lines
@@ -205,6 +221,7 @@ def mend_breaks(input_file_name="c:/rvp/downloads/2018_test4.txt",
     with open(ofn, mode="w" ) as ofile:
       first_fields = process_first_line(ifile=ifile,ofile=ofile,delim=delim)
       field_count = len(first_fields)
+      ifas_unit_index = field_count -1
       print("INFO: First line has {} fields = {}"
           .format(field_count, first_fields), file=lfile)
       # Parse a set of rows, each row made of of 'count' fields
@@ -239,13 +256,13 @@ def mend_breaks(input_file_name="c:/rvp/downloads/2018_test4.txt",
                   break;
               n_trailing_empty_fields += 1
 
-          if  n_trailing_empty_fields  > 0:
+          if  n_trailing_empty_fields > 0 and fields[ifas_unit_index] in units:
               # This is really a partial line that has been artificially
               # padded with columns on the end, an artifact found in the
               # input files.
               # Cut off the emptry trailing fields:
-              print("{}: INFO: Line has {} trailing empty fields, line='{}'"
-                  .format(nil, n_trailing_empty_fields, iline), file=lfile)
+              print("{}: WARNING: Line {} has {} trailing empty fields, line='{}'"
+                  .format(me,nil, n_trailing_empty_fields, iline), file=lfile)
               # new fields  - remove the trailing empty fields
               fields = fields[:-n_trailing_empty_fields]
               # Now fewer fields
@@ -282,7 +299,7 @@ def mend_breaks(input_file_name="c:/rvp/downloads/2018_test4.txt",
     ifile.close()
 # end def mend_breaks()
 input_file_name="c:/rvp/downloads/2018_test4.txt"
-input_file_name="/home/robert/Downloads/2017_All_Units_3.txt"
+input_file_name="/home/robert/Downloads/2017_All_Units_4.txt"
 
 output_file_name="c:/rvp/downloads/unbroken.txt"
 output_file_name="/home/robert/Downloads/unbroken.txt"
