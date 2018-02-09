@@ -44,7 +44,7 @@ Initial test FILENAME has last year's citations...
 '''
 
 '''
-Method ifas_citations_base():
+deprecated or renamed? Method ifas_citations_past():
 
 <summary> Read a 'base' file of previous IFAS citations that are not to be
 allowed in this year's batch of input.
@@ -165,25 +165,29 @@ class OutBookSheet():
 # end class OutBookSheet
 
 '''
-<summary>This object registers the annual IFAS citations input folders and
+<summary name="CitationsInspector">
+
+This object registers the annual IFAS citations input folders and
 files, and has main method inspect() which inspects a year's worth of IFAS
 'round1' citation data from the UF IFAS units.
+
 It produces an output excel file for each unit that inputted data, with
 various cell colorations and indications of warning and error conditions.
 
-These files are for UF MSL staff and IFAS staff to review and consider in
-making further manual refinements to each the unit-citations file to
-register this year's scholarly publications in peer-reviwed journals,
-authored by their employees.
+These output files files are for UF MSL staff and IFAS staff to review and
+consider in making further manual refinements to each the unit-citations
+file to register this year's scholarly publications in peer-reviwed
+journals, authored by their employees.
 
-Those files will comprise round2 orf input.
+Those files will comprise round2 orf input to this program
+
 </summary>
 
 <param> input_folder - main folder with a year of structured input
-files, with filenames and subfolder structure as expcted i routing __init__
+files, with filenames and subfolder structure as expcted in routing __init__
 and object methods, </param>
 
-<param name='base_pubs_file_name'> The name of the file (assumed to be in
+<param name='past_pubs_file_name'> The name of the file (assumed to be in
 the input_folder folder) containing the 'base' publications for
 the previous year's period, used to check for duplicates across new inputs
 this year and the previous year<./param>
@@ -198,25 +202,25 @@ class CitationsInspector():
     </param>
 
     <param name='input_files_glob'>
-    Glob pattern of input file filenames
+    Glob pattern of input file filenames to use in the input folder(s)
     </param>
 
-    <param name='base_pubs_file_name'>
+    <param name='past_pubs_file_name'>
     File name with DOIs of previous year's publications, used to reject as
     duplicates the lines in input files with the same DOI values.
     </param>
 
     Also read the base citations that have a doi mentioned and create a
-    dictionary d_base_doi entry keyed by the doi with value being the entire
+    dictionary d_past_doi entry keyed by the doi with value being the entire
     line's text.
 
     Also keep every line in the d_base dictionary, keyed by index line number
     zfilled to 10 positions.
     '''
     def __init__(self, input_folder=None, input_files_glob=None
-        , base_pubs_file_name=None, verbosity=0):
+        , past_pubs_file_name=None, verbosity=0):
         required_args = [
-          'input_folder','base_pubs_file_name', 'input_file_glob']
+          'input_folder','past_pubs_file_name', 'input_files_glob']
         if not all(required_args):
           msg = 'Missing a required arg from {}'.format(repr(required_args))
           raise ValueError(msg)
@@ -226,7 +230,7 @@ class CitationsInspector():
         #self.input_files_glob = 'IFAS*txt'
         self.input_files_glob = input_files_glob
         if verbosity > 0:
-            print("Inputs_folder='{}', glob='{}'".format(self.input_folder,
+            print("{}:input_folder='{}', glob='{}'".format(me,self.input_folder,
               self.input_files_glob))
 
         self.input_paths = list(
@@ -235,26 +239,26 @@ class CitationsInspector():
           raise ValueError(
             "Found ZERO input files in input folder {} with glob {}"
             .format(input_folder, repr(input_files_glob)))
-        self.base_pubs_file_name = base_pubs_file_name
+        self.past_pubs_file_name = past_pubs_file_name
         if verbosity > 0:
-            print("Using base pubs file name ='{}'"
-              .format(self.base_pubs_file_name))
+            print("Using past pubs file name ='{}'"
+              .format(self.past_pubs_file_name))
         # Number of lines in last year's citations file to skip from the start
         self.base_skip_lines = 4
         self.d_base_index = {}
-        self.d_base_doi = {}
+        self.d_past_doi = {}
         self.d_current_doi = {}
         self.d_unit_doi = {}
         n_file_citations = 0
         self.output_columns = [
-          'unit','doi', 'authors',  'pub_year','title','journal','volume','issue',
-          'pages', 'original_line',
+          'unit','doi', 'authors',  'pub_year','title','journal','volume',
+          'issue', 'pages', 'original_line',
         ]
 
         # input and save last year's citation info to use to check for
         # duplicates in this year's units
 
-        with open (str(self.base_pubs_file_name), encoding="utf-8-sig",
+        with open(str(self.past_pubs_file_name), encoding="utf-8-sig",
             errors='replace', mode="r") as input_file:
             input_lines = input_file.readlines()
 
@@ -288,7 +292,7 @@ class CitationsInspector():
                 doi = line[index_doi:].replace('\n','').strip()
                 unit = ''
                 '''
-                #experimental code to use if DOI guaranteed to always exists
+                #experimental code to use if DOI guaranteed to alway exists
                 #with no spaces IN the value, followed by unit name
                 tail = line[index_doi:].replace('\n','').strip()
                 tfields = tail.split(' ')
@@ -301,15 +305,15 @@ class CitationsInspector():
                 '''
                 if verbosity > 0:
                     msg = (
-                      "file={},line number={},with base_doi='{}',unit={}"
-                      .format(self.base_pubs_file_name,index_line,doi,unit))
+                      "file={},line number={},with past_doi='{}',unit={}"
+                      .format(self.past_pubs_file_name,index_line,doi,unit))
                     #MUST encode as below to handle printing misc chars in input
                     omsg = msg
                     print(msg.encode('ascii',errors='replace'))
                     #print(omsg) -- would cause UnicodeEncodeError -
                     # charmap codec cant encodt '\ufffd\''
-                # SAVE BASE DOI to check for duplicates later
-                self.d_base_doi[doi] = line
+                # SAVE past DOI to check for duplicates later
+                self.d_past_doi[doi] = line
                 n_file_citations += 1
             # end with open input_file
         #self.d_base = d_base
@@ -460,15 +464,15 @@ class CitationsInspector():
                         # A DOI STRING WAS FOUND
                         # Now do three doi duplication checks:
                         # DOI Dup Check (error2):
-                        # check if doi already in the base, prev year's report
-                        doi_base_dup = self.d_base_doi.get(doi, None)
+                        # check if doi already in the past, prev year's report
+                        doi_past_dup = self.d_past_doi.get(doi, None)
 
-                        if doi_base_dup is not None:
+                        if doi_past_dup is not None:
                             # ERROR: This doi duplicates one from base (previous) year
                             n_dup_old += 1
                             print("ERROR: Input file {}, index={},"
                               " has duplicate past doi '{}'".format(
-                                input_file_name, index_line, doi_base_dup))
+                                input_file_name, index_line, doi_past_dup))
                             d_column_style['doi'] = d_type_style['error2']
 
                         # DOI Dup Check  (error):
@@ -583,15 +587,15 @@ def run(study_year=2016, study_type='year_end'):
         msg="Invalid study type={}. Error.".format(study)
         raise ValueError(msg)
 
-    base_pubs_folder = etl.data_folder(linux='/home/robert', windows='U:',
+    past_pubs_folder = etl.data_folder(linux='/home/robert', windows='U:',
     data_relative_folder='/data/ifas_citations/{}/base_info/'.format(study_year))
-    base_file_name = 'IFAS-{}-pubs_by_topic-1.txt'.format(last_year)
+    past_file_name = 'IFAS-{}-pubs_by_topic-1.txt'.format(last_year)
 
-    # base_pubs_file_name: is the absolute path of the input file with LAST
+    # past_pubs_file_name: is the absolute path of the input file with LAST
     # YEAR's DOIs to flag as a duplicate error if any is found in
     # THIS YEAR's input data
 
-    base_pubs_file_name = '{}{}'.format(base_pubs_folder, base_file_name)
+    past_pubs_file_name = '{}{}'.format(past_pubs_folder, past_file_name)
 
     if study == 'normal':
         #Here we read input files under inputs_round1/units
@@ -616,13 +620,13 @@ def run(study_year=2016, study_type='year_end'):
     # example for params for a normal run comparing this years final list of
     # pubs to previous year and checking for dups, etc...
 
-    inspector = CitationsInspector(base_pubs_file_name=base_pubs_file_name
+    inspector = CitationsInspector(past_pubs_file_name=past_pubs_file_name
         ,input_folder=input_folder, input_files_glob=input_files_glob)
 
     # Optional param output_folder defaults to input_folder if not given
     inspector.inspect(output_folder=input_folder)
 
-    print("Got d_base_doi length='{}'".format(len(inspector.d_base_doi)))
+    print("Got d_past_doi length='{}'".format(len(inspector.d_past_doi)))
 
     n_dup_old = inspector.n_dup_old
     n_dup_cur = inspector.n_dup_cur
