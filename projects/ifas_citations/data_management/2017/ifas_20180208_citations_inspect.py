@@ -855,12 +855,13 @@ def run(study_year=2016,  past_pubs_file_name=None,
         msg="Not all required args given: {}".format(required_args)
         raise ValueError(msg)
 
-    print("{}: Starting with study_year={}, past_pubs_file_name={}"
-        .format(me, study_year, past_pubs_file_name))
 
     if study_type not in ['year_end','normal']:
         msg="Invalid study type={}. Error.".format(study)
         raise ValueError(msg)
+
+    print("{}: Starting with study_year={}, past_pubs_file_name={}"
+        .format(me, study_year, past_pubs_file_name))
 
     if study_year == 2016:
 
@@ -916,6 +917,11 @@ def run(study_year=2016,  past_pubs_file_name=None,
 
     log_file_name = "{}/log_inspector.txt".format(input_folder)
     log_file = open(log_file_name, mode='w')
+    print("{}: Starting with:study_year={}, past_pubs_file_name={}"
+        "\ninput_folder={}, input_files_glob={}"
+        "\nlog_file={}"
+        .format(me, study_year, past_pubs_file_name,
+            input_folder, input_files_glob, log_file_name))
 
     # Example for params for a normal run comparing this years final list of
     # pubs to previous year and checking for dups, etc...
@@ -923,6 +929,7 @@ def run(study_year=2016,  past_pubs_file_name=None,
     inspector = CitationsInspector(past_pubs_file_name=past_pubs_file_name
         ,input_folder=input_folder, input_files_glob=input_files_glob,
         log_file=log_file)
+
 
     # Optional param output_folder defaults to input_folder if not given
     if study_year > 2016:
