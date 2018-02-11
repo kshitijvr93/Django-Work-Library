@@ -24,7 +24,8 @@ print("sys.path={}".format(repr(sys.path)))
 
 sys.stdout.flush()
 import etl
-
+from pathlib import Path
+from collections import OrderedDict
 '''
 Python3 code
 20180208 - Robert V. Phillips
@@ -192,8 +193,10 @@ the input_folder folder) containing the 'base' publications for
 the previous year's period, used to check for duplicates across new inputs
 this year and the previous year<./param>
 
+
 '''
 class CitationsInspector():
+
     '''
     Set up input parameters and file references for use by the inspect method.
 
