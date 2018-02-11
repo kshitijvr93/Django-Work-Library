@@ -11,8 +11,8 @@ import sys, os, os.path, platform
 def register_modules():
     platform_name = platform.system().lower()
     if platform_name == 'linux':
-        modules_root = 'tbd'
-        raise ValueError("MISSING: Enter code here to define modules_root")
+        modules_root = '/home/robert/'
+        #raise ValueError("MISSING: Enter code here to define modules_root")
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
@@ -543,8 +543,7 @@ class CitationsInspector():
             # } end with open input_file
 
             print("\n\n Inspected input file={} with {} lines and {} dois."
-              .format(input_file_name, len(input_lines), n_unit_dois ),
-              file=sys.stdout)
+              .format(input_file_name, len(input_lines), n_unit_dois ))
 
             sys.stdout.flush()
 
@@ -597,7 +596,7 @@ def run(study_year=2016, study_type='year_end'):
 
     past_pubs_file_name = '{}{}'.format(past_pubs_folder, past_file_name)
 
-    if study == 'normal':
+    if study_type == 'normal':
         #Here we read input files under inputs_round1/units
         input_files_glob = 'IFAS*txt'
         input_folder = etl.data_folder(linux='/home/robert', windows='U:',
