@@ -1,0 +1,28 @@
+ABE	Agriculture & Biological Engineering
+AgEd	Agricultural Education & Communication
+Agron	Agronomy
+AniSci	Animal Sciences
+Citrus_REC	Citrus Research & Education Center
+EntNem	Entomology & Nematology
+EnvHort	Environmental Horticulture
+Everglades_REC	Everglades Research & Education Center
+FLMedEnt	Florida Medical Entomology Laboratory
+FoodSci	Food Science & Human Nutrition
+FRED	Food Resource Economics Department
+FtLauder_REC	Ft. Lauderdale Research & Education Center
+FYCS	Family, Youth & Community Sciences
+Gulf_REC	Gulf Coast Research & Education Center
+HortSci	Horticultural Sciences
+IFAS_Global	IFAS Global
+IndianRiv_REC	Indian River Research & Education Center
+MicroCell	Microbiology & Cell Science
+MidFL_REC	Mid Florida Research & Education Center
+NoFL_REC	North Florida Research & Education Center
+PlantPath	Plant Pathology
+Range_REC	Range Cattle Research & Education Center
+SFRC	School of Forest Resources & Conservation
+SoilWater	Soil & Water Sciences
+SW_REC	Southwest Florida Research & Education Center
+Trop_REC	Tropical Research & Education Center
+WildEco	Wildlife Ecology & Conservation
+West_REC	West Florida Research & Education Center
