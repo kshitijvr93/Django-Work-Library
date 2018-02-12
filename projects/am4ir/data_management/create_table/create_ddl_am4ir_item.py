@@ -1,9 +1,13 @@
 '''
-Create Marshaling Application Website (MAW) tables 'am4ir' for
+Create the Data Description Language (ddl) that creates the
+Marshaling Application Website (MAW) table 'am4ir' for
 feature am4ir.
-Optional here or in separate program:
-Read the elsevier am4ir spreadsheet item info,
-and insert it into  database table am4ir.
+It is written to standard output and can be simply copy-pasted to a db engine
+running client's prompt.
+
+See separate program : am4ir_spreadsheet_to_table.py to insert rows
+into a table that this ddl describes to create.
+
 '''
 import datetime
 from sqlalchemy import (
@@ -15,11 +19,10 @@ from sqlalchemy.schema import CreateTable
 
 from sqlalchemy.dialects.postgresql import ARRAY
 
-def tables_create():
+def tables_create(table_name='am4ir_item'):
     metadata = MetaData()
     tables = []
 
-    table_name = 'am4ir_item'
     table = Table(table_name, metadata,
       Column('{}_id'.format(table_name), Integer, primary_key=True),
 
@@ -77,6 +80,7 @@ def tables_create():
       #'oracle+cx_oracle://': {'extension':'_oracle.sql'},
       'mssql+pyodbc://': {'extension':'_mssql.sql'},
     }
+
     engines = []
     for engine_name, extension in d_ename_extension.items():
         # https://stackoverflow.com/questions/870925/how-to-generate-a-file-with-ddl-in-the-engines-sql-dialect-in-sqlalchemy

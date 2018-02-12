@@ -5,7 +5,7 @@ Using marshal1 db source table e2017_doc (make table name or other params
 into a cli arg later), update the item_elsevier_ufdc table column oac_elsevier.
 
 Do a correlated update using SA, similar to how am4ir updates its columns in
-item_elsevief_ufdc.
+item_elsevier_ufdc.
 
 '''
 import sys, os, os.path, platform
@@ -92,16 +92,20 @@ def open_access_update_by_pii(engine=None, table_name_source=None,
 # MAIN PROGRAM
 engine_nick_name = 'uf_local_mysql_marshal1'
 engine_write = get_db_engine_by_name(name=engine_nick_name)
-
 table_name_source = 'e2017_doc'
-table_name_dest = 'item_elsevier_ufdc'
+table_name_dest = 'item_elsevier_ufdc_test'
+#table_name_dest = 'item_elsevier_ufdc'
+
 print("WARNING: First alter the source correlated pii to have char(30),\n"
       "and put an index on it, and refresh the db, else this will timeout.")
 
 '''
+NB: do this one time after xml2rdb creates e2017_doc:
+
 alter table e2017_doc modify pii char(30);
 ALTER TABLE `marshal1`.`e2017_doc`
 ADD UNIQUE INDEX `ux_e2017_doc_pii` (`pii` ASC);
+
 '''
 
 open_access_update_by_pii(engine=engine_write, table_name_source=table_name_source,

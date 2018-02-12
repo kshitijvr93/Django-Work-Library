@@ -10,7 +10,7 @@ for mysql and postgresql.
 
 NOTE: Since xml2rdb is still simple to launch/run by hand,
 there is no simple utility (yet) embodied in the MAW project
-to launch this particular converson/insertion option.
+to launch this particular conversion/insertion option.
 I'll probably call it 'elsevier_api_to_rdb.py'
 
 This queries Elsevier apis to update the Marshaling Application

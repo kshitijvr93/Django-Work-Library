@@ -1,12 +1,17 @@
 '''
-    # NB - may want to use the newer module method spreadsheet_to_table
-    # If ever need to modify this method
+NB - I may want to use the newer module method spreadsheet_to_table
+     if am ever tempted to modify this method
 
-(1) Read excel am4ir spreadsheet from elsevier
+(1) Read excel am4ir spreadsheet from elsevier.
+    These are usually sent in emails by letitia mukherjee to UF Elsevier Pilot
+    mailing list in 2017-2018
+
 (2) and insert the colums of interest into rows of a table,
-    for example,  to default mysql table am4ir_item
+    for example,  to default output table named am4ir_item
+
 by  selecting row based on pii value and based on existence either insert or
 update a row, with the column values:
+
  (a) embargo_end_date,
  (b) set flag is_am4ir to true,
  (c) update_dt value (this column update should be automatic in the db, though)
@@ -14,11 +19,12 @@ update a row, with the column values:
 (3) and also use elevier entitlement for each row (depending on a runtime flag)
     and from that, update values of: api based on the
     article_item.publisher_item_id (pii) value to:
+
   (a) doi,  eid, scopus_id, is_publisher_open_access
 
-NOTE: make separate program later to get oaidoi open access info
-(4) use the doi value to use the oaidoi API update the
-oaidoi.org open access value.. oai_doi_open_access
+NOTE: can make a separate program later to get/update oaidoi open access info
+per row by using the row's doi value to use with the oaidoi API to update the
+row's oaidoi.org open access value.. oai_doi_open_access
 '''
 #
 import sys, os, os.path, platform
@@ -38,17 +44,17 @@ def register_modules():
     sys.path.append(repo_modules)
     return repo_root
 
-
 repo_root=register_modules()
 print ("Using repo_root={}".format(repo_root))
 
 print("sys.path={}".format(repr(sys.path)))
 
 import etl
+
 # Import slate of databases that podengo can use
 from podengo_db_engine_by_name import get_db_engine_by_name
 
-#### Sqlalechemy
+#### SqlAlechemy stuff
 import datetime
 from sqlalchemy import (
   Boolean, create_engine,
@@ -57,6 +63,7 @@ from sqlalchemy import (
   MetaData, String, Table, UniqueConstraint,
   )
 from sqlalchemy.schema import CreateTable
+
 #
 from pathlib import Path
 from etl import html_escape, has_digit, has_upper, make_home_relative_folder
@@ -69,10 +76,15 @@ from dataset.dataset_code import SheetDictReader
 '''
 Method am4ir_spreadsheet_to_am4ir_item():
 
-Read the given spreadhseet file and insert its rows
-to the given database, specifically to the table am4ir_item.
-See create_am4ir_table.py which should have created the table already in
+<summary name='am4ir_spreadsheet_to_am4ir_item'>
+
+Param workbook path identifies a spreadsheet file.
+Read the spreadsheet file and copy its rows
+to rows of table am4ir_item in the given database engine.
+
+See create_am4ir_table.py which should have already created the table in
 the given database.
+</param>
 
 <param name='workbook_path'>
 File path to an excel workbook to open, and use the first sheet as the
@@ -80,7 +92,7 @@ data source.
 </param>
 
 <param name='engine'>
-The SqlAlchemy, SA, engine to contain the output table.
+The SqlAlchemy, SA, database engine to contain the output table.
 </param>
 
 <param name='table_name'>
@@ -88,8 +100,8 @@ The name of the output table to contain the spreadsheet rows.
 NB - the table column names are NOT to be changed, as other utilities
 depend upon them.
 </param>
-
 '''
+
 def am4ir_spreadsheet_to_am4ir_item(
   workbook_path=None, engine=None, table_name='am4ir_item', verbosity=1):
 
@@ -99,8 +111,8 @@ def am4ir_spreadsheet_to_am4ir_item(
     inspector = inspect(engine)
 
     if verbosity > 1:
-        for table_name in inspector.get_table_names():
-            print("Got table_name={}".format(table_name))
+        for tname in inspector.get_table_names():
+            print("Got table_name={}".format(tname))
         print('Connecting')
 
     conn = engine.connect()
@@ -124,16 +136,19 @@ def am4ir_spreadsheet_to_am4ir_item(
       sheet_index=0, row_count_header=1, row_count_values_start=2)
 
     #Read spreadsheet row and insert table row
-    i=0
+    i = 0
     for row in reader:
         i += 1
         print("i={}:ssrow={}".format(i,row))
-        #engine.execute(am4ir_item.insert(),
+        # engine.execute(am4ir_item.insert(),
         #  itempii='somepiivalue{}'.format(i + 10000), )
+        # Remove 'fluff' characters from itempii value
         row['itempii'] = (row['itempii'].replace('-','')
           .replace('(','')
           .replace(')','')
           )
+
+        # Insert a row into the output table
         engine.execute(am4ir_item.insert(), {
           'account' : row['account'],
           'itempii' : row['itempii'],
@@ -151,57 +166,23 @@ def am4ir_spreadsheet_to_am4ir_item(
          } )
         if i % 100 == 0:
            print(i)
-
-    pass
+    # end for row in spreadsheet reader
+    return
 #end  am4ir_spreadsheet_to_am4ir_item()
 
 '''
 Copy the workbook on the given path (with all columns depended-upon in this code)
-to the given output databae engine and table
-
+to the given output database engine and table.
 '''
-def test_run(workbook_path=None, output_engine=None,table_name=None):
+
+def test_run(workbook_path=None, output_engine=None, table_name=None):
     me='test_run'
 
     engine = output_engine
     am4ir_spreadsheet_to_am4ir_item(
       workbook_path=workbook_path, engine=engine )
 
-def xxrun():
-    workbook_path = ('C:\\rvp\\git\\citrus\\projects\\am4ir\\data\\inventory_am4ir\\'
-        '20171101_from_elsevier_letitia_am4ir_masterlist.xlsx')
-    environment = 'mysql'
-    #environment = 'mssql'
-
-    if environment == 'mysql':
-        engine_spec_format = (
-          'mysql+mysqldb://{user}:{password}@127.0.0.1:3306/{dbname}'
-          )
-        d_format_params = {}
-        d_format_params['user'] = 'podengo'
-        d_format_params['password'] = '20MY18sql!'
-        d_format_params['dbname'] = 'marshal1'
-    else: #assume we are using mssql aka sql_server
-        # See https://stackoverflow.com/questions/24085352/how-do-i-connect-to-sql-server-via-sqlalchemy-using-windows-authentication
-        # Note: using windows authentication as we specify trusted connection
-        # Note: also had to add url-type param of driver=SQL+Server
-        engine_spec_format = (
-          'mssql://{server_name}\\SQLEXPRESS/{database_name}'
-          '?driver=SQL+Server'
-          '&trusted_connection=yes')
-        d_format_params = {}
-        d_format_params['server_name'] = 'localhost'
-        d_format_params['database_name'] = 'silodb'
-
-    engine_spec = (engine_spec_format.format(**d_format_params))
-    print("Using engine_spec={}".format(engine_spec))
-    engine = create_engine(engine_spec, echo=True)
-
-    print("Calling am4ir_spreadsheet_to_am4ir_item()....")
-    am4ir_spreadsheet_to_am4ir_item(
-      workbook_path=workbook_path, engine=engine )
-    return#
-#end
+#end test_run()
 
 print("Starting")
 
@@ -210,10 +191,12 @@ if env == 'uf':
     engine_name = 'local-silodb'
     engine_name = 'mysql-marshal1'
 
-    workbook_path = ('C:\\rvp\\git\\citrus\\projects\\am4ir\\data\\inventory_am4ir\\'
+    workbook_path = (
+        'C:\\rvp\\git\\citrus\\projects\\am4ir\\data\\inventory_am4ir\\'
         '20171101_from_elsevier_letitia_am4ir_masterlist.xlsx')
 else:
-    workbook_path = ('{}projects\\am4ir\\data\\inventory_am4ir\\'
+    workbook_path = (
+        '{}projects\\am4ir\\data\\inventory_am4ir\\'
         '20171101_from_elsevier_letitia_am4ir_masterlist.xlsx'.format(repo_root))
     engine_name = 'hp-psql'
 

@@ -13,10 +13,15 @@ whose primary key is pii, along with the load_date, that is the
 yyyy,mm,dd of the parent folders
 and a date value based on that.
 
-This program is needed because Elevier article metadata has no official
+This program is needed to maintain a load_date for each Elsevier pii article
+item because Elevier article metadata has no official
 field or xml tag that includes the load date, and I did not want to
 invent one and stick it in the xml output file of ealdxml, though I might
-change my mind one day.
+change my mind one day. We need the load_date so we can systematically
+re-check Elsevier items by marching through original load dates and
+more conveniently go check for any updates. We might also observe certain
+trends or lag-times to inform us of the best delays to wait before we re-check
+the Elsevier APIs for any article item updates.
 '''
 import sys, os, os.path, platform
 

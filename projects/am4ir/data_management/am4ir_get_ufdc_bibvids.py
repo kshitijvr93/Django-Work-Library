@@ -2,8 +2,9 @@
 am4ir_get_ufdc_bibivids
 
 NB - I suspended this work and then started doing this
-in file e_bibvid_marshal.py -- so maybe delete this file...
+in project MAW/inserts/item_elsevier_ufdc_reset.py
 
+Consider to review and destroy this file soon...
 
 Phase1:
 With given source input database/engine and target database/engine,
@@ -14,9 +15,6 @@ report that it is being added to the target table.
 Phase 2: may split out to program like - am4ir_to_spatial_kml later...
 Once the items are in the target, say mysql_marshal1, proceed...
 to compose an elsevier data value for each am4ir item.
-
-
-
 
 '''
 

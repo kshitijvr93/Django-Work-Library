@@ -6,7 +6,7 @@ Early stages: just run this and copy paste the apt script output to
 MysqlWorkbench, SSMS Server, or an input file for your target database system
 and database name.
 
-Requires sqlalchemy version 1.2+
+This code requires sqlalchemy version 1.2+
 '''
 import datetime
 from sqlalchemy import (
@@ -18,7 +18,7 @@ from sqlalchemy.schema import CreateTable
 
 from sqlalchemy.dialects.postgresql import ARRAY
 
-def tables_create():
+def tables_create(table_name='article_item'):
     metadata = MetaData()
     tables = []
     #
@@ -30,7 +30,6 @@ def tables_create():
 
     tables.append(table)
 
-    table_name = 'article_item'
     table = Table(table_name, metadata,
       Column('article_item_id', Integer, primary_key=True),
       Column('digest_sha1_mets', String(150),

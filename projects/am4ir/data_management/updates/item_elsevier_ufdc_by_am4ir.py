@@ -104,10 +104,10 @@ def am4ir_update_by_pii(engine=None, table_name_am4ir=None,
 
 # MAIN PROGRAM
 engine_nick_name = 'uf_local_mysql_marshal1'
-
 engine_write = get_db_engine_by_name(name=engine_nick_name)
-
 table_name_am4ir = 'am4ir_item'
-table_name_write = 'item_elsevier_ufdc'
+table_name_write = 'item_elsevier_ufdc_test'
+# table_name_write = 'item_elsevier_ufdc' #production ufdc
 am4ir_update_by_pii(engine=engine_write, table_name_am4ir=table_name_am4ir,
    table_name_ufdc=table_name_write)
+print ("DONE!")

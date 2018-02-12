@@ -7,16 +7,19 @@ Elsevier items and their already-used bibids. The output table will be used
 by a process to create a new set of LS METS files for new items, using new,
 that is not-used LS bibids.
 
+The output table will also be used to update am4ir and other extra-SobekCM
+data about Elsevier items.
+
 Parameters define a connection to a SobekCM input database which this program
 mines/queries for Elsevier item data, using sqlalchemy methods.
 Parameters also define an output engine database and table name, designed
 to be used by the MAW applications,
-while this program defines the output columns.
+while this program defines the table output columns.
 
 Processing does:
 
 (1) DROP the output table in the output/write engine,
-(2) recreate it in the 'input' engine database, and
+(2) recreate the output table in the 'output' engine database, and
 (3) populate the output table from the inputted SobekCM/selected information.
 
 The word 'reset' should be used in this program name to preserve the meaning
@@ -24,6 +27,7 @@ that this program drops and entirely resets/repopulates the output table
 when it is run.
 
 Purposes:
+
 The output is for use by UF marshaling applications, for example, to
 manage UFDC bib ids in use, or assign new ones to new items to load
 into SobekCM.
@@ -31,6 +35,7 @@ into SobekCM.
 The caller should not assume one could try to add data columns
 to the output table and populate them another way and survive another
 run of this process.
+
 The caller should not assume that rows may be inserted to the output
 table other than with this program and expect they will persist in that table.
 
@@ -285,15 +290,15 @@ def translate_elsevier_bibinfo(engine_read=None,engine_write=None
 # end def translate_elsevier_bibinfo()
 
 def test_translate(
-  engine_nick_name=None, engine_write_nickname=None,
+  engine_read_nickname=None, engine_write_nickname=None,
   table_name_out=None, verbosity=1):
     me = 'test_translate'
 
     if verbosity > 1:
-      print("{}: Using engine_nick_name={}, engine_write_nickname={}"
-          .format(me, engine_nick_name, engine_write_nickname))
+      print("{}: Using engine_read_nickname={}, engine_write_nickname={}"
+          .format(me, engine_nickname, engine_write_nickname))
 
-    engine_read = get_db_engine_by_name(name=engine_nick_name)
+    engine_read = get_db_engine_by_name(name=engine_read_nickname)
     engine_write = get_db_engine_by_name(name=engine_write_nickname)
 
     if verbosity > 1:
@@ -314,8 +319,9 @@ def test_translate(
 engine_write_nickname = 'uf_local_mysql_marshal1'
 #table_name_out = 'x_ufdc_production_elsevier_item'
 table_name_out = 'item_elsevier_ufdc'
+table_name_out = 'item_elsevier_ufdc_test'
 
-test_translate(engine_nick_name='production_sobekdb',
+test_translate(engine_read_nickname='integration_sobekdb',
    engine_write_nickname=engine_write_nickname,
    table_name_out=table_name_out)
 

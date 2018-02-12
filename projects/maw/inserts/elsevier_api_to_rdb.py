@@ -10,5 +10,5 @@ NOTE: Since xml2rdb is still simple to launch/run by hand,
 there is no simple utility (yet) embodied in the MAW project
 to launch this particular converson/insertion option.
 
-But I guess this is the filename to host that code when it is written.
+But this seems a good filename to host that code when it is written.
 '''
