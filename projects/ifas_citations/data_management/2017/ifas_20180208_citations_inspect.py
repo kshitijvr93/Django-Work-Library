@@ -908,7 +908,7 @@ def run(study_year=2016,  past_pubs_file_basename=None,
 
             input_folder = etl.data_folder(
                 linux='/home/robert/',
-                windows='/c/Users/robert/',
+                windows="C:\\rvp\\",
                 data_relative_folder=(
                   'git/citrus/projects/ifas_citations/data/{}'
                   .format(study_year)))

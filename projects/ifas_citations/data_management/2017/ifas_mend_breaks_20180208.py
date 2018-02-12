@@ -326,7 +326,7 @@ def test(study_year=2017, input_file_basename="2017_All_Units_4.txt"):
 
     output_file_name="{}unbroken.txt".format(input_folder)
 
-    log_file_name="{}log.txt".format(input_folder)
+    log_file_name="{}log_mender.txt".format(input_folder)
 
     lfile = open(log_file_name, mode="w")
 
