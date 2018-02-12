@@ -12,16 +12,25 @@ If that parameter is None,
 the first physical line in the file must have NO line breaks and thus
 also contain the correct number of fields and represent a logical line.
 '''
+import sys, os, os.path, platform
 
-import sys,os, os.path,platform
-sys.path.append('{}/git/citrus/modules'.format(os.path.expanduser('~')))
+def register_modules():
+    platform_name = platform.system().lower()
+    if platform_name == 'linux':
+        modules_root = '/home/robert/'
+        #raise ValueError("MISSING: Enter code here to define modules_root")
+    else:
+        # assume rvp office pc running windows
+        modules_root="C:\\rvp\\"
+    sys.path.append('{}git/citrus/modules'.format(modules_root))
+    return
+register_modules()
+import etl
 
 print("INFO: Using paths in sys.path:")
 for i,sp in enumerate(sys.path):
     print("INFO: sys.paths[{}]={}".format(i,repr(sp)))
-#import pymarc
-#from pymarc import MARCReader
-#import etl
+
 import codecs
 from collections import OrderedDict
 
@@ -73,7 +82,7 @@ physical input line are ignored, and if a unit name appears in a column
 that is not the column count column, a warning is issued.
 '''
 def process_first_line(ifile=None,ofile=None,delim='\t'):
-    me = process_first_line
+    me = 'process_first_line'
     first_line = ifile.readline()
     first_line = first_line[:-1]
 
@@ -298,18 +307,36 @@ def mend_breaks(input_file_name="c:/rvp/downloads/2018_test4.txt",
       #end while
     ifile.close()
 # end def mend_breaks()
-input_file_name="c:/rvp/downloads/2018_test4.txt"
-input_file_name="/home/robert/Downloads/2017_All_Units_4.txt"
 
-output_file_name="c:/rvp/downloads/unbroken.txt"
-output_file_name="/home/robert/Downloads/unbroken.txt"
+# MAIN PROGRAM
+def test(study_year=2017, input_file_basename="2017_All_Units_4.txt"):
 
-log_file_name="/home/robert/Downloads/log.txt"
-lfile = open(log_file_name, mode="w")
+    input_files_glob = (
+      'unbroken.txt'.format(study_year))
 
+    input_folder = etl.data_folder(
+        linux='/home/robert/',
+        windows="C:\\rvp\\",
+        data_relative_folder=(
+          'git/citrus/projects/ifas_citations/data/{}/'
+          .format(study_year)))
 
-mend_breaks(input_file_name=input_file_name,output_file_name=output_file_name,
-    lfile=lfile)
+    input_file_name="{}{}".format(input_folder,input_file_basename)
+    #input_file_name="/home/robert/Downloads/2017_All_Units_4.txt"
 
-print("INFO: Done!", file=lfile)
-sys.stdout.flush()
+    output_file_name="{}unbroken.txt".format(input_folder)
+
+    log_file_name="{}log.txt".format(input_folder)
+
+    lfile = open(log_file_name, mode="w")
+
+    mend_breaks(input_file_name=input_file_name,output_file_name=output_file_name,
+        lfile=lfile)
+
+    print("INFO: Done!", file=lfile)
+
+# MAIN Program
+testme=1
+if testme == 1:
+    test()
+    sys.stdout.flush()

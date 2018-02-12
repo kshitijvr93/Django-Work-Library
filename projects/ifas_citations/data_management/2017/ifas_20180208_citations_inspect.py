@@ -846,11 +846,11 @@ Value 'year_end' means it is the year_end study
 </param>
 '''
 
-def run(study_year=2016,  past_pubs_file_name=None,
+def run(study_year=2016,  past_pubs_file_basename=None,
     study_type='year_end'):
 
     me = 'run'
-    required_args = [ study_year, past_pubs_file_name, study_type]
+    required_args = [ study_year, past_pubs_file_basename, study_type]
     if not all(required_args):
         msg="Not all required args given: {}".format(required_args)
         raise ValueError(msg)
@@ -860,8 +860,8 @@ def run(study_year=2016,  past_pubs_file_name=None,
         msg="Invalid study type={}. Error.".format(study)
         raise ValueError(msg)
 
-    print("{}: Starting with study_year={}, past_pubs_file_name={}"
-        .format(me, study_year, past_pubs_file_name))
+    print("{}: Starting with study_year={}, past_pubs_file_basename={}"
+        .format(me, study_year, past_pubs_file_basename))
 
     if study_year == 2016:
 
@@ -917,10 +917,12 @@ def run(study_year=2016,  past_pubs_file_name=None,
 
     log_file_name = "{}/log_inspector.txt".format(input_folder)
     log_file = open(log_file_name, mode='w')
-    print("{}: Starting with:study_year={}, past_pubs_file_name={}"
+    past_pubs_file_name = (
+      "{}/{}".format(input_folder, past_pubs_file_basename))
+    print("{}: Using study_year={}, past_pubs_file_name={}"
         "\ninput_folder={}, input_files_glob={}"
         "\nlog_file={}"
-        .format(me, study_year, past_pubs_file_name,
+        .format(me, study_year, past_pubs_file_basename,
             input_folder, input_files_glob, log_file_name))
 
     # Example for params for a normal run comparing this years final list of
@@ -962,7 +964,9 @@ past_pubs_folder = etl.data_folder(linux='/home/robert/', windows='U:',
     '{}/base_info/'.format(past_year)))
 
 # past_file_name = 'ifas-{}-pubs_by_topic-1.txt'.format(past_year)
-past_file_name = '2015_master_base.txt'.format(past_year)
+#past_file_name = '2015_master_base.txt'.format(past_year)
+past_file_name = '2016_Master_List_final.txt'.format(past_year)
+past_pubs_file_basename = '2016_Master_List_final.txt'.format(past_year)
 
 # past_pubs_file_name: is the absolute path of the input file with last
 # year's dois to flag as a duplicate error if any is found in
@@ -973,4 +977,4 @@ print("MAIN: using past_year = {}, study_year = {}, past_pubs_file_name={}"
     .format(past_year,study_year,past_pubs_file_name))
 
 run(study_year=2017,
-    past_pubs_file_name=past_pubs_file_name)
+    past_pubs_file_basename=past_pubs_file_basename)
