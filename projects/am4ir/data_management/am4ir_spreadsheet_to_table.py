@@ -1,5 +1,5 @@
 '''
-NB - I may want to use the newer module method spreadsheet_to_table
+NB - I may want to use the newer module sqlalchemy/core method spreadsheet_to_table
      if am ever tempted to modify this method
 
 (1) Read excel am4ir spreadsheet from elsevier.
