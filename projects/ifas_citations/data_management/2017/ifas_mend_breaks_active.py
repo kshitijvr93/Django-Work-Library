@@ -149,9 +149,9 @@ def mend_breaks(input_file_name="c:/rvp/downloads/broken_lines.txt",
     with open(ofn, mode="w" ) as ofile:
       field_count = process_first_line(ifile=ifile,ofile=ofile,delim=delim)
       print("First line has {} fields".format(field_count))
-      # Parse a set of rows, each row made of of 'count' fields
-      # and output a line for each one
-      # first check the newline
+      # Parse a set of rows, each row made of 'count' fields
+      # and output a line for each one.
+      # First check the newline
       # if a line has 'too few' tab-separated fields, keep reading until
       # the number of FIELDS is satisfied.
       # error abort if a line's cumulative field count exceeds the number of
