@@ -21,8 +21,9 @@ from etl import html_escape, has_digit, has_upper, make_home_relative_folder
 
 '''
 
-method make_annual_citations() pretties up most titles that added upper case to each word,
-but REMOVES some uppercase words where they probably still should remain.
+method make_annual_citations() pretties up most titles that added upper case
+to each word, but REMOVES some uppercase words where they probably still
+should remain.
 
 Parameters:
 
@@ -37,7 +38,9 @@ lower case because it will again put them to lowercase.
 Rather, this is not designed to be iteratively applied - only to be
 hand-modified for final use after it is run ONCE on input.
 '''
-def make_apa_citations(input_folder=None, output_folder=None,input_glob='**/*utf8.txt'):
+def make_apa_citations(
+    input_folder=None, output_folder=None,input_glob='**/*utf8.txt'):
+
     me = 'make_apa_citations'
     if input_folder is None:
         raise ValueError("input_folder is not given as an argument")
@@ -186,17 +189,27 @@ def make_apa_citations(input_folder=None, output_folder=None,input_glob='**/*utf
     return None
 # end make_apa_citations
 
-def run():
+def run(study_year=2017):
     print("Starting")
     # input_folder = make_home_relative_folder("ifas_citations/inputs")
-    input_folder = etl.data_folder(linux='/home/robert', windows='U:',
-          data_relative_folder='/data/ifas_citations/2016/')
+    linux = '/home/robert/'
+    windows = 'C:\\rvp\\'
+    data_folder = ('git/citrus/projects/ifas_citations/data/{}/'
+        .format(study_year))
 
-    output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
-          data_relative_folder='data/ifas_citations/2016/')
+    # 2017 - I opened the xls file of the ifas inspector output and just saved
+    # as tab-delimited text to produce the citations_input_file
+    citations_input_file = 'IFAS_citations_2017_inspected.txt'
 
+    input_folder = etl.data_folder(linux=linux, windows=windows,
+        data_relative_folder=data_folder)
+
+    output_folder = input_folder
+
+    # Just one file this year, so use its name as input_glob pattern
     make_apa_citations(input_folder=input_folder,output_folder=output_folder
-          ,input_glob='*utf8.txt')
+        ,input_glob=citations_input_file)
+
     print("Done!")
 
 # RUN
