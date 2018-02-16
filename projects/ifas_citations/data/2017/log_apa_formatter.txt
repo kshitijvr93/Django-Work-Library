@@ -1,0 +1,19 @@
+Calling make_apa_citations...
+make_apa_citations: using input_folder=C:/rvp/git/citrus/projects/ifas_citations/data/2017/,
+output_folder=C:/rvp/git/citrus/projects/ifas_citations/data/2017/,
+input_glob=Test_Agron_20180216.txt
+Found 1 input files
+Processing file name=C:\rvp\git\citrus\projects\ifas_citations\data\2017\test_agron_20180216.txt
+
+Reading input file test_agron_20180216.txt
+Line has 12 tab-separated parts
+Line has 12 tab-separated parts
+Line has 12 tab-separated parts
+Line has 12 tab-separated parts
+Line has 12 tab-separated parts
+Line has 12 tab-separated parts
+Line has 12 tab-separated parts
+Line has 12 tab-separated parts
+Line has 12 tab-separated parts
+Line has 12 tab-separated parts
+Produced APA citation output file C:\rvp\git\citrus\projects\ifas_citations\data\2017\test_agron_20180216.txt.html with 10 citations.

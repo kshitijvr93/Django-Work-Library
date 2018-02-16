@@ -40,36 +40,38 @@ hand-modified for final use after it is run ONCE on input.
 '''
 def make_apa_citations(
     input_folder=None, output_folder=None,input_glob='**/*utf8.txt',
-    verbosity=0):
+    log_file=None,verbosity=0):
 
     me = 'make_apa_citations'
     if verbosity > 1:
         msg=('{}: starting witn input folder={},ouput_folder={}',
             'glob={}'.format(input_folder,output_folder,input_glob))
-        print(msg)
+        print(msg,file=log_file)
 
     if input_folder is None:
         raise ValueError("input_folder is not given as an argument")
     if output_folder is None:
         output_folder = input_folder
     print("{}: using input_folder={},\noutput_folder={},\ninput_glob={}"
-          .format(me,input_folder,output_folder,input_glob))
+          .format(me,input_folder,output_folder,input_glob),file=log_file)
 
     sys.stdout.flush
     input_folder_path = Path(input_folder)
     input_file_paths = list(input_folder_path.glob(input_glob))
     n_input_files = 0
     n_citations = 0
-    print("Found {} input files".format(len(input_file_paths)))
+
+    print("Found {} input files".format(len(input_file_paths)),file=log_file)
 
     for path in input_file_paths:
         input_file_name = "{}\{}".format(path.parents[0], path.name)
-        print("Processing file name={}".format(input_file_name))
+        print("Processing file name={}".format(input_file_name),file=log_file)
+
         n_input_files += 1
         output_file_name = input_file_name + '.html'
         n_file_citations = 0
         with open(str(output_file_name),encoding="utf-8",mode="w") as output_file:
-            print("\nReading input file {}".format(path.name))
+            print("\nReading input file {}".format(path.name),file=log_file)
             print("<!DOCTYPE html> <html>\n<head><meta charset='UTF-8'></head>\n"
                   "<body>\n<h3>APA Citations for Input File {}</h3>\n"
                   "<table border=2>\n"
@@ -85,11 +87,13 @@ def make_apa_citations(
                     #print("Got line='{}'.,eline='{}'".format(line,eline))
                     n_file_citations += 1
                     parts = line.split('\t')
-                    print("Line has {} tab-separated parts")
+                    authors, pubyear, title, journal, volume, issue, pages, doi = (
+                        ("",) * 8 )
                     nparts = len(parts)
-                    authors, pubyear, title, journal, volume, issue, pages, doi = ("",) * 8
+                    print("Line has {} tab-separated parts".format(nparts),file=log_file)
                     colskip = 0
                     colskip = 1 #per file from Suzanne 2017050x email with 'problem' in column 1,
+                    colskip = 0
 
                     index = colskip
                     if nparts > index:
@@ -191,7 +195,7 @@ def make_apa_citations(
                 # for line in input_lines
 
             print("Produced APA citation output file {} with {} citations."
-                  .format(output_file_name, n_file_citations))
+                  .format(output_file_name, n_file_citations),file=log_file)
             print("</table></body></html>\n",file=output_file)
             # withoutput_file
     # with input_file
@@ -203,25 +207,31 @@ def run(study_year=2017):
     # input_folder = make_home_relative_folder("ifas_citations/inputs")
     linux = '/home/robert/'
     windows = 'C:/rvp/'
-    data_folder = ('git/citrus/projects/ifas_citations/data/{}/'
+    data_relative_folder = ('git/citrus/projects/ifas_citations/data/{}/'
         .format(study_year))
 
+    data_folder = etl.data_folder(linux=linux, windows=windows,
+        data_relative_folder=data_relative_folder )
+
+    print("Got data_folder={}".format(data_folder))
     # 2017 - I opened the xls file of the ifas inspector output and just saved
     # as tab-delimited text to produce the citations_input_file
     citations_input_file = 'IFAS_citations_2017_inspected.txt'
     #20180216 1pm test
     citations_input_file = 'Test_Agron_20180216.txt'
+    log_basename = "log_apa_formatter.txt"
+    log_filename = "{}{}".format(data_folder,log_basename)
+    log_file = open(log_filename, encoding="utf-8",mode="w")
+    print("Calling make_apa_citations...", file=log_file)
 
-    input_folder = etl.data_folder(linux=linux, windows=windows,
-        data_relative_folder=data_folder)
-
-    output_folder = input_folder
+    input_folder = data_folder
+    output_folder = data_folder
 
     # Just one file this year, so use its name as input_glob pattern
     make_apa_citations(input_folder=input_folder,output_folder=output_folder
-        ,input_glob=citations_input_file, verbosity=1)
+        ,input_glob=citations_input_file, log_file=log_file,verbosity=1)
 
-    print("Done!")
+    print("Done! See log file='{}'".format(log_filename))
 
 # RUN
 run()
