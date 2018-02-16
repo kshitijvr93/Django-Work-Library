@@ -473,7 +473,34 @@ def run(env=None):
           0: Column('ufdc_item_id',Integer),
           1: Column('info', String(500))
         })
+    elif env == 'windows4':
+        engine_nickname = 'integration_sobekdb'
+        workbook_path = ('C:\\rvp\\data\\integration_bibs.xls')
+        sheet_index = 0
+        table_name = 'integration_bib'
 
+        #For every spreadsheet column index you want to copy to a table column,
+        #indicate the spreadsheet column index to copy and the associated
+        #table column name to put it in.
+        od_index_column = OrderedDict({
+          0: Column('integration_bib_id',Integer),
+          1: Column('bib', String(20)),
+          2: Column('bib_vid', String(20))
+        })
+    elif env == 'windows5':
+        engine_nickname = 'uf_local_mysql_marshal1'
+        workbook_path = ('C:\\rvp\\data\\integration_bibs.xls')
+        sheet_index = 0
+        table_name = 'integration_bib'
+
+        #For every spreadsheet column index you want to copy to a table column,
+        #indicate the spreadsheet column index to copy and the associated
+        #table column name to put it in.
+        od_index_column = OrderedDict({
+          0: Column('integration_bib_id',Integer),
+          1: Column('bib', String(20)),
+          2: Column('bib_vid', String(20))
+        })
 
     elif env == 'linux':
         #Linux
@@ -552,5 +579,7 @@ env = 'linux'
 env = 'linux3'
 env = 'windows2'
 env = 'windows3'
+env = 'windows4'
+env = 'windows5'
 
 run(env=env)

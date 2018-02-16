@@ -440,10 +440,72 @@ d_langcode_langtext = {
     'spa':'Spanish',
 }
 
+'''
+<summary name=''>
+Return a generator that does:
+Output the next filename under the search_folder param that
+matches the search_glob param
+</summary>
+<param name='input_folders'>
+List of folders (absolute path strings) in the filesystem
+under which we will search for input_glob - matching file names
+</param>
+<param name='input_glob'>
+Glob pattern to use to descend into input_folder to
+return a path for each matching filename.
+</param>
+'''
+def sequence_paths(input_folders=None, input_path_glob=None, verbosity=0):
+    me = 'sequence_paths'
+    if (input_folders is None or input_path_glob is None):
+        msg = "Missing param input_folders or input_path_glob"
+        raise ValueError(msg)
+
+    # compose input_path_list over multiple input_folders
+    for input_folder in input_folders:
+        paths = list(Path(input_folder).glob(input_path_glob))
+        if (verbosity > 0):
+            print("{}: Found {} files in input_folder='{}'"
+               " that match {}\n"
+              .format(me, len(paths),input_folder, input_path_glob))
+
+        #input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
+        for path in paths:
+            yield path
+        # end for path
+    # end for input folder
+# end def sequence_paths
+
 # TEST
-def test():
+def test_sequence_days():
     days = sequence_days(cymd_start='20170715', cymd_end='20170825')
     for day,dt_day in days:
         print("Got day={}".format(day))
 
-#test()
+def test_sequence_paths():
+    input_folders = []
+    #NB: test using the input older takes only 3 seconds.
+    #input_folder = 'F:/usf/resources/LS/00/59/'
+    input_folder = 'F:/usf/resources/LS/00/59/'
+
+    #NB: to seek at LS level takes 10-20 full minutes,
+    # input_folder = 'F:/usf/resources/LS/
+    input_folder = 'F:/usf/resources/LS/'
+
+    input_folders.append(input_folder)
+
+    output_file_name = 'c:/rvp/data/integration_bib.txt'
+    paths = sequence_paths(input_folders=input_folders,
+        input_path_glob='**/*.mets.xml',verbosity=2)
+    output_file=open(output_file_name, mode='w', encoding='utf-8')
+    i = 0
+    for path in paths:
+        i += 1
+        dparts = path.name.split('.')
+        bib_vid = dparts[0]
+        bparts = bib_vid.split('_')
+        bib = bparts[0]
+        print("{}\t{}".format(bib, bib_vid), file=output_file)
+    return
+
+test_sequence_paths()
