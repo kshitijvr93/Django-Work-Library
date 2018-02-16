@@ -490,7 +490,6 @@ def test_sequence_paths():
 
     #NB: to seek at LS level takes 10-20 full minutes,
     # input_folder = 'F:/usf/resources/LS/
-    input_folder = 'F:/usf/resources/LS/'
 
     input_folders.append(input_folder)
 
@@ -508,4 +507,4 @@ def test_sequence_paths():
         print("{}\t{}".format(bib, bib_vid), file=output_file)
     return
 
-test_sequence_paths()
+#test_sequence_paths()

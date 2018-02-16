@@ -52,7 +52,7 @@ def make_apa_citations(
         raise ValueError("input_folder is not given as an argument")
     if output_folder is None:
         output_folder = input_folder
-    print("{}: using input_folder={},output_folder={},input_glob={}"
+    print("{}: using input_folder={},\noutput_folder={},\ninput_glob={}"
           .format(me,input_folder,output_folder,input_glob))
 
     sys.stdout.flush
@@ -82,7 +82,7 @@ def make_apa_citations(
                 input_lines = input_file.readlines()
                 for line in input_lines:
                     eline = etl.escape_xml_text(line)
-                    print("Got line='{}'.,eline='{}'".format(line,eline))
+                    #print("Got line='{}'.,eline='{}'".format(line,eline))
                     n_file_citations += 1
                     parts = line.split('\t')
                     print("Line has {} tab-separated parts")
@@ -202,7 +202,7 @@ def run(study_year=2017):
     print("Starting")
     # input_folder = make_home_relative_folder("ifas_citations/inputs")
     linux = '/home/robert/'
-    windows = 'C:\\rvp\\'
+    windows = 'C:/rvp/'
     data_folder = ('git/citrus/projects/ifas_citations/data/{}/'
         .format(study_year))
 
@@ -210,7 +210,7 @@ def run(study_year=2017):
     # as tab-delimited text to produce the citations_input_file
     citations_input_file = 'IFAS_citations_2017_inspected.txt'
     #20180216 1pm test
-    citations_input_file = 'Test_Agron_20180216.text'
+    citations_input_file = 'Test_Agron_20180216.txt'
 
     input_folder = etl.data_folder(linux=linux, windows=windows,
         data_relative_folder=data_folder)
