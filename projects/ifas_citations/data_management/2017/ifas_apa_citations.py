@@ -39,20 +39,29 @@ Rather, this is not designed to be iteratively applied - only to be
 hand-modified for final use after it is run ONCE on input.
 '''
 def make_apa_citations(
-    input_folder=None, output_folder=None,input_glob='**/*utf8.txt'):
+    input_folder=None, output_folder=None,input_glob='**/*utf8.txt',
+    verbosity=0):
 
     me = 'make_apa_citations'
+    if verbosity > 1:
+        msg=('{}: starting witn input folder={},ouput_folder={}',
+            'glob={}'.format(input_folder,output_folder,input_glob))
+        print(msg)
+
     if input_folder is None:
         raise ValueError("input_folder is not given as an argument")
     if output_folder is None:
         output_folder = input_folder
     print("{}: using input_folder={},output_folder={},input_glob={}"
           .format(me,input_folder,output_folder,input_glob))
+
+    sys.stdout.flush
     input_folder_path = Path(input_folder)
     input_file_paths = list(input_folder_path.glob(input_glob))
     n_input_files = 0
     n_citations = 0
     print("Found {} input files".format(len(input_file_paths)))
+
     for path in input_file_paths:
         input_file_name = "{}\{}".format(path.parents[0], path.name)
         print("Processing file name={}".format(input_file_name))
@@ -200,6 +209,8 @@ def run(study_year=2017):
     # 2017 - I opened the xls file of the ifas inspector output and just saved
     # as tab-delimited text to produce the citations_input_file
     citations_input_file = 'IFAS_citations_2017_inspected.txt'
+    #20180216 1pm test
+    citations_input_file = 'Test_Agron_20180216.text'
 
     input_folder = etl.data_folder(linux=linux, windows=windows,
         data_relative_folder=data_folder)
@@ -208,7 +219,7 @@ def run(study_year=2017):
 
     # Just one file this year, so use its name as input_glob pattern
     make_apa_citations(input_folder=input_folder,output_folder=output_folder
-        ,input_glob=citations_input_file)
+        ,input_glob=citations_input_file, verbosity=1)
 
     print("Done!")
 
