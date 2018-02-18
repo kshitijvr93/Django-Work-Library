@@ -383,16 +383,19 @@ class Diver():
                     Path(input_folder).glob(glob))
                 for count,path in enumerate(input_path_list, start=1):
                     input_file_name = "{}{}".format(input_folder,path.name)
+                    input_file_name = path.resolve()
                     total_files_count += 1
                     if verbosity > 0:
                         print("{}: for glob='{}',parsing input file '{}'"
                             .format(me,glob,input_file_name),flush=True
                             , file=log_file )
 
-                    #l_rows=mon_file_parse2(engine_write=None,input_file_name=input_file_name
-                    #    ,verbosity=verbosity)
-                    # total_lines_inserted += len(l_rows)
-                    l_rows = ['one']
+                    l_rows = self.parse_file(engine_write=None,
+                        input_file_name=input_file_name
+                        ,verbosity=verbosity)
+
+                    total_lines_inserted += len(l_rows)
+                    #l_rows = ['one']
                     if verbosity > 5:
                         print(
                            "{}: Parsed file {}={} with {} reading rows"
@@ -407,10 +410,10 @@ class Diver():
                .format(me, count), flush=True, file=log_file)
         return total_files_count
 
-    def file_parse(engine_write=None, input_file_name=None,
+    def parse_file(self,engine_write=None, input_file_name=None,
         log_file=None,  verbosity=1):
 
-        me='mon_file_parse'
+        me='parse_file'
         rx_floats = r"(?<![a-zA-Z:])[-+]?\d*\.?\d+"
         rp_floats = re.compile(rx_floats)
         float_names = ['pressure_cm', 'temperature_c', 'conductivity_mS_cm']
@@ -502,7 +505,7 @@ class Diver():
             for count,d_row in enumerate(l_rows, start=1):
                 print("{}\t{}".format(count,d_row),flush=True)
         return l_rows
-    # end def mon_file_parse
+    # end def mon_parse_file
 #end class Diver()
 
 '''
