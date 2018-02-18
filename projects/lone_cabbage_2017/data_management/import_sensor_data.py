@@ -234,12 +234,12 @@ def extract_diver_reading(pattern=None,input_line=None):
     conductivity_mS_cm = match.group('conductivity_mS_cm')
 
     values = ['y4','mm','dd','pressure_cm','temperature_c',
-              'conductivity_mS_cm']:
+              'conductivity_mS_cm']
 
-    if not all values:
+    if not all(values):
         msg = ("Input string '{}' has not all values of {}"
             .input_string, values)
-        raise ValueError input
+        raise ValueError(msg)
 
     return("{}-{}-{}".format(y4,mm,dd),
            pressure_cm,
@@ -247,7 +247,6 @@ def extract_diver_reading(pattern=None,input_line=None):
            conductivity_mS_cm)
 # end def_extract_diver_reading
 
-----------------
 def mon_file_parse0(engine_write=None, input_file_name=None,log_file=None,
     verbosity=1):
 
@@ -319,37 +318,67 @@ import configparser
 
 class Diver():
 
-    def __init__(input_file_folders=None, serial_numbers=None,
-        input_file_globs=None, d_serial_location=None):
+    '''
+    From the engine_read, get the sensor metadata, including
+    sensor serial numbers and matching locations for the Diver sensors.
+    The goal is to assign sensor id and sensor location given the sensor_id
+    and date of each reading, as the sensor location can move around.
 
+    Initially, we hard-code the d_serial_sensor and d_sensor_location data
+    But we will get this from the database in a future phase.
+    '''
+
+    def get_metadata(self,engine_read=None):
+
+        # initial implementation just return a hard coded table
         # Later can read this from a database
-        if d_serial_location is None:
-            self.d_serial_location = {
-                '..02-V5602  317.' : 1, #loc 1 per folder name 20180218
-                '..00-V6916  317.' : 3,  #loc 3 per folder name 20180218
+        if engine_read is None:
+            # Key is 'serial number' from a raw sensor file, a string really.
+            # Value is the db inter id value of the sensor
+            self.d_serial_sensor = {
+                '..02-V5602  317.' : 1,  #loc 1 implied by folder name 20180218
+                '..00-V6916  317.' : 3,  #loc 3 was implied by folder name 20180218
+            }
+            # Hard code - assume for now that sensor id value happens to match
+            # its location id value, but later it will be in a db table
+            # Key is the sensor id and value is the location id
+            self.d_sensor_location = {
+                1 : 1,
+                3 : 3,
             }
         else:
-            self.d_serial_location = d_serial_location
+            raise ValueError("Not implemented")
 
-        if input_file_globs is None
+        return
+
+    def __init__(self,input_file_folders=None,
+        input_file_globs=None, engine=None, log_file=None):
+
+        self.input_file_folders = input_file_folders
+
+        if input_file_globs is None:
             self.input_file_globs = ['**/*.MON']
         else:
-            self.input_file_globs = diver_globs
+            self.input_file_globs = input_file_globs
 
         if log_file is None:
             self.log_file = sys.stdout
         else:
             log_file = sys.stdout
+        self.get_metadata()
+    #end def __init__
 
-    def parse_files():
+
+    def parse_files(self, verbosity=1):
         me = 'parse_files'
         total_files_count = 0
         total_lines_inserted = 0
+        log_file = self.log_file
 
         for input_folder in self.input_file_folders:
             if verbosity > 0:
                 print
-            for glob in self.input_files_glob:
+            for glob in self.input_file_globs:
                 input_path_list = list(
                     Path(input_folder).glob(glob))
                 for count,path in enumerate(input_path_list, start=1):
@@ -363,7 +392,8 @@ class Diver():
                     #l_rows=mon_file_parse2(engine_write=None,input_file_name=input_file_name
                     #    ,verbosity=verbosity)
                     # total_lines_inserted += len(l_rows)
-                    if verbosity > 0:
+                    l_rows = ['one']
+                    if verbosity > 5:
                         print(
                            "{}: Parsed file {}={} with {} reading rows"
                           .format(me, count, input_file_name,len(l_rows))
@@ -378,7 +408,7 @@ class Diver():
         return total_files_count
 
     def file_parse(engine_write=None, input_file_name=None,
-        log_file=None, serial_numbers=None, verbosity=1):
+        log_file=None,  verbosity=1):
 
         me='mon_file_parse'
         rx_floats = r"(?<![a-zA-Z:])[-+]?\d*\.?\d+"
@@ -426,7 +456,7 @@ class Diver():
                 if line_index == 13:
                     # check the serial number of this diver sensor device
                     serial_number = get_serial_number(line)
-                    if serial_number not in serials_numbers:
+                    if serial_number not in self.d_serial_sensor.keys():
                         msg=("Got serial number '{}', not in '{}'"
                           .format(serial_number, serial_numbers))
                         raise ValueError(msg)
@@ -472,6 +502,8 @@ class Diver():
             for count,d_row in enumerate(l_rows, start=1):
                 print("{}\t{}".format(count,d_row),flush=True)
         return l_rows
+    # end def mon_file_parse
+#end class Diver()
 
 '''
 However, this software is not dependent on that, though it
@@ -479,7 +511,7 @@ may facilitate locating test data to test modifications to this
 program.
 '''
 
-class Star ():
+class Star():
     def __init__(input_file_folders=None,
         input_file_globs=None, d_serial_location=None):
 
@@ -508,6 +540,9 @@ class Star ():
         else:
             self.input_file_globs = input_file_globs
 
+    #end def __init__
+#end class Star
+
 '''
 May not need class Oyster_Sensor as we can do parsing with the
 Diver and Star classes, but if add more fixed sensor classes
@@ -523,7 +558,7 @@ class Oyster_Sensor():
         if d_serial_location is None:
             self.d_serial_location = {
                 'DST CTD 8814' : 2,
-                'DST CTD 9058' : 4, #LC-WQ4 folder on 20180218
+                'DST CTD 9058' : 4, # LC-WQ4 folder on 20180218
                 'DST CTD 9060' : 5, # LC-WQ5 folder on 20180218
                 'DST CTD 9061' : 6, # LC-WQ6 folder on 20180218
                 'DST CTD 9035' : 7, # LC-WQ7 folder on 20180218
@@ -564,7 +599,7 @@ class Oyster_Sensor():
         ]
 
         return
-#end def mon_file_parse2
+#end class Oyster_Sensor
 
 '''
 
@@ -579,13 +614,13 @@ def run(env=None,verbosity=1):
     if env == 'uf':
         input_folder=(
           'U:\\rvp\\data\\oyster_sensor\\2017\\' )
-        print("Using 'uf' input folder='{}',glob='{}'"
-           .format(input_folder,glob), flush=True)
+        print("Using 'uf' input folder='{}'"
+           .format(input_folder), flush=True)
     else:
         input_folder=(
           '/home/robert/data/oyster_sensor/2017/' )
-        print("Using 'home' input folder='{}',glob='{}'"
-           .format(input_folder,glob), flush=True)
+        print("Using 'home' input folder='{}'"
+           .format(input_folder), flush=True)
 
     # Create various sensor instances
     # for now, each class defines a glob to identify its files
@@ -596,18 +631,16 @@ def run(env=None,verbosity=1):
     # in WQn, where N is a digit [0-9]
     # See the class code for exact 'glob' syntax used.
 
-    input_folders = [input_folder]
+    input_file_folders = [input_folder]
 
-    diver = Diver(input_folders=input_folder,
+    diver = Diver(input_file_folders=input_file_folders,
         input_file_globs = ['**/*.MON'])
 
-    star = Star(input_folders=input_folder,
-        input_file_globs = ['**/Star*WQ[0-9]'])
+    diver.parse_files()
 
-    Diver.parse()
+    #star = Star(input_folders=input_folder,
+    #    input_file_globs = ['**/Star*WQ[0-9]'])
 
-
-    input_path_list = list(Path(input_folder).glob(glob))
 
 #end def run()
 
