@@ -366,6 +366,25 @@ class Diver():
         else:
             log_file = sys.stdout
         self.get_metadata()
+
+        self.d_name_pattern = {
+
+            #The rx for line 13, serial number extraction
+            'serial_number': re.compile(
+                 r"""\s*Serial number\s*=(?P<serial_number>.*?)""",
+                 re.VERBOSE),
+# Example:'  Serial number           =..02-V5602  317.'
+
+            'data_reading' : re.compile(
+               r"""\s*(?P<y4>.*?)/(?P<mm>.*?)/(?P<dd>.*?)
+               \s*(?P<hr>.*?):(?P<min>.*?):(?P<sec>.*?).(?P<frac>.*?)
+               \s*(?P<pressure_cm>.*)
+               \s*(?P<temperature_c>.*)
+               \s*(?P<condictivity_mS_cm>.*)\s*""",
+               re.VERBOSE)
+# Example:'2017/12/21 21:00:00.0     1110.675      20.263      12.508'
+        }
+
     #end def __init__
 
 
@@ -411,92 +430,72 @@ class Diver():
         return total_files_count
 
     def parse_file(self,engine_write=None, input_file_name=None,
-        log_file=None,  verbosity=1):
+         verbosity=1):
 
         me='parse_file'
-        rx_floats = r"(?<![a-zA-Z:])[-+]?\d*\.?\d+"
-        rp_floats = re.compile(rx_floats)
-        float_names = ['pressure_cm', 'temperature_c', 'conductivity_mS_cm']
+        log_file = self.log_file
         l_rows = []
-        config_parser = configparser.ConfigParser()
-        config_string = ''
-        config_parsing = 0
 
         with open(input_file_name, 'r', encoding='latin1') as ifile:
             for line_index, line in enumerate(ifile, start = 1):
+                # Nip pesky ending newline
+                line = line[:len(line)-1]
                 if line.startswith('END OF') :
                     # Expected end of data LINES
                     break
-                if line.startswith('[Data]'):
-                    # end of config sections that configparser will use
-                    # So we will now parse the prior file lines
-                    # Turn off the flag to save lines for config
-                    # parsing, as we will need no more.
-                    config_parsing = 0
-
-                    if verbosity > 0:
-                        print("{}:Line {} starts final config section of [Data]:\n{}"
-                            .format(me,line_index))
-
-                    # Now parse the configuration file for all lines before
-                    # the [Data] section
-                    config_parser.read_string(config_string)
-
-                    # todo store all the config INFORMATION
-                    serial_number = (
-                      config_parser['Series settings']['Serial number'] )
-                    if verbosity > 0:
-                        print("{}: Serial number='{}'".format(me,serial_number))
-                if config_parsing == 1:
-                    config_string += line
-
-                if line.startswith('[Logger settings]'):
-                    # We are in config sections to mine with
-                    # configparser, so set sentinel
-                    config_string = line
-                    config_parsing = 1
 
                 if line_index == 13:
-                    # check the serial number of this diver sensor device
-                    serial_number = get_serial_number(line)
+                    # Check the serial number of this diver sensor device
+                    match = (self.d_name_pattern['serial_number']
+                        .match(line))
+                    serial_number = match.group("serial")
+                    if serial_number not in d_serial_sensor.keys():
+                        msg=("Found serial number {} not in {}"
+                            .format(serial_number, d_serial_location.keys()))
+                        raise ValueError(msg)
+                    sensor_id = d_serial_sensor[serial_number]
+                    location_id = d_sensor_location[sensor_id]
+
+                    if verbosity > 0:
+                        msg=("Input file '{}' serial={}, sensor={}, location={}"
+                            .format(input_file,serial_number, sensor_id,
+                            location_id))
+                        print(msg, file=log_file)
+
                     if serial_number not in self.d_serial_sensor.keys():
                         msg=("Got serial number '{}', not in '{}'"
                           .format(serial_number, serial_numbers))
                         raise ValueError(msg)
 
-                if line_index < 66:
+                if line_index < 67:
                     #Skip constant sensor header information
                     continue
 
-                line = line[:len(line)-1]
 
+                # Now read and parse this data line and create output d_row
                 d_row = {}
                 l_rows.append(d_row)
+
+                try:
+                    match = (self.d_name_pattern['data_reading']
+                        .match(line))
+                except Exception as ex:
+                    msg=('line={}data reading fails'.format(line_index))
+                    raise ValueError(msg)
+
+                y4 = match.group("y4")
+                mm = match.group("mm")
+                dd = match.group("dd")
+                date_str="{}-{}-{} {}:{}:{}.{}".format(y4,mm,dd,hr,min,sec,frac)
+
                 if verbosity > 1:
                   print("{}: input line {}='{}'"
                         .format(me,line_index,line),flush=True)
-                fields = line.split(' ');
-                date_str = fields[0]
-                time_str = fields[1]
-                d_row['date_str'] = date_str
-                d_row['time_str'] = time_str
-                floats_str = ' '.join(fields[2:])
-                if verbosity > 1:
-                    print("{}: got date='{}', time='{}', floats='{}'"
-                        .format(me,date_str,time_str,floats_str))
 
-                l_matches = rp_floats.findall(floats_str)
-                n_readings = len(l_matches)
-                if len(l_matches) != 3:
-                    msg=("{}: file={}, line {} has {} readings, Not 3."
-                        .format(me,input_file_name,line_index,n_readings))
-                    print("Error {}:".format(msg), flush=True)
-                    raise ValueError(msg)
-                for float_index,m in enumerate(l_matches, start=0):
-                    #ms = m.group() #method group() returns the match string
-                    if verbosity > 2:
-                        print("{}:Got float match='{}'".format(me,m),flush=True)
-                    d_row[float_names[float_index]] = float(m)
+                d_row['date_str'] = date_str
+                for field_name in ['pressure_cm','temperature_c','conductivity_mS_cm']:
+                    d_row[field_name] = float(match.group(field_name))
+
             # end line in input file
         # end with open.. input file_name
         if verbosity > 0:
@@ -505,7 +504,7 @@ class Diver():
             for count,d_row in enumerate(l_rows, start=1):
                 print("{}\t{}".format(count,d_row),flush=True)
         return l_rows
-    # end def mon_parse_file
+    # end def parse_file()
 #end class Diver()
 
 '''
