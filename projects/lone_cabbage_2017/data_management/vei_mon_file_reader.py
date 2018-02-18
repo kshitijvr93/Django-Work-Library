@@ -14,7 +14,8 @@ imports ....
 #(d_header, d_log, d_data) -
 # d_header is header parameter names and col_values
 # d_log is parsing info,warnings,errors
-# d_data is data parameter nams and values
+# d_data is data parameter names and values
+
 
 def mon_file_parse(connection=None, input_file_name=None):
 
@@ -118,22 +119,84 @@ register_modules()
 import etl
 from pathlib import Path
 from collections import OrderedDict
+import re
 
 '''
 <summary name='mon_file_parse'>
 
-Assumption: the output table is just inserted into, and has already
-been created:
+Assumptions: the output table receives only sensor data and is just inserted into, and has already
+been created.
 
 The given file is a 'diver sensor' file of readings data, which
 adheres to the strict format expected here.
 
+The header provides the sensor id and the channel/axis/column data names,
+and they are in order, in both the [Logger settings] section and
+the [Series settings] section as: PRESSSURE (in cm), TEMPERATURE, CONDUCTIVITY.
+
+Other header values are ignored, not checked, until and if use
+cases arise and are required and implemented that require
+them being checked.
+
+
+Also the sensor location is NOT authoritative, because
+UF WEC registers location in external files or logs and does
+not practice updating the sensors to always accurately have the
+sensor headers display where
+they are placed.
+
+THe MON file is a text file with latin1 encoding.
+
+The  [Data] has a line after it with a single integer that is ignored.
+Subsequent lines in the data section each conform to this format:
+
+(Date)4 digit year, slash(forward), 2 digit month, 2 digit day of month,
+space:
+(Time) 2 digit milatary time hour of day, colon, 2 digit minute, colon,
+2 digit second, period, 1 digit of seconds precision
+one or more spaces,
+(first measurement): a string of decimal digits followed by a period,
+  followed by 3 digits of precision.
+(second measurement): a string of decimal digits followed by a period,
+followed by 3 digits of precision:
+(third measurement): a string of decimal digits followed by a period,
+followed by 3 digits of precision:
+(or or more spaces followed by end of line)
+
+The last line in the file is a sentinel line with the text:
+END OF DATA FILE OF DATALOGGER FOR WINDOWS
+
+
+Each data line is used to insert a row in an output water_observations
+table. That table has a unique index on the composite (sensor_id, date, time)
+if a MON file row duplicates those values, it is skipped and not inserted,
+though a log file line is issued to log any consecutive range of line numbers
+within the input MON file that has the duplcate (already inserted data)
+
 </summary>
+
+regular expression for float:
+
+float_rx = r'[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'
+
+float_pattern = re.compile(float_rx)
+
+----------------
+sample sensor data line to date, time and 3 floats for
+
+(1)pressure_cm, (2)temperature_c, (3)conductivity_mS_cm
+2017/08/11 12:00:00.0     1106.592      29.100       1.472
+
+r''
+
+----------------
 
 '''
 import re
-def mon_file_parse(engine_write=None, input_file_name=None,verbosity=1):
-    me='mon_file_parse'
+def mon_file_parse0(engine_write=None, input_file_name=None,log_file=None,
+    verbosity=1):
+
+    me='mon_file_parse0'
     rx_floats = r"(?<![a-zA-Z:])[-+]?\d*\.?\d+"
     rp_floats = re.compile(rx_floats)
     float_names = ['pressure_cm', 'temperature_c', 'conductivity_mS_cm']
@@ -145,6 +208,7 @@ def mon_file_parse(engine_write=None, input_file_name=None,verbosity=1):
                 # Expected end of data LINES
                 break
             if line_index < 66:
+
                 #Skip constant sensor header information
                 continue
 
@@ -185,14 +249,16 @@ def mon_file_parse(engine_write=None, input_file_name=None,verbosity=1):
             print("{}".format(d_row),flush=True)
     return l_rows
 
-#end def mon_file_parse()
+#end def mon_file_parse0()
 
 '''
 The diver files are like windows 'ini' files, so use python 3.6
 package configparser
 '''
 import configparser
-def mon_file_parse2(engine_write=None, input_file_name=None,verbosity=1):
+def mon_file_parse(engine_write=None, input_file_name=None,log_file=None,
+    serial_numbers=None, verbosity=1):
+
     me='mon_file_parse'
     rx_floats = r"(?<![a-zA-Z:])[-+]?\d*\.?\d+"
     rp_floats = re.compile(rx_floats)
@@ -229,6 +295,14 @@ def mon_file_parse2(engine_write=None, input_file_name=None,verbosity=1):
                 # configparser, so set sentinel
                 config_string = line
                 config_parsing = 1
+
+            if line_index == 13:
+                # check the serial number of this diver sensor device
+                serial_number = get_serial_number(line)
+                if serial_number not in serials_numbers:
+                    msg=("Got serial number '{}', not in '{}'"
+                      .format(serial_number, serial_numbers))
+                    raise ValueError(msg)
 
             if line_index < 66:
                 #Skip constant sensor header information
