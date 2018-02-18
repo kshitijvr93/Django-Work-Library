@@ -367,21 +367,21 @@ class Diver():
             log_file = sys.stdout
         self.get_metadata()
 
-        self.d_name_pattern = {
+        self.d_name_rx = {
 
             #The rx for line 13, serial number extraction
-            'serial_number': re.compile(
-                 r"""\s*Serial number\s*=(?P<serial_number>.*?)""",
-                 re.VERBOSE),
+            'serial_number': (
+                 r"""\s*Serial number\s*=(?P<serial_number>.*?)"""
+                 ),
 # Example:'  Serial number           =..02-V5602  317.'
 
-            'data_reading' : re.compile(
-               r"""\s*(?P<y4>.*?)/(?P<mm>.*?)/(?P<dd>.*?)
-               \s*(?P<hr>.*?):(?P<min>.*?):(?P<sec>.*?).(?P<frac>.*?)
-               \s*(?P<pressure_cm>.*)
-               \s*(?P<temperature_c>.*)
-               \s*(?P<condictivity_mS_cm>.*)\s*""",
-               re.VERBOSE)
+            'data_reading' : (
+                 r"""\s*(?P<y4>.*?)/(?P<mm>.*?)/(?P<dd>.*?)
+                 \s*(?P<hr>.*?):(?P<min>.*?):(?P<sec>.*?).(?P<frac>.*?)
+                 \s*(?P<pressure_cm>.*)
+                 \s*(?P<temperature_c>.*)
+                 \s*(?P<condictivity_mS_cm>.*)\s*""",
+                 )
 # Example:'2017/12/21 21:00:00.0     1110.675      20.263      12.508'
         }
 
@@ -440,15 +440,26 @@ class Diver():
             for line_index, line in enumerate(ifile, start = 1):
                 # Nip pesky ending newline
                 line = line[:len(line)-1]
+                if verbosity > 0:
+                    print("Parsing line {} = {}".format(line_index,line)
+                        ,file=log_file, flush=True)
                 if line.startswith('END OF') :
                     # Expected end of data LINES
                     break
 
                 if line_index == 13:
+                    rx = self.d_name_rx['serial_number']
+                    match = re.search(rx,line)
                     # Check the serial number of this diver sensor device
-                    match = (self.d_name_pattern['serial_number']
-                        .match(line))
-                    serial_number = match.group("serial")
+                    try:
+                        serial_number = match.group("serial_number")
+                    except Exception as ex:
+                        msg=("rx={}, line={}, no serial part"
+                        .format(rx,line))
+                        print(msg)
+                        raise ValueError(msg)
+
+
                     if serial_number not in d_serial_sensor.keys():
                         msg=("Found serial number {} not in {}"
                             .format(serial_number, d_serial_location.keys()))
@@ -456,7 +467,7 @@ class Diver():
                     sensor_id = d_serial_sensor[serial_number]
                     location_id = d_sensor_location[sensor_id]
 
-                    if verbosity > 0:
+                    if verbosity > 10:
                         msg=("Input file '{}' serial={}, sensor={}, location={}"
                             .format(input_file,serial_number, sensor_id,
                             location_id))
@@ -477,8 +488,8 @@ class Diver():
                 l_rows.append(d_row)
 
                 try:
-                    match = (self.d_name_pattern['data_reading']
-                        .match(line))
+                    rx = self.d_name_rx['data_reading']
+                    match = re.search(rx, line)
                 except Exception as ex:
                     msg=('line={}data reading fails'.format(line_index))
                     raise ValueError(msg)
