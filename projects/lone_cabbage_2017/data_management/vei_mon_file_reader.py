@@ -181,6 +181,16 @@ float_rx = r'[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'
 
 float_pattern = re.compile(float_rx)
 
+regular expression for sensor data line:
+also see: https://stackoverflow.com/questions/6260777/python-regex-to-parse-string-and-return-tuple#6260945
+
+data_line_pattern = re.compile(
+    r"""\s*(?P<y4>.*?)\s*(?P<mm>.*?)\s*(?P<dd>.*?)
+       \s*(?P<pressure_cm>.*)
+       \s*(?P<temperature_c>.*)
+       \s*(?P<condictivity_mS_cm>.*)\s*""", re.VERBOSE
+    )
+
 ----------------
 sample sensor data line to date, time and 3 floats for
 
@@ -193,6 +203,51 @@ r''
 
 '''
 import re
+
+def diver_reading_pattern():
+    pattern = re.compile(
+        r"""\s*(?P<y4>.*?)\s*(?P<mm>.*?)\s*(?P<dd>.*?)
+           \s*(?P<pressure_cm>.*)
+           \s*(?P<temperature_c>.*)
+           \s*(?P<conductivity_mS_cm>.*)\s*""", re.VERBOSE
+        )
+    return pattern
+
+'''
+<summary name='extract_diver_reading'>
+</summary>
+<param name=pattern></param>
+A pattern produced by re.compile of a regular expression
+<param name='input_string'></param>
+A string with which to match the pattern.
+<param></param>
+'''
+def extract_diver_reading(pattern=None,input_line=None):
+    if pattern is None:
+        pattern = diver_reading_pattern()
+    match = pattern.match(input_string)
+    y4 = match.group("y4")
+    mm = match.group("mm")
+    dd = match.group("dd")
+    pressure_cm = match.group('pressure_cm')
+    temperature_c = match.group('temperature_c')
+    conductivity_mS_cm = match.group('conductivity_mS_cm')
+
+    values = ['y4','mm','dd','pressure_cm','temperature_c',
+              'conductivity_mS_cm']:
+
+    if not all values:
+        msg = ("Input string '{}' has not all values of {}"
+            .input_string, values)
+        raise ValueError input
+
+    return("{}-{}-{}".format(y4,mm,dd),
+           pressure_cm,
+           temperature_c,
+           conductivity_mS_cm)
+# end def_extract_diver_reading
+
+----------------
 def mon_file_parse0(engine_write=None, input_file_name=None,log_file=None,
     verbosity=1):
 
@@ -254,132 +309,305 @@ def mon_file_parse0(engine_write=None, input_file_name=None,log_file=None,
 '''
 The diver files are like windows 'ini' files, so use python 3.6
 package configparser
+
+Note: on 20180218 the 'Diver' folders are
+[
+'LC-WQ1','LC-WQ3'
+]
 '''
 import configparser
-def mon_file_parse(engine_write=None, input_file_name=None,log_file=None,
-    serial_numbers=None, verbosity=1):
 
-    me='mon_file_parse'
-    rx_floats = r"(?<![a-zA-Z:])[-+]?\d*\.?\d+"
-    rp_floats = re.compile(rx_floats)
-    float_names = ['pressure_cm', 'temperature_c', 'conductivity_mS_cm']
-    l_rows = []
-    config_parser = configparser.ConfigParser()
-    config_string = ''
-    config_parsing = 0
+class Diver():
 
-    with open(input_file_name, 'r', encoding='latin1') as ifile:
-        for line_index, line in enumerate(ifile, start = 1):
-            if line.startswith('END OF') :
-                # Expected end of data LINES
-                break
-            if line.startswith('[Data]'):
-                #end of config sections that configparser will use
-                config_parsing = 0
-                if verbosity > 0:
-                    print("{}:Got config sections of interest:\n{}"
-                        .format(me,config_string))
+    def __init__(input_file_folders=None, serial_numbers=None,
+        input_file_globs=None, d_serial_location=None):
 
-                config_parser.read_string(config_string)
+        # Later can read this from a database
+        if d_serial_location is None:
+            self.d_serial_location = {
+                '..02-V5602  317.' : 1, #loc 1 per folder name 20180218
+                '..00-V6916  317.' : 3,  #loc 3 per folder name 20180218
+            }
+        else:
+            self.d_serial_location = d_serial_location
 
-                # todo store all the config INFORMATION
-                serial_number = (
-                  config_parser['Series settings']['Serial number'] )
-                if verbosity > 0:
-                    print("{}: Serial number='{}'".format(me,serial_number))
-            if config_parsing == 1:
-                config_string += line
+        if input_file_globs is None
+            self.input_file_globs = ['**/*.MON']
+        else:
+            self.input_file_globs = diver_globs
 
-            if line.startswith('[Logger settings]'):
-                # We are in config sections to mine with
-                # configparser, so set sentinel
-                config_string = line
-                config_parsing = 1
+        if log_file is None:
+            self.log_file = sys.stdout
+        else:
+            log_file = sys.stdout
 
-            if line_index == 13:
-                # check the serial number of this diver sensor device
-                serial_number = get_serial_number(line)
-                if serial_number not in serials_numbers:
-                    msg=("Got serial number '{}', not in '{}'"
-                      .format(serial_number, serial_numbers))
+    def parse_files():
+        me = 'parse_files'
+        total_files_count = 0
+        total_lines_inserted = 0
+
+        for input_folder in self.input_file_folders:
+            if verbosity > 0:
+                print
+            for glob in self.input_files_glob:
+                input_path_list = list(
+                    Path(input_folder).glob(glob))
+                for count,path in enumerate(input_path_list, start=1):
+                    input_file_name = "{}{}".format(input_folder,path.name)
+                    total_files_count += 1
+                    if verbosity > 0:
+                        print("{}: for glob='{}',parsing input file '{}'"
+                            .format(me,glob,input_file_name),flush=True
+                            , file=log_file )
+
+                    #l_rows=mon_file_parse2(engine_write=None,input_file_name=input_file_name
+                    #    ,verbosity=verbosity)
+                    # total_lines_inserted += len(l_rows)
+                    if verbosity > 0:
+                        print(
+                           "{}: Parsed file {}={} with {} reading rows"
+                          .format(me, count, input_file_name,len(l_rows))
+                          ,file=log_file)
+                # end for path in input_path_list
+            #end for glob in star_globs
+        #end for input_folder in input_folders
+
+        if verbosity > 0:
+            print("{}:Processed count={} input files."
+               .format(me, count), flush=True, file=log_file)
+        return total_files_count
+
+    def file_parse(engine_write=None, input_file_name=None,
+        log_file=None, serial_numbers=None, verbosity=1):
+
+        me='mon_file_parse'
+        rx_floats = r"(?<![a-zA-Z:])[-+]?\d*\.?\d+"
+        rp_floats = re.compile(rx_floats)
+        float_names = ['pressure_cm', 'temperature_c', 'conductivity_mS_cm']
+        l_rows = []
+        config_parser = configparser.ConfigParser()
+        config_string = ''
+        config_parsing = 0
+
+        with open(input_file_name, 'r', encoding='latin1') as ifile:
+            for line_index, line in enumerate(ifile, start = 1):
+                if line.startswith('END OF') :
+                    # Expected end of data LINES
+                    break
+                if line.startswith('[Data]'):
+                    # end of config sections that configparser will use
+                    # So we will now parse the prior file lines
+                    # Turn off the flag to save lines for config
+                    # parsing, as we will need no more.
+                    config_parsing = 0
+
+                    if verbosity > 0:
+                        print("{}:Line {} starts final config section of [Data]:\n{}"
+                            .format(me,line_index))
+
+                    # Now parse the configuration file for all lines before
+                    # the [Data] section
+                    config_parser.read_string(config_string)
+
+                    # todo store all the config INFORMATION
+                    serial_number = (
+                      config_parser['Series settings']['Serial number'] )
+                    if verbosity > 0:
+                        print("{}: Serial number='{}'".format(me,serial_number))
+                if config_parsing == 1:
+                    config_string += line
+
+                if line.startswith('[Logger settings]'):
+                    # We are in config sections to mine with
+                    # configparser, so set sentinel
+                    config_string = line
+                    config_parsing = 1
+
+                if line_index == 13:
+                    # check the serial number of this diver sensor device
+                    serial_number = get_serial_number(line)
+                    if serial_number not in serials_numbers:
+                        msg=("Got serial number '{}', not in '{}'"
+                          .format(serial_number, serial_numbers))
+                        raise ValueError(msg)
+
+                if line_index < 66:
+                    #Skip constant sensor header information
+                    continue
+
+                line = line[:len(line)-1]
+
+                d_row = {}
+                l_rows.append(d_row)
+                if verbosity > 1:
+                  print("{}: input line {}='{}'"
+                        .format(me,line_index,line),flush=True)
+                fields = line.split(' ');
+                date_str = fields[0]
+                time_str = fields[1]
+                d_row['date_str'] = date_str
+                d_row['time_str'] = time_str
+                floats_str = ' '.join(fields[2:])
+                if verbosity > 1:
+                    print("{}: got date='{}', time='{}', floats='{}'"
+                        .format(me,date_str,time_str,floats_str))
+
+                l_matches = rp_floats.findall(floats_str)
+                n_readings = len(l_matches)
+                if len(l_matches) != 3:
+                    msg=("{}: file={}, line {} has {} readings, Not 3."
+                        .format(me,input_file_name,line_index,n_readings))
+                    print("Error {}:".format(msg), flush=True)
                     raise ValueError(msg)
+                for float_index,m in enumerate(l_matches, start=0):
+                    #ms = m.group() #method group() returns the match string
+                    if verbosity > 2:
+                        print("{}:Got float match='{}'".format(me,m),flush=True)
+                    d_row[float_names[float_index]] = float(m)
+            # end line in input file
+        # end with open.. input file_name
+        if verbosity > 0:
+            print("{}:Parsed file {},returning {} rows:"
+                .format(me,input_file_name, line_index-1))
+            for count,d_row in enumerate(l_rows, start=1):
+                print("{}\t{}".format(count,d_row),flush=True)
+        return l_rows
 
-            if line_index < 66:
-                #Skip constant sensor header information
-                continue
+'''
+However, this software is not dependent on that, though it
+may facilitate locating test data to test modifications to this
+program.
+'''
 
-            line = line[:len(line)-1]
+class Star ():
+    def __init__(input_file_folders=None,
+        input_file_globs=None, d_serial_location=None):
 
-            d_row = {}
-            l_rows.append(d_row)
-            if verbosity > 1:
-              print("{}: input line {}='{}'"
-                    .format(me,line_index,line),flush=True)
-            fields = line.split(' ');
-            date_str = fields[0]
-            time_str = fields[1]
-            d_row['date_str'] = date_str
-            d_row['time_str'] = time_str
-            floats_str = ' '.join(fields[2:])
-            if verbosity > 1:
-                print("{}: got date='{}', time='{}', floats='{}'"
-                    .format(me,date_str,time_str,floats_str))
+        rx_serial = ''  #tbd
 
-            l_matches = rp_floats.findall(floats_str)
-            n_readings = len(l_matches)
-            if len(l_matches) != 3:
-                msg=("{}: file={}, line {} has {} readings, Not 3."
-                    .format(me,input_file_name,line_index,n_readings))
-                print("Error {}:".format(msg), flush=True)
-                raise ValueError(msg)
-            for float_index,m in enumerate(l_matches, start=0):
-                #ms = m.group() #method group() returns the match string
-                if verbosity > 2:
-                    print("{}:Got float match='{}'".format(me,m),flush=True)
-                d_row[float_names[float_index]] = float(m)
-        # end line in input file
-    # end with open.. input file_name
-    if verbosity > 0:
-        print("{}:Parsed file {},returning {} rows:"
-            .format(me,input_file_name, line_index-1))
-        for count,d_row in enumerate(l_rows, start=1):
-            print("{}\t{}".format(count,d_row),flush=True)
-    return l_rows
+        # Later can read this from a database
+        if d_serial_location is None:
+            self.d_serial_location = {
+                # Diver sensors as of 20171222
+                '..02-V5602  317.' : 1, #loc 1 per folder name 20180218
+                '..00-V6916  317.' : 3,  #loc 3 per folder name 20180218
+                # Star ODDI sensors as of 20171222
+                'DST CTD 8814' : 2,
+                'DST CTD 9058' : 4, # LC-WQ4 folder on 20180218
+                'DST CTD 9060' : 5, # LC-WQ5 folder on 20180218
+                'DST CTD 9061' : 6, # LC-WQ6 folder on 20180218
+                'DST CTD 9035' : 7, # LC-WQ7 folder on 20180218
+                'DST CTD 9062' : 8, # LC-WQ8 folder on 20180218
+                'DST CTD 9036' : 9, # LC-WQ9 folder on 20180218
+            }
+        else:
+            self.serial_location = d_serial_location
+
+        if input_file_globs is None:
+            self.input_file_globs = ['**/Star*WQ[0-9]']
+        else:
+            self.input_file_globs = input_file_globs
+
+'''
+May not need class Oyster_Sensor as we can do parsing with the
+Diver and Star classes, but if add more fixed sensor classes
+later, this class might be useful to serve some management
+functions.
+
+Leave this code here as a stub for possible later implementation.
+
+'''
+class Oyster_Sensor():
+    def __init__(d_serial_location=None):
+
+        if d_serial_location is None:
+            self.d_serial_location = {
+                'DST CTD 8814' : 2,
+                'DST CTD 9058' : 4, #LC-WQ4 folder on 20180218
+                'DST CTD 9060' : 5, # LC-WQ5 folder on 20180218
+                'DST CTD 9061' : 6, # LC-WQ6 folder on 20180218
+                'DST CTD 9035' : 7, # LC-WQ7 folder on 20180218
+                'DST CTD 9062' : 8, # LC-WQ8 folder on 20180218
+                'DST CTD 9036' : 9, # LC-WQ9 folder on 20180218
+            }
+        else:
+            self.serial_location = d_serial_location
+
+        # Populate the location-indicator input folder names
+        # for now manually by examining the input files Mel Moreno
+        # made for Robert 2/14/2018 or so
+        # Note: if an input file is found under a folder not
+        # whose sensor-location association does not
+        # match this folder, a warning should be issued.
+        self.d_folder_location_20180216 = {
+            'LC-WQ1' : 1 ,
+            'LC-WQ2' : 2,
+            'LC-WQ3' : 3,
+            'LC-WQ4' : 4,
+            'LC-WQ5' : 5,
+            'LC-WQ6' : 6,
+            'LC-WQ7' : 7,
+            'LC-WQ8' : 8,
+            'LC-WQ9' : 9,
+        }
+        self.l_sensor_serial_numbers = [
+            '..02-V5602  317.',
+            ''
+        ]
+        self.diver_glob = ['**/*.MON']
+        self.star_globs = ['**/Star*WQ[0-9]']
+        #Populate the valid sensor serial numbers (may read from db
+        # later if needed)
+
+        self.sensor_serial_numbers = [
+
+        ]
+
+        return
 #end def mon_file_parse2
+
+'''
+
+Note: the input files to use were identified in an email from Mel
+Moreno to Robert Phillips 2018-02-12.
+
+'''
 
 def run(env=None,verbosity=1):
     me='run'
 
-    glob = '*.MON'
     if env == 'uf':
         input_folder=(
-          'C:\\rvp\\git\\citrus\\projects\\lone_cabbage_2017\\data_management\\' )
-        print("Using input folder='{}',glob='{}'"
+          'U:\\rvp\\data\\oyster_sensor\\2017\\' )
+        print("Using 'uf' input folder='{}',glob='{}'"
            .format(input_folder,glob), flush=True)
     else:
         input_folder=(
-          '/home/robert/git/citrus/projects/lone_cabbage_2017/data_management/' )
-        print("Using input folder='{}',glob='{}'"
+          '/home/robert/data/oyster_sensor/2017/' )
+        print("Using 'home' input folder='{}',glob='{}'"
            .format(input_folder,glob), flush=True)
 
+    # Create various sensor instances
+    # for now, each class defines a glob to identify its files
+    # and NO other sensor files.
+    # This program ASSUMES/requires doordination/pre-enforecement
+    # in file naming. All "Diver" raw sensor file names must
+    # end in MON and each Star raw sensor file name must end
+    # in WQn, where N is a digit [0-9]
+    # See the class code for exact 'glob' syntax used.
+
+    input_folders = [input_folder]
+
+    diver = Diver(input_folders=input_folder,
+        input_file_globs = ['**/*.MON'])
+
+    star = Star(input_folders=input_folder,
+        input_file_globs = ['**/Star*WQ[0-9]'])
+
+    Diver.parse()
+
+
     input_path_list = list(Path(input_folder).glob(glob))
-
-    count = 0
-    for count,path in enumerate(input_path_list, start=1):
-        input_file_name = "{}{}".format(input_folder,path.name)
-        if verbosity > 0:
-            print("{}: parsing input file '{}'".format(me,input_file_name)
-                ,flush=True)
-        l_rows=mon_file_parse2(engine_write=None,input_file_name=input_file_name
-            ,verbosity=verbosity)
-        if verbosity > 0:
-            print("{}: Parsed file {} = {} with {} reading rows"
-                .format(me, count, input_file_name,len(l_rows)))
-
-    if verbosity > 0:
-        print("{}:Processed count={} input files."
-           .format(me, count), flush=True)
-    return count
 
 #end def run()
 
