@@ -206,10 +206,9 @@ import re
 
 def diver_reading_pattern():
     pattern = re.compile(
-        r"""\s*(?P<y4>.*?)\s*(?P<mm>.*?)\s*(?P<dd>.*?)
-           \s*(?P<pressure_cm>.*)
-           \s*(?P<temperature_c>.*)
-           \s*(?P<conductivity_mS_cm>.*)\s*""", re.VERBOSE
+        r"\s*(?P<y4>.*?)\s*(?P<mm>.*?)\s*(?P<dd>.*?)"
+           "\s*(?P<pressure_cm>.*)\s*(?P<temperature_c>.*)"
+           "\s*(?P<conductivity_mS_cm>.*)\s*", re.VERBOSE
         )
     return pattern
 
@@ -371,16 +370,15 @@ class Diver():
 
             #The rx for line 13, serial number extraction
             'serial_number': (
-                 r"""\s*Serial number\s*=(?P<serial_number>.*?)"""
+                 r"\s*Serial number\s*=(?P<serial_number>.*)"
                  ),
 # Example:'  Serial number           =..02-V5602  317.'
 
             'data_reading' : (
-                 r"""\s*(?P<y4>.*?)/(?P<mm>.*?)/(?P<dd>.*?)
-                 \s*(?P<hr>.*?):(?P<min>.*?):(?P<sec>.*?).(?P<frac>.*?)
-                 \s*(?P<pressure_cm>.*)
-                 \s*(?P<temperature_c>.*)
-                 \s*(?P<condictivity_mS_cm>.*)\s*""",
+                 r"\s*(?P<y4>.*)/(?P<mm>.*)/(?P<dd>.*)"
+                 "\s*(?P<hr>.*):(?P<min>.*):(?P<sec>.*)\.(?P<frac>.*)"
+                 "\s*(?P<pressure_cm>.*)\s*(?P<temperature_c>.*)"
+                 "\s*(?P<condictivity_mS_cm>.*)\s*"
                  )
 # Example:'2017/12/21 21:00:00.0     1110.675      20.263      12.508'
         }
@@ -448,28 +446,31 @@ class Diver():
                     break
 
                 if line_index == 13:
-                    rx = self.d_name_rx['serial_number']
+                    #rx = self.d_name_rx['serial_number']
+                    rx = r'''Serial number           =(?P<serial_number>.*)'''
                     match = re.search(rx,line)
                     # Check the serial number of this diver sensor device
                     try:
                         serial_number = match.group("serial_number")
+                        serial_number = match.group(1)
                     except Exception as ex:
                         msg=("rx={}, line={}, no serial part"
                         .format(rx,line))
                         print(msg)
                         raise ValueError(msg)
 
-
+                    d_serial_sensor = self.d_serial_sensor
+                    d_sensor_location = self.d_sensor_location
                     if serial_number not in d_serial_sensor.keys():
-                        msg=("Found serial number {} not in {}"
-                            .format(serial_number, d_serial_location.keys()))
+                        msg=("Found serial number '{}' not in '{}'"
+                            .format(serial_number, d_serial_sensor.keys()))
                         raise ValueError(msg)
                     sensor_id = d_serial_sensor[serial_number]
                     location_id = d_sensor_location[sensor_id]
 
-                    if verbosity > 10:
-                        msg=("Input file '{}' serial={}, sensor={}, location={}"
-                            .format(input_file,serial_number, sensor_id,
+                    if verbosity > 0:
+                        msg=("Input file '{}' line13='{},' serial={}, sensor={}, location={}"
+                            .format(input_file_name,line,serial_number, sensor_id,
                             location_id))
                         print(msg, file=log_file)
 
@@ -482,33 +483,46 @@ class Diver():
                     #Skip constant sensor header information
                     continue
 
-
                 # Now read and parse this data line and create output d_row
                 d_row = {}
                 l_rows.append(d_row)
 
                 try:
                     rx = self.d_name_rx['data_reading']
-                    match = re.search(rx, line)
+                    if verbosity > 0:
+                        print("rx='{}',\nand line='{}'".format(rx,line),
+                              file=log_file)
+
+                    data_match = re.search(rx, line)
                 except Exception as ex:
                     msg=('line={}data reading fails'.format(line_index))
                     raise ValueError(msg)
 
-                y4 = match.group("y4")
-                mm = match.group("mm")
-                dd = match.group("dd")
-                date_str="{}-{}-{} {}:{}:{}.{}".format(y4,mm,dd,hr,min,sec,frac)
+                y4 = data_match.group("y4")
+                mm = data_match.group("mm")
+                dd = data_match.group("dd")
+                hr = data_match.group("hr")
+                minute = data_match.group("min")
+                sec = data_match.group("sec")
+                frac = data_match.group("frac")
+                date_str="{}-{}-{} {}:{}:{}.{}".format(y4,mm,dd,hr,minute,sec,frac)
 
                 if verbosity > 1:
                   print("{}: input line {}='{}'"
                         .format(me,line_index,line),flush=True)
 
-                d_row['date_str'] = date_str
-                for field_name in ['pressure_cm','temperature_c','conductivity_mS_cm']:
-                    d_row[field_name] = float(match.group(field_name))
+                if verbosity > 0:
+                    d_row['date_str'] = date_str
+                    print("Created date_str='{}'".format(date_str),flush=True)
 
+                for field_name in ['pressure_cm','temperature_c','conductivity_mS_cm']:
+                    value = data_match.group(field_name)
+                    if verbosity > 0:
+                        print("Field_name='{}', value='{}'".format(field_name,value))
+                    d_row[field_name] = value
             # end line in input file
         # end with open.. input file_name
+
         if verbosity > 0:
             print("{}:Parsed file {},returning {} rows:"
                 .format(me,input_file_name, line_index-1))
