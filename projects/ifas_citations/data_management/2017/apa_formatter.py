@@ -167,9 +167,16 @@ def make_apa_citations(
                             while pages.endswith('.'):
                                 pages = pages[:-1]
 
-                        index +=1
+                        # 20180216 - Another last-second change forced by
+                        # varying input for 2017 - NOW doi is 2 fields after
+                        # a new intervening 'jorunal type'
+                        # column, so  we do += 3 instead of +=1 next
+
+                        index += 3
                         if nparts > index:
+                            # Another change, now no 'doi:' is given in the input
                             doi = parts[index].replace(' ','').replace('\n','')
+
                             if doi.startswith('http://dx.doi.org/'):
                                 doi = doi[18:]
                             if doi.upper().startswith('DOI:'):
@@ -178,17 +185,23 @@ def make_apa_citations(
                         p_volume = '' if volume == '' else ', {}'.format(volume)
                         p_issue = '' if issue == '' else '({})'.format(issue)
                         p_pages = '' if pages == '' else ', {}'.format(pages)
-                        p_doi = '' if doi == '' else (
-                            ' <a href="http:/dx.doi.org/{}"> {}</a>'.format(doi,doi))
+                        if doi == '':
+                            p_doi = ''
+                        elif make_table == 1:
+                            p_doi = (' <a href="http:/dx.doi.org/{}"> {}</a>'
+                                .format(doi,doi))
+                        else:
+                            p_doi = ' ' + doi
+
                         if make_table == 1:
                             open_citation = '<tr><td>'
                             close_citation = '</td></tr>'
                         else:
                             open_citation = '<p>'
-                            close_citation = '</p>''
+                            close_citation = '</p>'
 
                         print("{}{} ({}). {}. "
-                              "<span style='font-style: italic;'>{}{}</span>{}{}.{}\n</td></tr>\n"
+                              "<span style='font-style: italic;'>{}{}</span>{}{}.{}\n"
                             .format(open_citation,html_escape(authors),
                                     html_escape(pubyear),
                                     html_escape(title),
@@ -198,6 +211,7 @@ def make_apa_citations(
                                     html_escape(p_pages),
                                     p_doi)
                             ,file=output_file)
+                        print("{}\n".format(close_citation),file=output_file)
                     # end nparts > title index value
                 # for line in input_lines
 
@@ -239,7 +253,8 @@ def run(study_year=2017):
 
     # Just one file this year, so use its name as input_glob pattern
     make_apa_citations(input_folder=input_folder,output_folder=output_folder
-        ,input_glob=citations_input_file, log_file=log_file,verbosity=1)
+        ,input_glob=citations_input_file, log_file=log_file,
+        make_table=0, verbosity=1)
 
     print("Done! See log file='{}'".format(log_filename))
 
