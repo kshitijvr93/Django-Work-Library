@@ -206,7 +206,7 @@ def make_apa_citations(
                             # correct APA offical format of March 2017 per:
                             # ("http://blog.apastyle.org/apastyle/2017/03/doi-"
                             # "display-guidelines-update-march-2017.html")
-                            doi =" https://doi.org/{}".format(doi)
+                            doi ="https://doi.org/{}".format(doi)
                             p_doi = (' <a href="{}"> {}</a>'
                                 .format(doi,doi))
 
