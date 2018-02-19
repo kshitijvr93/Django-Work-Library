@@ -458,10 +458,7 @@ class Diver():
             for line_index, line in enumerate(ifile, start = 1):
                 # Nip pesky ending newline
                 line = line[:len(line)-1]
-                # RVP TEST BREAKjj
-                if line_index > 72:
-                     break;
-                if verbosity > 0:
+                if verbosity > 1:
                     print("Parsing line {} ='{}'".format(line_index,line)
                         ,file=log_file, flush=True)
                 if line.startswith('END OF') :
@@ -492,7 +489,7 @@ class Diver():
                     location_id = d_sensor_location[sensor_id]
 
                     if verbosity > 0:
-                        msg=("Input file '{}' line13='{},' serial={}, sensor={}, location={}"
+                        msg=("Input file '{}',\n line13='{},' serial={}, sensor={}, location={}"
                             .format(input_file_name,line,serial_number, sensor_id,
                             location_id))
                         print(msg, file=log_file)
@@ -512,7 +509,7 @@ class Diver():
 
                 try:
                     rx = self.d_name_rx['data_reading']
-                    if verbosity > 0:
+                    if verbosity > 1:
                         print("rx='{}',\nand line='{}'".format(rx,line),
                               file=log_file)
 
@@ -529,8 +526,6 @@ class Diver():
                 sec = data_match.group("sec")
                 #frac = data_match.group("frac")
                 date_str="{}-{}-{} {}:{}:{}".format(y4,mm,dd,hr,minute,sec)
-                date_str2=("y4='{}',mm='{}',dd='{}',\n"
-                    "hr='{}',min='{}',sec={}").format(y4,mm,dd,hr,minute,sec)
 
                 pressure_cm = temperature_c = conductivity_mS_cm = 'tbd'
                 #pressure_cm = data_match.group('pressure_cm')
@@ -541,23 +536,22 @@ class Diver():
                   print("{}: input line {}='{}'"
                         .format(me,line_index,line),flush=True)
 
-                if verbosity > 0:
+                if verbosity > 1:
                     d_row['date_str'] = date_str
-                    print("Created date_str2='{}'".format(date_str2),flush=True)
                     print("pressure_cm='{}'".format(pressure_cm))
                     print("temperature_c='{}'".format(temperature_c))
                     print("conductivity_mS_cm='{}'".format(conductivity_mS_cm))
 
                 for field_name in ['pressure_cm','temperature_c','conductivity_mS_cm']:
                     value = data_match.group(field_name)
-                    if verbosity > 0:
+                    if verbosity > 1:
                         print("Field_name='{}', value='{}'".format(field_name,value))
                     d_row[field_name] = value
             # end line in input file
         # end with open.. input file_name
 
         if verbosity > 0:
-            print("{}:Parsed file {},returning {} rows:"
+            print("{}:Parsed file {},\n and returning {} rows:"
                 .format(me,input_file_name, line_index-1))
             for count,d_row in enumerate(l_rows, start=1):
                 print("{}\t{}".format(count,d_row),flush=True)

@@ -40,7 +40,7 @@ hand-modified for final use after it is run ONCE on input.
 '''
 def make_apa_citations(
     input_folder=None, output_folder=None,input_glob='**/*utf8.txt',
-    log_file=None,verbosity=0):
+    make_table=1,log_file=None,verbosity=0):
 
     me = 'make_apa_citations'
     if verbosity > 1:
@@ -74,8 +74,9 @@ def make_apa_citations(
             print("\nReading input file {}".format(path.name),file=log_file)
             print("<!DOCTYPE html> <html>\n<head><meta charset='UTF-8'></head>\n"
                   "<body>\n<h3>APA Citations for Input File {}</h3>\n"
-                  "<table border=2>\n"
                   .format(input_file_name), file=output_file)
+            if make_table == 1:
+                  print("<table border=2>\n", file=output_file)
             # NOTE: save EXCEL file as utf-8 encoded file
             with open (str(input_file_name),mode="r",encoding="utf-8",errors="ignore") as input_file:
                 # NOTE: may use VIM or other tools to change input file encoding to required
@@ -179,10 +180,16 @@ def make_apa_citations(
                         p_pages = '' if pages == '' else ', {}'.format(pages)
                         p_doi = '' if doi == '' else (
                             ' <a href="http:/dx.doi.org/{}"> {}</a>'.format(doi,doi))
+                        if make_table == 1:
+                            open_citation = '<tr><td>'
+                            close_citation = '</td></tr>'
+                        else:
+                            open_citation = '<p>'
+                            close_citation = '</p>''
 
-                        print("<tr><td>{} ({}). {}. "
+                        print("{}{} ({}). {}. "
                               "<span style='font-style: italic;'>{}{}</span>{}{}.{}\n</td></tr>\n"
-                            .format(html_escape(authors),
+                            .format(open_citation,html_escape(authors),
                                     html_escape(pubyear),
                                     html_escape(title),
                                     html_escape(journal),
@@ -196,8 +203,11 @@ def make_apa_citations(
 
             print("Produced APA citation output file {} with {} citations."
                   .format(output_file_name, n_file_citations),file=log_file)
-            print("</table></body></html>\n",file=output_file)
-            # withoutput_file
+            if make_table == 1:
+                print("</table>",file=output_file)
+
+            print("</body></html>\n",file=output_file)
+            # with output_file
     # with input_file
     return None
 # end make_apa_citations
