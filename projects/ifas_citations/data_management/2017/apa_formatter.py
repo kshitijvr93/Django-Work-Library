@@ -1,6 +1,17 @@
+'''
 # 20170315 - Robert V. Phillips
 # Python3 Code that runs in a Jupyter Cell
 # to produce APA style citations from tab-delimited .txt files in a given input directory
+
+NOTE: after running this program, use pandoc to convert it to a docx file for
+UF Lib Marston library use:
+
+pandoc -f html -t docx -o test_agron.docx test_agron_20180216.txt.html
+
+It converts the &apos and other characters that microsoft word 2016 does not
+properly convert.
+
+'''
 import sys, os, os.path, platform
 
 def register_modules():
