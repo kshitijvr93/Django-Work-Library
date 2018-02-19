@@ -119,7 +119,8 @@ register_modules()
 import etl
 from pathlib import Path
 from collections import OrderedDict
-import regex
+#import regex
+import re
 
 '''
 <summary name='mon_file_parse'>
@@ -202,118 +203,15 @@ r''
 ----------------
 
 '''
-import re
-
-def diver_reading_pattern():
-    pattern = re.compile(
-        r"\s*(?P<y4>.*?)\s*(?P<mm>.*?)\s*(?P<dd>.*?)"
-           "\s*(?P<pressure_cm>.*)\s*(?P<temperature_c>.*)"
-           "\s*(?P<conductivity_mS_cm>.*)\s*", re.VERBOSE
-        )
-    return pattern
 
 '''
-<summary name='extract_diver_reading'>
-</summary>
-<param name=pattern></param>
-A pattern produced by re.compile of a regular expression
-<param name='input_string'></param>
-A string with which to match the pattern.
-<param></param>
-'''
-def extract_diver_reading(pattern=None,input_line=None):
-    if pattern is None:
-        pattern = diver_reading_pattern()
-    match = pattern.match(input_string)
-    y4 = match.group("y4")
-    mm = match.group("mm")
-    dd = match.group("dd")
-    pressure_cm = match.group('pressure_cm')
-    temperature_c = match.group('temperature_c')
-    conductivity_mS_cm = match.group('conductivity_mS_cm')
+class Diver():
 
-    values = ['y4','mm','dd','pressure_cm','temperature_c',
-              'conductivity_mS_cm']
 
-    if not all(values):
-        msg = ("Input string '{}' has not all values of {}"
-            .input_string, values)
-        raise ValueError(msg)
-
-    return("{}-{}-{}".format(y4,mm,dd),
-           pressure_cm,
-           temperature_c,
-           conductivity_mS_cm)
-# end def_extract_diver_reading
-
-def mon_file_parse0(engine_write=None, input_file_name=None,log_file=None,
-    verbosity=1):
-
-    me='mon_file_parse0'
-    rx_floats = r"(?<![a-zA-Z:])[-+]?\d*\.?\d+"
-    rp_floats = re.compile(rx_floats)
-    float_names = ['pressure_cm', 'temperature_c', 'conductivity_mS_cm']
-    l_rows = []
-    with open(input_file_name, 'r', encoding='latin1') as ifile:
-        for line_index, line in enumerate(ifile, start = 1):
-            line = line[:len(line)-1]
-            if line.startswith('END OF') :
-                # Expected end of data LINES
-                break
-            if line_index < 66:
-
-                #Skip constant sensor header information
-                continue
-
-            d_row = {}
-            l_rows.append(d_row)
-            if verbosity > 0:
-              print("{}: input line {}='{}'"
-                    .format(me,line_index,line),flush=True)
-            fields = line.split(' ');
-            date_str = fields[0]
-            time_str = fields[1]
-            d_row['date_str'] = date_str
-            d_row['time_str'] = time_str
-            floats_str = ' '.join(fields[2:])
-            #d_row['time_str'] = time_str
-            if verbosity > 0:
-                print("{}: got date='{}', time='{}', floats='{}'"
-                    .format(me,date_str,time_str,floats_str))
-
-            l_matches = rp_floats.findall(floats_str)
-            n_readings = len(l_matches)
-            if len(l_matches) != 3:
-                msg=("{}: file={}, line {} has {} readings, Not 3."
-                    .format(me,input_file_name,line_index,n_readings))
-                print("Error {}:".format(msg), flush=True)
-                raise ValueError(msg)
-            for float_index,m in enumerate(l_matches, start=0):
-                #ms = m.group() #method group() returns the match string
-                if verbosity > 1:
-                    print("Got match ='{}'".format(m),flush=True)
-                d_row[float_names[float_index]] = float(m)
-        # end line in input file
-    # end with open.. input file_name
-    if verbosity > 0:
-        print("{}:Parsed file {},returning {} rows:"
-            .format(me,input_file_name, line_index-1))
-        for d_row in l_rows:
-            print("{}".format(d_row),flush=True)
-    return l_rows
-
-#end def mon_file_parse0()
+Note: on 20180218 the current sub-folders with sample diver files are:
+[ 'LC-WQ1','LC-WQ3' ]
 
 '''
-The diver files are like windows 'ini' files, so use python 3.6
-package configparser
-
-Note: on 20180218 the 'Diver' folders are
-[
-'LC-WQ1','LC-WQ3'
-]
-'''
-import configparser
 
 class Diver():
 
@@ -692,9 +590,8 @@ def run(env=None,verbosity=1):
 
     diver.parse_files()
 
-    #star = Star(input_folders=input_folder,
+    # star = Star(input_folders=input_folder,
     #    input_file_globs = ['**/Star*WQ[0-9]'])
-
 
 #end def run()
 
@@ -706,6 +603,5 @@ if testme == 1:
 
     run(env=env, verbosity=1)
     print("Done",flush=True)
-else:
-    config = configparser.ConfigParser()
-    config.sections()
+
+#END FILE
