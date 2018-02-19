@@ -167,6 +167,11 @@ def make_apa_citations(
                             while pages.endswith('.'):
                                 pages = pages[:-1]
 
+                        p_volume = '' if volume == '' else ', {}'.format(volume)
+                        p_issue = '' if issue == '' else '({})'.format(issue)
+                        p_pages = '' if pages == '' else ', {}'.format(pages)
+
+
                         # 20180216 - Another last-second change forced by
                         # varying input for 2017 - NOW doi is 2 fields after
                         # a new intervening 'jorunal type'
@@ -179,19 +184,20 @@ def make_apa_citations(
 
                             if doi.startswith('http://dx.doi.org/'):
                                 doi = doi[18:]
+                            if doi.startswith('https://doi.org/'):
+                                doi = doi[16:]
                             if doi.upper().startswith('DOI:'):
                                 doi = doi[4:]
 
-                        p_volume = '' if volume == '' else ', {}'.format(volume)
-                        p_issue = '' if issue == '' else '({})'.format(issue)
-                        p_pages = '' if pages == '' else ', {}'.format(pages)
                         if doi == '':
                             p_doi = ''
-                        elif make_table == 1:
-                            p_doi = (' <a href="http:/dx.doi.org/{}"> {}</a>'
-                                .format(doi,doi))
                         else:
-                            p_doi = ' ' + doi
+                            # correct APA offical format of March 2017 per:
+                            # ("http://blog.apastyle.org/apastyle/2017/03/doi-"
+                            # "display-guidelines-update-march-2017.html")
+                            doi =" https://doi.org/{}".format(doi)
+                            p_doi = (' <a href="{}"> {}</a>'
+                                .format(doi,doi))
 
                         if make_table == 1:
                             open_citation = '<tr><td>'
