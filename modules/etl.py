@@ -229,7 +229,9 @@ def html_escape(text):
     html_escape_table = {
         "&": "&amp;",
         '"': "&quot;",
-        "'": "&apos;",
+        # Try this instead for IFAS Citations conversion html to doc files
+        #    "'": "&apos;",
+        "'": "&#x27;",
         ">": "&gt;",
         "<": "&lt;",
         "\t": " ", # extra:replace tabs to create tab-delimited outputs when needed

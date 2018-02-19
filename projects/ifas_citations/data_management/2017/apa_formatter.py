@@ -219,6 +219,7 @@ def make_apa_citations(
 
                         print("{}{} ({}). {}. "
                               "<span style='font-style: italic;'>{}{}</span>{}{}.{}\n"
+                              #"<text font-style='italic'>{}{}</text>{}{}.{}\n"
                             .format(open_citation,html_escape(authors),
                                     html_escape(pubyear),
                                     html_escape(title),
