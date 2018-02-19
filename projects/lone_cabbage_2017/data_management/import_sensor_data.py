@@ -119,7 +119,7 @@ register_modules()
 import etl
 from pathlib import Path
 from collections import OrderedDict
-import re
+import regex
 
 '''
 <summary name='mon_file_parse'>
@@ -188,7 +188,7 @@ data_line_pattern = re.compile(
     r"""\s*(?P<y4>.*?)\s*(?P<mm>.*?)\s*(?P<dd>.*?)
        \s*(?P<pressure_cm>.*)
        \s*(?P<temperature_c>.*)
-       \s*(?P<condictivity_mS_cm>.*)\s*""", re.VERBOSE
+       \s*(?P<conductivity_mS_cm>.*)\s*""", re.VERBOSE
     )
 
 ----------------
@@ -373,13 +373,33 @@ class Diver():
                  r"\s*Serial number\s*=(?P<serial_number>.*)"
                  ),
 # Example:'  Serial number           =..02-V5602  317.'
+            # orig
+            'orig_reading_orig' : (
+                 r"\s*(?P<y4>.*)/(?P<mm>.*)/(?P<dd>.*)"
+                 r"\s*(?P<hr>.*):(?P<min>.*):(?P<sec>.*)\.(?P<frac>.*)"
+                 r"\s*(?P<pressure_cm>.*)\s*(?P<temperature_c>.*)"
+                 r"\s*(?P<conductivity_mS_cm>.*)\s*"
+                 ),
+
+
+
+
+
+
+
+
+
+
+
+
 
             'data_reading' : (
-                 r"\s*(?P<y4>.*)/(?P<mm>.*)/(?P<dd>.*)"
-                 "\s*(?P<hr>.*):(?P<min>.*):(?P<sec>.*)\.(?P<frac>.*)"
-                 "\s*(?P<pressure_cm>.*)\s*(?P<temperature_c>.*)"
-                 "\s*(?P<condictivity_mS_cm>.*)\s*"
+                 r"(?P<y4>.*)/(?P<mm>.*)/(?P<dd>.*)"
+                 r"\s\s*(?P<hr>.*):(?P<min>.*):(?P<sec>(\d+(\.\d*)))"
+                 r"\s*(?P<pressure_cm>(\d+(\.\d*)))\s*(?P<temperature_c>\d+(\.\d*))"
+                 r"\s*(?P<conductivity_mS_cm>\d+(\.\d*))"
                  )
+# Example:'2017/12/21 21:00:00.0     1110.675      20.263      12.508'
 # Example:'2017/12/21 21:00:00.0     1110.675      20.263      12.508'
         }
 
@@ -423,8 +443,8 @@ class Diver():
         #end for input_folder in input_folders
 
         if verbosity > 0:
-            print("{}:Processed count={} input files."
-               .format(me, count), flush=True, file=log_file)
+            print("{}:Processed total_files_count={} input files."
+               .format(me, total_files_count), flush=True, file=log_file)
         return total_files_count
 
     def parse_file(self,engine_write=None, input_file_name=None,
@@ -438,8 +458,11 @@ class Diver():
             for line_index, line in enumerate(ifile, start = 1):
                 # Nip pesky ending newline
                 line = line[:len(line)-1]
+                # RVP TEST BREAKjj
+                if line_index > 72:
+                     break;
                 if verbosity > 0:
-                    print("Parsing line {} = {}".format(line_index,line)
+                    print("Parsing line {} ='{}'".format(line_index,line)
                         ,file=log_file, flush=True)
                 if line.startswith('END OF') :
                     # Expected end of data LINES
@@ -504,8 +527,15 @@ class Diver():
                 hr = data_match.group("hr")
                 minute = data_match.group("min")
                 sec = data_match.group("sec")
-                frac = data_match.group("frac")
-                date_str="{}-{}-{} {}:{}:{}.{}".format(y4,mm,dd,hr,minute,sec,frac)
+                #frac = data_match.group("frac")
+                date_str="{}-{}-{} {}:{}:{}".format(y4,mm,dd,hr,minute,sec)
+                date_str2=("y4='{}',mm='{}',dd='{}',\n"
+                    "hr='{}',min='{}',sec={}").format(y4,mm,dd,hr,minute,sec)
+
+                pressure_cm = temperature_c = conductivity_mS_cm = 'tbd'
+                #pressure_cm = data_match.group('pressure_cm')
+                #temperature_c = data_match.group('temperature_c')
+                #conductivity_mS_cm = data_match.group('conductivity_mS_cm')
 
                 if verbosity > 1:
                   print("{}: input line {}='{}'"
@@ -513,7 +543,10 @@ class Diver():
 
                 if verbosity > 0:
                     d_row['date_str'] = date_str
-                    print("Created date_str='{}'".format(date_str),flush=True)
+                    print("Created date_str2='{}'".format(date_str2),flush=True)
+                    print("pressure_cm='{}'".format(pressure_cm))
+                    print("temperature_c='{}'".format(temperature_c))
+                    print("conductivity_mS_cm='{}'".format(conductivity_mS_cm))
 
                 for field_name in ['pressure_cm','temperature_c','conductivity_mS_cm']:
                     value = data_match.group(field_name)
@@ -640,7 +673,7 @@ def run(env=None,verbosity=1):
 
     if env == 'uf':
         input_folder=(
-          'U:\\rvp\\data\\oyster_sensor\\2017\\' )
+          'U:\\data\\oyster_sensor\\2017\\' )
         print("Using 'uf' input folder='{}'"
            .format(input_folder), flush=True)
     else:
@@ -675,6 +708,7 @@ testme = 1
 if testme == 1:
 
     env = 'home'
+    env = 'uf'
 
     run(env=env, verbosity=1)
     print("Done",flush=True)
