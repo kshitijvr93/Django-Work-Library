@@ -49,6 +49,7 @@ from sqlalchemy import (
   )
 
 from sqlalchemy.schema import CreateTable
+from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
 
 import sqlalchemy.sql.sqltypes
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -182,11 +183,23 @@ def table_water_observation_create(metadata=None):
 #end def table_water_observation_create
 
 class OysterProject():
-    def __init__(self, engine=None):
-        # initialize some central data, later read from db
+    def __init__(self, engine=None, log_file=None):
+        # initialize some central data, later read some from db
+        if engine is None:
+            raise ValueError("Missing engine parameter")
         metadata = MetaData()
-        table_water_observation_create(metadata=metadata)
-        d_name_table =
+        self.sa_metadata = MetaData()
+        self.engine = engine
+        #Get engine water_observation table
+        self.table_water_observation = Table('water_observation',
+            self.sa_metadata, autoload=True, autoload_with=engine)
+
+        if log_file is None:
+            self.log_file = sys.stdout
+        else:
+            self.log_file = log_file
+
+        #table_water_observation_create(metadata=metadata)
         return
     # end def __init__
 
@@ -244,9 +257,11 @@ class Diver():
 
         if project is None:
             # eg an instance of the OysterProject() class
-            raise ValueError(project not given)
+            raise ValueError("project not given")
 
         self.project = project
+        self.log_file = project.log_file
+
         self.input_file_folders = input_file_folders
 
         if input_file_globs is None:
@@ -254,11 +269,15 @@ class Diver():
         else:
             self.input_file_globs = input_file_globs
 
-        if log_file is None:
-            self.log_file = sys.stdout
-        else:
-            log_file = sys.stdout
         self.get_metadata()
+        if engine is None:
+            self.engine = self.project.engine
+            engine = self.engine
+        else:
+            self.engine = engine
+
+        sa_meta = MetaData()
+
 
         self.d_name_rx = {
 
@@ -266,26 +285,6 @@ class Diver():
             'serial_number': (
                  r"\s*Serial number\s*=(?P<serial_number>.*)"
                  ),
-# Example:'  Serial number           =..02-V5602  317.'
-            # orig
-            'orig_reading_orig' : (
-                 r"\s*(?P<y4>.*)/(?P<mm>.*)/(?P<dd>.*)"
-                 r"\s*(?P<hr>.*):(?P<min>.*):(?P<sec>.*)\.(?P<frac>.*)"
-                 r"\s*(?P<pressure_cm>.*)\s*(?P<temperature_c>.*)"
-                 r"\s*(?P<conductivity_mS_cm>.*)\s*"
-                 ),
-
-
-
-
-
-
-
-
-
-
-
-
 
             'data_reading' : (
                  r"(?P<y4>.*)/(?P<mm>.*)/(?P<dd>.*)"
@@ -296,7 +295,14 @@ class Diver():
 # Example:'2017/12/21 21:00:00.0     1110.675      20.263      12.508'
 # Example:'2017/12/21 21:00:00.0     1110.675      20.263      12.508'
         }
+        self.rx_data_reading = (
+                 r"(?P<y4>.*)/(?P<mm>.*)/(?P<dd>.*)"
+                 r"\s\s*(?P<hr>.*):(?P<min>.*):(?P<sec>(\d+(\.\d*)))"
+                 r"\s*(?P<pressure_cm>(\d+(\.\d*)))\s*(?P<temperature_c>\d+(\.\d*))"
+                 r"\s*(?P<conductivity_mS_cm>\d+(\.\d*))"
+                 )
 
+        self.rx_serial_number = r"\s*Serial number\s*=(?P<serial_number>.*)"
     #end def __init__
 
 
@@ -321,11 +327,10 @@ class Diver():
                             .format(me,glob,input_file_name),flush=True
                             , file=log_file )
 
-                    l_rows = self.parse_file(engine_write=None,
-                        input_file_name=input_file_name
+                    n_rows = self.import_file(input_file_name=input_file_name
                         ,verbosity=verbosity)
 
-                    total_lines_inserted += len(l_rows)
+                    total_lines_inserted += n_rows
                     #l_rows = ['one']
                     if verbosity > 5:
                         print(
@@ -341,12 +346,16 @@ class Diver():
                .format(me, total_files_count), flush=True, file=log_file)
         return total_files_count
 
-    def parse_file(self,engine_write=None, input_file_name=None,
-         verbosity=1):
+    def import_file(self, input_file_name=None, verbosity=1):
 
-        me='parse_file'
+        me='import_file'
         log_file = self.log_file
         l_rows = []
+        rx_data_reading = self.d_name_rx['data_reading']
+        rx_data_reading = self.rx_data_reading
+        if verbosity > 1:
+            print("rx_data_reading='{}',\nand line='{}'"
+                .format(rx_data_reading,line), file=log_file)
 
         with open(input_file_name, 'r', encoding='latin1') as ifile:
             for line_index, line in enumerate(ifile, start = 1):
@@ -361,28 +370,33 @@ class Diver():
 
                 if line_index == 13:
                     #rx = self.d_name_rx['serial_number']
-                    rx = r'''Serial number           =(?P<serial_number>.*)'''
-                    match = re.search(rx,line)
+                    rx_serial_number = (
+                      r'Serial number           =(?P<serial_number>.*)')
+                    match = re.search(rx_serial_number,line)
                     # Check the serial number of this diver sensor device
                     try:
                         serial_number = match.group("serial_number")
                         serial_number = match.group(1)
                     except Exception as ex:
-                        msg=("rx={}, line={}, no serial part"
-                        .format(rx,line))
+                        msg=("rx_serial_number={}, line={}, no serial part"
+                        .format(rx_serial_number,line))
                         print(msg)
                         raise ValueError(msg)
 
                     d_serial_sensor = self.d_serial_sensor
                     if serial_number not in d_serial_sensor.keys():
-                        msg=("Found serial number '{}' not in '{}'"
-                            .format(serial_number, d_serial_sensor.keys()))
+                        msg=("Input_file_name: {}\n"
+                             "Found serial number '{}' not in '{}'"
+                            .format(input_file_name,serial_number,
+                            d_serial_sensor.keys()))
                         raise ValueError(msg)
+
                     sensor_id = d_serial_sensor[serial_number]
-                    location_id = project.get_location_by_sensor(sensor_id)
+                    location_id = self.project.get_location_by_sensor(sensor_id)
 
                     if verbosity > 0:
-                        msg=("Input file '{}',\n line13='{},' serial={}, sensor={}, location={}"
+                        msg=("Input file '{}',\n line13='{},'\n"
+                            " serial={}, sensor={}, location={}"
                             .format(input_file_name,line,serial_number, sensor_id,
                             location_id))
                         print(msg, file=log_file)
@@ -401,12 +415,7 @@ class Diver():
                 l_rows.append(d_row)
 
                 try:
-                    rx = self.d_name_rx['data_reading']
-                    if verbosity > 1:
-                        print("rx='{}',\nand line='{}'".format(rx,line),
-                              file=log_file)
-
-                    data_match = re.search(rx, line)
+                    data_match = re.search(rx_data_reading, line)
                 except Exception as ex:
                     msg=('line={}data reading fails'.format(line_index))
                     raise ValueError(msg)
@@ -419,6 +428,7 @@ class Diver():
                 sec = data_match.group("sec")
                 #frac = data_match.group("frac")
                 date_str="{}-{}-{} {}:{}:{}".format(y4,mm,dd,hr,minute,sec)
+                d_row['observation_datetime'] = date_str
 
                 pressure_cm = temperature_c = conductivity_mS_cm = 'tbd'
                 #pressure_cm = data_match.group('pressure_cm')
@@ -434,7 +444,7 @@ class Diver():
                     print("pressure_cm='{}'".format(pressure_cm))
                     print("temperature_c='{}'".format(temperature_c))
                     print("conductivity_mS_cm='{}'".format(conductivity_mS_cm))
-
+                # NOTE: field_names match columns in table_water_observation
                 for field_name in ['pressure_cm','temperature_c','conductivity_mS_cm']:
                     value = data_match.group(field_name)
                     if verbosity > 1:
@@ -443,13 +453,18 @@ class Diver():
             # end line in input file
         # end with open.. input file_name
 
+        # Insert rows to table water_observation from this input file
+        for row in l_rows:
+          self.project.engine.execute(
+              self.project.table_water_observation.insert(), row)
+
         if verbosity > 0:
             print("{}:Parsed file {},\n and returning {} rows:"
                 .format(me,input_file_name, line_index-1))
             for count,d_row in enumerate(l_rows, start=1):
                 print("{}\t{}".format(count,d_row),flush=True)
         return l_rows
-    # end def parse_file()
+    # end def import_file()
 #end class Diver()
 
 '''
@@ -563,11 +578,21 @@ def run(env=None,verbosity=1):
           'U:\\data\\oyster_sensor\\2017\\' )
         print("Using 'uf' input folder='{}'"
            .format(input_folder), flush=True)
+        engine_nick_name = 'uf_local_mysql_lcroyster1'
     else:
         input_folder=(
           '/home/robert/data/oyster_sensor/2017/' )
         print("Using 'home' input folder='{}'"
            .format(input_folder), flush=True)
+
+        engine_nick_name = 'hp_psql_lcroyster1'
+        engine_nick_name = 'hp_mysql_lcroyster1'
+
+    engine = get_db_engine_by_name(name=engine_nick_name)
+    log_file_name="{}/log_import.txt".format(input_folder)
+    log_file = open(log_file_name, mode='w')
+
+    oyster_project = OysterProject(engine=engine, log_file=sys.stdout)
 
     # Create various sensor instances
     # for now, each class defines a glob to identify its files
@@ -578,25 +603,9 @@ def run(env=None,verbosity=1):
     # in WQn, where N is a digit [0-9]
     # See the class code for exact 'glob' syntax used.
 
-    if env == 'uf':
-        #something all messet up.. THIS works for UF! using env of uf...
-        engine_nick_name = 'uf_local_mysql_marshal1'
-        engine_nick_name = 'uf_local_mysql_lcroyster1'
-        # sqlite FAIL: "SQLite does not support autoincrement for
-        #   composite primary keys"
-        # engine_nick_name = 'uf_local_sqlite_lcroyster1'
-    else:
-        engine_nick_name = 'hp_mysql_lcroyster1'
-        engine_nick_name = 'hp_psql_lcroyster1'
-        engine_nick_name = 'hp_mysql_lcroyster1'
-
-    engine = get_db_engine_by_name(name=engine_nick_name)
-    // resume here... to call method to create water obs table..
-
-
     input_file_folders = [input_folder]
 
-    diver = Diver(input_file_folders=input_file_folders,
+    diver = Diver(project=oyster_project, input_file_folders=input_file_folders,
         input_file_globs = ['**/*.MON'])
 
     diver.parse_files()
