@@ -413,6 +413,8 @@ class Diver():
                 # Now read and parse this data line and create output d_row
                 d_row = {}
                 l_rows.append(d_row)
+                d_row['sensor_id'] = sensor_id
+                d_row['location_id'] = location_id
 
                 try:
                     data_match = re.search(rx_data_reading, line)

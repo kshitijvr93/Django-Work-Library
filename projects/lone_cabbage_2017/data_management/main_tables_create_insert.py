@@ -430,6 +430,6 @@ def run(env=None):
 #
 test = 1
 if test == 1 :
-    env = 'uf'
     env = 'home'
+    env = 'uf'
     run(env=env)
