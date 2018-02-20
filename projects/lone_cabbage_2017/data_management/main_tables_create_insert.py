@@ -410,6 +410,8 @@ def tables_populate(engine=None, metadata=None,d_name_table=None):
 
 # MAIN CODE
 def run(env=None):
+    me="run (import_sensor_data)"
+    print("STARTING: {}: starting".format(me))
     if env == 'uf':
         #something all messet up.. THIS works for UF! using env of uf...
         engine_nick_name = 'uf_local_mysql_marshal1'
@@ -427,6 +429,10 @@ def run(env=None):
 
     d_name_table = tables_create(engine=engine,metadata=metadata)
     tables_populate(engine=engine,metadata=metadata,d_name_table=d_name_table)
+
+    print("ENDING: {}: ending".format(me))
+    return
+#end def run
 
 #
 test = 1

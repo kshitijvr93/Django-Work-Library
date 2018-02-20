@@ -457,24 +457,28 @@ Glob pattern to use to descend into input_folder to
 return a path for each matching filename.
 </param>
 '''
-def sequence_paths(input_folders=None, input_path_glob=None, verbosity=0):
+def sequence_paths(input_folders=None, input_path_globs=None, verbosity=0):
+    # NOTE: I changed arg input_path_glob to input_path_globs
+    # apologies to callers that need to adapt
     me = 'sequence_paths'
-    if (input_folders is None or input_path_glob is None):
+    if (input_folders is None or input_path_globs is None):
         msg = "Missing param input_folders or input_path_glob"
         raise ValueError(msg)
 
     # compose input_path_list over multiple input_folders
     for input_folder in input_folders:
-        paths = list(Path(input_folder).glob(input_path_glob))
-        if (verbosity > 0):
-            print("{}: Found {} files in input_folder='{}'"
-               " that match {}\n"
-              .format(me, len(paths),input_folder, input_path_glob))
+        for input_path_glob in input_path_globs:
+            paths = list(Path(input_folder).glob(input_path_glob))
+            if (verbosity > 0):
+                print("{}: Found {} files in input_folder='{}'"
+                   " that match {}\n"
+                  .format(me, len(paths),input_folder, input_path_glob))
 
-        #input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
-        for path in paths:
-            yield path
-        # end for path
+            #input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
+            for path in paths:
+                yield path
+            # end for path
+        #end for input_path_glob
     # end for input folder
 # end def sequence_paths
 
