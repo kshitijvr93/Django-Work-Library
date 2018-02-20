@@ -232,32 +232,15 @@ class Diver():
         else:
             self.engine = engine
 
-        self.d_name_rx2 = {
-
-            #The rx for line 13, serial number extraction
-            'serial_number': (
-                 r"\s*Serial number\s*=(?P<serial_number>.*)"
-                 ),
-
-            'data_reading' : (
-                 r"(?P<y4>.*)/(?P<mm>.*)/(?P<dd>.*)"
-                 r"\s\s*(?P<hr>.*):(?P<min>.*):(?P<sec>(\d+(\.\d*)))"
-                 r"\s*(?P<pressure_cm>(\d+(\.\d*)))\s*(?P<temperature_c>\d+(\.\d*))"
-                 r"\s*(?P<conductivity_mS_cm>\d+(\.\d*))"
-                 )
-# Example:'2017/12/21 21:00:00.0     1110.675      20.263      12.508'
-# Example:'2017/12/21 21:00:00.0     1110.675      20.263      12.508'
-        }
+        # Example:'2017/12/21 21:00:00.0     1110.675      20.263      12.508'
         self.rx_data_reading = (
                  r"(?P<y4>.*)/(?P<mm>.*)/(?P<dd>.*)"
                  r"\s\s*(?P<hr>.*):(?P<min>.*):(?P<sec>(\d+(\.\d*)))"
                  r"\s*(?P<pressure_cm>(\d+(\.\d*)))\s*(?P<temperature_c>\d+(\.\d*))"
                  r"\s*(?P<conductivity_mS_cm>\d+(\.\d*))"
                  )
-
         self.rx_serial_number = r"\s*Serial number\s*=(?P<serial_number>.*)"
     #end def __init__
-
 
     def parse_files(self, verbosity=1):
         me = 'parse_files'
@@ -459,6 +442,176 @@ class Star():
             self.input_file_globs = input_file_globs
 
     #end def __init__
+    '''
+    Line 19+: sample(Tab delimiters in raw file)
+    1	26.10.2017 10:20:00	17.98	0.01	0.00	1475.31
+
+        rx_line18_data_reading = (
+        )
+        rx_line19_data_reading = (
+                 # Date components
+                 r"(/d<sn>)\t(?P<dd>\d+).(?P<mm>\d+).(?P<y4>\d+)"
+                 r"\t(?P<hr>\d+):(?P<min>\d+.*):(?P<sec>(\d+(\.\d*)))"
+
+                 # Readings
+                 r"\t(?P<temperature_c>(\d+(\.\d*)))"
+                 r"\t(?P<salinity_psu>(\d+(\.\d*)))"
+                 r"\t(?P<conductivity_mS_cm>\d+(\.\d*))"
+                 r"\t(?P<sound_velocity_m_sec>(\d+(\.\d*)))"
+                 )
+
+
+    '''
+    def import_file(self, input_file_name=None, verbosity=1):
+
+        me='import_file'
+        log_file = self.log_file
+        l_rows = []
+        rx_line19_data_reading = (
+             # Date components
+             r"(/d<sn>)\t(?P<dd>\d+).(?P<mm>\d+).(?P<y4>\d+)"
+             r"\t(?P<hr>\d+):(?P<min>\d+.*):(?P<sec>(\d+(\.\d*)))"
+
+             # Readings
+             r"\t(?P<temperature_c>(\d+(\.\d*)))"
+             r"\t(?P<salinity_psu>(\d+(\.\d*)))"
+             r"\t(?P<conductivity_mS_cm>\d+(\.\d*))"
+             r"\t(?P<sound_velocity_m_sec>(\d+(\.\d*)))"
+             )
+
+        #rx_data_reading = self.d_name_rx['data_reading']
+        #rx_data_reading = self.rx_data_reading
+
+        if verbosity > 1:
+            print("rx_data_reading='{}',\nand line='{}'"
+                .format(rx_data_reading,line), file=log_file)
+
+        with open(input_file_name, 'r', encoding='latin1') as ifile:
+            for line_index, line in enumerate(ifile, start = 1):
+                # Nip pesky ending newline
+                line = line[:len(line)-1]
+                if verbosity > 1:
+                    print("Parsing line {} ='{}'".format(line_index,line)
+                        ,file=log_file, flush=True)
+                if line.startswith('END OF') :
+                    # Expected end of data LINES
+                    break
+
+                if line_index == -13:
+                    #rx = self.d_name_rx['serial_number']
+                    rx_serial_number = (
+                      r'Serial number           =(?P<serial_number>.*)')
+                    match = re.search(rx_serial_number,line)
+                    # Check the serial number of this diver sensor device
+                    try:
+                        serial_number = match.group("serial_number")
+                        serial_number = match.group(1)
+                    except Exception as ex:
+                        msg=("rx_serial_number={}, line={}, no serial part"
+                        .format(rx_serial_number,line))
+                        print(msg)
+                        raise ValueError(msg)
+
+                    d_serial_sensor = self.d_serial_sensor
+                    if serial_number not in d_serial_sensor.keys():
+                        msg=("Input_file_name: {}\n"
+                             "Found serial number '{}' not in '{}'"
+                            .format(input_file_name,serial_number,
+                            d_serial_sensor.keys()))
+                        raise ValueError(msg)
+
+                    sensor_id = d_serial_sensor[serial_number]
+                    location_id = self.project.get_location_by_sensor(sensor_id)
+
+                    if verbosity > 0:
+                        msg=("Input file '{}',\n line13='{},'\n"
+                            " serial={}, sensor={}, location={}"
+                            .format(input_file_name,line,serial_number, sensor_id,
+                            location_id))
+                        print(msg, file=log_file)
+
+                    if serial_number not in self.d_serial_sensor.keys():
+                        msg=("Got serial number '{}', not in '{}'"
+                          .format(serial_number, serial_numbers))
+                        raise ValueError(msg)
+
+                if line_index < 18:
+                    #Skip constant sensor header information
+                    # later, do read line 18 too
+                    continue
+
+                # We will parse a data row...
+                # later, parse out sensor_id and location_id too
+                sensor_id = 9
+                location_id = 9
+
+                d_row = {}
+                l_rows.append(d_row)
+                d_row['sensor_id'] = sensor_id
+                d_row['location_id'] = location_id
+
+                try:
+                if line_index == 18:
+                    #later parse this line separately
+                    continue;
+
+                # Line 19 and greater - regular-formatted data lines
+                # read and parse this data line and create output d_row
+                try:
+                    data_match = re.search(rx_line19_data_reading, line)
+                except Exception as ex:
+                    msg=('line={} data reading fails'.format(line_index))
+                    raise ValueError(msg)
+
+                y4 = data_match.group("y4")
+                mm = data_match.group("mm")
+                dd = data_match.group("dd")
+                hr = data_match.group("hr")
+                minute = data_match.group("min")
+                sec = data_match.group("sec")
+                #frac = data_match.group("frac")
+                date_str="{}-{}-{} {}:{}:{}".format(y4,mm,dd,hr,minute,sec)
+                d_row['observation_datetime'] = date_str
+
+                pressure_cm = temperature_c = conductivity_mS_cm = 'tbd'
+                #pressure_cm = data_match.group('pressure_cm')
+                #temperature_c = data_match.group('temperature_c')
+                #conductivity_mS_cm = data_match.group('conductivity_mS_cm')
+
+                if verbosity > 1:
+                  print("{}: input line {}='{}'"
+                        .format(me,line_index,line),flush=True)
+
+                if verbosity > 1:
+                    d_row['date_str'] = date_str
+                    print("temperature_c='{}'".format(temperature_c))
+                    print("salinity_psu='{}'".format(salinity_psu))
+                    print("conductivity_mS_cm='{}'".format(conductivity_mS_cm))
+                    print("sound_velocity_m_sec='{}'".format(sound_velocity_m_sec))
+
+                # NOTE: field_names match columns in table_water_observation
+                for field_name in ['pressure_cm','salinity_psu',
+                    'conductivity_mS_cm', 'sound_velocity_m_sec']:
+
+                    value = data_match.group(field_name)
+                    if verbosity > 1:
+                        print("Field_name='{}', value='{}'".format(field_name,value))
+                    d_row[field_name] = value
+            # end line in input file
+        # end with open.. input file_name
+
+        # Insert rows to table water_observation from this input file
+        for row in l_rows:
+          self.project.engine.execute(
+              self.project.table_water_observation.insert(), row)
+
+        if verbosity > 0:
+            print("{}:Parsed file {},\n and found {} rows:"
+                .format(me,input_file_name, line_index-1))
+            for count,d_row in enumerate(l_rows, start=1):
+                print("{}\t{}".format(count,d_row),flush=True)
+
+        return len(l_rows)
 #end class Star
 
 '''

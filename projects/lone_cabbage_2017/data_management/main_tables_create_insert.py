@@ -331,11 +331,12 @@ def table_water_observation_create(metadata=None):
       Column('specific_conductance_us_cm_25c', Float),
       Column('specific_conductance_ms_cm_25c', Float),
       Column('salinity_g_kg', Float),
+      Column('salinity_psu', Float),
       Column('temperature_c', Float),
       Column('pressure_psi', Float),
       Column('pressure_cm', Float),
       Column('conductivity_mS_cm', Float),
-      Column('sound_velocity_m_s', Float),
+      Column('sound_velocity_m_sec', Float),
       Column('note', String(20),
              comment='Short note on observation'),
       ForeignKeyConstraint(
