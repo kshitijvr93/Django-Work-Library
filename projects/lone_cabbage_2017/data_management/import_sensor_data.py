@@ -1,104 +1,23 @@
 '''
-vei_mon_file_reader.py
+import_sensor_data.py
+
+This code drops and creates the table water_observations from scratch,
+then reads all the sensor data and re-imports it.
+
+A more sophisticated version will probably be developed that will
+read the data readings and try to insert each one, and affably fail
+if there is a duplicate sensor-datetime error, meaning the same data
+row is being read twice.
+
+The import files may grow over time, so upon re-reads the larger portion
+of beginning rows will be tried and fail until the reader gets to the
+very end where it starts trying to read new rows.
+
+Some pre-coordination of the import files may be advisable to speed up
+this process.
 
 
 Python 3.6+ code
-
-
-imports ....
-
-# Summary:  From input_file_name of type 'mon', validate
-# the data and import into connection's table 'water_quality'
-# We will have a similar method for each input file type.
-# RETURN: 3-tuple of dictionaries
-#(d_header, d_log, d_data) -
-# d_header is header parameter names and col_values
-# d_log is parsing info,warnings,errors
-# d_data is data parameter names and values
-
-
-def mon_file_parse(connection=None, input_file_name=None):
-
-    # Here we assume the line counts are constant for all
-    # .MON text data files. Other code might do some pre-parsing
-    # to determin the line counts or other parsing clue values,
-    # here line counts is just an example.
-    # Some other parsing technigues can be designed as we
-    # constrain/assess the variety of input file types
-    # possible or set requirements on the types we support.
-    dict_clues = {}
-    dict_clues['header_lines'] = some_count
-    dict_clues['serial_number_line']  = some_count
-    ...
-
-    # Parse and return the header info, parsing log,
-    # and input file handle for the input file
-    # Parser will balk at bad data, bad units,
-    # errors, and issue warnings as apt.
-
-    d_header, d_log, input_file = parse_mon_header(
-        dict_clues, input_file_name)
-
-    if d_header is None:
-        # We have some error conditions in the parsing log,
-        # so we will return None and let caller write the log.
-        close(input_file)
-        return None, d_log, None
-
-    #continue to parse and register valid data
-    d_data, d_log = parse_mon_data(input_file)
-
-    close(input_file)
-
-    if d_data is None:
-        # parse_mon_data found bad data not within prescribed
-        # ranges or other error messages
-        return None, d_log, None
-
-    # data is OK
-    return d_header, d_data
-#end mon_file_parse
-
-def mon_file_dispose(connection, input_file_names):
-    for input_file in input_file_names:
-        d_header, d_log, d_data = (
-         mon_file_parse(file_name) )
-        if d_header is None or d_data is None:
-            #we had some errors, so output log to error make_home_relative_folder
-            write_to_error_folder(input_file_name,d_log)
-        else:
-            #File parsed OK, so insert to table water_quality:
-            result = water_quality_insert_mon(connection, d_header, d_data)
-            write_to_processed_folder(input_file_name,d_log)
-
-def import_files():
-    #
-    connection = xyz --- connection to db call
-    root_folder =  (parent folder of folders import, errors,
-        procesed)
-
-    # find files in import folder for each file type
-
-    #First look for and dispose mon files
-    input_file_names = find_mon_import_file_names(root_folder)
-
-    # Do the right thing with these files
-    mon_files_dispose(connection,input_file_names)
-
-    #For other input file types zzz, also find and dispose
-
-    input_file_names = find_xxx_import (root_folder)
-    xxx_files_dispose(connection,input_file_names)
-
-    input_file_names = find_yyy_import (root_folder)
-    yyy_files_dispose(connection,input_file_names)
-
-    ...
-
-    input_file_names = find_zzz_import (root_folder)
-    zzz_files_dispose(connection,input_file_names)
-
-# end import_files()
 
 '''
 import sys, os, os.path, platform
@@ -119,14 +38,30 @@ register_modules()
 import etl
 from pathlib import Path
 from collections import OrderedDict
+
+#### Sqlalchemy
+from sqlalchemy import (
+  Boolean, create_engine,
+  CheckConstraint, Column,
+  Date, DateTime,Float, FLOAT, ForeignKeyConstraint,
+  inspect, Integer,
+  MetaData, Sequence, String, Table, Text, UniqueConstraint,
+  )
+
+from sqlalchemy.schema import CreateTable
+
+import sqlalchemy.sql.sqltypes
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy_tools.core.utils import drop_if_exists
+
 #import regex
 import re
 
 '''
-<summary name='mon_file_parse'>
+General notes- context about the Oyster files.
 
-Assumptions: the output table receives only sensor data and is just inserted into, and has already
-been created.
+Assumptions: the output table receives only sensor data and is just inserted
+into, and has already been created.
 
 The given file is a 'diver sensor' file of readings data, which
 adheres to the strict format expected here.
@@ -198,11 +133,72 @@ sample sensor data line to date, time and 3 floats for
 (1)pressure_cm, (2)temperature_c, (3)conductivity_mS_cm
 2017/08/11 12:00:00.0     1106.592      29.100       1.472
 
-r''
-
 ----------------
 
 '''
+def table_water_observation_create(metadata=None):
+    table_name = 'water_observation'
+    me = '{}_create'.format(table_name)
+
+    # NOTE: we break from convention and use observation_id
+    table_object =  Table(table_name, metadata,
+      Column('{}_id'.format(table_name), Integer,
+          # NOTE do NOT use Sequence here for mysql?
+          #Sequence('{}_id_seq'.format(table_name), metadata=metadata),
+          primary_key=True, autoincrement=True,
+          comment='Automatically incremented row id.'),
+      UniqueConstraint('{}_id'.format(table_name),
+          name='uq1_{}'.format(table_name) ),
+      Column('sensor_id', Integer),
+      Column('observation_datetime', DateTime),
+      UniqueConstraint('sensor_id','observation_datetime',
+          name='uq2_{}'.format(table_name) ),
+      # location_id can be derived, maybe no need to populate via imports?
+      Column('location_id', Integer, default=1),
+      Column('phosphorus_ug', Float),
+      Column('nitrogen_ug', Float),
+      Column('chlorophyll_ug', Float),
+      Column('secchi_ft', Float),
+      Column('color_pt_co', Float),
+      Column('specific_conductance_us_cm_25c', Float),
+      Column('specific_conductance_ms_cm_25c', Float),
+      Column('salinity_g_kg', Float),
+      Column('temperature_c', Float),
+      Column('pressure_psi', Float),
+      Column('pressure_cm', Float),
+      Column('conductivity_mS_cm', Float),
+      Column('sound_velocity_m_s', Float),
+      Column('note', String(20),
+             comment='Short note on observation'),
+      ForeignKeyConstraint(
+        ['sensor_id'], ['sensor.sensor_id'],
+        name='fk_{}_sensor_id'.format(table_name)),
+      ForeignKeyConstraint(
+        ['location_id'], ['location.location_id'],
+        name='fk_{}_location_id'.format(table_name)),
+      )
+
+    return table_object
+#end def table_water_observation_create
+
+class OysterProject():
+    def __init__(self, engine=None):
+        # initialize some central data, later read from db
+        metadata = MetaData()
+        table_water_observation_create(metadata=metadata)
+        d_name_table =
+        return
+    # end def __init__
+
+    def get_location_by_sensor(self,sensor_id=None):
+        # todo: Later, get from db table sensor_location or sensor_event
+        # or events...
+        # using today's date as one param
+        location_id = sensor_id
+
+        return location_id
+    # end def get_location_by_sensor
+#end class Oyster
 
 '''
 class Diver():
@@ -218,10 +214,12 @@ class Diver():
     '''
     From the engine_read, get the sensor metadata, including
     sensor serial numbers and matching locations for the Diver sensors.
-    The goal is to assign sensor id and sensor location given the sensor_id
-    and date of each reading, as the sensor location can move around.
+    The goal is to assign sensor id and sensor location given the sensor
+    serial number in the header file section for
+    each dated reading (set of 1 date-time and 3 measurements per reading),
+    because the sensor location can move around.
 
-    Initially, we hard-code the d_serial_sensor and d_sensor_location data
+    Initially, we hard-code the d_serial_sensor data
     But we will get this from the database in a future phase.
     '''
 
@@ -236,21 +234,19 @@ class Diver():
                 '..02-V5602  317.' : 1,  #loc 1 implied by folder name 20180218
                 '..00-V6916  317.' : 3,  #loc 3 was implied by folder name 20180218
             }
-            # Hard code - assume for now that sensor id value happens to match
-            # its location id value, but later it will be in a db table
-            # Key is the sensor id and value is the location id
-            self.d_sensor_location = {
-                1 : 1,
-                3 : 3,
-            }
         else:
             raise ValueError("Not implemented")
 
         return
 
-    def __init__(self,input_file_folders=None,
+    def __init__(self,project=None,input_file_folders=None,
         input_file_globs=None, engine=None, log_file=None):
 
+        if project is None:
+            # eg an instance of the OysterProject() class
+            raise ValueError(project not given)
+
+        self.project = project
         self.input_file_folders = input_file_folders
 
         if input_file_globs is None:
@@ -378,13 +374,12 @@ class Diver():
                         raise ValueError(msg)
 
                     d_serial_sensor = self.d_serial_sensor
-                    d_sensor_location = self.d_sensor_location
                     if serial_number not in d_serial_sensor.keys():
                         msg=("Found serial number '{}' not in '{}'"
                             .format(serial_number, d_serial_sensor.keys()))
                         raise ValueError(msg)
                     sensor_id = d_serial_sensor[serial_number]
-                    location_id = d_sensor_location[sensor_id]
+                    location_id = project.get_location_by_sensor(sensor_id)
 
                     if verbosity > 0:
                         msg=("Input file '{}',\n line13='{},' serial={}, sensor={}, location={}"
@@ -583,6 +578,22 @@ def run(env=None,verbosity=1):
     # in WQn, where N is a digit [0-9]
     # See the class code for exact 'glob' syntax used.
 
+    if env == 'uf':
+        #something all messet up.. THIS works for UF! using env of uf...
+        engine_nick_name = 'uf_local_mysql_marshal1'
+        engine_nick_name = 'uf_local_mysql_lcroyster1'
+        # sqlite FAIL: "SQLite does not support autoincrement for
+        #   composite primary keys"
+        # engine_nick_name = 'uf_local_sqlite_lcroyster1'
+    else:
+        engine_nick_name = 'hp_mysql_lcroyster1'
+        engine_nick_name = 'hp_psql_lcroyster1'
+        engine_nick_name = 'hp_mysql_lcroyster1'
+
+    engine = get_db_engine_by_name(name=engine_nick_name)
+    // resume here... to call method to create water obs table..
+
+
     input_file_folders = [input_folder]
 
     diver = Diver(input_file_folders=input_file_folders,
@@ -600,6 +611,7 @@ if testme == 1:
 
     env = 'home'
     env = 'uf'
+
 
     run(env=env, verbosity=1)
     print("Done",flush=True)
