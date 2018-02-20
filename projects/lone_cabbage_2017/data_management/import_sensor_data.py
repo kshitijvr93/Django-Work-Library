@@ -251,7 +251,7 @@ class Diver():
 
     def parse_files(self, verbosity=1):
         me = 'parse_files'
-        files_count = 0
+        file_count = 0
 
         total_file_rows = 0
         log_file = self.log_file
@@ -264,8 +264,8 @@ class Diver():
 
             input_file_name = path.resolve()
             if verbosity > 0:
-                print("{}: for glob='{}',parsing input file '{}'"
-                    .format(me,glob,input_file_name),flush=True
+                print("{}: parsing input file '{}'"
+                    .format(me,input_file_name),flush=True
                     , file=log_file )
 
             n_rows = self.import_file(input_file_name=input_file_name
@@ -281,10 +281,10 @@ class Diver():
         # end for path in paths
 
         if verbosity > 0:
-            print("{}:Processed total_files_count={} input files."
+            print("{}:Processed file_count={} input files."
                .format(me, file_count), flush=True, file=log_file)
 
-        return total_files_count
+        return file_count
     # def parse_files
 
     def import_file(self, input_file_name=None, verbosity=1):
@@ -672,9 +672,19 @@ class Star():
         # end with open.. input file_name
 
         # Insert rows to table water_observation from this input file
+        line_count = 18
         for row in l_rows:
-          self.project.engine.execute(
-              self.project.table_water_observation.insert(), row)
+            line_count += 1
+            try:
+                self.project.engine.execute(
+                    self.project.table_water_observation.insert(), row)
+            except Exception as ex:
+                msg=("\n***************\n"
+                    "WARNING: Input file {},\ninsert line_count {} has error {}."
+                    "\n***************\n"
+                    .format(input_file_name, line_count,ex))
+                print(msg)
+
 
         if verbosity > 0:
             print("{}:Parsed file {},\n and found {} rows:"
@@ -811,7 +821,7 @@ if testme == 1:
     env = 'home'
     env = 'uf'
 
-    run(env=env, verbosity=1,do_diver=0)
+    run(env=env, verbosity=1,do_diver=1,do_star=1)
     print("Done",flush=True)
 
 #END FILE
