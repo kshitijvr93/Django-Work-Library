@@ -137,60 +137,20 @@ sample sensor data line to date, time and 3 floats for
 ----------------
 
 '''
-def table_water_observation_create(metadata=None):
-    table_name = 'water_observation'
-    me = '{}_create'.format(table_name)
-
-    # NOTE: we break from convention and use observation_id
-    table_object =  Table(table_name, metadata,
-      Column('{}_id'.format(table_name), Integer,
-          # NOTE do NOT use Sequence here for mysql?
-          #Sequence('{}_id_seq'.format(table_name), metadata=metadata),
-          primary_key=True, autoincrement=True,
-          comment='Automatically incremented row id.'),
-      UniqueConstraint('{}_id'.format(table_name),
-          name='uq1_{}'.format(table_name) ),
-      Column('sensor_id', Integer),
-      Column('observation_datetime', DateTime),
-      UniqueConstraint('sensor_id','observation_datetime',
-          name='uq2_{}'.format(table_name) ),
-      # location_id can be derived, maybe no need to populate via imports?
-      Column('location_id', Integer, default=1),
-      Column('phosphorus_ug', Float),
-      Column('nitrogen_ug', Float),
-      Column('chlorophyll_ug', Float),
-      Column('secchi_ft', Float),
-      Column('color_pt_co', Float),
-      Column('specific_conductance_us_cm_25c', Float),
-      Column('specific_conductance_ms_cm_25c', Float),
-      Column('salinity_g_kg', Float),
-      Column('temperature_c', Float),
-      Column('pressure_psi', Float),
-      Column('pressure_cm', Float),
-      Column('conductivity_mS_cm', Float),
-      Column('sound_velocity_m_s', Float),
-      Column('note', String(20),
-             comment='Short note on observation'),
-      ForeignKeyConstraint(
-        ['sensor_id'], ['sensor.sensor_id'],
-        name='fk_{}_sensor_id'.format(table_name)),
-      ForeignKeyConstraint(
-        ['location_id'], ['location.location_id'],
-        name='fk_{}_location_id'.format(table_name)),
-      )
-
-    return table_object
 #end def table_water_observation_create
 
 class OysterProject():
     def __init__(self, engine=None, log_file=None):
-        # initialize some central data, later read some from db
+        # Initialize some central data, later read some from db
         if engine is None:
             raise ValueError("Missing engine parameter")
-        metadata = MetaData()
-        self.sa_metadata = MetaData()
         self.engine = engine
-        #Get engine water_observation table
+
+        self.sa_metadata = MetaData()
+        # If given set study_end_date_time, to use it to limit water_observations.
+        # But maybe not useful?
+
+        # Get engine table object for water_observation
         self.table_water_observation = Table('water_observation',
             self.sa_metadata, autoload=True, autoload_with=engine)
 
@@ -199,7 +159,6 @@ class OysterProject():
         else:
             self.log_file = log_file
 
-        #table_water_observation_create(metadata=metadata)
         return
     # end def __init__
 
@@ -216,7 +175,6 @@ class OysterProject():
 '''
 class Diver():
 
-
 Note: on 20180218 the current sub-folders with sample diver files are:
 [ 'LC-WQ1','LC-WQ3' ]
 
@@ -225,7 +183,7 @@ Note: on 20180218 the current sub-folders with sample diver files are:
 class Diver():
 
     '''
-    From the engine_read, get the sensor metadata, including
+    From the self.project.engine, get the sensor metadata, including
     sensor serial numbers and matching locations for the Diver sensors.
     The goal is to assign sensor id and sensor location given the sensor
     serial number in the header file section for
@@ -236,19 +194,17 @@ class Diver():
     But we will get this from the database in a future phase.
     '''
 
-    def get_metadata(self,engine_read=None):
-
-        # initial implementation just return a hard coded table
+    def get_metadata(self):
+        engine_read = self.project.engine
+        # Initial implementation just return a hard coded table
         # Later can read this from a database
-        if engine_read is None:
-            # Key is 'serial number' from a raw sensor file, a string really.
-            # Value is the db inter id value of the sensor
-            self.d_serial_sensor = {
-                '..02-V5602  317.' : 1,  #loc 1 implied by folder name 20180218
-                '..00-V6916  317.' : 3,  #loc 3 was implied by folder name 20180218
-            }
-        else:
-            raise ValueError("Not implemented")
+
+        # Key is 'serial number' from a raw sensor file, a string really.
+        # Value is the db inter id value of the sensor
+        self.d_serial_sensor = {
+            '..02-V5602  317.' : 1,  #loc 1 implied by folder name 20180218
+            '..00-V6916  317.' : 3,  #loc 3 was implied by folder name 20180218
+        }
 
         return
 
@@ -276,10 +232,7 @@ class Diver():
         else:
             self.engine = engine
 
-        sa_meta = MetaData()
-
-
-        self.d_name_rx = {
+        self.d_name_rx2 = {
 
             #The rx for line 13, serial number extraction
             'serial_number': (
@@ -351,7 +304,7 @@ class Diver():
         me='import_file'
         log_file = self.log_file
         l_rows = []
-        rx_data_reading = self.d_name_rx['data_reading']
+        #rx_data_reading = self.d_name_rx['data_reading']
         rx_data_reading = self.rx_data_reading
         if verbosity > 1:
             print("rx_data_reading='{}',\nand line='{}'"
@@ -461,11 +414,12 @@ class Diver():
               self.project.table_water_observation.insert(), row)
 
         if verbosity > 0:
-            print("{}:Parsed file {},\n and returning {} rows:"
+            print("{}:Parsed file {},\n and found {} rows:"
                 .format(me,input_file_name, line_index-1))
             for count,d_row in enumerate(l_rows, start=1):
                 print("{}\t{}".format(count,d_row),flush=True)
-        return l_rows
+
+        return len(l_rows)
     # end def import_file()
 #end class Diver()
 
@@ -591,6 +545,7 @@ def run(env=None,verbosity=1):
         engine_nick_name = 'hp_mysql_lcroyster1'
 
     engine = get_db_engine_by_name(name=engine_nick_name)
+
     log_file_name="{}/log_import.txt".format(input_folder)
     log_file = open(log_file_name, mode='w')
 
@@ -622,7 +577,6 @@ if testme == 1:
 
     env = 'home'
     env = 'uf'
-
 
     run(env=env, verbosity=1)
     print("Done",flush=True)
