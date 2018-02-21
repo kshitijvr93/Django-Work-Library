@@ -159,6 +159,10 @@ class OysterProject():
         self.table_water_observation = Table('water_observation',
             self.sa_metadata, autoload=True, autoload_with=engine)
 
+        # Get engine table object for sensor_observation
+        self.table_sensor_observation = Table('sensor_observation',
+            self.sa_metadata, autoload=True, autoload_with=engine)
+
         if log_file is None:
             self.log_file = sys.stdout
         else:
@@ -170,7 +174,7 @@ class OysterProject():
         return
     # end def __init__
 
-    def get_location_by_sensor(self,sensor_id=None):
+    def get_location_by_sensor_datetime(self,sensor_id=None,datetime=None):
         # todo: Later, get from db table sensor_location or sensor_event
         # or events...
         # using today's date as one param
@@ -334,7 +338,8 @@ class Diver():
                         raise ValueError(msg)
 
                     sensor_id = d_serial_sensor[serial_number]
-                    location_id = self.project.get_location_by_sensor(sensor_id)
+                    location_id = self.project.get_location_by_sensor_datetime(
+                        sensor_id, None)
 
                     if verbosity > 0:
                         msg=("Input file '{}',\n line13='{},'\n"
@@ -405,10 +410,25 @@ class Diver():
                     self.project.table_water_observation.insert(), row)
             except Exception as ex:
                 msg=("\n***************\n"
-                    "WARNING: Input file {},\ninsert line_count {} has error {}."
+                    "WARNING: Input file '{}',\ninsert line_count {} has error {}."
                     "\n***************\n"
                     .format(input_file_name, line_count,ex))
                 print(msg, file=log_file)
+
+        # Insert rows to table sensor_observation from this input file
+        for row in l_rows:
+            line_count += 1
+            try:
+                self.project.engine.execute(
+                    self.project.table_sensor_observation.insert(), row)
+            except Exception as ex:
+                pass
+                #Let the water_sensor_observation warning suffice for now
+                #msg=("\n***************\n"
+                #    "WARNING: Input file {},\ninsert line_count {} has error {}."
+                #    "\n***************\n"
+                #    .format(input_file_name, line_count,ex))
+                #print(msg, file=log_file)
 
         if verbosity > 0:
             print("{}:Parsed file {},\n and found {} rows:"
@@ -487,8 +507,9 @@ class Star():
 
         total_file_rows = 0
         log_file = self.log_file
-        print("{}:Starting with input_folders={},globs={}"
-            .format(me,self.input_file_folders, self.input_file_globs))
+        if verbosity > 0:
+            print("{}:Starting with input_folders={},globs={}"
+                .format(me,self.input_file_folders, self.input_file_globs))
 
         paths = sequence_paths(input_folders=self.input_file_folders,
             input_path_globs=self.input_file_globs)
@@ -508,25 +529,28 @@ class Star():
                   .format(me, file_count, input_file_name,n_rows)
                   ,file=log_file)
         # end for path in paths
-        print("{}:Ending with {} files found".format(me,file_count))
+        if verbosity > 0:
+            print("{}:Ending with {} files found".format(me,file_count))
         return file_count
-
    # end def parse_files
 
-   def update_row_by_match(self,match,d_row):
-
+    '''
+    Return None if match failed, otherwise retur d_row of name-value pairs.
+    '''
+    def update_row_by_match(self,match=None,d_row=None,verbosity=1):
+        me = 'update_row_by_match'
         try:
-            y4 = data_match.group("y4")
-            mm = data_match.group("mm")
-            dd = data_match.group("dd")
-            hr = data_match.group("hr")
-            minute = data_match.group("min")
-            sec = data_match.group("sec")
+            y4 = match.group("y4")
+            mm = match.group("mm")
+            dd = match.group("dd")
+            hr = match.group("hr")
+            minute = match.group("min")
+            sec = match.group("sec")
             # NOTE: field_names match columns in table_water_observation
             for field_name in ['temperature_c','salinity_psu',
                 'conductivity_mS_cm', 'sound_velocity_m_sec']:
 
-                value = data_match.group(field_name)
+                value = match.group(field_name)
                 value = value.replace(',','.');
 
                 if verbosity > 2:
@@ -538,20 +562,15 @@ class Star():
                 d_row[field_name] = value
             # end for field_name
 
-            except Exception as ex:
-                  msg = (
-                    "\n*****************\n"
-                    "PARSE ERROR: {}:File name '{}', line count='{}':"
-                    "\nLine='{}'\n""\nException={}"
-                    "\n*****************\n"
-                    .format(me,input_file_name,line_count,line,ex))
-                  print(msg, file=self.log_file)
-                  raise ValueError(msg)
+            date_str="{}-{}-{} {}:{}:{}".format(y4,mm,dd,hr,minute,sec)
+            d_row['observation_datetime'] = date_str
 
-                date_str="{}-{}-{} {}:{}:{}".format(y4,mm,dd,hr,minute,sec)
-                d_row['observation_datetime'] = date_str
+        except Exception as ex:
+            # Signal a parsing exception
+            d_row=None
 
-       return d_row
+        return d_row
+#end def update_row_by_match
 
     '''
     Line 19+: sample(Tab delimiters in raw file)
@@ -640,7 +659,8 @@ class Star():
                         raise ValueError(msg)
 
                     sensor_id = self.d_serial_sensor[serial_number]
-                    location_id = self.project.get_location_by_sensor(sensor_id)
+                    location_id = self.project.get_location_by_sensor_datetime(
+                        sensor_id,None)
 
                     if verbosity > 0:
                         msg=("Input file '{}',\n line13='{},'\n"
@@ -684,14 +704,20 @@ class Star():
                         .format(line_count))
                     raise ValueError(msg)
 
-                d_row = self.update_row_by_match(data_match, d_row):
+                d_row = self.update_row_by_match(data_match, d_row)
+                if d_row is None:
+                    msg = (
+                            "\n*****************\n"
+                            "PARSE ERROR: {}:File name '{}', line count='{}':"
+                            "\nLine='{}'\n"
+                            "\n*****************\n"
+                            .format(me,input_file_name,line_count,line))
+                    print(msg, file=self.log_file)
+                    raise ValueError(msg)
 
                 if verbosity > 1:
                   print("{}: input line {}='{}'"
                         .format(me,line_count,line),flush=True)
-
-                if verbosity > 1:
-                    d_row['date_str'] = date_str
 
             # end line in input file
         # end with open.. input file_name
@@ -709,6 +735,20 @@ class Star():
                     "\n***************\n"
                     .format(input_file_name, line_count,ex))
                 print(msg)
+        # Insert rows to table sensor_observation from this input file
+        for row in l_rows:
+            line_count += 1
+            try:
+                self.project.engine.execute(
+                    self.project.table_sensor_observation.insert(), row)
+            except Exception as ex:
+                pass
+                #Let the water_sensor_observation warning suffice for now
+                #msg=("\n***************\n"
+                #    "WARNING: Input file {},\ninsert line_count {} has error {}."
+                #    "\n***************\n"
+                #    .format(input_file_name, line_count,ex))
+                #print(msg, file=log_file)
 
 
         if verbosity > 0:
@@ -825,7 +865,7 @@ def run(env=None,do_diver=1, do_star=1, verbosity=1):
     if do_diver == 1:
         diver = Diver(project=oyster_project, input_file_folders=input_file_folders,
             input_file_globs = ['**/*.MON'])
-        diver.parse_files()
+        diver.parse_files(verbosity=verbosity)
     # star = Star(input_folders=input_folder,
     #    input_file_globs = ['**/Star*WQ[0-9]'])
 
@@ -834,7 +874,7 @@ def run(env=None,do_diver=1, do_star=1, verbosity=1):
             input_file_globs = ['**/Star*WQ[0-9]'])
 
         print("{}: calling parse_files".format(me))
-        star.parse_files(verbosity=2)
+        star.parse_files(verbosity=verbosity)
         print("{}: back from calling parse_files".format(me))
     return
 
@@ -847,7 +887,7 @@ if testme == 1:
     else:
         env = 'uf'
 
-    run(env=env, verbosity=1,do_diver=1,do_star=1)
+    run(env=env, do_diver=1,do_star=1,verbosity=1)
     print("Done",flush=True)
 
 #END FILE
