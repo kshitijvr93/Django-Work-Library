@@ -303,6 +303,44 @@ def table_water_observation_populate(engine=None,table_object=None):
 
     return
 #end def table_sensor_populate
+'''
+Table sensor_observation is a narrower table version than table water observation.
+Table sensor_observation is updated by fixed sensors types of diver and star.
+'''
+
+def table_sensor_observation_create(metadata=None):
+    table_name = 'sensor_observation'
+    me = '{}_create'.format(table_name)
+
+    # NOTE: we break from convention and use observation_id
+    table_object =  Table(table_name, metadata,
+      Column('{}_id'.format(table_name), Integer,
+          # NOTE do NOT use Sequence here for mysql?
+          #Sequence('{}_id_seq'.format(table_name), metadata=metadata),
+          primary_key=True, autoincrement=True,
+          comment='Automatically incremented row id.'),
+      UniqueConstraint('{}_id'.format(table_name),
+          name='uq1_{}'.format(table_name) ),
+      Column('sensor_id', Integer),
+      Column('observation_datetime', DateTime),
+      Column('location_id', Integer, default=1),
+      UniqueConstraint('sensor_id','observation_datetime',
+          name='uq2_{}'.format(table_name) ),
+      # location_id can be derived, maybe no need to populate via imports?
+      Column('conductivity_mS_cm', Float),
+      Column('pressure_cm', Float),
+      Column('salinity_psu', Float),
+      Column('temperature_c', Float),
+      Column('sound_velocity_m_sec', Float),
+      ForeignKeyConstraint(
+        ['sensor_id'], ['sensor.sensor_id'],
+        name='fk_{}_sensor_id'.format(table_name)),
+      ForeignKeyConstraint(
+        ['location_id'], ['location.location_id'],
+        name='fk_{}_location_id'.format(table_name)),
+      )
+
+    return table_object
 
 def table_water_observation_create(metadata=None):
     table_name = 'water_observation'
