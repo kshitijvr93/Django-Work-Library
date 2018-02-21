@@ -311,6 +311,7 @@ def add_subelements(element, subelements, item_ids=False):
  the item value as the d_elts parameter.
 '''
 def add_subelements_from_dict(element, d_subelements):
+    pass
     # Use an OrderedDct that is sorted by key for easier human-reading
     # First argument must be an lxml element
     # second argument must be a dictionary with
@@ -487,6 +488,7 @@ def test_sequence_days():
     days = sequence_days(cymd_start='20170715', cymd_end='20170825')
     for day,dt_day in days:
         print("Got day={}".format(day))
+    return
 
 def test_sequence_paths():
     input_folders = []
@@ -494,14 +496,16 @@ def test_sequence_paths():
     #input_folder = 'F:/usf/resources/LS/00/59/'
     input_folder = 'F:/usf/resources/LS/00/59/'
 
-    #NB: to seek at LS level takes 10-20 full minutes,
+    # NB: to seek at LS level takes 10-20 full minutes,
     # input_folder = 'F:/usf/resources/LS/
 
     input_folders.append(input_folder)
 
     output_file_name = 'c:/rvp/data/integration_bib.txt'
+    input_path_globs = ['**/*.mets.xml']
     paths = sequence_paths(input_folders=input_folders,
-        input_path_glob='**/*.mets.xml',verbosity=2)
+        input_path_globs=input_path_globs, verbosity=2)
+
     output_file=open(output_file_name, mode='w', encoding='utf-8')
     i = 0
     for path in paths:
@@ -511,6 +515,6 @@ def test_sequence_paths():
         bparts = bib_vid.split('_')
         bib = bparts[0]
         print("{}\t{}".format(bib, bib_vid), file=output_file)
-    return
 
-#test_sequence_paths()
+    return
+#end test_sequence_paths()

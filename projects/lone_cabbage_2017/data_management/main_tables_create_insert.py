@@ -17,8 +17,8 @@ def register_modules():
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
     sys.path.append('{}git/citrus/modules'.format(modules_root))
-    return
-register_modules()
+    return platform_name
+platform_name = register_modules()
 import etl
 
 print("Using sys.path={}".format(repr(sys.path)))
@@ -436,7 +436,11 @@ def run(env=None):
 
 #
 test = 1
+
 if test == 1 :
-    env = 'home'
-    env = 'uf'
+    if platform_name == 'linux':
+        env = 'home'
+    else:
+        env = 'uf'
+
     run(env=env)

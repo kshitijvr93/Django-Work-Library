@@ -32,8 +32,9 @@ def register_modules():
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
     sys.path.append('{}git/citrus/modules'.format(modules_root))
-    return
-register_modules()
+    return platform_name
+
+platform_name=register_modules()
 
 from etl import sequence_paths
 from pathlib import Path
@@ -398,8 +399,16 @@ class Diver():
 
         # Insert rows to table water_observation from this input file
         for row in l_rows:
-          self.project.engine.execute(
-              self.project.table_water_observation.insert(), row)
+            line_count += 1
+            try:
+                self.project.engine.execute(
+                    self.project.table_water_observation.insert(), row)
+            except Exception as ex:
+                msg=("\n***************\n"
+                    "WARNING: Input file {},\ninsert line_count {} has error {}."
+                    "\n***************\n"
+                    .format(input_file_name, line_count,ex))
+                print(msg, file=log_file)
 
         if verbosity > 0:
             print("{}:Parsed file {},\n and found {} rows:"
@@ -428,6 +437,24 @@ a given glob.
 '''
 
 class Star():
+
+    def get_metadata(self):
+        engine_read = self.project.engine
+        # Initial implementation just return a hard coded table
+        # Later can read this from a database
+
+        # Key is 'serial number' from a raw sensor file, a string really.
+        # Value is the db inter id value of the sensor
+        self.d_serial_sensor = {
+            '8814' : 2,  #loc 1 implied by folder name 20180218
+            '9058' : 4,  #loc 3 was implied by folder name 20180218
+            '9060' : 5,  #loc 3 was implied by folder name 20180218
+            '9061' : 6,  #loc 3 was implied by folder name 20180218
+            '9035' : 7,  #loc 3 was implied by folder name 20180218
+            '9062' : 8,  #loc 3 was implied by folder name 20180218
+            '9036' : 9,  #loc 3 was implied by folder name 20180218
+        }
+
     def __init__(self,project=None, input_file_folders=None,
         input_file_globs=None, log_file=None, d_serial_location=None):
         me = "Star.__init__"
@@ -440,28 +467,12 @@ class Star():
         print("{}:Using log file {}".format(me,self.log_file))
         print("{}:Using log file {}".format(me,self.log_file),file=self.log_file)
 
+        self.get_metadata()
+
 
         self.input_file_folders = input_file_folders
 
         rx_serial = ''  #tbd
-
-        # Later can read this from a database
-        if d_serial_location is None:
-            self.d_serial_location = {
-                # Diver sensors as of 20171222
-                '..02-V5602  317.' : 1, #loc 1 per folder name 20180218
-                '..00-V6916  317.' : 3,  #loc 3 per folder name 20180218
-                # Star ODDI sensors as of 20171222
-                'DST CTD 8814' : 2,
-                'DST CTD 9058' : 4, # LC-WQ4 folder on 20180218
-                'DST CTD 9060' : 5, # LC-WQ5 folder on 20180218
-                'DST CTD 9061' : 6, # LC-WQ6 folder on 20180218
-                'DST CTD 9035' : 7, # LC-WQ7 folder on 20180218
-                'DST CTD 9062' : 8, # LC-WQ8 folder on 20180218
-                'DST CTD 9036' : 9, # LC-WQ9 folder on 20180218
-            }
-        else:
-            self.serial_location = d_serial_location
 
         if input_file_globs is None:
             self.input_file_globs = ['**/Star*WQ[0-9]']
@@ -469,6 +480,7 @@ class Star():
             self.input_file_globs = input_file_globs
 
     #end def __init__
+
     def parse_files(self, verbosity=1):
         me = 'parse_files'
         file_count = 0
@@ -500,6 +512,46 @@ class Star():
         return file_count
 
    # end def parse_files
+
+   def update_row_by_match(self,match,d_row):
+
+        try:
+            y4 = data_match.group("y4")
+            mm = data_match.group("mm")
+            dd = data_match.group("dd")
+            hr = data_match.group("hr")
+            minute = data_match.group("min")
+            sec = data_match.group("sec")
+            # NOTE: field_names match columns in table_water_observation
+            for field_name in ['temperature_c','salinity_psu',
+                'conductivity_mS_cm', 'sound_velocity_m_sec']:
+
+                value = data_match.group(field_name)
+                value = value.replace(',','.');
+
+                if verbosity > 2:
+                    print("Field_name='{}', value='{}'"
+                      .format(field_name,value))
+                # Capitulation to inconsistent sea star sensor files.
+                # Some use , some use . as decimal point
+                value = value.replace(',','.')
+                d_row[field_name] = value
+            # end for field_name
+
+            except Exception as ex:
+                  msg = (
+                    "\n*****************\n"
+                    "PARSE ERROR: {}:File name '{}', line count='{}':"
+                    "\nLine='{}'\n""\nException={}"
+                    "\n*****************\n"
+                    .format(me,input_file_name,line_count,line,ex))
+                  print(msg, file=self.log_file)
+                  raise ValueError(msg)
+
+                date_str="{}-{}-{} {}:{}:{}".format(y4,mm,dd,hr,minute,sec)
+                d_row['observation_datetime'] = date_str
+
+       return d_row
 
     '''
     Line 19+: sample(Tab delimiters in raw file)
@@ -537,22 +589,21 @@ class Star():
         l_rows = []
         # Date components
         # and Readings
-        rx_star_line19_reading0 = (
-             r"(?P<sn>\d+)\s\s*(?P<dd>.*)/.(?P<mm>.*)/.(?P<y4>.*)"
-             r"\s\s*(?P<hr>\d):(?P<min>\d.*):(?P<sec>(\d+(\.\d*)))"
-             r"\s+(?P<temperature_c>(\d+(\.\d*)))"
-             r"\s+(?P<salinity_psu>(\d+(\.\d*)))"
-             r"\s+(?P<conductivity_mS_cm>\d+(\.\d*))"
-             r"\s+(?P<sound_velocity_m_sec>(\d+(\.\d*)))"
-             )
+        rx_star_serial_number_line16= (
+           r".*\t(?P<serial_number>\d+)" )
+
         rx_star_line19_reading = (
            r"(?P<sn>\d+)\s*(?P<dd>\d+)\.(?P<mm>\d+)\.(?P<y4>\d+)"
            r"\s\s*(?P<hr>\d+):(?P<min>\d+):(?P<sec>(\d+))"
-                    r"\s+(?P<temperature_c>(\d+(\.\d*)))"
-                     r"\s+(?P<salinity_psu>(\d+(\.\d*)))"
-               r"\s+(?P<conductivity_mS_cm>(\d+(\.\d*)))"
-             r"\s+(?P<sound_velocity_m_sec>(\d+(\.\d*)))"
+                    r"\s+(?P<temperature_c>(\d+([.,]\d*)))"
+                     r"\s+(?P<salinity_psu>(\d+([.,]\d*)))"
+               r"\s+(?P<conductivity_mS_cm>(\d+([.,]\d*)))"
+             r"\s+(?P<sound_velocity_m_sec>(\d+([.,]\d*)))"
              )
+
+        rx_star_line18_reading = (r"#D\s+Data:\s+"
+              + rx_star_line19_reading )
+              #but note sn is something else here...?
 
         if verbosity > 0:
             print("{}:rx_star_line19_reading='{}'"
@@ -567,20 +618,18 @@ class Star():
                     print("Parsing line {} ='{}'".format(line_count,line)
                         ,file=log_file, flush=True)
 
-                if line_count == -13:
-                    #rx = self.d_name_rx['serial_number']
-                    rx_serial_number = (
-                      r'Serial number           =(?P<serial_number>.*)')
-                    match = re.search(rx_serial_number,line)
-                    # Check the serial number of this diver sensor device
+                if line_count == 16:
+                    # Get serial number
+                    rx_star_serial_number_line16= (
+                       r".*\t(?P<serial_number>\d+)" )
                     try:
+                        match = re.search(rx_star_serial_number_line16,line)
                         serial_number = match.group("serial_number")
-                        serial_number = match.group(1)
-                    except Exception as ex:
-                        msg=("rx_serial_number={}, line={}, no serial part"
-                        .format(rx_serial_number,line))
-                        print(msg)
-                        raise ValueError(msg)
+                    except:
+                        msg = ("{}: input_file has {} no serial number"
+                            .format(me,input_file_name))
+                        print(msg, file=outfile)
+                        raise
 
                     d_serial_sensor = self.d_serial_sensor
                     if serial_number not in d_serial_sensor.keys():
@@ -590,7 +639,7 @@ class Star():
                             d_serial_sensor.keys()))
                         raise ValueError(msg)
 
-                    sensor_id = d_serial_sensor[serial_number]
+                    sensor_id = self.d_serial_sensor[serial_number]
                     location_id = self.project.get_location_by_sensor(sensor_id)
 
                     if verbosity > 0:
@@ -605,27 +654,27 @@ class Star():
                           .format(serial_number, serial_numbers))
                         raise ValueError(msg)
 
+                # end if line_count == 16 (We set sensor_id and location_id)
+
                 if line_count < 18:
                     #Skip constant sensor header information
                     # later, do read line 18 too
                     continue
 
-                # We will parse a data row...
-                # later, parse out sensor_id and location_id too
-                sensor_id = 9
-                location_id = 9
-
                 d_row = {}
                 l_rows.append(d_row)
+
                 d_row['sensor_id'] = sensor_id
                 d_row['location_id'] = location_id
 
                 if line_count == 18:
+                    #rx_star
                     #later parse this line separately
                     continue;
 
                 if verbosity > 0:
                     print("{}: reading line {} = '{}'".format(me,line_count,line))
+
                 # Here we have Line 19 and greater - regular-formatted data lines
                 # read and parse this data line and create output d_row
                 try:
@@ -635,20 +684,7 @@ class Star():
                         .format(line_count))
                     raise ValueError(msg)
 
-                y4 = data_match.group("y4")
-                mm = data_match.group("mm")
-                dd = data_match.group("dd")
-                hr = data_match.group("hr")
-                minute = data_match.group("min")
-                sec = data_match.group("sec")
-                #frac = data_match.group("frac")
-                date_str="{}-{}-{} {}:{}:{}".format(y4,mm,dd,hr,minute,sec)
-                d_row['observation_datetime'] = date_str
-
-                pressure_cm = temperature_c = conductivity_mS_cm = 'tbd'
-                #pressure_cm = data_match.group('pressure_cm')
-                #temperature_c = data_match.group('temperature_c')
-                #conductivity_mS_cm = data_match.group('conductivity_mS_cm')
+                d_row = self.update_row_by_match(data_match, d_row):
 
                 if verbosity > 1:
                   print("{}: input line {}='{}'"
@@ -656,17 +692,6 @@ class Star():
 
                 if verbosity > 1:
                     d_row['date_str'] = date_str
-
-                # NOTE: field_names match columns in table_water_observation
-                for field_name in ['temperature_c','salinity_psu',
-                    'conductivity_mS_cm', 'sound_velocity_m_sec']:
-
-                    value = data_match.group(field_name)
-                    value = value.replace(',','.');
-
-                    if verbosity > 2:
-                        print("Field_name='{}', value='{}'".format(field_name,value))
-                    d_row[field_name] = value
 
             # end line in input file
         # end with open.. input file_name
@@ -817,9 +842,10 @@ def run(env=None,do_diver=1, do_star=1, verbosity=1):
 
 testme = 1
 if testme == 1:
-
-    env = 'home'
-    env = 'uf'
+    if platform_name == 'linux':
+        env = 'home'
+    else:
+        env = 'uf'
 
     run(env=env, verbosity=1,do_diver=1,do_star=1)
     print("Done",flush=True)
