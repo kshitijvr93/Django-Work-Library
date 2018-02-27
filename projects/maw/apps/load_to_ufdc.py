@@ -51,23 +51,30 @@ class Ufdc_loader():
 
     '''
 
-    def __init__(self, staging_folder=None, inbound_folder=None):
+    def __init__(self, staging_folder=None, inbound_folder=None,verbosity=0):
         required_args = [staging_folder, inbound_folder]
         if not all(required_args):
             msg = ("Not all required args supplied: {}".format(required_args))
             raise ValueError(msg)
+        # Note: not using param verbosity yet, but keep for future.
 
         self.staging_folder = staging_folder
         self.inbound_folder = inbound_folder
         incoming_mets_dirname = (
             '/'.join(self.inbound_folder.split('/')[:-1]))
+        # Might use failures_folder later for a temporary staging area
+        # to copy files under one folder there for one vid,
+        # then when done, rename the temp folder to one
+        # under folder inbound, if copy atomicity becomes an issue.
         self.failures_folder = "/{}/failures".format(incoming_mets_dirname)
         self.input_file_globs = ["**/*.mets.xml"]
         self.log_file = sys.stdout
+        # Note: do not set a self.verbosity, but do support separate verbosity
+        # args in  constructor and methods.
 
         return
 
-    def valid_mets_copy(self, mets_input_path=None, verbosity=1):
+    def valid_mets_copy(self, mets_input_path=None,verbosity=0):
         '''
         We found the absolute path to a mets file to copy to the inbound folder.
         Also copy any of its sibling files in the staging area.
@@ -101,15 +108,17 @@ class Ufdc_loader():
 
         staging_mets_folders = [staging_mets_dirname]
         # create/use the incoming failure folder as a temporary folder
-        print("Copying input files from folder={}".format(staging_mets_dirname)
-         , flush=True)
+        if verbosity > 0:
+            print("Copying input files from folder={}"
+                .format(staging_mets_dirname), flush=True)
+
         fpaths = sequence_paths(input_folders=staging_mets_folders,
             input_path_globs=["*.*"])
 
         for fpath in fpaths:
             input_file_name = fpath.resolve()
 
-            if verbosity > 0 or 1 == 1:
+            if verbosity > 0 :
                 print("{}: Copying input file '{}' to {}"
                     .format(me,input_file_name,inbound_mets_dirname)
                     ,flush=True, file=self.log_file )
@@ -141,8 +150,36 @@ class Ufdc_loader():
         return n_loaded
 
 #end class Ufdc_loader
+def run_ufdc_auto_loader(
+    log_file_name=None,
+    max_mets_files=10,
+    verbosity=0,
+    staging_folder=None, inbound_folder=None,
+    ):
 
-def test_ufdc_loader(env=None):
+    me = 'run_ufdc_auto_loader'
+    required_args = [staging_folder, inbound_folder]
+    if not all(required_args):
+        msg = ("{}: Some required args missing: {}"
+            ,format(me,required_args))
+        raise ValueError(msg)
+
+    if log_file_name is None:
+        log_file_name = "{}/{}".format(staging_folder,"load_to_ufdc.txt")
+
+    with open(log_file_name, mode='w', encoding='utf-8') as log_file:
+        print("{}:Starting".format(me))
+        ufdc_loader = Ufdc_loader(staging_folder=staging_folder,
+            inbound_folder=inbound_folder,verbosity=verbosity)
+        # Run a loading run
+
+        n_loaded = ufdc_loader.load(max_mets_files=max_mets_files)
+        print("{}: loaded {} mets files".format(me, n_loaded))
+
+    return
+#end def run_ufdc_auto_loader
+
+def test_ufdc_loader(env=None,max_mets_files=10,verbosity=1):
     me = 'test_ufdc_loader'
     if env is None:
         env = 'uf_office'
@@ -154,17 +191,14 @@ def test_ufdc_loader(env=None):
         msg = "Unknown env='{}'".format(env)
 
     log_file_name = "{}/{}".format(staging_folder,"load_to_ufdc.txt")
-    with open(log_file_name, mode='w', encoding='utf-8') as log_file:
-        print("{}:Starting".format(me))
-        ufdc_loader = Ufdc_loader(staging_folder=staging_folder,
-            inbound_folder=inbound_folder)
-        # Run a loading run
 
-        n_loaded = ufdc_loader.load(max_mets_files=10)
-        print("{}: loaded {} mets files".format(me, n_loaded))
+    run_ufdc_auto_loader(staging_folder=staging_folder,
+        inbound_folder=inbound_folder,
+        max_mets_files=max_mets_files,
+        verbosity=verbosity,
+        log_file_name=log_file_name)
 
-    print("{}:Ending".format(me))
     #end with log_file
 #end def test_ufdc_loader
 
-test_ufdc_loader(env='uf_office')
+test_ufdc_loader(env='uf_office',max_mets_files=100)
