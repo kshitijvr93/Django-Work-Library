@@ -128,7 +128,7 @@ class Ufdc_loader():
         return 1
     #end def valid_mets_copy
 
-    def load(self, max_mets_files=0, verbosity=0):
+    def load(self, max_mets_items=0, verbosity=0):
         # Get list of paths of .mets.xml files under staging folder.
         #
         input_folders = [self.staging_folder]
@@ -142,7 +142,7 @@ class Ufdc_loader():
             was_copied = self.valid_mets_copy(mets_input_path=path,
                 verbosity=verbosity)
             n_loaded += was_copied
-            if max_mets_files > 0 and n_loaded >= max_mets_files:
+            if max_mets_items > 0 and n_loaded >= max_mets_items:
                 #maybe add code to print to log file here...
                 break
         # end for path in paths
@@ -152,7 +152,7 @@ class Ufdc_loader():
 #end class Ufdc_loader
 def run_ufdc_auto_loader(
     log_file_name=None,
-    max_mets_files=10,
+    max_mets_items=10,
     verbosity=0,
     staging_folder=None, inbound_folder=None,
     ):
@@ -161,7 +161,7 @@ def run_ufdc_auto_loader(
     required_args = [staging_folder, inbound_folder]
     if not all(required_args):
         msg = ("{}: Some required args missing: {}"
-            ,format(me,required_args))
+            .format(me,required_args))
         raise ValueError(msg)
 
     if log_file_name is None:
@@ -173,13 +173,13 @@ def run_ufdc_auto_loader(
             inbound_folder=inbound_folder,verbosity=verbosity)
         # Run a loading run
 
-        n_loaded = ufdc_loader.load(max_mets_files=max_mets_files)
+        n_loaded = ufdc_loader.load(max_mets_items=max_mets_items)
         print("{}: loaded {} mets files".format(me, n_loaded))
 
     return
 #end def run_ufdc_auto_loader
 
-def test_ufdc_loader(env=None,max_mets_files=10,verbosity=1):
+def test_ufdc_loader(env=None,max_mets_items=10,verbosity=1):
     me = 'test_ufdc_loader'
     if env is None:
         env = 'uf_office'
@@ -194,11 +194,40 @@ def test_ufdc_loader(env=None,max_mets_files=10,verbosity=1):
 
     run_ufdc_auto_loader(staging_folder=staging_folder,
         inbound_folder=inbound_folder,
-        max_mets_files=max_mets_files,
+        max_mets_items=max_mets_items,
         verbosity=verbosity,
         log_file_name=log_file_name)
 
     #end with log_file
 #end def test_ufdc_loader
 
-test_ufdc_loader(env='uf_office',max_mets_files=100)
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    # Arguments
+    parser.add_argument("-v", "--verbosity",
+     type=int, default=0,
+     help="increase output verbosity")
+    parser.add_argument("-s", "--staging_folder",
+     default = "U:\\data\\elsevier\\output_exoldmets\\staging\\",
+     help="parent folder above subfolders with METS items to copy")
+    parser.add_argument("-u", "--ufdc_inbound_folder",
+     default = "C:\\rvp\\data\\test_inbound\\",
+     help="UFDC inbound folder to paste METS items for the builder")
+    parser.add_argument("-m", "--max_mets_items",
+     type=int, default=0,
+     help="If not 0, limit the MET items to copy from staging to UFDC inbound.")
+
+    args = parser.parse_args()
+
+    if args.verbosity:
+        print("Using verbosity value={}".format(args.verbosity))
+        print("Using staging_folder={}".format(args.staging_folder))
+        print("Using ufdc_inbound_folder={}".format(args.ufdc_inbound_folder))
+
+
+    run_ufdc_auto_loader(verbosity=args.verbosity,
+        staging_folder=args.staging_folder,
+        max_mets_items=args.max_mets_items,
+        inbound_folder=args.ufdc_inbound_folder
+        )
