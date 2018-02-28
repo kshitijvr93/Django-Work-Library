@@ -194,7 +194,6 @@ import time
 
 if __name__ == "__main__":
     import argparse
-    print("STARTING...")
     parser = argparse.ArgumentParser()
     # Arguments
     parser.add_argument("-l", "--log_file",
