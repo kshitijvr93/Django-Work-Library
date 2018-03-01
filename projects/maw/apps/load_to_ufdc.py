@@ -196,16 +196,12 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     # Arguments
-    parser.add_argument("-l", "--log_file",
-     default="U:\\data\\run_logs\\ufdc_load_log.txt",
-     help="Name of a log file to create and put processing messages in.")
-
     parser.add_argument("-r", "--maximum_runs",
      type=int, default=2,
      help="Maximum number of runs (0=no maximum, 1=default)")
 
     parser.add_argument("-p", "--pause_seconds",
-     type=int, default=6,
+     type=int, default=4,
      help="Number of seconds to pause between runs")
 
     parser.add_argument("-m", "--max_mets_items",
@@ -216,13 +212,17 @@ if __name__ == "__main__":
      type=int, default=1,
      help="increase output verbosity")
 
+    parser.add_argument("-l", "--log_file",
+     default="U:\\data\\run_logs\\ufdc_load_log.txt",
+     help="Name of a log file to create and put processing messages in.")
+
     parser.add_argument("-s", "--staging_folder",
      default = "U:\\data\\elsevier\\output_exoldmets\\test_maw_loader\\",
      help="parent folder above subfolders with METS items to copy")
 
     parser.add_argument("-u", "--ufdc_inbound_folder",
-     # default = "F:\\usf\\incoming\\test_inbound\\",
-     default = "U:\\data\\elsevier\\output_exoldmets\\test_inbound\\",
+     default="F:\\usf\\incoming\\test_inbound\\",
+     # default="U:\\data\\elsevier\\output_exoldmets\\test_inbound\\",
      help="UFDC inbound folder to paste METS items for the builder")
 
     args = parser.parse_args()
