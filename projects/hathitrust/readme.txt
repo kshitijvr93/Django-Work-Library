@@ -9,6 +9,7 @@ a cli command:
 
 For linux bash shell:
   $ workon py36 #to make sure you are running python 3.6
+  $ python --version #verify python3
   $ python manage.py runserver
 
 OR for windows with python 3.6 installed as the default python,
