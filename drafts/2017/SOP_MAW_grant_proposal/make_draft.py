@@ -3,6 +3,7 @@ make_draft.py
 make the draft
 '''
 import sys, os, os.path, platform
+
 def get_path_modules(verbosity=0):
   env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
   path_user = os.environ.get(env_var)
