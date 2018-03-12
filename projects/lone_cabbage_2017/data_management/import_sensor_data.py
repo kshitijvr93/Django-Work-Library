@@ -22,7 +22,6 @@ Python 3.6+ code
 '''
 import sys, os, os.path, platform
 
-
 def register_modules():
     platform_name = platform.system().lower()
     if platform_name == 'linux':
@@ -62,20 +61,20 @@ import re
 '''
 General notes- context about the Oyster files.
 
-Assumptions: the output table receives only sensor data and is just inserted
-into, and has already been created.
+Assumptions: From this import process, the output table receives only sensor
+data and the table has already been created, so it is just inserted into.
 
-The given file is a 'diver sensor' file of readings data, which
-adheres to the strict format expected here.
+Each given file is either a 'diver sensor' or a 'oddi star sensor'
+text file of readings data, which adheres to the strict format expected here.
 
-The header provides the sensor id and the channel/axis/column data names,
+The header lines of a sensor data file provides the
+sensor id and the channel/axis/column data names,
 and they are in order, in both the [Logger settings] section and
 the [Series settings] section as: PRESSSURE (in cm), TEMPERATURE, CONDUCTIVITY.
 
 Other header values are ignored, not checked, until and if use
 cases arise and are required and implemented that require
 them being checked.
-
 
 Also the sensor location is NOT authoritative, because
 UF WEC registers location in external files or logs and does
@@ -104,17 +103,14 @@ followed by 3 digits of precision:
 The last line in the file is a sentinel line with the text:
 END OF DATA FILE OF DATALOGGER FOR WINDOWS
 
-
 Each data line is used to insert a row in an output water_observations
 table. That table has a unique index on the composite (sensor_id, date, time)
 if a MON file row duplicates those values, it is skipped and not inserted,
 though a log file line is issued to log any consecutive range of line numbers
 within the input MON file that has the duplcate (already inserted data)
-
 </summary>
 
 regular expression for float:
-
 float_rx = r'[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'
 
 float_pattern = re.compile(float_rx)
@@ -134,7 +130,6 @@ sample sensor data line to date, time and 3 floats for
 
 (1)pressure_cm, (2)temperature_c, (3)conductivity_mS_cm
 2017/08/11 12:00:00.0     1106.592      29.100       1.472
-
 ----------------
 
 '''
@@ -195,12 +190,12 @@ Note: on 20180218 the current sub-folders with sample diver files are:
 class Diver():
 
     '''
-    From the self.project.engine, get the sensor metadata, including
+    From the db of self.project.engine, get the sensor metadata, including
     sensor serial numbers and matching locations for the Diver sensors.
     The goal is to assign sensor id and sensor location given the sensor
-    serial number in the header file section for
-    each dated reading (set of 1 date-time and 3 measurements per reading),
-    because the sensor location can move around.
+    serial number in the header file section for each dated reading
+    (set of 1 date-time and 3 measurements per reading), because the
+    sensor location can move around.
 
     Initially, we hard-code the d_serial_sensor data
     But we will get this from the database in a future phase.
@@ -863,15 +858,17 @@ def run(env=None,do_diver=1, do_star=1, verbosity=1):
     input_file_folders = [input_folder]
 
     if do_diver == 1:
-        diver = Diver(project=oyster_project, input_file_folders=input_file_folders,
-            input_file_globs = ['**/*.MON'])
+        diver = Diver(project=oyster_project,
+            input_file_folders=input_file_folders,
+            input_file_globs=['**/*.MON'])
         diver.parse_files(verbosity=verbosity)
     # star = Star(input_folders=input_folder,
     #    input_file_globs = ['**/Star*WQ[0-9]'])
 
     if do_star == 1:
-        star = Star(project=oyster_project, input_file_folders=input_file_folders,
-            input_file_globs = ['**/Star*WQ[0-9]'])
+        star = Star(project=oyster_project,
+            input_file_folders=input_file_folders,
+            input_file_globs=['**/Star*WQ[0-9]'])
 
         print("{}: calling parse_files".format(me))
         star.parse_files(verbosity=verbosity)
@@ -887,7 +884,7 @@ if testme == 1:
     else:
         env = 'uf'
 
-    run(env=env, do_diver=1,do_star=1,verbosity=1)
+    run(env=env, do_diver=1, do_star=1, verbosity=1)
     print("Done",flush=True)
 
 #END FILE
