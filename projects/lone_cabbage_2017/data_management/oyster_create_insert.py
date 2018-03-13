@@ -153,33 +153,92 @@ def table_location_create(metadata=None):
           #Sequence('{}_id_seq'.format(table_name), metadata=metadata),
           primary_key=True, autoincrement=True,
           comment='Automatically incremented row id.'),
-      UniqueConstraint('{}_id'.format(table_name),
-          name='uq1_{}'.format(table_name) ),
       Column('tile_id', Integer),
-      Column('latitude', Float),
-      Column('longitude', Float),
-      Column('name', String(200), primary_key=True,
+      Column('latitude', Float(precision=20)),
+      Column('longitude', Float(precision=20)),
+      Column('name', String(200),
              comment='Location name, eg LC_WQ1, LC_WQ2. Shorter for reports.'),
+      UniqueConstraint('name'.format(table_name),
+          name='uq_name1_{}'.format(table_name) ),
       Column('alias1', String(200),
              comment='Possibly other name designation of the location.'),
+      UniqueConstraint('alias1'.format(table_name),
+          name='uq_alias1_{}'.format(table_name) ),
       Column('alias2', String(200),
              comment='Possibly other name designation of the location.'),
+      UniqueConstraint('alias2'.format(table_name),
+          name='uq_alias2_{}'.format(table_name) ),
       )
     return table_object
 #end def table_location_create
 
 def table_location_populate(engine=None, table_object=None):
     l_rows = [
-        { 'name':'LCR Buoy One', },
-        { 'name':'LCR Buoy Two', },
-        { 'name':'LCR Buoy Three', },
-        { 'name':'LCR Buoy Four', },
-        { 'name':'LCR Buoy Five', },
-        { 'name':'LCR Buoy Six', },
-        { 'name':'LCR Buoy Seven', },
-        { 'name':'LCR Buoy Eight', },
-        { 'name':'LCR Buoy Nine', },
-        { 'name':'Unknown', },
+
+        { 'name':'LCR Buoy One',
+          'alias1': 'WQ1',
+          #WQ1|29.267726987600327|-83.098221989348531|
+          'latitude': 29.267726987600327,
+          'longitude': -83.098221989348531,
+        },
+
+        { 'name':'LCR Buoy Two',
+          'alias1': 'WQ2',
+          #WQ2|29.257425041869283|-83.080270970240235|
+          'latitude': 29.257425041869283,
+          'longitude': -83.080270970240235,
+        },
+
+        { 'name':'LCR Buoy Three',
+          'alias1': 'WQ3',
+          #WQ3|29.232152011245489|-83.082710020244122|
+          'latitude': 29.232152011245489,
+          'longitude': -83.082710020244122,
+        },
+
+        { 'name':'LCR Buoy Four',
+          'alias1': 'WQ4',
+          #WQ4|29.266459979116917|-83.115749973803759|
+          'latitude': 29.266459979116917,
+          'longitude': -83.115749973803759,
+        },
+
+        { 'name':'LCR Buoy Five',
+          'alias1': 'WQ5',
+          #WQ5|29.24560303799808|-83.095912020653486|
+          'latitude': 29.24560303799808,
+          'longitude': -83.095912020653486,
+        },
+
+        { 'name':'LCR Buoy Six',
+          'alias1': 'WQ6',
+          #WQ6|29.231049958616495|-83.090120041742921|
+          'latitude': 29.231049958616495,
+          'longitude': -83.090120041742921,
+        },
+        { 'name':'LCR Buoy Seven',
+          'alias1': 'WQ7',
+          #WQ7|29.230171032249928|-83.092115018516779|
+          'latitude': 29.230171032249928,
+          'longitude': -83.092115018516779,
+        },
+        { 'name':'LCR Buoy Eight',
+          'alias1': 'WQ8',
+          #WQ8|29.246092038229108|-83.101499984040856|
+          'latitude': 29.246092038229108,
+          'longitude': -83.101499984040856,
+        },
+        { 'name':'LCR Buoy Nine',
+          'alias1': 'WQ9',
+          #WQ9|29.265770986676216|-83.118119034916162|
+          'latitude': 29.265770986676216,
+          'longitude': -83.118119034916162,
+        },
+        { 'name':'Unknown',
+          'alias1': '???',
+          #'latitude': None,
+          #'longitude': None,
+        },
 
     ]
 
@@ -242,14 +301,18 @@ def table_sensor_populate(engine=None,verbosity=1):
     7 : ['9035', 'star'],
     8 : ['9062', 'star'],
     9 : ['9036', 'star'],
+    10 : ['9059', 'star'],
     }
     l_rows=[]
-    for i in range (1,10):
+    for i in range (1,11):
         d_row = {}
         l_rows.append(d_row)
         d_row['project_id'] = 1
         d_row['sensor_id'] = i
         d_row['location_id'] = i
+        #20180312 adjusment before implementing sensor location history fully
+        if i == 10:
+            d_row['location_id'] = 2
         d_row['observation_unit'] = 'minute'
         d_row['observation_count'] = 60
         d_row['serial_number'] = d_sensor_serial_manufacturer[i][0]
@@ -475,6 +538,8 @@ def run(env=None):
     metadata = MetaData()
 
     d_name_table = tables_create(engine=engine,metadata=metadata)
+
+    # Populate only certain constant hard-coded table data
     tables_populate(engine=engine,metadata=metadata,d_name_table=d_name_table)
 
     print("ENDING: {}: ending".format(me))

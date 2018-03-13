@@ -145,6 +145,7 @@ class OysterProject():
         if engine is None:
             raise ValueError("Missing engine parameter")
         self.engine = engine
+        self.log_file = log_file
 
         self.sa_metadata = MetaData()
         # If given set study_end_date_time, to use it to limit water_observations.
@@ -169,11 +170,14 @@ class OysterProject():
         return
     # end def __init__
 
-    def get_location_by_sensor_datetime(self,sensor_id=None,datetime=None):
+    def get_location_by_sensor_datetime(self, sensor_id=None,datetime=None):
         # todo: Later, get from db table sensor_location or sensor_event
         # or events...
         # using today's date as one param
         location_id = sensor_id
+        #temp testing 20170313
+        if sensor_id == 10:
+            location_id = 2
 
         return location_id
     # end def get_location_by_sensor
@@ -223,7 +227,7 @@ class Diver():
             raise ValueError("project not given")
 
         self.project = project
-        self.log_file = project.log_file
+        self.log_file = log_file if log_file is not None else project.log_file
 
         self.input_file_folders = input_file_folders
 
@@ -263,7 +267,7 @@ class Diver():
             file_count += 1
 
             input_file_name = path.resolve()
-            if verbosity > 0:
+            if verbosity > 1:
                 print("{}: parsing input file '{}'"
                     .format(me,input_file_name),flush=True
                     , file=log_file )
@@ -273,7 +277,7 @@ class Diver():
 
             total_file_rows += n_rows
             #l_rows = ['one']
-            if verbosity > 5:
+            if verbosity > 0:
                 print(
                    "{}: Parsed file {}={} with {} 'readings' rows"
                   .format(me, file_count, input_file_name,n_rows)
@@ -304,7 +308,7 @@ class Diver():
                 line = line[:len(line)-1]
                 if verbosity > 1:
                     print("Parsing line {} ='{}'".format(line_count,line)
-                        ,file=log_file, flush=True)
+                        ,file=log_file)
                 if line.startswith('END OF') :
                     # Expected end of data LINES
                     break
@@ -321,7 +325,7 @@ class Diver():
                     except Exception as ex:
                         msg=("rx_serial_number={}, line={}, no serial part"
                         .format(rx_serial_number,line))
-                        print(msg)
+                        print(msg, file=log_file)
                         raise ValueError(msg)
 
                     d_serial_sensor = self.d_serial_sensor
@@ -381,9 +385,9 @@ class Diver():
 
                 if verbosity > 1:
                   print("{}: input line {}='{}'"
-                        .format(me,line_count,line),flush=True)
+                        .format(me,line_count,line),file=log_file)
 
-                if verbosity > 1:
+                if verbosity > 2:
                     d_row['date_str'] = date_str
                     print("pressure_cm='{}'".format(pressure_cm))
                     print("temperature_c='{}'".format(temperature_c))
@@ -391,7 +395,7 @@ class Diver():
                 # NOTE: field_names match columns in table_water_observation
                 for field_name in ['pressure_cm','temperature_c','conductivity_mS_cm']:
                     value = data_match.group(field_name)
-                    if verbosity > 1:
+                    if verbosity > 2:
                         print("Field_name='{}', value='{}'".format(field_name,value))
                     d_row[field_name] = value
             # end line in input file
@@ -427,10 +431,10 @@ class Diver():
 
         if verbosity > 0:
             print("{}:Parsed file {},\n and found {} rows:"
-                .format(me,input_file_name, len(l_rows)))
+                .format(me,input_file_name, len(l_rows),file=log_file))
 
             for count, d_row in enumerate(l_rows, start=1):
-                print("{}\t{}".format(count,d_row),flush=True)
+                print("{}\t{}".format(count,d_row),file=log_file)
 
         return len(l_rows)
     # end def import_file()
@@ -448,6 +452,13 @@ generator tha yields:
 
 The next path for a file under a given input folder that matches
 a given glob.
+
+TODO: revert to only one glob per generator! Two globs may be given if
+a list is used that 'reiterates' the same file name, NOT a good idea.
+The caller may handle this separately, or need a new non-generator
+approach that keeps a dict of filenames and then tosses dups, and then
+just iterates the keys.. but since the dict is already in memory, it would
+NOT be a generator, just an interable.
 
 '''
 
@@ -468,6 +479,7 @@ class Star():
             '9035' : 7,  #loc 3 was implied by folder name 20180218
             '9062' : 8,  #loc 3 was implied by folder name 20180218
             '9036' : 9,  #loc 3 was implied by folder name 20180218
+            '9059' : 10,  #loc 3 was implied by folder name 20180218
         }
 
     def __init__(self,project=None, input_file_folders=None,
@@ -479,6 +491,7 @@ class Star():
 
         self.project = project
         self.log_file = project.log_file
+
         print("{}:Using log file {}".format(me,self.log_file))
         print("{}:Using log file {}".format(me,self.log_file),file=self.log_file)
 
@@ -504,7 +517,8 @@ class Star():
         log_file = self.log_file
         if verbosity > 0:
             print("{}:Starting with input_folders={},globs={}"
-                .format(me,self.input_file_folders, self.input_file_globs))
+                .format(me,self.input_file_folders, self.input_file_globs),
+                file=log_file)
 
         paths = sequence_paths(input_folders=self.input_file_folders,
             input_path_globs=self.input_file_globs)
@@ -525,7 +539,8 @@ class Star():
                   ,file=log_file)
         # end for path in paths
         if verbosity > 0:
-            print("{}:Ending with {} files found".format(me,file_count))
+            print("{}:Ending with {} files found".format(me,file_count),
+                file=log_file)
         return file_count
    # end def parse_files
 
@@ -550,7 +565,7 @@ class Star():
 
                 if verbosity > 2:
                     print("Field_name='{}', value='{}'"
-                      .format(field_name,value))
+                      .format(field_name,value),file=log_file)
                 # Capitulation to inconsistent sea star sensor files.
                 # Some use , some use . as decimal point
                 value = value.replace(',','.')
@@ -619,7 +634,7 @@ class Star():
               + rx_star_line19_reading )
               #but note sn is something else here...?
 
-        if verbosity > 0:
+        if verbosity > 1:
             print("{}:rx_star_line19_reading='{}'"
                 .format(me,rx_star_line19_reading)
                 ,file=log_file)
@@ -628,9 +643,9 @@ class Star():
             for line_count, line in enumerate(ifile, start = 1):
                 # Nip pesky ending newline
                 line = line[:len(line)-1]
-                if verbosity > 0:
+                if verbosity > 1:
                     print("Parsing line {} ='{}'".format(line_count,line)
-                        ,file=log_file, flush=True)
+                        ,file=log_file)
 
                 if line_count == 16:
                     # Get serial number
@@ -642,7 +657,7 @@ class Star():
                     except:
                         msg = ("{}: input_file has {} no serial number"
                             .format(me,input_file_name))
-                        print(msg, file=outfile)
+                        print(msg, file=log_file)
                         raise
 
                     d_serial_sensor = self.d_serial_sensor
@@ -687,8 +702,9 @@ class Star():
                     #later parse this line separately
                     continue;
 
-                if verbosity > 0:
-                    print("{}: reading line {} = '{}'".format(me,line_count,line))
+                if verbosity > 1:
+                    print("{}: reading line {} = '{}'"
+                        .format(me,line_count,line),file=log_file)
 
                 # Here we have Line 19 and greater - regular-formatted data lines
                 # read and parse this data line and create output d_row
@@ -707,12 +723,12 @@ class Star():
                             "\nLine='{}'\n"
                             "\n*****************\n"
                             .format(me,input_file_name,line_count,line))
-                    print(msg, file=self.log_file)
+                    print(msg, file=log_file)
                     raise ValueError(msg)
 
                 if verbosity > 1:
                   print("{}: input line {}='{}'"
-                        .format(me,line_count,line),flush=True)
+                        .format(me,line_count,line), file=log_file)
 
             # end line in input file
         # end with open.. input file_name
@@ -729,7 +745,7 @@ class Star():
                     "WARNING: Input file {},\ninsert line_count {} has error {}."
                     "\n***************\n"
                     .format(input_file_name, line_count,ex))
-                print(msg)
+                print(msg, file=log_file)
         # Insert rows to table sensor_observation from this input file
         for row in l_rows:
             line_count += 1
@@ -748,9 +764,11 @@ class Star():
 
         if verbosity > 0:
             print("{}:Parsed file {},\n and found {} rows:"
-                .format(me,input_file_name, line_count-1))
+                .format(me,input_file_name, line_count-1),file=log_file)
+
+        if verbosity > 2:
             for count,d_row in enumerate(l_rows, start=1):
-                print("{}\t{}".format(count,d_row),flush=True)
+                print("{}\t{}".format(count,d_row),file=log_file)
 
         return len(l_rows)
 #end class Star
@@ -825,24 +843,29 @@ def run(env=None,do_diver=1, do_star=1, verbosity=1):
 
     if env == 'uf':
         input_folder=(
-          'U:\\data\\oyster_sensor\\2017\\' )
+          # 'U:\\data\\oyster_sensor\\2017\\'
+          'T:\\WEC\\Groups\\Oyster Project\\wq_robert\\Raw\\Latest'
+          )
         print("Using 'uf' input folder='{}'"
-           .format(input_folder), flush=True)
+           .format(input_folder), file=sys.stdout)
         engine_nick_name = 'uf_local_mysql_lcroyster1'
     else:
         input_folder=(
           '/home/robert/data/oyster_sensor/2017/' )
         print("Using 'home' input folder='{}'"
-           .format(input_folder), flush=True)
+           .format(input_folder), file=sys_stdout)
 
         engine_nick_name = 'hp_psql_lcroyster1'
         engine_nick_name = 'hp_mysql_lcroyster1'
 
-    engine = get_db_engine_by_name(name=engine_nick_name)
-
     log_file_name="{}/log_import.txt".format(input_folder)
-    #log_file = open(log_file_name, mode='w')
-    log_file = sys.stdout
+    print("{}: STARTING: Using log_file_name={}".format(me,log_file_name),
+        file=sys.stdout, flush=True)
+
+    log_file = open(log_file_name, mode="w", encoding='utf-8')
+
+
+    engine = get_db_engine_by_name(name=engine_nick_name)
 
     oyster_project = OysterProject(engine=engine, log_file=log_file)
 
@@ -868,23 +891,30 @@ def run(env=None,do_diver=1, do_star=1, verbosity=1):
     if do_star == 1:
         star = Star(project=oyster_project,
             input_file_folders=input_file_folders,
-            input_file_globs=['**/Star*WQ[0-9]'])
+            #input_file_globs=['**/Star*WQ[0-9]']
+            input_file_globs=['**/Star*.DAT',]
+            )
 
-        print("{}: calling parse_files".format(me))
+        print("{}: calling parse_files".format(me),file=log_file)
         star.parse_files(verbosity=verbosity)
-        print("{}: back from calling parse_files".format(me))
+        print("{}: back from calling parse_files".format(me),file=log_file)
+    print("ENDING: See log file name='{}'".format(log_file_name))
     return
 
 #end def run()
 
 testme = 1
+
+do_star = 1
+do_diver = 0
+
 if testme == 1:
     if platform_name == 'linux':
         env = 'home'
     else:
         env = 'uf'
 
-    run(env=env, do_diver=1, do_star=1, verbosity=1)
+    run(env=env, do_diver=do_diver, do_star=do_star, verbosity=1)
     print("Done",flush=True)
 
 #END FILE

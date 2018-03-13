@@ -1,6 +1,7 @@
 '''
 python 3.6 code to drop the lone cabbage oyster project database tables
 as of January 2018 or so...
+
 '''
 
 import sys, os, os.path, platform
@@ -54,7 +55,8 @@ def run(env=None):
     # keys) to least dependent, else drops can fail.
     #
     table_names = [
-        'water_observation', 'sensor_history', 'sensor', 'location', 'project']
+        'water_observation', 'sensor_observation','sensor_history', 'sensor',
+        'location', 'project']
 
     for table_name in table_names:
 
