@@ -260,10 +260,17 @@ class Diver():
         total_file_rows = 0
         log_file = self.log_file
 
-        paths = sequence_paths(input_folders=self.input_file_folders,
+        gpaths = sequence_paths(input_folders=self.input_file_folders,
             input_path_globs=self.input_file_globs)
 
-        for path in paths:
+        for path in gpaths:
+            if path in paths:
+                # gpaths could have duplicates when mulitple globs
+                # were used to generate the gpaths
+                continue
+            #Store this path to reject future duplicates in the sequence
+            paths.append(path)
+
             file_count += 1
 
             input_file_name = path.resolve()

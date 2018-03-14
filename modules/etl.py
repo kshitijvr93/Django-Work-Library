@@ -447,7 +447,9 @@ d_langcode_langtext = {
 <summary name=''>
 Return a generator that does:
 Output the next filename under the search_folder param that
-matches the search_glob param
+matches one of the input_path_globs.
+NOTE: if multiple input_path_globs were listed, caller must handle
+(probably reject) any duplicate paths that may emit in the sequence.
 </summary>
 <param name='input_folders'>
 List of folders (absolute path strings) in the filesystem
