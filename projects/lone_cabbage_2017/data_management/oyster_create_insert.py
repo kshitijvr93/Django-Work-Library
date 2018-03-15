@@ -151,8 +151,8 @@ def table_location_create(metadata=None):
       Column('{}_id'.format(table_name), Integer,
           # NOTE do NOT use Sequence here for mysql?
           #Sequence('{}_id_seq'.format(table_name), metadata=metadata),
-          primary_key=True, autoincrement=True,
-          comment='Automatically incremented row id.'),
+          primary_key=True, autoincrement=False,
+          comment='tbd'),
       Column('tile_id', Integer),
       Column('latitude', Float(precision=20)),
       Column('longitude', Float(precision=20)),
@@ -175,66 +175,87 @@ def table_location_create(metadata=None):
 def table_location_populate(engine=None, table_object=None):
     l_rows = [
 
-        { 'name':'LCR Buoy One',
+        {
+          'location_id': 1,
+          'name':'LCR Buoy One',
           'alias1': 'WQ1',
           #WQ1|29.267726987600327|-83.098221989348531|
           'latitude': 29.267726987600327,
           'longitude': -83.098221989348531,
         },
 
-        { 'name':'LCR Buoy Two',
+        {
+          'location_id': 2,
+          'name':'LCR Buoy Two',
           'alias1': 'WQ2',
           #WQ2|29.257425041869283|-83.080270970240235|
           'latitude': 29.257425041869283,
           'longitude': -83.080270970240235,
         },
 
-        { 'name':'LCR Buoy Three',
+        {
+          'location_id': 3,
+          'name':'LCR Buoy Three',
           'alias1': 'WQ3',
           #WQ3|29.232152011245489|-83.082710020244122|
           'latitude': 29.232152011245489,
           'longitude': -83.082710020244122,
         },
 
-        { 'name':'LCR Buoy Four',
+        {
+          'location_id': 4,
+          'name':'LCR Buoy Four',
           'alias1': 'WQ4',
           #WQ4|29.266459979116917|-83.115749973803759|
           'latitude': 29.266459979116917,
           'longitude': -83.115749973803759,
         },
 
-        { 'name':'LCR Buoy Five',
+        {
+          'location_id': 5,
+          'name':'LCR Buoy Five',
           'alias1': 'WQ5',
           #WQ5|29.24560303799808|-83.095912020653486|
           'latitude': 29.24560303799808,
           'longitude': -83.095912020653486,
         },
 
-        { 'name':'LCR Buoy Six',
+        {
+          'location_id': 6,
+          'name':'LCR Buoy Six',
           'alias1': 'WQ6',
           #WQ6|29.231049958616495|-83.090120041742921|
           'latitude': 29.231049958616495,
           'longitude': -83.090120041742921,
         },
-        { 'name':'LCR Buoy Seven',
+        {
+          'location_id': 7,
+          'name':'LCR Buoy Seven',
           'alias1': 'WQ7',
           #WQ7|29.230171032249928|-83.092115018516779|
           'latitude': 29.230171032249928,
           'longitude': -83.092115018516779,
         },
-        { 'name':'LCR Buoy Eight',
+        {
+          'location_id': 8,
+          'name':'LCR Buoy Eight',
           'alias1': 'WQ8',
           #WQ8|29.246092038229108|-83.101499984040856|
           'latitude': 29.246092038229108,
           'longitude': -83.101499984040856,
         },
-        { 'name':'LCR Buoy Nine',
+        {
+          'location_id': 9,
+          'name':'LCR Buoy Nine',
           'alias1': 'WQ9',
           #WQ9|29.265770986676216|-83.118119034916162|
           'latitude': 29.265770986676216,
           'longitude': -83.118119034916162,
         },
-        { 'name':'Unknown',
+
+        {
+          'location_id': 0,
+          'name':'Unknown',
           'alias1': '???',
           #'latitude': None,
           #'longitude': None,
@@ -292,8 +313,10 @@ def table_sensor_populate(engine=None,verbosity=1):
             sa_metadata, autoload=True, autoload_with=engine)
 
     d_sensor_serial_manufacturer = {
-    1 : ['..02-V5602  317.', 'diver'],
-    3 : ['..00-V6916  317.', 'diver'],
+    #1 : ['..02-V5602  317.', 'diver'],
+    #3 : ['..00-V6916  317.', 'diver'],
+    1 : ['V5602', 'diver'],
+    3 : ['V6916', 'diver'],
     2 : ['8814', 'star'],
     4 : ['9058', 'star'],
     5 : ['9060', 'star'],
@@ -354,67 +377,87 @@ def table_sensor_history_create(metadata=None):
     return table_object
 #def table_sensor_create
 
-def table_sensor_history_populate(engine=None,table_object=None):
-    sa_metadata = MetaData()
-    table_object = Table('sensor_history',
-            sa_metadata, autoload=True, autoload_with=engine)
+def get_d_sensor_deployments():
 
     l_rows = [
-        { 'sensor_id':1, 'location_id':1, 'event_type': 'placement' },
-        { 'sensor_id':2, 'location_id':2, 'event_type': 'placement'  },
-        { 'sensor_id':3, 'location_id':3, 'event_type': 'placement'  },
-        { 'sensor_id':4, 'location_id':4, 'event_type': 'placement'  },
-        { 'sensor_id':5, 'location_id':5, 'event_type': 'placement'  },
-        { 'sensor_id':6, 'location_id':6, 'event_type': 'placement'  },
-        { 'sensor_id':7, 'location_id':7, 'event_type': 'placement'  },
-        { 'sensor_id':8, 'location_id':8, 'event_type': 'placement'  },
-        { 'sensor_id':9, 'location_id':9, 'event_type': 'placement'  },
+        { 'sensor_id':1, 'location_id':1,
+            'event_date': '2017-08-16 00:00:00' },
+        { 'sensor_id':2, 'location_id':2,
+            'event_date': '2017-08-16 00:00:00'  },
+        { 'sensor_id':2, 'location_id':0,
+            'event_date': '2017-12-01 10:20:01'  },
+
+        { 'sensor_id':3, 'location_id':3,
+            'event_date': '2017-08-16 00:00:00' },
+
+        { 'sensor_id':4, 'location_id':4,
+            'event_date': '2017-10-06 00:00:00' },
+        { 'sensor_id':5, 'location_id':5,
+            'event_date': '2017-08-27 00:00:00' },
+        { 'sensor_id':6, 'location_id':6,
+            'event_date':  '2017-08-27 00:00:00' },
+        { 'sensor_id':7, 'location_id':7,
+            'event_date':  '2017-11-08 00:00:00' },
+        { 'sensor_id':8, 'location_id':8,
+            'event_date':  '2017-11-08 00:00:00' },
+        { 'sensor_id':9, 'location_id':9,
+            'event_date':  '2017-11-08 00:00:00' },
+        { 'sensor_id':10, 'location_id':2,
+            'event_date':  '2017-12-01 11:00:00' },
     ]
+    # Key is sensor, value is dict keyed by unique dates,
+    # each with a location id (deployment location) value.
+    d_sensor_deployment = {}
+    for d_row in l_rows:
+        print("Using d_row='{}'".format(d_row))
+        sensor_id = d_row['sensor_id']
+        if d_sensor_deployment.get(sensor_id, None) is None:
+            d_sensor_deployment[sensor_id] = dict()
+        d_date_loc = d_sensor_deployment[sensor_id];
+
+        dt = datetime.datetime.strptime(d_row['event_date'],"%Y-%m-%d %H:%M:%S")
+        if dt in d_date_loc.keys():
+            raise ValueError(
+             "Sensor {} has duplicate sensor datetime {}"
+             .format(sensor_id, repr(dt)))
+
+        d_date_loc[dt] = d_row['location_id']
 
     #insert the l_rows
-    for row in l_rows:
-        engine.execute(table_object.insert(), row)
+    #for row in l_rows:
+    #    engine.execute(table_object.insert(), row)
+    # Replace each d_date_loc with an orderedDict to
+    # support faster downstream processes
 
-    return
+    for sensor_id, d_date_loc in d_sensor_deployment.items():
+        # Sort each sensor_deployment dict by date keys
+        d_sensor_deployment[sensor_id] = OrderedDict(
+          { key:d_date_loc[key] for key in sorted(d_date_loc.keys()) })
+
+    print("Got final d_sensor_deployments = {}"
+        .format(repr(d_sensor_deployment)))
+
+    return d_sensor_deployment
 
 '''
 Table sensor_observation is a narrower table version than table water observation.
 Table sensor_observation is updated by fixed sensors types of diver and star.
+
+Deprecated: just will use a view
+
+-- raw sensor readings measurements:
+
+-- create view for sensor observation
+
+drop view sob ;
+select water_observation_id as sensor_observation_id,
+    observation_datetime, in_service, location_id, sensor_id,
+    conductivity_mS_cm, pressure_cm, salinity_psu, temperature_c,
+    sound_velocity_m_sec
+from water_observation;
+
+
 '''
-
-def table_sensor_observation_create(metadata=None):
-    table_name = 'sensor_observation'
-    me = '{}_create'.format(table_name)
-
-    # NOTE: we break from convention and use observation_id
-    table_object =  Table(table_name, metadata,
-      Column('{}_id'.format(table_name), Integer,
-          # NOTE do NOT use Sequence here for mysql?
-          #Sequence('{}_id_seq'.format(table_name), metadata=metadata),
-          primary_key=True, autoincrement=True,
-          comment='Automatically incremented row id.'),
-      UniqueConstraint('{}_id'.format(table_name),
-          name='uq1_{}'.format(table_name) ),
-      Column('sensor_id', Integer),
-      Column('observation_datetime', DateTime),
-      Column('location_id', Integer, default=1),
-      UniqueConstraint('sensor_id','observation_datetime',
-          name='uq2_{}'.format(table_name) ),
-      # location_id can be derived, maybe no need to populate via imports?
-      Column('conductivity_mS_cm', Float),
-      Column('pressure_cm', Float),
-      Column('salinity_psu', Float),
-      Column('temperature_c', Float),
-      Column('sound_velocity_m_sec', Float),
-      ForeignKeyConstraint(
-        ['sensor_id'], ['sensor.sensor_id'],
-        name='fk_{}_sensor_id'.format(table_name)),
-      ForeignKeyConstraint(
-        ['location_id'], ['location.location_id'],
-        name='fk_{}_location_id'.format(table_name)),
-      )
-
-    return table_object
 
 def table_water_observation_create(metadata=None):
     table_name = 'water_observation'
@@ -433,6 +476,7 @@ def table_water_observation_create(metadata=None):
       Column('observation_datetime', DateTime),
       UniqueConstraint('sensor_id','observation_datetime',
           name='uq2_{}'.format(table_name) ),
+      Column('in_service', Integer),
       # location_id can be derived, maybe no need to populate via imports?
       Column('location_id', Integer, default=1),
       Column('phosphorus_ug', Float),
@@ -493,8 +537,8 @@ def tables_create(engine=None, metadata=None):
         metadata=metadata)
     d_name_table['water_observation'] = table_water_observation_create(
         metadata=metadata)
-    d_name_table['sensor_observation'] = table_sensor_observation_create(
-        metadata=metadata)
+    #d_name_table['sensor_observation'] = table_sensor_observation_create(
+    #    metadata=metadata)
 
     metadata.create_all(engine, checkfirst=False)
     return d_name_table
@@ -509,10 +553,11 @@ def tables_populate(engine=None, metadata=None,d_name_table=None):
     table_location_populate(engine=engine,
         table_object=d_name_table['location'])
     table_sensor_populate(engine=engine)
-    table_sensor_history_populate(engine=engine,
-        table_object=d_name_table['sensor_history'])
+    #table_sensor_history_populate(engine=engine,
+    #    table_object=d_name_table['sensor_history'])
     # No need to initialize water_observtion table, as an import
     # program is now working
+    d = get_d_sensor_deployments()
 
     return
 

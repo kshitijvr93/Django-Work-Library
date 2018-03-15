@@ -57,6 +57,7 @@ from sqlalchemy_tools.core.utils import drop_if_exists
 
 #import regex
 import re
+import datetime
 
 '''
 General notes- context about the Oyster files.
@@ -133,9 +134,103 @@ sample sensor data line to date, time and 3 floats for
 ----------------
 
 '''
-#end def table_water_observation_create
+
 
 class OysterProject():
+    ''' encode hard-coded sensor deployments into useful dictionary
+    Later get l_rows from a db table instead of hardcoding here
+    '''
+    def get_d_sensor_deployments(self):
+
+        l_rows = [
+            { 'sensor_id':1, 'location_id':1,
+                'event_date': '2017-08-16 00:00:00' },
+            { 'sensor_id':2, 'location_id':2,
+                'event_date': '2017-08-16 00:00:00'  },
+            { 'sensor_id':2, 'location_id':0,
+                'event_date': '2017-12-01 10:20:01'  },
+
+            { 'sensor_id':3, 'location_id':3,
+                'event_date': '2017-08-16 00:00:00' },
+
+            { 'sensor_id':4, 'location_id':4,
+                'event_date': '2017-10-06 00:00:00' },
+            { 'sensor_id':5, 'location_id':5,
+                'event_date': '2017-08-27 00:00:00' },
+            { 'sensor_id':6, 'location_id':6,
+                'event_date':  '2017-08-27 00:00:00' },
+            { 'sensor_id':7, 'location_id':7,
+                'event_date':  '2017-11-08 00:00:00' },
+            { 'sensor_id':8, 'location_id':8,
+                'event_date':  '2017-11-08 00:00:00' },
+            { 'sensor_id':9, 'location_id':9,
+                'event_date':  '2017-11-08 00:00:00' },
+            { 'sensor_id':10, 'location_id':2,
+                'event_date':  '2017-12-01 11:00:00' },
+        ]
+        # Key is sensor, value is dict keyed by unique dates,
+        # each with a location id (deployment location) value.
+        d_sensor_deployment = {}
+        for d_row in l_rows:
+            print("Using d_row='{}'".format(d_row))
+            sensor_id = d_row['sensor_id']
+            if d_sensor_deployment.get(sensor_id, None) is None:
+                d_sensor_deployment[sensor_id] = dict()
+            d_date_loc = d_sensor_deployment[sensor_id];
+
+            dt = datetime.datetime.strptime(d_row['event_date'],"%Y-%m-%d %H:%M:%S")
+            if dt in d_date_loc.keys():
+                raise ValueError(
+                 "Sensor {} has duplicate sensor datetime {}"
+                 .format(sensor_id, repr(dt)))
+
+            d_date_loc[dt] = d_row['location_id']
+
+        # insert the l_rows
+        # for row in l_rows:
+        #    engine.execute(table_object.insert(), row)
+        # Replace each d_date_loc with an orderedDict to
+        # support faster downstream processes
+
+        for sensor_id, d_date_loc in d_sensor_deployment.items():
+            # Sort each sensor_deployment dict by date keys
+            d_sensor_deployment[sensor_id] = OrderedDict(
+              { key:d_date_loc[key] for key in sorted(d_date_loc.keys()) })
+
+        print("Got final d_sensor_deployments = {}"
+            .format(repr(d_sensor_deployment)))
+
+        return d_sensor_deployment
+
+    #end def get_d_sensor_deployments
+    '''
+    Potential speedup:
+    Put the increasing times in a list rather than a dict so they can be
+    indexed and return the index of deployed so the caller can state it as
+    a param on a successive call to save time.. because the caller's inputs
+    are sorted such that the time is always increasing within a file.
+    '''
+
+    def get_in_service_location(
+        self,sensor_id=None, observation_datetime=None):
+        # Return True if this observation falls in a period of a valid
+        # deployment to a project location
+        od_datetime_loc = self.d_sensor_deployments[sensor_id]
+        #Find whether this date is covered by a valid deployment
+        in_service = 0
+        location_id = 0
+        for deployed, location_id in od_datetime_loc.items():
+            if deployed > observation_datetime:
+                #This deployment is in the future beyond this observation,
+                #so just break with the current in_service_value
+                break;
+            if observation_datetime >= deployed and location_id != 0:
+                # 0 is the 'unknown' or invalid location
+                in_service = 1
+        return in_service, location_id
+
+    #end def get_in_service()
+
     def __init__(self, engine=None, log_file=None,verbosity=1):
         me='OysterProject.__init__'
         # Initialize some central data, later read some from db
@@ -155,32 +250,18 @@ class OysterProject():
         self.table_water_observation = Table('water_observation',
             self.sa_metadata, autoload=True, autoload_with=engine)
 
-        # Get engine table object for sensor_observation
-        self.table_sensor_observation = Table('sensor_observation',
-            self.sa_metadata, autoload=True, autoload_with=engine)
-
         if log_file is None:
             self.log_file = sys.stdout
         else:
             self.log_file = log_file
         if verbosity > 0:
             print("{}: got log_file={}".format(me,repr(self.log_file)))
+
+        self.d_sensor_deployments = self.get_d_sensor_deployments()
         print("Test print to log file.", file=log_file)
 
         return
     # end def __init__
-
-    def get_location_by_sensor_datetime(self, sensor_id=None,datetime=None):
-        # todo: Later, get from db table sensor_location or sensor_event
-        # or events...
-        # using today's date as one param
-        location_id = sensor_id
-        #temp testing 20170313
-        if sensor_id == 10:
-            location_id = 2
-
-        return location_id
-    # end def get_location_by_sensor
 #end class Oyster
 
 '''
@@ -246,11 +327,12 @@ class Diver():
         # Example:'2017/12/21 21:00:00.0     1110.675      20.263      12.508'
         self.rx_diver_reading = (
                  r"(?P<y4>.*)/(?P<mm>.*)/(?P<dd>.*)"
-                 r"\s\s*(?P<hr>.*):(?P<min>.*):(?P<sec>(\d+(\.\d*)))"
+                 r"\s\s*(?P<hr>.*):(?P<min>.*):(?P<sec>(\d+))\.\d*"
                  r"\s*(?P<pressure_cm>(\d+(\.\d*)))\s*(?P<temperature_c>\d+(\.\d*))"
                  r"\s*(?P<conductivity_mS_cm>\d+(\.\d*))"
                  )
-        self.rx_serial_number = r"\s*Serial number\s*=(?P<serial_number>.*)"
+        # rx based on Dr. Pine's group, implied by the IDs they manually record.
+        self.rx_serial_number = r"\s*Serial number\s*.*-(?P<serial_number>.*)  .*"
     #end def __init__
 
     def parse_files(self, verbosity=1):
@@ -263,10 +345,13 @@ class Diver():
         gpaths = sequence_paths(input_folders=self.input_file_folders,
             input_path_globs=self.input_file_globs)
 
+        paths = []
         for path in gpaths:
             if path in paths:
                 # gpaths could have duplicates when mulitple globs
-                # were used to generate the gpaths
+                # were used to generate the gpaths, so skip dups
+                # If carefully chosen to guarantee the globs have no dups,
+                # one can bypass this checking
                 continue
             #Store this path to reject future duplicates in the sequence
             paths.append(path)
@@ -344,14 +429,12 @@ class Diver():
                         raise ValueError(msg)
 
                     sensor_id = d_serial_sensor[serial_number]
-                    location_id = self.project.get_location_by_sensor_datetime(
-                        sensor_id, None)
 
                     if verbosity > 0:
                         msg=("Input file '{}',\n line13='{},'\n"
-                            " serial={}, sensor={}, location={}"
-                            .format(input_file_name,line,serial_number, sensor_id,
-                            location_id))
+                            " serial={}, sensor={}"
+                            .format(input_file_name,line
+                              ,serial_number, sensor_id))
                         print(msg, file=log_file)
 
                     if serial_number not in self.d_serial_sensor.keys():
@@ -367,12 +450,11 @@ class Diver():
                 d_row = {}
                 l_rows.append(d_row)
                 d_row['sensor_id'] = sensor_id
-                d_row['location_id'] = location_id
 
                 try:
                     data_match = re.search(rx_diver_reading, line)
                 except Exception as ex:
-                    msg=('line={}data reading fails'.format(line_count))
+                    msg=('line={}, data reading fails'.format(line_count))
                     raise ValueError(msg)
 
                 y4 = data_match.group("y4")
@@ -382,8 +464,16 @@ class Diver():
                 minute = data_match.group("min")
                 sec = data_match.group("sec")
                 #frac = data_match.group("frac")
-                date_str="{}-{}-{} {}:{}:{}".format(y4,mm,dd,hr,minute,sec)
+                date_str = "{}-{}-{} {}:{}:{}".format(y4,mm,dd,hr,minute,sec)
                 d_row['observation_datetime'] = date_str
+
+                obs_dt = datetime.datetime.strptime(date_str,"%Y-%m-%d %H:%M:%S")
+
+                in_service, location_id = self.project.get_in_service_location(
+                    sensor_id=sensor_id, observation_datetime=obs_dt)
+
+                d_row['in_service'] = in_service
+                d_row['location_id'] = location_id
 
                 pressure_cm = temperature_c = conductivity_mS_cm = 'tbd'
                 #pressure_cm = data_match.group('pressure_cm')
@@ -396,6 +486,8 @@ class Diver():
 
                 if verbosity > 2:
                     d_row['date_str'] = date_str
+                    print("date_str='{}'".format(date_str))
+                    print("in_service='{}'".format(in_service))
                     print("pressure_cm='{}'".format(pressure_cm))
                     print("temperature_c='{}'".format(temperature_c))
                     print("conductivity_mS_cm='{}'".format(conductivity_mS_cm))
@@ -420,21 +512,6 @@ class Diver():
                     "\n***************\n"
                     .format(input_file_name, line_count,ex))
                 print(msg, file=log_file)
-
-        # Insert rows to table sensor_observation from this input file
-        for row in l_rows:
-            line_count += 1
-            try:
-                self.project.engine.execute(
-                    self.project.table_sensor_observation.insert(), row)
-            except Exception as ex:
-                pass
-                #Let the water_sensor_observation warning suffice for now
-                #msg=("\n***************\n"
-                #    "WARNING: Input file {},\ninsert line_count {} has error {}."
-                #    "\n***************\n"
-                #    .format(input_file_name, line_count,ex))
-                #print(msg, file=log_file)
 
         if verbosity > 0:
             print("{}:Parsed file {},\n and found {} rows:"
@@ -552,10 +629,13 @@ class Star():
    # end def parse_files
 
     '''
-    Return None if match failed, otherwise retur d_row of name-value pairs.
+    Return None if re match failed, otherwise retur d_row of name-value pairs.
     '''
-    def update_row_by_match(self,match=None,d_row=None,verbosity=1):
+    def update_row_by_match(self, sensor_id=None,match=None, d_row=None, verbosity=1):
         me = 'update_row_by_match'
+
+        log_file = self.log_file
+
         try:
             y4 = match.group("y4")
             mm = match.group("mm")
@@ -579,12 +659,25 @@ class Star():
                 d_row[field_name] = value
             # end for field_name
 
-            date_str="{}-{}-{} {}:{}:{}".format(y4,mm,dd,hr,minute,sec)
+            date_str = "{}-{}-{} {}:{}:{}".format(y4,mm,dd,hr,minute,sec)
+
             d_row['observation_datetime'] = date_str
+
+            obs_dt = datetime.datetime.strptime(date_str,"%Y-%m-%d %H:%M:%S")
+            in_service, location_id = self.project.get_in_service_location(
+                sensor_id=sensor_id, observation_datetime=obs_dt)
+            d_row['in_service'] = in_service
+            d_row['location_id'] = location_id
 
         except Exception as ex:
             # Signal a parsing exception
-            d_row=None
+            msg = ("\n------------------\nGot exception = {}"
+               .format(repr(ex)))
+
+            print(msg)
+            stdout.flush()
+            print(msg, file=log_file)
+            d_row = None
 
         return d_row
 #end def update_row_by_match
@@ -615,8 +708,6 @@ class Star():
                  r"\t(?P<conductivity_mS_cm>\d+(\.\d*))"
                  r"\t(?P<sound_velocity_m_sec>(\d+(\.\d*)))"
                  )
-
-
     '''
     def import_file(self, input_file_name=None, verbosity=1):
 
@@ -676,14 +767,12 @@ class Star():
                         raise ValueError(msg)
 
                     sensor_id = self.d_serial_sensor[serial_number]
-                    location_id = self.project.get_location_by_sensor_datetime(
-                        sensor_id,None)
 
                     if verbosity > 0:
                         msg=("Input file '{}',\n line13='{},'\n"
-                            " serial={}, sensor={}, location={}"
-                            .format(input_file_name,line,serial_number, sensor_id,
-                            location_id))
+                            " serial={}, sensor={}"
+                            .format(input_file_name,line,serial_number,
+                            sensor_id))
                         print(msg, file=log_file)
 
                     if serial_number not in self.d_serial_sensor.keys():
@@ -702,7 +791,6 @@ class Star():
                 l_rows.append(d_row)
 
                 d_row['sensor_id'] = sensor_id
-                d_row['location_id'] = location_id
 
                 if line_count == 18:
                     #rx_star
@@ -722,7 +810,10 @@ class Star():
                         .format(line_count))
                     raise ValueError(msg)
 
-                d_row = self.update_row_by_match(data_match, d_row)
+                # Note: since the location depends on observation date of
+                # the row, the next method also updates location_id
+                d_row = self.update_row_by_match(sensor_id=sensor_id,
+                    match=data_match, d_row=d_row)
                 if d_row is None:
                     msg = (
                             "\n*****************\n"
@@ -753,21 +844,6 @@ class Star():
                     "\n***************\n"
                     .format(input_file_name, line_count,ex))
                 print(msg, file=log_file)
-        # Insert rows to table sensor_observation from this input file
-        for row in l_rows:
-            line_count += 1
-            try:
-                self.project.engine.execute(
-                    self.project.table_sensor_observation.insert(), row)
-            except Exception as ex:
-                pass
-                #Let the water_sensor_observation warning suffice for now
-                #msg=("\n***************\n"
-                #    "WARNING: Input file {},\ninsert line_count {} has error {}."
-                #    "\n***************\n"
-                #    .format(input_file_name, line_count,ex))
-                #print(msg, file=log_file)
-
 
         if verbosity > 0:
             print("{}:Parsed file {},\n and found {} rows:"
