@@ -56,7 +56,7 @@ class HathiRouter:
 #       YAML_CREATED = 4
 
 class Hathi_item(models.Model):
-    id = models.UUIDField(Primary_key=True, default=uuid.uuid4, editable=False)
-    folder_path = models.CharField()
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    folder_path = models.CharField(max_length=1024)
     state_code = models.IntegerField()
     yaml_status = models.IntegerField()
