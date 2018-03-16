@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 
+APPEND_SLAH = True
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -32,6 +33,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'polls.apps.PollsConfig',
+    # 'hathitrust.apps.HathitrustConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -73,12 +75,23 @@ WSGI_APPLICATION = 'marshal1.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
+DB_ENGINE_BACKENDS_STANDARD=['sqlite3','postgresql','mysql','oracle']
 
 DATABASES = {
+    # This db will hold users and groups info
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+    },
+    # Separate dps database will hold hathitrust and other dps apps
+    'uflib_dps': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'marshal1',
+        'USER': 'podengo',
+        'PASSWORD': '20MY18sql!',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+    },
 }
 
 

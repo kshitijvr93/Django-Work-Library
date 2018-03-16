@@ -4,8 +4,11 @@ See .../docs/features.txt for info on the feature set, some of which this code u
 See .../docs/architecture.txt for architecture used
 
 Running a development server:
-Go to subfolder marshal1, and in a shell issue
-a cli command:
+
+STEP 1:
+Go to subfolder marshal1
+
+STEP 2: and for you host OS:
 
 For linux bash shell:
   $ workon py36 #to make sure you are running python 3.6
@@ -15,6 +18,8 @@ For linux bash shell:
 OR for windows with python 3.6 installed as the default python,
 and also from a terminal in that folder:
   $ winpty python.exe manage.py runserver
+
+STEP 3:
 
 Then in a local browser, try: 127.0.0.1:8000/admin
 

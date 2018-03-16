@@ -204,6 +204,7 @@ class OysterProject():
 
     #end def get_d_sensor_deployments
     '''
+    get_in_service_location():
     Potential speedup:
     Put the increasing times in a list rather than a dict so they can be
     indexed and return the index of deployed so the caller can state it as
@@ -849,7 +850,6 @@ class Star():
             print("{}:Parsed file {},\n and found {} rows:"
                 .format(me,input_file_name, line_count-1),file=log_file)
 
-        if verbosity > 2:
             for count,d_row in enumerate(l_rows, start=1):
                 print("{}\t{}".format(count,d_row),file=log_file)
 
