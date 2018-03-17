@@ -20,4 +20,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('polls/', include('polls.urls')),
     path('hathitrust/', include('hathitrust.urls')),
+    path('lcroyster/', include('hathitrust.urls')),
+    path('ifas_citations/', include('hathitrust.urls')),
+    path('archivesspace/', include('hathitrust.urls')),
+    path('ccila/', include('hathitrust.urls')),
+    path('elsevier/', include('hathitrust.urls')),
+    path('rvp/', include('hathitrust.urls')),
 ]
