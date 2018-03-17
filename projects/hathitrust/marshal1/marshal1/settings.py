@@ -92,6 +92,14 @@ DATABASES = {
         'HOST': '127.0.0.1',
         'PORT': '3306',
     },
+    'uflib_oyster_db': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'lcroyster1',
+        'USER': 'podengo',
+        'PASSWORD': '20MY18sql!',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+    },
 }
 DATABASE_ROUTERS = ['hathitrust.models.HathiRouter',]
 
