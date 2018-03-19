@@ -19,11 +19,13 @@ from django.contrib import admin
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('polls/', include('polls.urls')),
-    path('hathitrust/', include('hathitrust.urls')),
-    path('lcroyster/', include('lcroyster.urls')),
-    path('ifas_citations/', include('hathitrust.urls')),
-    path('archivesspace/', include('hathitrust.urls')),
+    path('am4ir/', include('hathitrust.urls')),
+    path('aspace/', include('hathitrust.urls')),
+    path('cattleman/', include('hathitrust.urls')),
     path('ccila/', include('hathitrust.urls')),
     path('elsevier/', include('hathitrust.urls')),
+    path('hathitrust/', include('hathitrust.urls')),
+    path('ifas_citations/', include('hathitrust.urls')),
+    path('lcroyster/', include('lcroyster.urls')),
     path('rvp/', include('hathitrust.urls')),
 ]
