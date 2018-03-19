@@ -32,7 +32,6 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'polls.apps.PollsConfig',
     'hathitrust.apps.HathitrustConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -84,7 +83,7 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     },
     # Separate dps database will hold hathitrust and other dps apps
-    'uflib_dps_db': {
+    'hathitrust_db': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'marshal1',
         'USER': 'podengo',

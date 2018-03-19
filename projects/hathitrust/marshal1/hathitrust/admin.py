@@ -3,6 +3,8 @@ from .models import Hathi_item
 
 class HathiModelAdmin(admin.ModelAdmin):
     using = 'uflib_dps_db'
+    #On admin change list page, show item name, not uuid(the default)
+    #list_display = ('item_name',)
 
     def save_model(self, request, obj, form, change):
         # Tell Django to save objects to the 'other' database.
@@ -27,6 +29,8 @@ class HathiModelAdmin(admin.ModelAdmin):
         # on the 'other' database.
         return super().formfield_for_manytomany(db_field, request,
             using=self.using, **kwargs)
+
+
 
 admin.site.register(Hathi_item, HathiModelAdmin)
 

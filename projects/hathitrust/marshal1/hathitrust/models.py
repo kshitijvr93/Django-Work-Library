@@ -1,6 +1,11 @@
 import uuid
 from django.db import models
 #from django_enumfield import enum
+
+#other useful model imports at times (see django docs, tutorials):
+import datetime
+from django.utils import timezone
+
 '''
 NOTE: rather than have a separate file router.py to host HathiRouter, I just
 put it here. Also see settings.py should include this dot-path
@@ -15,8 +20,8 @@ class HathiRouter:
     A router to control all db ops on models in the hathitrust Application.
     '''
 
-    app_label = 'uflib_dps'
-    app_db = 'uflib_dps_db'
+    app_label = 'hathitrust_db'
+    app_db = 'hathitrust_db'
 
     '''
     See: https://docs.djangoproject.com/en/2.0/topics/db/multi-db/
@@ -56,7 +61,18 @@ class HathiRouter:
 #       YAML_CREATED = 4
 
 class Hathi_item(models.Model):
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    item_name = models.CharField(max_length=1024,default='item_name')
+    modify_date = models.DateTimeField(default=None)
     folder_path = models.CharField(max_length=1024)
     state_code = models.IntegerField()
     yaml_status = models.IntegerField()
+
+    def __str__(self):
+        return self.item_name
+
+    class Meta:
+        db_table = 'hathi_item'
+
+#end class Hathi_item
