@@ -70,16 +70,14 @@ class HathiRouter:
 
 class Item(models.Model):
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Refrain from using 'id' and Djanog automaticall makes an auto integer
     name = models.CharField(max_length=1024,default='Hathitrust item name')
     modify_date = models.DateTimeField(auto_now=True)
+    modify_user = models.UserField()
     folder_path = models.CharField(max_length=1024)
     state_code = models.IntegerField()
 
-
-    STATUS_NEW = 'new',
-    STATUS_VALID ='valid'
-    STATUS_compiling ='compiling'
     STATUS_CHOICES = (
         ( 'new' ,'new'),
         ( 'compiling','compiling'),

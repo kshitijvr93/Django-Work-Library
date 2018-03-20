@@ -7,7 +7,6 @@ from .models import Item
 def index(request):
 
     latest_item_list = Item.objects.order_by('-modify_date')[:5]
-    template = loader.get_template('hathitrust/index.html')
 
     msg = ("UFDC Hathitrust Project:")
     msg += ("\nLatest item modified is '{}'"
@@ -19,6 +18,7 @@ def index(request):
         'latest_item_list' : latest_item_list,
         'item_count' : len(latest_item_list),
     }
-    return HttpResponse(template.render(context, request))
+    #return HttpResponse(template.render(context, request))
+    return render(request, "hathitrust/index.html", context)
 
 # Create your views here.
