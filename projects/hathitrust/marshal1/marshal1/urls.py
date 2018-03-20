@@ -16,6 +16,8 @@ Including another URLconf
 from django.urls import include, path, re_path
 from django.contrib import admin
 
+# Set admin site display title
+admin.site.site_header = "UF Libraries Marshaling Apps Web (MAW) Admin"
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('am4ir/', include('hathitrust.urls')),

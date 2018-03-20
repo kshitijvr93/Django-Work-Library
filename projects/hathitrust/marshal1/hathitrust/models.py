@@ -72,10 +72,26 @@ class Item(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=1024,default='Hathitrust item name')
-    modify_date = models.DateTimeField(default=None)
+    modify_date = models.DateTimeField(auto_now=True)
     folder_path = models.CharField(max_length=1024)
     state_code = models.IntegerField()
-    yaml_status = models.IntegerField()
+
+
+    STATUS_NEW = 'new',
+    STATUS_VALID ='valid'
+    STATUS_compiling ='compiling'
+    STATUS_CHOICES = (
+        ( 'new' ,'new'),
+        ( 'compiling','compiling'),
+        ( 'packaged','package is valid to send'),
+        ( 'sent','sent'),
+        ( 'evaluated','evaluated'),
+        ( 'recompiling','recompiling'),
+        ( 'done','done')
+    )
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES,
+        default='new')
 
     def __str__(self):
         return self.name
@@ -84,8 +100,11 @@ class Item(models.Model):
         and create the db table name via a prefix of the table
         class of app_name and _. It makes
         migrations and management much easier down the line.
-        Changing it after doing the first migration seems to
-        confuse migrations, too, which can be a mess?
+        Changing it after doing some migrations Will
+        confuse migrations, too, which can be a mess.
+
+        Good article:
+
 
         class Meta:
           db_table = 'hathi_item'
