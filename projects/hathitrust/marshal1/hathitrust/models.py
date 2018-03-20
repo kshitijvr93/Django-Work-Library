@@ -20,8 +20,12 @@ class HathiRouter:
     A router to control all db ops on models in the hathitrust Application.
     '''
 
-    app_label = 'hathitrust_db'
-    app_db = 'hathitrust_db'
+    # app_label is really an app name. Here it is hathitrust.
+    app_label = 'hathitrust'
+
+    # app_db is really a main settings.py DATABASES name, which is
+    # more properly a 'connection' name
+    app_db = 'hathitrust_connection'
 
     '''
     See: https://docs.djangoproject.com/en/2.0/topics/db/multi-db/
@@ -53,26 +57,38 @@ class HathiRouter:
 #end class
 
 # Create your models here.
-#class HathiItemState(enum.Enum):
+#
+# NB: we accept the django default of prefixing each real
+# db table name with the app_name, hence the model names
+# below do not start with hathi or hathitrust.
+# class HathiItemState(enum.Enum):
 #       HAS_FOLDER = 0
 #       FOLDER_LOADED = 1
 #       FILES_EXAMINED = 2
 #       FILES_NEED_CHANGES = 3
 #       YAML_CREATED = 4
 
-class Hathi_item(models.Model):
+class Item(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    item_name = models.CharField(max_length=1024,default='item_name')
+    name = models.CharField(max_length=1024,default='Hathitrust item name')
     modify_date = models.DateTimeField(default=None)
     folder_path = models.CharField(max_length=1024)
     state_code = models.IntegerField()
     yaml_status = models.IntegerField()
 
     def __str__(self):
-        return self.item_name
+        return self.name
 
-    class Meta:
-        db_table = 'hathi_item'
+    ''' note: DO not set db_table. Let Django do its thing
+        and create the db table name via a prefix of the table
+        class of app_name and _. It makes
+        migrations and management much easier down the line.
+        Changing it after doing the first migration seems to
+        confuse migrations, too, which can be a mess?
+
+        class Meta:
+          db_table = 'hathi_item'
+    '''
 
 #end class Hathi_item

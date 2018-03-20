@@ -18,7 +18,6 @@ from django.contrib import admin
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('polls/', include('polls.urls')),
     path('am4ir/', include('hathitrust.urls')),
     path('aspace/', include('hathitrust.urls')),
     path('cattleman/', include('hathitrust.urls')),

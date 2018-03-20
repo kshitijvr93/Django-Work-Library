@@ -76,16 +76,28 @@ WSGI_APPLICATION = 'marshal1.wsgi.application'
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 DB_ENGINE_BACKENDS_STANDARD=['sqlite3','postgresql','mysql','oracle']
 
+# NB: Databases is really a dictionary of connecton name keys, and each
+# value is a dictionary of django-reserved names to designate connecton info to
+# a particular databse.
+#
 DATABASES = {
     # This db will hold users and groups info
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    },
-    # Separate dps database will hold hathitrust and other dps apps
-    'hathitrust_db': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'marshal1',
+        # The maw1_default_db database will host misc django default data
+        'NAME': 'maw1_default_db',
+        'USER': 'podengo',
+        'PASSWORD': '20MY18sql!',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+    },
+    'uflib_oyster_db': {
+    },
+    'hathitrust_connection': {
+        'ENGINE': 'django.db.backends.mysql',
+        # The maw1_db database will host hathitrust and probably
+        # some other maw apps
+        'NAME': 'maw1_db',
         'USER': 'podengo',
         'PASSWORD': '20MY18sql!',
         'HOST': '127.0.0.1',

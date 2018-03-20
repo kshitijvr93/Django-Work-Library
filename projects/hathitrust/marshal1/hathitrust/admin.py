@@ -1,8 +1,10 @@
 from django.contrib import admin
-from .models import Hathi_item
+from .models import Item
 
 class HathiModelAdmin(admin.ModelAdmin):
-    using = 'uflib_dps_db'
+    # Using should be a settings.py DATABASES key, a 'connection' name,
+    # actually, as called in misc Django messages
+    using = 'hathitrust_connection'
     #On admin change list page, show item name, not uuid(the default)
     #list_display = ('item_name',)
 
@@ -32,6 +34,6 @@ class HathiModelAdmin(admin.ModelAdmin):
 
 
 
-admin.site.register(Hathi_item, HathiModelAdmin)
+admin.site.register(Item, HathiModelAdmin)
 
 # Register your models here.
