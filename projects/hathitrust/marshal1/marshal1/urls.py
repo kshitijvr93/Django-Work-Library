@@ -23,7 +23,7 @@ urlpatterns = [
     path('am4ir/', include('hathitrust.urls')),
     path('aspace/', include('hathitrust.urls')),
     path('cattleman/', include('hathitrust.urls')),
-    path('ccila/', include('hathitrust.urls')),
+    path('cuba_libro/', include('hathitrust.urls')),
     path('elsevier/', include('hathitrust.urls')),
     path('hathitrust/', include('hathitrust.urls')),
     path('ifas_citations/', include('hathitrust.urls')),

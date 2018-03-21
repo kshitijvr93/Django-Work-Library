@@ -2,7 +2,7 @@
 <p> A total of {{item_count}} Hathitrust Items are now being managed:<p>
     <ul>
     {% for item in latest_item_list %}
-        <li><a href="/polls/{{ item.id }}/">{{ item.name }}</a></li>
+        <li><a href="/hathitrust/{{ item.id }}/">{{ item.name }}</a></li>
     {% endfor %}
     </ul>
 {% else %}
