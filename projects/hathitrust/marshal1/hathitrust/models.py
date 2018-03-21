@@ -113,8 +113,7 @@ So it will have a foreign key to a Hathitrust item.
 '''
 class Item_file(models.Model):
     #id is a default integer auto field, which is perfect, so let django make itself.
-    item_id = Models.ForeignKey('Item', on_delete=models.CASCADE,)
+    item_id = models.ForeignKey('Item', on_delete=models.CASCADE,)
 
-    )
 
 #end class Hathi_item
