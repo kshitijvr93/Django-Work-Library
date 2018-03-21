@@ -103,13 +103,13 @@ DATABASES = {
         'HOST': '127.0.0.1',
         'PORT': '3306',
     },
-    'uflib_oyster_db': {
+    'lcroyster_prod_connection': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'lcroyster1',
-        'USER': 'podengo',
+        'NAME': 'LCRoysterproject',
+        'USER': 'LCRoysterproject',
         'PASSWORD': '20MY18sql!',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
+        'PORT': '3354',
     },
 }
 DATABASE_ROUTERS = ['hathitrust.models.HathiRouter',]

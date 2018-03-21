@@ -74,7 +74,7 @@ class Item(models.Model):
     # Refrain from using 'id' and Djanog automaticall makes an auto integer
     name = models.CharField(max_length=1024,default='Hathitrust item name')
     modify_date = models.DateTimeField(auto_now=True)
-    modify_user = models.UserField()
+    modify_user_name = models.CharField(max_length=1024,default='username')
     folder_path = models.CharField(max_length=1024)
     state_code = models.IntegerField()
 
