@@ -107,9 +107,13 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'LCRoysterproject',
         'USER': 'LCRoysterproject',
-        'PASSWORD': '20MY18sql!',
+        'PASSWORD': 'HLLV6Pske0vTzhIZfSya',
         'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
         'PORT': '3354',
+        'OPTIONS' : {
+            # Heed a warning during manage.py migrate runs
+            'init_command' : "SET sql_mode='STRICT_ALL_TABLES'",
+        }
     },
 }
 DATABASE_ROUTERS = ['hathitrust.models.HathiRouter',]

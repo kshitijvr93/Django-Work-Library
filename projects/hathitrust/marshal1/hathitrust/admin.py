@@ -32,7 +32,8 @@ class HathiModelAdmin(admin.ModelAdmin):
         return super().formfield_for_manytomany(db_field, request,
             using=self.using, **kwargs)
 
-
+#class ItemAdmin(HathiModelAdmin):
+#    list_display = ['name', 'status', 'folder_path', 'modify_date',]
 
 admin.site.register(Item, HathiModelAdmin)
 

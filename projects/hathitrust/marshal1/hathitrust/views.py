@@ -1,8 +1,11 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
 from django.template import loader
 
 from .models import Item
+
+def detail (request, item_id):
+    item = get_object_or_404(Item, pk=item_id)
 
 def index(request):
 

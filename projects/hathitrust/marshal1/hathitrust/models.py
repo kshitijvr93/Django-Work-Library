@@ -70,13 +70,17 @@ class HathiRouter:
 
 class Item(models.Model):
 
-    # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # Refrain from using 'id' and Djanog automaticall makes an auto integer
-    name = models.CharField(max_length=1024,default='Hathitrust item name')
+    # Field 'id' is 'special', and if not defined, Django defines
+    # it as I do below.
+    # However I do include it per python Zen: explicit is better than implicit.
+    id = models.AutoField(primary_key=True)
+
+    #
+    uuid4 = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    name = models.CharField(max_length=255, unique=True,
+        default='Hathitrust item name')
     modify_date = models.DateTimeField(auto_now=True)
-    modify_user_name = models.CharField(max_length=1024,default='username')
     folder_path = models.CharField(max_length=1024)
-    state_code = models.IntegerField()
 
     STATUS_CHOICES = (
         ( 'new' ,'new'),
