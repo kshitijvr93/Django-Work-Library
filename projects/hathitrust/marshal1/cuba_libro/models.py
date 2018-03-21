@@ -15,17 +15,17 @@ setting for DATABASE_ROUTERS.
 '''
 # Maybe move the HathiRouter later, but for now keep here
 #
-class HathiRouter:
+class Cuba_LibroRouter:
     '''
     A router to control all db ops on models in the hathitrust Application.
     '''
 
     # app_label is really an app name. Here it is hathitrust.
-    app_label = 'hathitrust'
+    app_label = 'cuba_libro'
 
     # app_db is really a main settings.py DATABASES name, which is
     # more properly a 'connection' name
-    app_db = 'hathitrust_connection'
+    app_db = 'cuba_libro_connection'
 
     '''
     See: https://docs.djangoproject.com/en/2.0/topics/db/multi-db/
@@ -75,28 +75,43 @@ class Item(models.Model):
     # However I do include it per python Zen: explicit is better than implicit.
     id = models.AutoField(primary_key=True)
 
-    #
-    uuid4 = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    name = models.CharField(max_length=255, unique=True,
-        default='Hathitrust item name')
-    modify_date = models.DateTimeField(auto_now=True)
-    folder_path = models.CharField(max_length=1024)
+    # Many fields based on Jessie English UF email of 20180319
+    accession_id = models.CharField(max_length=255, unique=True
+        , editable=True),
 
-    STATUS_CHOICES = (
-        ( 'new' ,'new'),
-        ( 'compiling','compiling'),
-        ( 'packaged','package is valid to send'),
-        ( 'sent','sent'),
-        ( 'evaluated','evaluated'),
-        ( 'recompiling','recompiling'),
-        ( 'done','done')
+    CLAIMANT_CHOICES = (
+        ( 'UF' ,'University of Florida'),
+        ( 'Available' ,'Available'),
+        ( 'Harvard','Harvard'),
+        ( 'NC State','North Carolina State University'),
+        ( 'Other1','Some other institutional partner(s)?')
     )
 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES,
-        default='new')
+    claimant = models.CharField(max_length=50, choices=CLAIMANT_CHOICES,
+        default='Available')
+
+    authors = models.TextField(max_length=255, default=''
+        ,editable=True)
+
+    title = models.TextField(max_length=255, default=''
+        ,editable=True)
+    pub_year = models.IntegerField(editable=True,)
+    modify_date = models.DateField(editable=False)
+    notes = models.TextField(max_length=255, default=''
+        ,editable=True)
+    place_of_publication = models.TextField(max_length=255,
+        editable=True,)
+
+    link_url = models.URLField()
+    edition_url = models.URLField()
+    url = models.URLField()
+    sub_file_database = models.TextField("Sub file/database"
+        ,max_length=255,editable=True)
+
+    publisher = models.TextField(max_length=255, editable=True)
 
     def __str__(self):
-        return self.name
+        return self.accession_id
 
     ''' note: DO not set db_table. Let Django do its thing
         and create the db table name via a prefix of the table
@@ -118,6 +133,5 @@ So it will have a foreign key to a Hathitrust item.
 class Item_file(models.Model):
     #id is a default integer auto field, which is perfect, so let django make itself.
     item_id = models.ForeignKey('Item', on_delete=models.CASCADE,)
-
 
 #end class Hathi_item

@@ -33,6 +33,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'hathitrust.apps.HathitrustConfig',
+    'cuba_libro.apps.CubaLibroConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -95,7 +96,27 @@ DATABASES = {
     },
     'uflib_oyster_db': {
     },
+    'maw1_db_connection': {
+        'ENGINE': 'django.db.backends.mysql',
+        # The maw1_db database will host hathitrust and probably
+        # some other maw apps
+        'NAME': 'maw1_db',
+        'USER': 'podengo',
+        'PASSWORD': '20MY18sql!',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+    },
     'hathitrust_connection': {
+        'ENGINE': 'django.db.backends.mysql',
+        # The maw1_db database will host hathitrust and probably
+        # some other maw apps
+        'NAME': 'maw1_db',
+        'USER': 'podengo',
+        'PASSWORD': '20MY18sql!',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+    },
+    'cuba_libro_connection': {
         'ENGINE': 'django.db.backends.mysql',
         # The maw1_db database will host hathitrust and probably
         # some other maw apps
@@ -118,7 +139,10 @@ DATABASES = {
         }
     },
 }
-DATABASE_ROUTERS = ['hathitrust.models.HathiRouter',]
+DATABASE_ROUTERS = [
+    'hathitrust.models.HathiRouter',
+    'cuba_libro.models.Cuba_LibroRouter',
+]
 
 
 # Password validation

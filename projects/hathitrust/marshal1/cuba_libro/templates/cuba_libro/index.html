@@ -1,5 +1,5 @@
 {% if latest_item_list %}
-<p>A total of {{item_count}} Cuba Libro items are now being managed:<p>
+<p>A total of {{item_count}} Cuba Libro items are now being managed.<p>
     <ul>
     {% for item in latest_item_list %}
         <li><a href="/cuba_libro/{{ item.id }}/">{{ item.name }}</a></li>
