@@ -33,8 +33,10 @@ class CubaLibroModelAdmin(admin.ModelAdmin):
             using=self.using, **kwargs)
 
 class ItemAdmin(CubaLibroModelAdmin):
-    list_display = ['accession_id', 'claimant', 'title', 'modify_date',]
+    list_display = ['accession_id', 'claimant', 'title', 'pub_year'
+        ,'modify_date',]
     search_fields = ['accession_id','authors','title']
+    list_filter = ['claimant','pub_year']
 
 admin.site.register(Item, ItemAdmin)
 

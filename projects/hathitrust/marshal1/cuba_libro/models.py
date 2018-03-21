@@ -77,9 +77,9 @@ class Item(models.Model):
 
     # Many fields based on Jessie English UF email of 20180319
     accession_id = models.CharField(max_length=255, unique=True
-        , editable=True),
+        , default="unique accession identifier", editable=True)
 
-    CLAIMANT_CHOICES = (
+    PARTNER_CHOICES = (
         ( 'UF' ,'University of Florida'),
         ( 'Available' ,'Available'),
         ( 'Harvard','Harvard'),
@@ -87,28 +87,29 @@ class Item(models.Model):
         ( 'Other1','Some other institutional partner(s)?')
     )
 
-    claimant = models.CharField(max_length=50, choices=CLAIMANT_CHOICES,
-        default='Available')
+    agent = models.CharField('Agent', max_length=50,
+        choices=PARTNER_CHOICES, default='Available')
 
     authors = models.TextField(max_length=255, default=''
-        ,editable=True)
+        ,editable=True, null=True)
 
     title = models.TextField(max_length=255, default=''
         ,editable=True)
-    pub_year = models.IntegerField(editable=True,)
-    modify_date = models.DateField(editable=False)
-    notes = models.TextField(max_length=255, default=''
-        ,editable=True)
+    pub_year = models.IntegerField(default=2018,editable=True,)
+    modify_date = models.DateTimeField(auto_now=True, editable=False)
+    notes = models.TextField(max_length=255, default='',
+        blank=True,null=True,editable=True)
     place_of_publication = models.TextField(max_length=255,
-        editable=True,)
+        blank=True, null=True, editable=True,)
 
-    link_url = models.URLField()
-    edition_url = models.URLField()
-    url = models.URLField()
+    link_url = models.URLField(blank=True, null=True)
+    edition_url = models.URLField(blank=True, null=True)
+    url = models.URLField(blank=True, null=True)
     sub_file_database = models.TextField("Sub file/database"
-        ,max_length=255,editable=True)
+        ,blank=True,null=True,max_length=255,editable=True)
 
-    publisher = models.TextField(max_length=255, editable=True)
+    publisher = models.TextField(max_length=255, null=True,
+        blank=True,editable=True)
 
     def __str__(self):
         return self.accession_id
