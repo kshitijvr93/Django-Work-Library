@@ -97,15 +97,24 @@ class Item(models.Model):
     ''' note: DO not set db_table. Let Django do its thing
         and create the db table name via a prefix of the table
         class of app_name and _. It makes
-        migrations and management much easier down the line.
-        Changing it after doing some migrations Will
-        confuse migrations, too, which can be a mess.
-
-        Good article:
-
+        migrations and many management operations much easier down the line.
+        Changing it after doing some migrations will
+        confuse migrations, too, which can be somewhat messy, or require
+        a refresher review of migrations docs.
 
         class Meta:
-          db_table = 'hathi_item'
+          db_table = 'item'
     '''
+
+'''
+Model Item_file will be a single file that a user uploads that will be
+associated with a particular Hathitrust item.
+So it will have a foreign key to a Hathitrust item.
+'''
+class Item_file(models.Model):
+    #id is a default integer auto field, which is perfect, so let django make itself.
+    item_id = Models.ForeignKey('Item', on_delete=models.CASCADE,)
+
+    )
 
 #end class Hathi_item
