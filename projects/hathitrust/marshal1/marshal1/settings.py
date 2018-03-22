@@ -34,6 +34,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'hathitrust.apps.HathitrustConfig',
     'cuba_libro.apps.CubaLibroConfig',
+    'maw_home.apps.MawHomeConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -90,25 +90,23 @@ class Item(models.Model):
     agent = models.CharField('Agent', max_length=50,
         choices=PARTNER_CHOICES, default='Available')
 
-    authors = models.TextField(max_length=255, default=''
-        ,editable=True, null=True)
-
-    title = models.TextField(max_length=255, default=''
-        ,editable=True)
+    authors = models.TextField( default='' ,editable=True)
+    title = models.TextField( default='' ,editable=True)
     pub_year = models.IntegerField(default=2018, editable=True,)
+
     modify_date = models.DateTimeField(auto_now=True, editable=False)
-    notes = models.TextField(max_length=255, default='',
+    notes = models.TextField(default='',
         blank=True,null=True,editable=True)
-    place_of_publication = models.TextField(max_length=255,
+    place_of_publication = models.CharField(max_length=255,
         blank=True, null=True, editable=True,)
 
     link_url = models.URLField(blank=True, null=True)
     edition_url = models.URLField(blank=True, null=True)
     url = models.URLField(blank=True, null=True)
-    sub_file_database = models.TextField("Sub file/database"
+    sub_file_database = models.CharField("Sub file/database"
         ,blank=True, null=True, max_length=255, editable=True)
 
-    publisher = models.TextField(max_length=255, null=True,
+    publisher = models.CharField(max_length=255, null=True,
         blank=True, editable=True)
 
     def __str__(self):

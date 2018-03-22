@@ -19,6 +19,8 @@ from django.contrib import admin
 # Set admin site display title
 admin.site.site_header = "UF Libraries Marshaling Apps Web (MAW) Admin"
 urlpatterns = [
+    path('', include('maw_home.urls')),
+    path('home/', include('maw_home.urls')),
     path('admin/', admin.site.urls),
     path('am4ir/', include('hathitrust.urls')),
     path('aspace/', include('hathitrust.urls')),
