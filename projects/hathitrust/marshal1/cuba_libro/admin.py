@@ -38,6 +38,8 @@ class ItemAdmin(CubaLibroModelAdmin):
     search_fields = ['accession_id', 'authors', 'title']
     list_filter = ['agent', 'pub_year','modify_date']
     date_hierarchy = 'modify_date'
+    # See raw_id_fiels = ('some foreigh key') when you have a foreign key
+    #
 
 
 admin.site.register(Item, ItemAdmin)
