@@ -76,8 +76,10 @@ class Item(models.Model):
     id = models.AutoField(primary_key=True)
 
     # Many fields based on Jessie English UF email of 20180319
-    accession_id = models.CharField(max_length=255, unique=True
-        , default="unique accession identifier", editable=True)
+    # Note: make sure initial test db data has unique accession_number before
+    #resetting unique=True
+    accession_number = models.CharField(max_length=255,
+        default="unique accession number", editable=True)
 
     PARTNER_CHOICES = (
         ( 'UF' ,'University of Florida'),
@@ -89,16 +91,70 @@ class Item(models.Model):
 
     agent = models.CharField('Agent', max_length=50,
         choices=PARTNER_CHOICES, default='Available')
+    agent_modify_date = models.DateTimeField(auto_now=True, editable=False)
 
-    authors = models.TextField( default='' ,editable=True)
-    title = models.TextField( default='' ,editable=True)
-    pub_year = models.IntegerField(default=2018, editable=True,)
+    holding = models.CharField(max_length=20, blank=True, editable=True)
+    reference_type = models.CharField(max_length=20, blank=True, editable=True)
+    authors_primary = models.TextField(default='',blank=True, editable=True)
 
-    modify_date = models.DateTimeField(auto_now=True, editable=False)
+    title_primary = models.TextField(default='', blank=True, editable=True)
+    periodical_full = models.TextField(default='', blank=True, editable=True)
+    periodical_abbrev = models.TextField(default='', blank=True, editable=True)
+    pub_year_span = models.CharField(max_length=50,default='2018', editable=True,)
+    pub_date_free_from = models.TextField(default='', blank=True, editable=True)
+    volume = models.CharField(max_length=30, default='', blank=True, editable=True)
+    issue = models.CharField(max_length=30, default='', blank=True, editable=True)
+    start_page = models.CharField(max_length=30, default='', blank=True, editable=True)
+    other_pages = models.CharField(max_length=30, default='', blank=True, editable=True)
+    keywords = models.TextField( default='', blank=True,editable=True)
+    abstract = models.TextField( default='', blank=True,editable=True)
+    personal_notes = models.TextField( default='', blank=True,editable=True)
+    authors_secondary = models.TextField( default='', blank=True,editable=True)
+    title_secondary = models.TextField( default='', blank=True,editable=True)
+    edition = models.CharField(default='', max_length=80, blank=True, editable=True)
+    publisher = models.CharField(default='', max_length=255, blank=True, editable=True)
+    place_of_publication = models.CharField(default='', max_length=255, blank=True, editable=True)
+    authors_tertiary = models.TextField(default='', blank=True, editable=True)
+    authors_quaternary = models.TextField(default='', blank=True, editable=True)
+    authors_quinary = models.TextField(default='', blank=True, editable=True)
+    titles_tertiary = models.TextField(default='', blank=True, editable=True)
+    isbn_issn = models.CharField("ISSN/ISBN", max_length=255, blank=True, editable=True)
+    availability = models.TextField(default='', blank=True, editable=True)
+    author_address = models.TextField("Author/Address", default='' ,blank=True,editable=True)
+    language = models.TextField(default='', blank=True,editable=True)
+    classification = models.TextField(default='', blank=True,editable=True)
+    sub_file_database = models.TextField(default='', blank=True,editable=True)
+    original_foreign_title = models.TextField(default='', blank=True,editable=True)
+    links = models.TextField(default='', blank=True,editable=True)
+    url = models.TextField(default='', blank=True,editable=True)
+    doi = models.TextField(default='', blank=True,editable=True)
+    pmid = models.TextField(default='', blank=True,editable=True)
+    pmcid = models.TextField(default='', blank=True,editable=True)
+    call_number = models.TextField(default='', blank=True,editable=True)
+    database = models.TextField(default='', blank=True,editable=True)
+    data_source = models.TextField(default='', blank=True,editable=True)
+    identifying_phrase = models.TextField(default='', blank=True,editable=True)
+    retrieved_date = models.CharField(max_length=255, blank=True, editable=True)
+    user_1 = models.TextField(default='', blank=True, editable=True)
+    user_2 = models.TextField(default='', blank=True, editable=True)
+    user_3 = models.TextField(default='', blank=True, editable=True)
+    user_4 = models.TextField(default='', blank=True, editable=True)
+    user_5 = models.TextField(default='', blank=True, editable=True)
+    user_6 = models.TextField(default='', blank=True, editable=True)
+    user_7 = models.TextField(default='', blank=True, editable=True)
+    user_8 = models.TextField(default='', blank=True, editable=True)
+    user_9 = models.TextField(default='', blank=True, editable=True)
+    user_10 = models.TextField(default='', blank=True, editable=True)
+    user_11 = models.TextField(default='', blank=True, editable=True)
+    user_12 = models.TextField(default='', blank=True, editable=True)
+    user_13 = models.TextField(default='', blank=True, editable=True)
+    user_14 = models.TextField(default='', blank=True, editable=True)
+    user_15 = models.TextField(default='', blank=True, editable=True)
+
     notes = models.TextField(default='',
         blank=True,null=True,editable=True)
     place_of_publication = models.CharField(max_length=255,
-        blank=True, null=True, editable=True,)
+        blank=True, editable=True,)
 
     link_url = models.URLField(blank=True, null=True)
     edition_url = models.URLField(blank=True, null=True)
@@ -106,11 +162,8 @@ class Item(models.Model):
     sub_file_database = models.CharField("Sub file/database"
         ,blank=True, null=True, max_length=255, editable=True)
 
-    publisher = models.CharField(max_length=255, null=True,
-        blank=True, editable=True)
-
     def __str__(self):
-        return self.accession_id
+        return self.accession_number
 
     ''' note: DO not set db_table. Let Django do its thing
         and create the db table name via a prefix of the table

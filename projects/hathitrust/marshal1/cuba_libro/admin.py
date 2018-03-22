@@ -81,14 +81,19 @@ class CubaLibroModelAdmin(admin.ModelAdmin):
             using=self.using, **kwargs)
 
 class ItemAdmin(CubaLibroModelAdmin):
-    list_display = ['accession_id', 'agent', 'title', 'pub_year'
-        ,'modify_date',]
-    search_fields = ['accession_id', 'authors', 'title']
-    list_filter = ['agent', 'pub_year','modify_date']
-    date_hierarchy = 'modify_date'
+    list_display = ['accession_number', 'agent',
+         'agent_modify_date',
+         'title_primary',
+         'pub_year_span',
+         'call_number',
+         ]
+    search_fields = ['accession_id', 'reference_type',
+        'authors_primary', 'title_primary']
+    list_filter = ['agent', 'reference_type', 'data_source', 'pub_year_span',
+        'agent_modify_date']
+    date_hierarchy = 'agent_modify_date'
     # See raw_id_fiels = ('some foreigh key') when you have a foreign key
     #
-
 
 admin.site.register(Item, ItemAdmin)
 
