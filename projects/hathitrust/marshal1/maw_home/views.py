@@ -8,7 +8,8 @@ def detail (request, item_id):
 def index(request):
 
 
-    msg = ("UF Library Marshaling Application Website")
+    msg = ("UF Library Marshaling Application Website:")
+    #msg += "\nINSTALLED_APPS={}".format(repr(INSTALLED_APPS))
 
     #admin_href = "localhost:8000/admin/hathitrust"
     #msg += "</br><a href='{}''>Hathitrust Administration</a>".format(admin_href)

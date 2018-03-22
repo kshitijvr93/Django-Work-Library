@@ -6,5 +6,5 @@ from . import views
 
 urlpatterns = [
     re_path(route=r'^$', view=views.index, name='index'),
-    path(route=r'index', view=views.index, name='index'),
+    path(route=r'home', view=views.index, name='index'),
 ]
