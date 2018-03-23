@@ -80,6 +80,17 @@ class CubaLibroModelAdmin(admin.ModelAdmin):
         return super().formfield_for_manytomany(db_field, request,
             using=self.using, **kwargs)
 
+
+def agent_uf(modeladmin, request, queryset):
+        queryset.update(agent='UF')
+
+agent_uf.short_description = "Claim selected items by UF agent"
+
+def agent_available(modeladmin, request, queryset):
+        queryset.update(agent='Available')
+
+agent_available.short_description = "Make selected items available to any agent"
+
 class ItemAdmin(CubaLibroModelAdmin):
     list_display = ['accession_number', 'agent',
          'agent_modify_date',
@@ -90,10 +101,12 @@ class ItemAdmin(CubaLibroModelAdmin):
     search_fields = ['accession_id', 'reference_type',
         'authors_primary', 'title_primary','call_number']
     list_filter = ['agent', 'reference_type', 'data_source',
-        'pub_year_span', 'agent_modify_date',]
+         ]
     date_hierarchy = 'agent_modify_date'
     # See raw_id_fiels = ('some foreigh key') when you have a foreign key
     #
+    actions = [agent_uf, agent_available]
+
 
 admin.site.register(Item, ItemAdmin)
 
