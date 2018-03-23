@@ -56,7 +56,22 @@ def get_db_engine_by_name(name=None,verbosity=0):
               '{dialect}+{driver}://{user}:{password}@'
               '{host}:{port}/{dbname}?charset={charset}'),
         },
-        'uf_local_mysql_marshal1': {
+        'uf_local_mysql_maw1_db': {
+            # Note driver mysqldb requires "include mysqlclient"
+            'dialect': 'mysql',
+            'driver': 'mysqldb',
+            'user': 'podengo',
+            'password': '20MY18sql!',
+            'host': '127.0.0.1',
+            'port': '3306',
+            'dbname' : 'maw1_db',
+            # NOTE: MUST SET utf8 on connections!
+            'charset': 'utf8',
+            'format' : (
+              '{dialect}+{driver}://{user}:{password}@'
+              '{host}:{port}/{dbname}?charset={charset}'),
+        },
+        'uf_local_mysql_maw1_db': {
             # Note driver mysqldb requires "include mysqlclient"
             'dialect': 'mysql',
             'driver': 'mysqldb',

@@ -78,7 +78,7 @@ class Item(models.Model):
     # Many fields based on Jessie English UF email of 20180319
     # Note: make sure initial test db data has unique accession_number before
     #resetting unique=True
-    accession_number = models.CharField(max_length=255,
+    accession_number = models.CharField(max_length=255, unique=True,
         default="unique accession number", editable=True)
 
     PARTNER_CHOICES = (
@@ -93,47 +93,77 @@ class Item(models.Model):
         choices=PARTNER_CHOICES, default='Available')
     agent_modify_date = models.DateTimeField(auto_now=True, editable=False)
 
+    # Original source data for holding is of the form XXX[-NNN[-MMM]]
+    # Later I may modify this model to separate them into: holder,
+    # hold_count_low, hold_count_high values if needed.
+    # If only NNN is given in imported input, then an import process will
+    # set both hold_count_low and hold_count_high to NNN
+    # If neither NNN nor MMM is given, set both to 0
+
+    # import colum 0
     holding = models.CharField(max_length=20, blank=True, editable=True)
+
+    #reference type seems on imported files seems to empirically comport with
+    #one of the values: [' Book, Whole', 'Journal Article', 'Map',
+    #    'Web Page', ]
+
+    # import colum 1
     reference_type = models.CharField(max_length=20, blank=True, editable=True)
+    # import column 2
     authors_primary = models.TextField(default='',blank=True, editable=True)
 
     title_primary = models.TextField(default='', blank=True, editable=True)
     periodical_full = models.TextField(default='', blank=True, editable=True)
+
+    # pub_year_span spreadsheet index = 5
     periodical_abbrev = models.TextField(default='', blank=True, editable=True)
+
     pub_year_span = models.CharField(max_length=50,default='2018', editable=True,)
     pub_date_free_from = models.TextField(default='', blank=True, editable=True)
     volume = models.CharField(max_length=30, default='', blank=True, editable=True)
     issue = models.CharField(max_length=30, default='', blank=True, editable=True)
+
+    # index k =  10
     start_page = models.CharField(max_length=30, default='', blank=True, editable=True)
     other_pages = models.CharField(max_length=30, default='', blank=True, editable=True)
     keywords = models.TextField( default='', blank=True,editable=True)
     abstract = models.TextField( default='', blank=True,editable=True)
     personal_notes = models.TextField( default='', blank=True,editable=True)
+
     authors_secondary = models.TextField( default='', blank=True,editable=True)
     title_secondary = models.TextField( default='', blank=True,editable=True)
     edition = models.CharField(default='', max_length=80, blank=True, editable=True)
     publisher = models.CharField(default='', max_length=255, blank=True, editable=True)
     place_of_publication = models.CharField(default='', max_length=255, blank=True, editable=True)
+
+    #index 20
     authors_tertiary = models.TextField(default='', blank=True, editable=True)
     authors_quaternary = models.TextField(default='', blank=True, editable=True)
     authors_quinary = models.TextField(default='', blank=True, editable=True)
     titles_tertiary = models.TextField(default='', blank=True, editable=True)
     isbn_issn = models.CharField("ISSN/ISBN", max_length=255, blank=True, editable=True)
+
     availability = models.TextField(default='', blank=True, editable=True)
     author_address = models.TextField("Author/Address", default='' ,blank=True,editable=True)
     language = models.TextField(default='', blank=True,editable=True)
     classification = models.TextField(default='', blank=True,editable=True)
     sub_file_database = models.TextField(default='', blank=True,editable=True)
+
+    #index=30
     original_foreign_title = models.TextField(default='', blank=True,editable=True)
     links = models.TextField(default='', blank=True,editable=True)
+    url = models.TextField('DOI', default='', blank=True,editable=True)
     doi = models.TextField('DOI', default='', blank=True,editable=True)
     pmid = models.TextField('PMID', default='', blank=True,editable=True)
-    pmcid = models.TextField('PCMID', default='', blank=True,editable=True)
+    pmcid = models.TextField('PMCID', default='', blank=True,editable=True)
+
     call_number = models.TextField(default='', blank=True,editable=True)
     database = models.TextField(default='', blank=True,editable=True)
     data_source = models.TextField(default='', blank=True,editable=True)
     identifying_phrase = models.TextField(default='', blank=True,editable=True)
     retrieved_date = models.CharField(max_length=255, blank=True, editable=True)
+
+    # index 40
     user_1 = models.TextField(default='', blank=True, editable=False)
     user_2 = models.TextField(default='', blank=True, editable=False)
     user_3 = models.TextField(default='', blank=True, editable=False)
