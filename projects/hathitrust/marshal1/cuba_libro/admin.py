@@ -89,8 +89,8 @@ class ItemAdmin(CubaLibroModelAdmin):
          ]
     search_fields = ['accession_id', 'reference_type',
         'authors_primary', 'title_primary','call_number']
-    list_filter = ['agent', 'reference_type', 'data_source', 'pub_year_span',
-        'agent_modify_date']
+    list_filter = ['agent', 'reference_type', 'data_source',
+        'pub_year_span', 'agent_modify_date',]
     date_hierarchy = 'agent_modify_date'
     # See raw_id_fiels = ('some foreigh key') when you have a foreign key
     #

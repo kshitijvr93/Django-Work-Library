@@ -86,11 +86,11 @@ class Item(models.Model):
         ( 'Available' ,'Available'),
         ( 'Harvard','Harvard'),
         ( 'NC State','North Carolina State University'),
-        ( 'Other1','Some other institutional partner(s)?')
+        ( '','Unavailable but unknown agent')
     )
 
-    agent = models.CharField('Agent', max_length=50,
-        choices=PARTNER_CHOICES, default='Available')
+    agent = models.CharField('Agent', default='Available', blank=True, max_length=50,
+        choices=PARTNER_CHOICES)
     agent_modify_date = models.DateTimeField(auto_now=True, editable=False)
 
     # Original source data for holding is of the form XXX[-NNN[-MMM]]
@@ -101,14 +101,16 @@ class Item(models.Model):
     # If neither NNN nor MMM is given, set both to 0
 
     # import colum 0
-    holding = models.CharField(max_length=20, blank=True, editable=True)
+    holding = models.CharField(max_length=20, default='',
+        blank=True, editable=True)
 
     #reference type seems on imported files seems to empirically comport with
     #one of the values: [' Book, Whole', 'Journal Article', 'Map',
     #    'Web Page', ]
 
     # import colum 1
-    reference_type = models.CharField(max_length=20, blank=True, editable=True)
+    reference_type = models.CharField(default='',
+        max_length=20, blank=True, editable=True)
     # import column 2
     authors_primary = models.TextField(default='',blank=True, editable=True)
 

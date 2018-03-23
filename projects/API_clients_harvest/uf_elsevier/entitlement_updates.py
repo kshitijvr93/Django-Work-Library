@@ -526,7 +526,8 @@ def run_elsevier_entitlement_updates(
         pii = row_entitlement['pii']
         u = update_table
         if verbosity > 0:
-            print("{}: Doing update with values={}".format(me,repr(row_entitlement)))
+            print("{}: Doing update with values={}"
+                .format(me,repr(row_entitlement)))
         ux = u.update().values(row_entitlement).where(u.c.pii == pii)
         if verbosity > 0:
             print("{}: From update got ux={}".format(me,repr(ux)))

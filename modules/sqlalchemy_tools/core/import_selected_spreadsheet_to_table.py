@@ -61,7 +61,7 @@ def col_xls_to_num(col):
                     .format(c))
                 raise ValueError(msg)
             num = num * 26 + place_value + 1
-    return num
+    return num - 1
 '''
 <summary name='sqlalchemy_core_table'>
 
@@ -274,9 +274,6 @@ def spreadsheet_to_engine_table(
     i = 0
     for row in reader:
         i += 1
-        # test
-        if i > 20:
-            break;
         if (verbosity > 1 ):
             msg = ("{}:reading ss row {}={}".format(me,i,repr(row)))
             print(msg.encode('utf-8'))
@@ -298,7 +295,7 @@ def spreadsheet_to_engine_table(
             try:
                 value = row[reader.column_names[ss_index]]
             except Exception as ex:
-                msg = ("index_xls '{}' index number={} is bad."
+                msg = ("is_index_xls '{}' index number={} is bad."
                     .format(xls_column_name, ss_index))
                 raise ValueError(msg)
 
@@ -357,13 +354,13 @@ def spreadsheet_to_engine_table(
         # INSERT A ROW OF THE SPREADSHEET COLUMN VALUES IN ORDER
         # NOTE - ASSUMED: the table column order and number  must match the
         # spreadsheet column order
-        print("Calling insert....{} to table...".format(
-            repr(od_table_column__value)))
 
-        engine.execute(table_core.insert(), od_table_column__value)
+        result = engine.execute(table_core.insert(), od_table_column__value)
 
         if i % 100 == 0:
-           print(i)
+          print("Sample row {}, called insert of {} to table..."
+              .format(i,repr(od_table_column__value)))
+          print("inserted_primary_key={}".format(result.inserted_primary_key))
     #end for row in spreadsheet
 #end spreadsheet_to_engine_table(workbook_path=None, table=None, engine=None):
 
@@ -406,7 +403,7 @@ def spreadsheet_to_table(
   # Logical input and configuration parameters
   od_index_column=None, input_workbook_path=None, sheet_index=0,
   row_count_values_start=2,
-  index_xls=False,
+  is_index_xls=False,
   engine_nickname=None, table_name=None,
   create_table=False,
   verbosity=0,
@@ -434,6 +431,7 @@ def spreadsheet_to_table(
 
     if create_table == True:
         #Create the in-memory sqlalchemy table_core object.
+        print("{}:Creating table '{}'.".format(me,table_name))
         table_core = sqlalchemy_core_table(
           table_name=table_name, columns=od_index_column.values(),
           verbosity=verbosity,)
@@ -446,12 +444,20 @@ def spreadsheet_to_table(
         # the correct column names in od_index_colum as values
 
         metadata.reflect(my_db_engine)
-        engine_table = metadata.tables[table_name]
+        print("{}:Autoloading table '{}'.".format(me,table_name))
+        try:
+            engine_table = metadata.tables[table_name]
+        except:
+            msg = ("engine_nickname '{}' has no table '{}'."
+              .format(engine_nickname,table_name))
+            raise ValueError(msg)
+
         #rvp exp
         #table_core = metadata.tables[table_name]
-        print("{}:Autoloading table '{}'.".format(me,table_name))
         table_core = Table(table_name, metadata, autoload=True,
             autoload_with=my_db_engine)
+
+    sys.stdout.flush()
 
     # From the table_core, create a true persistent database table object
 
@@ -461,7 +467,7 @@ def spreadsheet_to_table(
        engine_table=engine_table,
        od_index_column=od_index_column,
        row_count_values_start=row_count_values_start,
-       is_index_xls=index_xls,
+       is_index_xls=is_index_xls,
        engine=my_db_engine,
        table_core=table_core,
        verbosity=1,
@@ -478,7 +484,7 @@ def run(env=None,verbosity=1):
 
     engine_nickname = 'none'
     row_count_values_start = 2
-    index_xls = False
+    is_index_xls = False
     create_table = False
 
     if env == 'windows':
@@ -559,15 +565,15 @@ def run(env=None,verbosity=1):
           1: Column('bib', String(20)),
           2: Column('bib_vid', String(20))
         })
-    elif env == 'uf_cuba_libro_items':
+    elif env == 'uf_cuba_libro_item':
         print("Using env={}".format(env))
         engine_nickname = 'uf_local_mysql_maw1_db'
         workbook_path = ('C:\\rvp\\downloads\\'
-          'cuba_libro_items_hls.xlsx')
-        table_name = 'test_accessions'
+          'cuba_libro_item_hls.xlsx')
+        table_name = 'cuba_libro_item'
         create_table = False
         row_count_values_start = 2
-        index_xls = True
+        is_index_xls = True
         sheet_index = 1
         # These column names and any given lengths should match the
         # table schema
@@ -665,6 +671,8 @@ def run(env=None,verbosity=1):
         msg = "env='{}' is not defined.".format(env)
         raise ValueError(msg)
 
+
+
     print( "{}:After if clauses -- Using env='{}',nickname='{}'"
         .format(me,env,engine_nickname))
 
@@ -678,6 +686,7 @@ def run(env=None,verbosity=1):
       "engine_nickname={},table_name={}"
       .format(me,env,workbook_path,sheet_index,
         od_index_column,row_count_values_start,engine_nickname,table_name))
+
     sys.stdout.flush()
 
     spreadsheet_to_table(
@@ -688,9 +697,13 @@ def run(env=None,verbosity=1):
       # indices to the output table's sqlalchemy columns
       od_index_column=od_index_column,
       row_count_values_start=row_count_values_start,
-      index_xls=index_xls,
+      is_index_xls=is_index_xls,
+
+      engine_nickname=engine_nickname,
+      table_name=table_name,
+      create_table=create_table,
+
       #Set the desired output engine/table_name
-      engine_nickname=engine_nickname,table_name=table_name,
       verbosity=1,
       )
 
@@ -707,6 +720,6 @@ env = 'windows2'
 env = 'windows3'
 env = 'windows4'
 env = 'windows5'
-env = 'uf_cuba_libro_items'
+env = 'uf_cuba_libro_item'
 
 run(env=env)
