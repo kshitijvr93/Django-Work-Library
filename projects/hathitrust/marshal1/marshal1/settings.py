@@ -127,6 +127,9 @@ DATABASES = {
         'HOST': '127.0.0.1',
         'PORT': '3306',
     },
+}
+
+'''
     'lcroyster_prod_connection': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'LCRoysterproject',
@@ -136,10 +139,11 @@ DATABASES = {
         'PORT': '3354',
         'OPTIONS' : {
             # Heed a warning during manage.py migrate runs
-            'init_command' : "SET sql_mode='STRICT_ALL_TABLES'",
-        }
+            'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
+        },
     },
-}
+'''
+
 DATABASE_ROUTERS = [
     'hathitrust.models.HathiRouter',
     'cuba_libro.models.Cuba_LibroRouter',
