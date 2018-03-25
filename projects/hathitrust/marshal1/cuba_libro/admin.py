@@ -81,15 +81,15 @@ class CubaLibroModelAdmin(admin.ModelAdmin):
             using=self.using, **kwargs)
 
 
-def agent_uf(modeladmin, request, queryset):
-        queryset.update(agent='UF')
+def agent_available_to_uf(modeladmin, request, queryset):
+        queryset.filter(agent='Available').update(agent='UF')
 
-agent_uf.short_description = "Claim selected items by UF agent"
+agent_available_to_uf.short_description = "Change Available agent to UF agent"
 
-def agent_available(modeladmin, request, queryset):
-        queryset.update(agent='Available')
+def agent_uf_to_available(modeladmin, request, queryset):
+        queryset.filter(agent='UF').update(agent='Available')
 
-agent_available.short_description = "Make selected items available to any agent"
+agent_uf_to_available.short_description = "Change UF agent to Available agent"
 
 class ItemAdmin(CubaLibroModelAdmin):
     list_display = ['accession_number', 'agent',
@@ -105,7 +105,7 @@ class ItemAdmin(CubaLibroModelAdmin):
     date_hierarchy = 'agent_modify_date'
     # See raw_id_fiels = ('some foreigh key') when you have a foreign key
     #
-    actions = [agent_uf, agent_available]
+    actions = [agent_uf_to_available, agent_available_to_uf]
 
 
 admin.site.register(Item, ItemAdmin)

@@ -79,7 +79,7 @@ class Item(models.Model):
     # Note: make sure initial test db data has unique accession_number before
     # resetting unique=True
     accession_number = models.CharField(max_length=255,
-        default="unique accession number", editable=True)
+        default="Enter accession number here", editable=True)
 
     PARTNER_CHOICES = (
         ( 'UF' ,'University of Florida'),
