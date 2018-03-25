@@ -82,7 +82,8 @@ class SheetDictReader(object):
             msg="row_count_header must be >= 1"
             raise ValueError(msg)
         if row_count_values_start <= row_count_header:
-            msg="row_count_values_start is too low"
+            msg=("row_count_values_start={} is too low. row_count_header={}."
+                .format(row_count_values_start, row_count_header))
             raise ValueError(msg)
         if column_names is not None:
             raise ValueError("Todo: implement optional column names")
@@ -101,6 +102,10 @@ class SheetDictReader(object):
             self.column_names.append(column_name)
             self.od_name_value[column_name] = ""
 
+        if verbosity > 0:
+            print("{}: At row count {}, found header names = {}"
+                 .format(me,row_count_header, self.column_names))
+
         ''' alternate way to get column names seems less efficient,
         found in a stack overflow page - gets all column values And
         picks one with the header..
@@ -116,10 +121,6 @@ class SheetDictReader(object):
             self.field_names.append(column_name)
             self.d_column_name_value[column_name] = ""
         '''
-
-        if verbosity > 0:
-            print("SheetDictReader has column_names={}"
-              .format(repr(self.column_names)))
 
     def __getitem__(self, index):
         # Index 0 really returns the row

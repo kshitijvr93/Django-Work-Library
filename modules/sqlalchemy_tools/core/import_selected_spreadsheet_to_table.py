@@ -224,6 +224,7 @@ Used to use next default, but keep here for reference
 def spreadsheet_to_engine_table(
   workbook_path=None, sheet_index=0,
   od_index_column=None,
+  column_index_offset=0,
   table_core=None, engine_table=None,
   is_index_xls=True, #whether index is a letter like 'a', 'z','aa', etc
   engine=None,
@@ -264,8 +265,10 @@ def spreadsheet_to_engine_table(
       row_count_values_start=row_count_values_start)
 
     first_sheet = workbook.sheet_by_index(reader.sheet_index)
-    print("{}: SheetDictReader with sheet_index {} has column_names={}"
-        .format(me, reader.sheet_index, repr(reader.column_names)))
+    print("{}: SheetDictReader with sheet_index {}, row_count_header={}\n"
+        " has column_names={}"
+        .format(me, reader.sheet_index, row_count_header,
+                repr(reader.column_names)))
     sys.stdout.flush()
 
     #Read each spreadsheet row and insert table row
@@ -290,6 +293,12 @@ def spreadsheet_to_engine_table(
                 # The index value is actually an xls-style column abbreviation
                 # like a, b, aa, ab, etc, so we convert it to numerical index
                 ss_index = col_xls_to_num(ss_index)
+
+            # Hack to facilitate spreadhsheets with similar column sequences,
+            # but some with varying numbers of ignorable leading columns
+            # (see cuba_libro FUG vs HLS spreadsheets)
+            ss_index += column_index_offset
+
             # Create entry in filtered dict with key of each interesting
             # output column name paired with its  row's value
             try:
@@ -354,14 +363,17 @@ def spreadsheet_to_engine_table(
         # INSERT A ROW OF THE SPREADSHEET COLUMN VALUES IN ORDER
         try:
             result = engine.execute(table_core.insert(), od_table_column__value)
+            if i % 100 == 0:
+              print("On row {}inserted_primary_key={}"
+                  .format(i,result.inserted_primary_key))
         except Exception as ex:
-            msg = ("SKIP insert: Reason='{}', attempted row='{}'."
-                .format(repr(ex),repr(od_table_column__value)))
+            msg = ("SKIP insert: Spreadsheet row_count={}, Reason='{}',row='{}'."
+                .format(i-1+row_count_values_start,repr(ex),repr(od_table_column__value)))
+            print(msg.encode('utf-8'))
 
         if i % 100 == 0:
-          print("Sample row {}, called insert of {} to table..."
+            print("Sample row {}, called insert of {} to table..."
               .format(i,repr(od_table_column__value)))
-          print("inserted_primary_key={}".format(result.inserted_primary_key))
     #end for row in spreadsheet
 #end spreadsheet_to_engine_table(workbook_path=None, table=None, engine=None):
 
@@ -403,6 +415,7 @@ persistent table in the database engine.
 def spreadsheet_to_table(
   # Logical input and configuration parameters
   od_index_column=None, input_workbook_path=None, sheet_index=0,
+  column_index_offset=0,
   row_count_values_start=2,
   is_index_xls=False,
   engine_nickname=None, table_name=None,
@@ -422,6 +435,7 @@ def spreadsheet_to_table(
       'table_name',
       'create_table',
     ]
+
     if not all(required_args):
       msg=("{}:Mising some required args: {}"
            .format(me,repr(required_args)))
@@ -440,7 +454,7 @@ def spreadsheet_to_table(
           metadata=metadata, engine=my_db_engine, table_core=table_core,
           verbosity=verbosity,)
     else:
-        # We will use an exant table and insert/append rows to it
+        # We will use an extant table and insert/append rows to it
         # NOTE: user must have consulted its schema and supplied
         # the correct column names in od_index_colum as values
 
@@ -467,6 +481,7 @@ def spreadsheet_to_table(
        workbook_path=input_workbook_path, sheet_index=sheet_index,
        engine_table=engine_table,
        od_index_column=od_index_column,
+       column_index_offset=column_index_offset,
        row_count_values_start=row_count_values_start,
        is_index_xls=is_index_xls,
        engine=my_db_engine,
@@ -475,7 +490,7 @@ def spreadsheet_to_table(
        )
 
     return
-# end spreadsheet_to_engine_table()
+# end spreadsheet_to_table()
 
 def run(env=None,verbosity=1):
     me='run()'
@@ -487,6 +502,12 @@ def run(env=None,verbosity=1):
     row_count_values_start = 2
     is_index_xls = False
     create_table = False
+    # Parameter hack invented to syncrhonize columns for cuba_libro
+    # For some source spreadsheets, (FUG) there is an extra left-hand
+    # start column that is not used, so FUG will set this to 1 to skip
+    # the column without having to define a new od_column_xxx dictionary
+    # for FUG than for HLS imported spreadsheets
+    column_index_offset = 0
 
     if env == 'windows':
         engine_nickname = 'uf_local_mysql_marshal1'
@@ -566,16 +587,87 @@ def run(env=None,verbosity=1):
           1: Column('bib', String(20)),
           2: Column('bib_vid', String(20))
         })
-    elif env == 'uf_cuba_libro_item':
+    elif env == 'uf_cuba_libro_item_fug':
+        # FUG starts at row 4, HLS starts at 2
+        # Set manually in code for now!
         print("Using env={}".format(env))
         engine_nickname = 'uf_local_mysql_maw1_db'
+
         workbook_path = ('C:\\rvp\\downloads\\'
-          'cuba_libro_item_hls.xlsx')
+          'cuba_libro_item_fug.xlsx')
+        # NOTE: sheet index values start at 0
+        sheet_index = 1
+        row_count_values_start = 2
+
         table_name = 'cuba_libro_item'
         create_table = False
-        row_count_values_start = 2
         is_index_xls = True
+
+        od_index_column = OrderedDict({
+          # skip 'a' - moved to queue...
+          'b': Column('holding',String(20)),
+          'c': Column('accession_number', Text),
+          'd': Column('reference_type',String(20)),
+
+          'e': Column('authors_primary', Text),
+          'f': Column('title_primary', Text),
+          'g': Column('periodical_full', Text),
+          'h': Column('periodical_abbrev', Text),
+          'i': Column('pub_year_span',String(50)),
+          'j': Column('pub_date_free_from', Text),
+          'k': Column('volume', String(30)),
+          'l': Column('issue', String(30)),
+          'm': Column('start_page', String(30)),
+          'n': Column('other_pages', String(30)),
+          'o': Column('keywords', Text),
+          'p': Column('abstract', Text),
+          'q': Column('notes', Text),
+          'r': Column('personal_notes', Text),
+          's': Column('authors_secondary', Text),
+          't': Column('title_secondary', Text),
+          'u': Column('edition', String(80)),
+          'v': Column('publisher', String(255)),
+          'w': Column('place_of_publication', String(255)),
+          'x': Column('authors_tertiary', Text),
+          'y': Column('authors_quaternary', Text),
+          'z': Column('authors_quinary', Text),
+          'aa': Column('title_tertiary', Text),
+          'ab': Column('isbn_issn', String(255)),
+          #'ac' : availability (used by UF not HLS, not in the table yet)
+          'ad': Column('author_address', Text),
+
+          #'ad': Column('language', Text), in HL    S, not UF
+          #'ae': Column('accession_number...) second occurence
+          'ah': Column('sub_file_database', Text),
+          'ai': Column('original_foreign_title', Text),
+          'aj': Column('links', Text),
+          'ak': Column('url', Text),
+          'al': Column('doi', Text),
+          'am': Column('pmid', Text),
+          'an': Column('pmcid', Text),
+          'ao': Column('call_number', Text),
+          'ap': Column('database', Text),
+          'aq': Column('data_source', Text),
+          'ar': Column('identifying_phrase', Text),
+          'as': Column('retrieved_date', Text),
+          'at': Column('shortened_title', Text),
+          'au': Column('user_1', Text),
+          ##############################################
+        })
+
+    elif env == 'uf_cuba_libro_item_hls':
+        print("Using env={}".format(env))
+        engine_nickname = 'uf_local_mysql_maw1_db'
+
+        workbook_path = ('C:\\rvp\\downloads\\'
+          'cuba_libro_item_hls.xlsx')
         sheet_index = 1
+        row_count_values_start = 2
+
+        table_name = 'cuba_libro_item'
+        create_table = False
+        is_index_xls = True
+
         # These column names and any given lengths should match the
         # table schema
         # All String(N) calls need value N argument.
@@ -672,12 +764,8 @@ def run(env=None,verbosity=1):
         msg = "env='{}' is not defined.".format(env)
         raise ValueError(msg)
 
-
-
     print( "{}:After if clauses -- Using env='{}',nickname='{}'"
         .format(me,env,engine_nickname))
-
-
 
     print(
       "{}:Using env='{}'',\n"
@@ -697,6 +785,7 @@ def run(env=None,verbosity=1):
       # Map the input workbook first spreadsheet's row's column
       # indices to the output table's sqlalchemy columns
       od_index_column=od_index_column,
+      column_index_offset=column_index_offset,
       row_count_values_start=row_count_values_start,
       is_index_xls=is_index_xls,
 
@@ -721,6 +810,7 @@ env = 'windows2'
 env = 'windows3'
 env = 'windows4'
 env = 'windows5'
-env = 'uf_cuba_libro_item'
+env = 'uf_cuba_libro_item_fug'
+env = 'uf_cuba_libro_item_hls'
 
 run(env=env)
