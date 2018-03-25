@@ -352,10 +352,11 @@ def spreadsheet_to_engine_table(
         #  .format(od_table_column__value))
         #engine.execute(engine_table.insert(), od_table_column__value)
         # INSERT A ROW OF THE SPREADSHEET COLUMN VALUES IN ORDER
-        # NOTE - ASSUMED: the table column order and number  must match the
-        # spreadsheet column order
-
-        result = engine.execute(table_core.insert(), od_table_column__value)
+        try:
+            result = engine.execute(table_core.insert(), od_table_column__value)
+        except Exception as ex:
+            msg = ("SKIP insert: Reason='{}', attempted row='{}'."
+                .format(repr(ex),repr(od_table_column__value)))
 
         if i % 100 == 0:
           print("Sample row {}, called insert of {} to table..."

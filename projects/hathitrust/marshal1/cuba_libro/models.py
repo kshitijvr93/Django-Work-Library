@@ -78,7 +78,7 @@ class Item(models.Model):
     # Many fields based on Jessie English UF email of 20180319
     # Note: make sure initial test db data has unique accession_number before
     # resetting unique=True
-    accession_number = models.CharField(max_length=255,
+    accession_number = models.CharField(max_length=255, unique=True,
         default="Enter accession number here", editable=True)
 
     PARTNER_CHOICES = (
