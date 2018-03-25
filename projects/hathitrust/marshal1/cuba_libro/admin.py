@@ -99,7 +99,7 @@ class ItemAdmin(CubaLibroModelAdmin):
          'data_source',
          ]
     search_fields = ['accession_number', 'reference_type',
-        'authors_primary', 'title_primary','call_number']
+        'authors_primary', 'title_primary','call_number','pub_year_span']
     list_filter = ['agent', 'reference_type', 'data_source',
          ]
     date_hierarchy = 'agent_modify_date'
