@@ -86,7 +86,6 @@ class Item(models.Model):
         ( 'Available' ,'Available'),
         ( 'Harvard','Harvard'),
         ( 'NC State','North Carolina State University'),
-        ( '','Unavailable but unknown agent')
     )
 
     agent = models.CharField('Agent', null=True, default='Available',
