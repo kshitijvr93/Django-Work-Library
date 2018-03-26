@@ -1,0 +1,1067 @@
+START DAY 20160331 thursday
+20160331t0900 sobek code camp thursday morning plugins viewers customize and manage collections
+-20160331t0900 -- 20160331 sobek code camp thursday morning
+here are
+    mark, paul sullivan and patrick stanley, jackson looney, richard bernardy,
+    laurie taylor, chelsea dinsmore, eric kesse, so far,
+    and total of 27 are scheduled to arrive..
+coffee is scheduled for 915am
+-t0900 ILF people arrived, (also haven, lordes came 10 minutes ago)  laura perry, jane pen, pam handley,
+-in back we find steve duckworth... eric kesse..
+-boyd is new re family preservation re laura perry
+laurie taylor is talking to fletcher, per laura...
+-mstl dysty mark starts..
+this is code camp, common expression wrt digital libs,
+    today is very general about what you can do..
+        so this is descr of what system can do, history of system, what we are moving to, so collection mgrs are in audience today
+        first we do basic announcements..
+        keith is guy in blue, 2 susans, (stelton and altieri)  rose nicholson from fiu, and fletcher is with preservation
+        going over schedule now in 2 hour events, we got a printout too.
+        1pm is how to create your own md templates and default md.. to allow others to submit  submit data to control fields they see and data they enter (but maybe not create new field?)
+        and 3pm - how sobec m shares your md and resources
+        and 4:15 today is ongoing projects
+    tomorrow is code specific, will do an install at 8:30 in the morning... we can do an install for 30 minutes to have the web version on our machine
+        tomorrow
+            9am is plugin architecture, with config setups, and it is broadly descriptive of what you can configure in general
+            and 10am we see how to ad new md fields,
+            cr new builder modeleues at 1pm,
+            and 3pm is creating new item viewers.(but main topic on viewers was postponed to the next day, 20160401)
+-break for coffee... 9:15 -
+=====================
+20160331t0915 - SOBEKCM PLUGIN ARCHITECTURE (includes demos of misc VIEWERS...)
+    -ufdc hosted here at UF, and also the dLOC is hosted here, it helped drive early dev..
+    - we also share our screen with fiu..
+    - now a slideshow of what sobekcm supports
+    here is new college site... and photographs are shown here..
+    and here is dloc page and shows cap haiti on a map and then a photo of the citadel in haiti, so can get to it geographically and then look at the item/photo
+    and can zoom in - a zoomer that uses iip image zoomer and jpeg2000 technology, and citations info is data user enters..
+    an early collection is baldwin collection... stunning photos...
+    so toc is on lefthand side if see thumbnails views
+        and then can click to get a page turner...
+            and it, this page turner viewer feature,  is automatically added now to all books with more than 4 pages
+    and the citation is entered by user
+        and sobek can convert it (back) to a marc record
+    and we have multimedia, and streaming videos,
+        and 1 is a voodoo product, and you can link to your youtube videos too.
+    so those are general materials
+        and also theses and dissertations, showing brief view and also other info,
+     the standard (viewer-editor or maybe citation) view
+        has degree grantor, etc, other fields for dissertations
+    and new college changes it more.. more terminology
+    ---
+    now re newspapers - they are big if you saw the 10 yr bday party at UF yesterday.
+        and here are ways newspaper displays if you drill down load by date
+        and shows the hierarchical list with expandable plus/minus
+    and a map of fla with markers
+        and click on a geo point to see its local newspaper,
+        and also works with books, photos, anything you can assign a geo coord to
+    -and one viewer spins in 360 degrees say,
+        showings 360-degress tours of fancy hats
+    and now see results... of smithsonian ... items
+    and now map search
+        so look at israel region and then it shows you the maps OF that area on file..
+        so it shows the search area in a green box outline and the map found in a red outline.. you can do with any material in the system with geo coords.
+    so now here are eads.. here is the current display added several years ago,
+        and we still look to develop a new system we spec'ed out years ago with john nemmers.
+    and we see dashed outlines of containers and sub containers, interesting.. we hope to finish by year end
+        and can expand and contract containers and subcontainers,
+        and also see digital objects that you put in that folder or containers
+    now metadata vg
+        md standards are dublin core, mods, marc21... you can do md browses and we can cusotmize own collections
+        and we  have more examples of mark view
+        and we can create TEI as well, it will create it from actual text there, working on project with london, plain tei from the extant md
+        and examples to edit md... shows a page or the record info tab of the md editor
+        and see dialog edit main title,
+        and we support granular md, and the dialogs map to marc subfields, so you can drill down
+    and the qc tool here that jane penn uses..
+         is nice, showing each page and 2 fields below for page and c or number
+    now vg postcards
+    and IR fb and branding vg
+        skipping now on branding
+        so all the branding is at the instance level but can also be at the collection level
+        so in a collection of ufdc can have particular brandings with custom home pages and custom headers, footers, etc.. eg see dloc
+        also see gulf coast(al?) state college..
+        and fiu dPanther digital collections page and they have added a new layer on top
+        and aurora (or area) in colorado runs 3 universities in a consortium
+        and new college has student theses collected.
+    -and so this is quickly a feel of the breadth of it.
+    -- so we saw the digital repository front end
+    and it has also workflow, wf, mgmt tools, as it was developed inside the dlc (digital lib center), now digital processing services dps
+    and it is sobek, a digital repo, wf mgmt tool, fwoor , digital library in a  box, simple -
+    user friendly and standards-based (METS/MODS/etc)
+    so sobek cm is not just a digital repo..
+    and more and more with new versions, it will be much more customizable, less set in stone..
+    and now 4.10 is much more is configurable
+        so system can work with external servers, and change how things work within it
+    and even though a framework that can be changed and configured and still user friendly,
+    and can handle large scale diff materials, photos, newspapers, videos, etc..
+    and still standards based.. mets/mods it uses they are LOC standards, and it reads marc.
+    so your material should be exportable to to other systems.
+-t0930
+now sobekcm milestones history
+    -
+    aug 2005 dev begins,
+    march 2006 release of version 1.0
+    sept 2006 rlease of v 2.0 refactoring
+    may 2011 - release of version 3.0, removed greenstone from stack.
+    -and in v3.0 we substituted using solr/lucene instead, and in 3.0 md searching was in the db,
+    but now it is all moving into , all into solr.
+    -in 2013 we released code as open soruce, uf did
+    and in march 2014 we revealed v 4.0 with html, multiple uploads, etc, grants like ephemeral cities and dloc were used to boost sobek
+    multiple uploads - to allow users to upload all 10 images of the book at once, eg
+    and user communty vg - first was UF
+    we were loading with palmm, the state collective the, palmm, and were were both in palmm and ufdc
+    and fiu and usf added by 2006 grant of 'epehemral cities', project to digitize materials form other museums too around state of fla and other sources in fl..
+    so this was first user community
+    and since we have added to about 32 or more... each has an icon..
+    -and we have loaded many newspaper projects and titles. and
+    vg user community map shows markers from seattle to around egypt, south to venezuallao, and russia on a state library, and london with eric
+    and univ of virgin islands and curacao
+    and we have instances in similar area
+    vg sobek digital is company that supports sobekcm sw...
+    and mark sullivan founded it in late 2014 and we support 6 instances, wolfsonion, austria, london, curacao..
+vg sobek digital
+    -
+we finished acquisition of another company, simple dl,
+    and we migrate those 10 customers to sobekcm.. and they are in utah, so we see some colorado and west central locations in the us, so that is extreme growth.
+-so more modern releases, where you can see releases - can view on github
+and the code is open source , so google for github sobekcm.. and go there..
+and the url will change in a few weeks to remove mark's name from it..
+we have had 1643 commits from 8 programmers.
+and it shows various releases..
+most changes of last year are moving toward v5.0 with a major change in architecture of the system
+it is a challenge to balance configurability and simpleness, trying to make these user friendly..
+a long process to make things configurable and keep simple interfaces, we worked on for last 18 months.. and much code has been pushed into configuration files..
+- so now it is such that anybody can actually use the sw
+t0941
+and niche graphics of the new architecture, etc.
+-so now we bring out microservices
+    We have sobekcm engine that has a set of rest apis, and then a user interface, so code is split out.
+    so user interface talks to engine on back end and to user on fe..
+    -so user asks for item, and ui parses request goes to engine and gets the item (book or collection, whatever)
+    -this is important, so we can create a totally new user interface..
+    so if we cr a small collection to seek compete control of the display, esp if small, we can cr another display next to it...
+now seeing more of sobekcm repo website docs, hitting links on left now.
+    see builder/bulk loader node.. going over that page...
+    so it looks for tasks and  seeks ftp incoming or the inbound folders to see if they have anything.. so about 1/minute it polls , and then loads into system pretty fast.
+    so on github can see the latest releases, and/or sobekrepository.org is another good one., see the project home, and it has a lot of info...
+    -and it also has tech help that goes into architecture of sw and history.. etc.
+    -the bulk loader allows long tif image processing to be done outside bulk loader
+    and look at diagrams under new architecture still for bulk loader.. with lots of blue boxes in 5 rows..
+-now look at sobekcm repo.org/sobekcm/development/highlights page and */history page to see all of release history and upcoming goals
+-and now there is an exhibits module - cool -
+    can create your own html pages within the system..
+    and can cr the pages there and reference your items..
+    We have always had static pages.. that are in your collection too (rather than in your content..)?
+        eg you can set up addl pages to describe custom stuff like your collection donors, etc..
+    -more exhibits module goals - need better way to ref your items from your online exhibit a TODO now
+    so it is similar to OMEKA, and this is what it will do
+and exists video item viewer.. solved by html5 and it works fine..
+-we added (some) support for diff databases..
+and msoft announced that sql server will 'run on linux'... so not as vital to do/(to really support 100%) all dbs now..
+- and you can use all rest apis to pull your own items, etc..
+- and mvs, mark v sullivan, will show HIS ticket system eg with jira -- to have a place to see the future directions..
+- see he is going through the ...development/history webpage scrolling around...
+-also see sobek org has the download center to dl  the system or the mets editor... with waning support.
+- dloc toolkit is older but works
+and smart tool used by institutions
+    hosting own instance like dloc
+and stats reader is deprecated..
+- and  bottom has some youtube links
+- eg see help/affiliation - webpage shows affiliation element help... this is pending addl development per this page..
+-so support.sobekdigital.com is our ticket system now
+    see url support.sobekdigital.com/secure/Dashboard.jspa...
+    and you can just ask here, how do I do this functionality...
+    this is preferred to the sobek google group for discussion list
+vg version 4.10.0 beta we will install tomorrow 830am
+    we are not required to do that... tomorrow, but we may
+    the real release is due in next week or so, after testing
+    basic goals:
+        1 better integration with builder in the web viewer, and
+        2 much more config options of the basic sobekcm features
+        3 better visib for all of the config options the system uses
+        4 abilty to cr new extensions plugins and add or change features
+        5 ugprade of the builder,
+            including adding tesseract, a couple other builder funcs and scheduled tasks
+        6  item viewer has complete overhaul so can create own custom viewer..
+- vg version 5.0
+    it is expected within 3 months after 4.10
+    and this version is ability to configure all non-item viewers functionality
+    and  if you want to put in your own mysobek viewer for particular users to add materials
+    and bullet pt 2 of 2, this (future version - if it works)
+        completes the complete move to solr/lucent for all searching,
+    bec now(at that point in the future)  the md searching is in the db
+    but in advanced search queries,
+         if you use ands and ors with large chunks in the db, so it is long, like florida and history in the db,
+        but it will be much faster
+and the sw is user focused and user specific and use the ticket system
+    sobekdigital jira ticket system... url is elsewhere
+    and contribute to cmty help page please
+    and can put in a ticket to change working also of help if you like.
+so much user focus came from dloc as well
+    we went thru trainings to train institutions to submit materials..
+    they load material, digitize locally and submit it.
+    so we try to simplify the process..
+    -rose and brooke are also assoc with dloc... brooke is ....
+    -now moving to break  time 1002
+t1025 waiting to restart... -first about user scope
+    -
+that laurie says...
+    sobekcm has grown, including tech dev, users
+    and how we use it,
+    and my title has evolved  to digitization
+    what do you do with it.
+so what next is exhibits exhibits,
+    how do you share stories ..
+    lordes says it works awesomely, and our researchers use it...
+    this is like carol palmers early work... this is how libs function.
+    and for sobekcm we have the dloc cmty, many connected  with it, and overlapping communities..
+    and some af fl and pr newspaper projects...
+so chelsea works on updating charge for sobekcm user cmty,
+     and it has grown much in a couple of years,
+    -
+    and you may be added to the listserv,
+        anyone using the curator tools,
+        editing or submitting items if you have questions on it,
+        and the data collections support and support for data resources,
+        we talk about as a cmty as we move forward
+    so 2  things , developer community and user community,
+        dev cmty on google groups
+        so the user group meets quarterly, and dev groups may try to meet quarterly..
+NOW so we look at CUSTOMIZING AND MANAGING COLLECTIONS
+    -
+see test.sobeklibrary.com/l/iumtobacco is our demo
+    -
+so when logged on, rights can be assigned to users to have perms on items and or collection
+    so if you manage your own collection, you should have rights rts to see all icons at top (hide/show row).
+and OPTION USAGE  shows usage
+MANAGE COLLECTIONS --- and manage collection gives much control, etc
+    SEE icon/page for 'private items'
+        -
+    if you have private or dark items they show up here and it gives a list of them
+        -
+    and shows when last work was done on them, before  you make items public
+    so when add through template you can define default visibility -
+    for UF IR the default is immediately public,
+    or for some you can go private
+        which means nobody can discover it
+        dark
+            means nobody else can see it, ie cannot see the digital resources attached,
+        and have another flag
+            to even prevent seeing citation
+        and can also have flag
+            to see only from UF ip address
+        .
+    ALSO we have:
+        resource count in collection from item count...
+            page it shows last milestone, title count, item count, page count, file count
+        and totals...
+            a caveat is that tracking only begins when it is finished being digitized and image-processed,
+                so other immature items may still exist
+    and now page is usage stats,
+        shows total view, visits, people hit main pages, browses, or came up in search results or had title view
+            and tab for to show most accessed titles,
+                can be done at instance level or here, for juts your collection.
+        now that was usage stats
+    now to tab manage collection...
+        some of this is repetitious, we also saw view private and dark... etc..
+        and here you can see many things done to the collection, eg, when created, when things deleted.
+        it is not history of items but it shows YOUR admin actions on the collection, or whomever made a web-admin based change...
+    now.. see if you view an item
+        you see milestones.. and in addition we keep change log vs every digital resource, l
+        like when it was added to system, scanned, added to QC and made public, milestone stats..
+    so we will maybe modify
+    and now can view collection's  user-permissions
+        to show who has rights to add items and/or edit items.. very useful..
+        just as in windows active directory ad for windows machines, you can define things at group level or item level
+        now ... you are unlikely to be able to change that unless you are sys admin
+    and now to collection admin link - see that exists...
+        so this show/hide lines
+         we saw most things except admin so far
+    most of these features are fairly new, they work with config files directly on our nw..
+    and now when you create a collection,
+        you may want to create a banner, so laurie or a helper can tell you the restrictions in size for a banner for your instance... etc..
+    -now seeing example of changing home page text for a collection...
+    NOTE: if you make a change, rem you work thru a browser..
+        so there is a chance you wont see it unless you hit your browser refresh button...
+    -This is fairly simple std html editor.. and see the ckeditor type icons in the editor,
+        he shows some icon functionalities in the editor..
+        so if you say paste from 'Word' as an option, it 'knows' how to handle strange 'Word' formatting..
+        so you can also change buttons, a 50x50 gif for now...
+        so he shows example now of admin viewer, mwe
+    we will see the tables or tabs?
+    general tab...has your own collection name full and shows rights,  description, etc...
+        and full name is usu listed in the breadcrumbs, the short name that is..
+        and you can select brief view or another view to show your collection and sub collections list with descriptions..
+         so that's the description
+    -so "external link"  ... has the link to the place that has the item, eg elsevier..
+    inactive collection
+        never shows for user or in breadcrumbs, so you can set active/inactive flag
+    eg on baldwin collection only 5 of many are featured on the home page, so you can specify a subset
+        and not all sub collections if you wish..
+        each sub collection image has a ''colleciton button' and it is a 50x50 gif.
+    and you can hit select files and upload a gif per button as you wish
+    -t1055
+    - thematic heading you only see if you are a system admin, puts this at the top of the page...?
+    next go to tab appearance
+        to do the next basic thing to define a banner...
+            so 1 is edit home page,
+            2 is buttons for sub collections
+            and 3 is banner, usually
+        - sobekcm is extremely multilingual... so you can have multiple banners that show graphical letters for the name of the collection for different languages... nice.
+        - and your webskin can define anything differently, your colors, background,
+        see tab appearance
+            has fields for webskins...
+            so in general if a person navigates your site...
+            you can here say that this collection should act like this set of skins only
+        next custom stylesheet.. you can
+            -so if a browser user has their browser set as chinese or other languages, the apt banner will show as defined...
+        - but it adds a bit of complexity to manage your collection...
+        - our theory is the browser is set for a list of prioritized languages and we follow that.. so if we had not their lang 1, banner, then we would show a banner for their lang choice 2 if their browser tells us.
+        -say you want to just change the size of a heading page, you can use your custom stylesheet...
+        - that was the appearance tab
+    now to the search tab -- it lets you change the search box...
+        -you can select match search or custom map with your own lat and lon, map is centered on that point with your zoom level
+        - that was tab search
+        - we added text search, so now our main home page has a TAB for textsearch, ok.
+    -now to tab metadata
+        this is useful, as it offers md browsers.. eg for genre and identifier...
+            and they appear in your browseby dd list then.
+        - and md tab has OAI-PMH settings, too..
+            this is a format useful to share md
+            the open archives initiative, protocol for md harvesting...OAI-PMH
+            oai -pmh uses the word 'set' for collection, used on this tab in 'include in oai-pmh as a set?' label
+            in the box can add <dc:identifier>dkhdjv</dc:identifier>, for example, maybe other lines
+            at instance level you can define which md types you expose to oai-pmh.
+            standard is dublin core dc,
+            and you can say create mods or your own created md scheme,
+            and mark21 and dc are the default you should have..
+    now see tab results..
+        it gives you the facets (and diff terms for facets exist) - it shows you counts of  some popular categories/groupings you seek in these results
+        there are these 4 'brands' or these 3 'type's and you can select to drill down, eg select where x=y when you click on one..
+        you can have up to 8 facets and you as collection manager can select any field to be in your facet list
+        -so in 1 we have subject format, pub date, ..
+        can select anything. in your md for your facet
+        - useful if you have diff md in your collection fvs some others..
+        - and you can change your results view, and you have brief, table, thumbnail view
+        and you can say which you want to have at all and which is the default for first result view
+    - tab child pages now...
+        child pages are child pages, in your collection, and tab subcollections and uploads exist, we will see briefly..
+        - child page is a way to add pages that are linked to the collection, eg to give grant info or talk of workflow you used to build the collection, or instructions to give to others in future of how to add to the collection.
+        eg see dloc... collection ... ??
+        so if in dlocl and click partners it is a child page under dloc.com/dloc1/partners (dloc1 is the collection here).
+        reminder all these tabs are from the ADMIN view parent tab...
+        so when add a child page
+            you put your title
+            and it becomes the new tab name,
+            and you can build a deep menu structure yourself defining children of children,
+            and the ddlist is populated fine too.
+        - no visibility means not on a tab,
+        but you must change your home page text to link to your page, say granting info that you do not want to use up valuable space on the menu line of tabs..
+    -t1128
+    ---
+    - now to tab 'subcollections' -
+        so some users may make new sub collections, maybe an admin , not sure now which type of user(s)
+        - can click the new collection wizard to create a sub collection..
+        uploads is for admin only to refer to maybe temp info, not findable by anyone except the admin who needs a misc reference about the collection...
+        eg phone numbers of current owner of a to -be acquired item that will not be used again... anything. that is not part of a collection...
+we break for lunch and reconvene at 1pm
+see https://robertvernonphillips.com/admin/bills/log/10928/
+Next log/segment pasted:
+20160331t1300 thursday 1pm sobek code camp uploading materials user templates work history viewer tips update template
+20160331 thursday 1 pm sobek code camp
+    -
+-now 1pm we reconvene and look at UPLOADING MATERIALS
+so if anyone is authenticated and authorized to add an item, first you must login to the sobekcm web app..
+    so once logged on you will see myname-my-Instance name.., eg my'UFDC'
+    Note that one can sign on via gatorlink shibboleth or via sobekcm db itself.
+    if you are system admin, you can see the admin dropdown and see users and groups
+    and you can click edit to give global perms to a specific user, eg power user
+two fields/selections are templates and default metadata
+templates has 3 checkboxes for:
+    dloc,
+    internal ir,
+    and default md is full or none...
+    or maybe both as checkboxes, yes any combo can be checked.
+and default md is very useful..
+and faculty members are added to get template IR and the IR default md
+and it says which collection they can contribute to,
+    via the template value...... (so the template name value implies a collection too?)
+the default md (form) may be (specify) a simple statement of the user name.. or more complete data fields..
+-so the default md can be as simple as a note or a full record of fields
+so you see 'what would you like to do today' list.
+first option/link is start a new item
+    doing start a new item,
+        ALT1: step 1 of 3 is grant of permission (user must agree to submit the item..)
+        ALT2: step1 of 2 (if internal template does not have this grant rqmt, th grant screen is skipped)
+    -and if x [x is... user?] is assigned to multiple templates they can select from a dd list of template names.
+        how to 'assign x to multiple templates' ?
+        x is collection code? or x is user?
+    and see the md editor.. the basic default item.. this is step 2 of 3 called item description...
+    enter the basic info to describe a new item (fill in default fields).
+    - this has about 13 fields that can be edited..
+    -and if you click next, there are 3 things required for an item..
+    but title and material type and institution code are all three required ...
+    but usu that happens in the bg anyway.
+- and now  etd.. electronic theses and dissertations
+    -
+we can click on the title field for help
+and it links to sobekrepository.org/help/titlesimple, with nice help..
+- step 3 of 3 you can specify wh they can upload files, etc.., and now we click 'select files' and upload a pdf...
+and can add labels to the ones you uploaded.
+- so we add etd presentation from uf, and it defaults to private item..
+the uploaded file is an image here i think,
+and it was shown in the standard view next time it was pulled up about 20% from top of page in rt margin area...
+-now he shows ir.xml - the template for the ir... comment says begin the xml for this input template.
+    so very few top level fields, name, notes, perms... the grant of perms that is
+    and next is date created, last modified, creator of the template, and impt field is' include user As Author' with  true or false
+    (but you can delete it later if you are just helping an absent author to submit an item..)
+    and there is a field bibidRoot, and eg for elsevier it would be LS, and for IR it is IR for the object id...
+    if the default md field is listed in the template that uses it, the template will show the value, and they can edit,
+    or if the default md field is not in the template, it is protected from the user changing it.
+    -
+now see the server under inetpub/wwwroot/, so see subfolder UFDC,
+    and there  the subfolder dirs, and exist folder mySobek and under it are folders projects and templates..
+    so now see under folder projects
+        ? is being called default md..
+        and there are *.pmets files with  a short collection name as filename prefix, eg UFIR for file  UFIR.pmets, etc
+        and you cannot set a default md field with title, but can set others
+    and in subfolder templates, it has subfolders..
+        and should be a folder called user,
+            and under user is where you put your templates..
+        the plan is to make it so the system can go look for those templates and add to the db..
+        but eventually you can create those templates online..
+        but if you put those default files into there, it should work(in 4.10? or in 4.9?)
+-so .. see system admin tab, sub-tabs items/default md
+and see on the bottom it shows the ones you have .. with CODE as the prefix we saw for the pmets files.
+now he edits a new one,  md code glr, and description and name he provides and saves..
+and it now appears in bottom rows area..
+so under material info, he clicks for edit named entity dialog and he has 8 or sub-fields and you can see how each affects final marc fields values
+so saw full name is sullivan, mark  in our default md and say dates.. affiliation, etc..
+- so those fields are attributes..
+-and we see other fields donor, default publisher, etc..
+so now we have new default md, and go to admin user user permissions
+    and find a user
+    and click check for the new md for some user and test it..
+    let that user login and start an item and the user will have a new list choice in default md list when adding an item.
+.-christy would like if they select an article type
+     like conference notes vs x, to show diff set of fields..
+    mvs, not done yet... christy would love it.
+- company 'simpledl' mvs acquisition provided him with good workflows to do things, prepare input better ... will be incorporating.
+    ai - look up simpledl and check out workflows info..
+- mvs - in future,
+    as you type say a publisher they will autocomplete or make suggestions, as the inet is now faster..
+    -similar for spellchecker in sobekcm..
+    - mvs uses and does chrome and laurie n taylor lnt likes chrome better for error checking and auotfills..
+    - and they may add a lookahead..
+- and at top of step 2 or 3 is clear button so you clear the input form back to the default md...
+- and they try to allow a new user level to have default md to in the near future, a power user..
+and can share it if needed with other users, and then the sysadmin need not do it..
+-now system admin/items/default md see that page again..
+if anyone wants new templates, ask mark, or laurie or maybe allison soon
+- so seek an item they have submttted..
+so if you click edit md for a sought and found item... if you use full form, it shows the world of all md..
+- now see another template 'internal' and another type of material -
+    so see when open it,  internal template has no grant of permissions statement
+    so we are on step 1 of 2 at start, not 1 of 3.
+-re: how to name pages.. leading zeroes maintain lexical sort order..
+- gw workflow to correct thumbnail wrong choice in search results, but right one in description display,
+mvs is puzzled.. interesting..
+-so the qc tool
+    creates 'structural md', (associates page number, chapter numbers, appendix letters, etc, to specific component pdf images) and maybe it now does all aerials correctly too
+    but earlier they got weird structural data in there..
+        one grover ticket addresses this...
+        changes in aerials/tiles numbering and md.
+    -ao - found webforms clunky for qc interface or for descr md entry..
+        looking at product like contentdm? as a model, you have option to flip ...
+    mvs - that is exactly the philosophy of  simpledl, they wrote their own contentdm, so those tools are better.....
+and spreadsheets not great for md... so go to more sophisticated editors like--
+- gw - there are outline levels in excel...
+    or excel that do these things of which we speak...
+        AI - research or ask gw details..- RVP: done - not really too useful...
+- and gw is concerned about ... he sees a lot in production with a lot of clickover to cut down upon..
+ao - seeks a solution to in add to individ recs in a webform,
+    that librarian can work with the data in a more birdseye way... more flexiblity..
+    mvs, yes, think about how you want that
+    and we can talk about that... something that works for many people wo losing granularity of md.
+-jvs and gw would love export/import to access, not ssheet, as could keep the hierarchy
+    20160826 rvp NOTE: a little spiffing up of my xml2db program might do this fairly easily
+now md is the mets file data, so info about the digital resource in general...
+    -
+the idea is the md is valid about the digital resource no matter where this is hosted
+    -
+and behaviors-
+    is how this item behaves in THIS collection,
+    eg which aggregations it is in,
+    the wordmarks you want to appear on the left,
+    serial hierarchy..
+    under md basic info
+    also viewers list,
+    main thumbnail, tickler,
+    dark flag,
+    born digital,
+    tracking box,
+    disposition advice..
+    notes..
+    all those are behaviors.
+-so those fields are behaviors...- so the behaviors screen is going to change..
+these are template elts,
+and 4.10 ITEM VIEWERS - the viewers are getting more complicated in 4.10 viewers
+    so we will have more customized iface for viewers..
+    eg html viewer also has a file and label, and the new iface will specify an order for the viewers..
+    - in new version...
+        also all of this becomes more configurable as well,
+        where you can override the jpeg viewer...
+        so you can change jpeg viewer to not zoom if you want, etc...
+        now see the url has the bibid and the vid..
+            so newspaper may have single bib and the vid is the volume id,
+            up to 10k values basically or 100k vid is max.. (5 digits) 00000-99999
+        - so configurable will be whether the title click goes to a jpeg or the internal citation (or external we can add)
+- t1404 now...
+- now, can also view the work history of an item...
+    see when submitted, when bulk loaded, when updated pages/divisions... very useful
+    - and see tab milestones, history, or directory too...
+    directory shows all the files you have..(for an item)
+now manage tab
+    then see all things you can do with your resource/bib...
+    at top level can add a  volume
+    under behaviors, new volume is import features..
+    so it tracks last used volume id...
+    and so if multiple volumes we also have a volume list...
+so that is all of the online interface wrt working with items..
+====================================
+- laura perry - we want a rights stmt to be applicable to all vids...
+    mvs:  it is widely requested... and it is something that we do want to add in near future..
+    -  mvs to change md (so that) the builder can call a program that say changes some rights statements,
+    and it will go update the mets files.. so the builder basically launches process to change mets files.
+======================================
+update template: Now do we want to update a template/?
+Yes, so ok lets update an extant template...
+======================================
+    so we see we login as an admin user into webapp.. ok.
+    - and we start new item, say select the dloc template...
+    now we go to start a new item.. ok, we chose the template,
+    now on step 2 we edit main title...
+    so on local machine we  got ..inetpub/wwwroot/muysobek/templates/users/dloc.xml and edit it with notepad ++
+    we are editing it.. and now review the templates/default/edit/xxx.xml files,
+    see editmarc.xml and there we see type-title and you change title and subtype values to change what is displayed to the user.
+    so lets change subtype=form and hit save in the dloc,xml file in dloc,xml file..
+    so lets save it in mydocuments  and now drag from mydocuments back under wwwroot/.../templates/xx/
+    and now we see ..
+    we go to add a new item... and nothing has changed..
+    CLEAR CACHE: so on web, you clear the cache
+        system admin/resetsettings/
+        and on bottom ddlist right click reset cache..
+    so now restart our webserver so we do not have to wait for cache to clear (do not do in production)..
+    oops, now go reset cache in local library and start a new item and accept template dloc
+    and now main title has 'empty main title' and that shows what we did in the template editing with notepad++ helped.
+    and so can add a new field.. say we find genre.. and type="Genre" and under that see element names...
+    so that is how we change existing xml... say to add elements to templates..
+    - question : when you edit xml to add genre, is it ok to add sub-xml tag element with value 'article'. ..
+    and now see file sobekcm template elements.config
+    and it shows the complete list of.. universe of md elements that come with the system by default
+    and we could add our own elements here and add to configuration file..
+    eg if when you type in pub name you can create your own template elt to refer to this config system..
+ao - genre is an element type and also a resource type...
+-t1421 - we go to break early and reconvene at 3pm...
+-and at 1615 we will talk about projects we are working on and things we need in the system.
+- friday am session: https://robertvernonphillips.com/admin/bills/log/10932/
+
+next log class notes:
+20160401 uflib sobekcm code camp friday morning github testing plugins metadata configuration engine endpoints protobuf item viewer configuring
+20160401 sobekcm code camp friday morning
+    -
+-20160401 -  today mark will write an endpoint that emulates etd, as it is going away
+    and in sobekcm now we create endpoints that do serialization,
+    and so we can read into a list of title result objects for example.
+- 5.0 - future - and aggregation viewer is future...
+    always pull the latest from github has the newest config file for aggregation viewer.
+-t0900
+-see schedule.. we are changing it a bit
+    first (before plugin architecture), about using github now and in future,
+        when to do branches,
+         what to do when committing code back.. and testing
+        and we will NOT do the builder modules today... rather we will discuss adding a new endpoint to the engine, eg for reporting, to restore the etds..
+        and mvs will output a video of the builder module soon in a few weeks
+    -
+and we have sobekdigital.com ticket system, JIRA AND GOOGLE GROUPS
+    an open resource that anybody can register at and use,
+    and exist sections for general custs, and there is a general topic too
+    mvs may move the discussions around wrt propietary info
+    and can go create a ticket, and one type is question or query that goes into a diff workflow..
+    we' they, mvs will go through  the qs and move to faq page periodically
+    we had a discussion group, and we will combine all and put into a faq
+    mvs suggest using the ticket system,
+    BUT - to ask mvs but for gen community issues, use google disc lists..?
+        google lists are seen by all sobek people,
+GITHUB and code committing
+    For code authors.. diff ways to do that.. we have not used branches much.. so we will start.
+    and when you use github you have local br and commit to master
+    So mvs is comfortable with us committing to master branch.. as mvs will rollback as needed
+    or we can create sep branch under own name, etc..
+    now mvs is custodian and will change when a group of devs appears to do it..
+    So we clone the repo, create a branch, and or cr branch in existing github page/url?
+    and github url will change soon.. by version 5, we will have another repo for just the official releases...
+    -we have permissions to create our own branch..
+    we can create a branch on mvs clone too if we want..
+    - that's code committing
+now for upgrades topic
+    they are similar, do the sql script and overlay the builder and overlay the webapp..
+    - this version 4.10 has more config files that will appear... and need to be saved? per site..
+    - so code seeks a config file say shibboleth.config and seeks through a path of folders
+    but in new version it reads all files under folder config and folder plugins,
+    so we need to move around our extant configs, also same for xml files we maintain
+and version 5
+    has solr lucene changes and we must reindex all items in our library..
+        low-cpu bground task over a week or however...
+        and then can take the solr instance that was fed slowly
+        and swap over to it
+        and then upgrade it with last week or so that it missed ..
+    so this is a great time to bring up test servers..
+- mvs - re testing in general now --
+    so now, what richard bernardy rb has done
+    he has a staging thing or host so he can do dev test and move it over to regular iis install test,
+    and they have only one live server, but not sql server 2012..
+    so he dups the db and syncs the content folder,...
+    and he gets a db backup and moves the drive bw the  two for the content..
+-cliff: and we bring up a new test system on host ufdc-cache,
+    so we put a backup recent prod test database on there and put in a port num in connections string as it was a private ip
+    and we had a clone of prod server, and gave it some dns names, like test* where * is prod servers (testufdc vs ufdc)
+    and we have zoom working,
+    and in other sites we add explicit host name like testufdcimages... etc and teststaugsusting, etc
+    and we have web server communicating with db,
+    and cliff asked ufit to cr a testufdc on the flvc for all our resources files mets files, etc
+    and we want to cr.. to put in test data perhaps
+    and other thing, we have parallel test inbound and incoming folders that we will use for test
+    and we will change the db system settings to point to our test folders in our test db settings table
+    ..mvs maybe we can add a new config file to do that.. a new feature
+    and for ufdc the 2 index folders are 235 gb, but now we have too little, or no host with that space now..
+    and so for solr ...
+    mvs and with the 16 tb resources, we are not changing mets in new versions,
+        and new files will be written into sobekfiles subfolder,
+        so we will not change format of mets files
+    cliff: part of big thing is on standlalone we were admins and did not tackle permissions changing issues, so doing that now
+    mvs will add a config file to override settings that are otherwise in the db,
+    so we can have that config file in our test box .. or put in a git repo eg
+    so as long as that config file is on webserver.. new sobekcm code will use that so we need not edit db settings table each time
+-t0915
+and now what keven is doing.. at fiu
+cliff - it seems he has another test solution and he has to test his dpatnther too.
+mvs -- it would be good for us to share our testing... say of the release candidate... so we can all decide when to move to a full version..
+mvs will talk to keven.. and we at uf will share our tests
+mvs may create a google test discussion group too
+-we had been loose on the testing, so we just looked at emailed issues, and usually most errors  were discovered in first hour
+-and to create std testing...
+    using hudson to run vs the engine .. would be good
+    - we'll get to test engine endpoints
+    or the gui... eg selenium for .net maybe or similar.
+    - and in v5.0 we should be able to test the engine easily...
+    - and add test data too to load and test...
+    - and some items are more interesting technically we need to add to our test data to load to test data,
+    eg items with flash viewer needs and new file types to add to test data,
+    and ufl has used the html viewer and the cool sanborn maps, add some of those.
+- that is all of housekeeping.
+-------------------------------------
+- now topic is new plugin architecture
+    -overview:
+        a good peek into what we can customize..
+        now we just review some xml files and see what we an change in them..
+        - see file: we open sobekcm web application in vs2012
+        and look at test.sobeklibrary.com/l/admin/settings..
+        this is new systemwide settings to view.. so see things in db section is what some permitted users may change.
+        see all the text there
+    -so system wide settings.. see section settings... description,
+        most settings per se comes from db, but all other cats there come from xml or config files.
+        now see general settings  page...
+        so in 4.10 we added columns in settings table, we added help, and the region where the setting displays, the tab
+        and more permissions granularity
+        we can add say api keys to settings table if we wish to show here..
+        - so see sobekcm-_settings table.. in ssms..
+        - columns are setting key, the display label for the setting, then setting_value
+        and we see app setting new and it has the value and column is tab page is new..
+        shows the display page of that setting you want
+        -and see column options to make a combo box if not null and settingid is  an alt primary key
+        and a column help is there
+        -and some things from config file show in 'configuration settings'
+        and field hosted instance - true of false, true adds new level of super admin host admin call it,
+        and some that sysadmins did are now moved up to super admin ., like appl server nw name... the server settings..
+        and config files section has help on how config files work, see link source files, shows about 15 or 20 files that it will read on startup..
+        -so it looks in config folder first.. etc...
+        - the point is you should not change config\default\sxxx.config files
+        and there is a row for plugins\xxx which you can config... and you can add config files there and put the files in
+        and the config\user folder should be rarely used, usu only if multiple plugins have conflicts.
+        so there are folders underneath your webserver
+        cliff - so the order they appear is the order they are processed..
+        so under wwwroot is folder config and it also has config and default folder and we will add a folder for plugins there
+        so exists a configuration reading log that also tells  the files it found.. and time they are read. and it reads all ,config and all ,xml files there
+        and it reports any errors found..
+        so now every config file may have every bit of config in it..
+        we used to have like 8 config readers, but now we have one config reader..
+        notice the microservices ... it is how the ui points to the engine... sobekcm_microservices.config
+        and sobeckcm_static_resources it does nlitltle with...
+        and see the postcard plugin example ..admin/settings/config/log under test.sobeklibrary.com
+    -other settings
+        now builder settings..
+            some may go away and exist existing builder folders subsection ftp folder..
+            and you can name builder.processing, failures folder,  ie inbound, ,processing, failures folder..
+            and builder modules also comes from confg stuff..
+            now for builder loader config.. (divert to vg with little blue boxes in rows)...
+            - so preprocess area on that chart where ones we do, builder does first..
+            the preprocesss could change all the folders and next is iterate through all incoming folders,
+            and then goes through all items, and does postprocessing, eg  archiving I guess.
+        ..more settings
+            -and see item deletaino modules .. you can add under there see url...admin settings/builder/modules
+            and post process modules are all from config
+            some things the engine does not care.. eg the microservices thing.. only it needs to know how to get to the engine..
+            -mvs,--- it remembers the date of the oldest config file it read and every 10 secs it polls to find all newer config files and repulls the config info as needed
+            - (things like max file ssize are in web config file for iss... os type things or web server.. will need a restart at that level)
+            - mvs - you must write code to use your new settings...
+            Q for mark - best test to use that this site is UFDC?
+            - maybe existence of some custom setting..
+        - now we look at new Web.config file under, sibling to SobekCM.aspx..
+            see value system.net defautt rporoxy...
+            we need to add this to our config ..
+            so set proxy bypassonlocal="True" so it will save a bit of time to NOT go out to your dns server,
+            which takes a good 800 msec, very long,
+            and set suessytemdefault="False'
+            and it has Maxjsonserialization he set to 50M
+            and maxAllowedContentLength is at 2billion bytes now
+                but may need to be raised for videos uploaded.
+    - metadata configuration
+        -
+now topic md configuration..
+    this is longstanding.. 3 years
+    it runs
+        the creation of mets, reading of it, esp non-standard,
+        and first is the search fields,
+        and this is from the DB, not in config files
+    so it has fields in use in this system.. xml fields.
+        so when you first install the apps there are 100 addl columns in the items mor m basic search table,
+        you can use such list of fields...
+        from which to pick without needing to change db..
+    and these are metadata search fields under ..admin/settings/metadata/f..
+and now under ../filereaders
+    this files readers writers was more used in mets editor, and has columns can read, can write
+    ans so all these have column class (file readers) and it means they are standard in the system,
+    and it will show if coming from an assembly or plugin
+    so last bottom one here is called PostcardCore , POSTCARDECORE,dmdSec, PostcardCore...
+    and we added Learning Object M -- LOM_IEEE_METS_dmdSec_ReaderWriter.
+    so Mark suggests to make a new METS readerwriter to read the data... good practice, makes migrations easier.
+    - those are how to read and write diff mets SECTIONs
+, now on to settings/metadata/metsprofiles.
+    and have lis active, label, mdtype, mets section, code class
+    you can write each at file level, various levels,
+    and mostly this dmdsec reader writer ...
+    may see it needs to write a new dmdSec, and some have METS Section amdSec..
+    - and you can say when you create a new digital resource, you can say add this X type of md in there.
+    so you can say when ever you add a new item you can add a postcard module,
+        and when it comes time to write, even though no data on input,
+        the writer will be triggered to go get the apt db data to write
+        if it was changed  in sobekcm web app.
+    and is an abililty to add. new MD as modules, so you create a md module and add it to your package..
+----and in your config,
+- so for authentication.. some may move ... and then engine does read that data...
+    2 modes, standard authentication and shibboleth authentication, and may add windows authentication...
+    so obviously uf runs shibboleth,
+    so see settings/engine/authentication section for Shibboleth details..
+-now see engine/briefitem, see the briefitem mapping
+    it mirrored the complexity of a mets mode file with elts and subelts and enumeration controls,
+    now a 6-mo new thing called brief item, it is mapped and set via engine api
+    use mets readers to read  mets, use section readers to read items of md,
+    and end up with brief item mapper to map it.
+    so the briefitem has big dict of kev pairs and bit more data,
+    and say the postcard object, the postcard md module say have hierarchy and enumerations,
+    but when you get to brief item mappers, you have a key value pair to see how to map to the citation display.
+    and the brief item mapper is just a list of kev pairs you want to display in the citation.
+    - there is info there to map that field
+    so you have the term title, you can have things there that say type of title, display label, what title maps to for other authorities
+    like dc:title, vra:title, a way to link the data type
+    so you have multiple mappings and  the engine has mult engines, and we have std, internal and citation mappings.
+    and not clear the difference between them, which mappings and mappers...
+    and for internal.. now.
+    here it is the only one with internal comments of briefitem mappers,
+    you want to control these and not put out in general apis
+    and one engine endpoint of  this and internal comments should only be given to restricted IP clients..
+    - the original intent is to not give your file list, but just your citation.
+    the new version now had the new internal mapping set
+    and standard default set) - but no default really, the code must specify standard, internal or .. citation
+now see engine/contact..
+this shows the contact form..
+    see example at ../l/contact for testing perupes at test.sobeklibrary.com/l/contact
+    so we have a lot of settings ... to create custom contact forms
+    this is just top level contact form,
+    and you can also create custom configs at collection level to have a custom contact form per collection..
+--
+-and jl had a great q of why email was listed...
+    mvs it affects clearall in config file reading log
+and see settings/engine/endpoints
+    -
+    has everhthing the engine exposes and at most a quarter are now used by the user interface
+    yet see GetItemEAD, specific endpoint, most have 4 for
+        xml, json, json-p, protobuf,
+        and protobuf is supposed to be faster serialization/shorter
+            because protobuf does not include the names.
+    -and sobekcm_core library has all the objects we pass between the apis
+    and in there in vs 2013/2 see briefiedtn/briefietemInfo object..
+        so lines 16 shows class is serializable, data contract and protocontract and xmlroot("item")]
+        and every attribute is decorated further ... in briefiteminfo.cs
+    and in json all datamembers are lowercased..  could use XMLAttribute, XMLText, misc reverse of xml referenceing
+    -so goto bottom and see highest number see ProtoMember(14)
+    you supply the column id so protouf can use those, one byte for the column id, if max of 255 attributes,
+    so that makes protobuf faster
+    and we use that in sobekcm mostly.
+    so the same method is used, with attribute or pcol type..
+    and if have bottom row of engine endpoints have plugin/ and it has only 1 , as all pi author wanted, and last column shows restriction and penult is /component/
+    -so his cust endpoint has all 4 verbs and this table shows you may employ those in this system.
+    - so to cr new new content page,
+        call swbcontent/single/json
+        and use delete verb or put or post ..
+        or get is there too. (but implies your params will be constant on subsequent get)
+    - so that is list of all endpoints now..
+- and OAI-PMK see engeine/oaipmh
+    -
+    and simple, you can override things not here, and add descriptions... for oaipmh repo.. etc,
+    so see config file example to show values that could be in use that are not
+    and on bottom you can tell which md prefixes to support
+    and which class to use to read and write those types, this is when you save your objects in your db..
+    so if you add a new one here you must reprocess your objects,
+    and builder will use this and use this class and save in db with marc21prefix.
+    - this is a short list..and see egneing/qctool shortlist is list of divsisions..
+-and see settings/ui.. on left citation viewer link, to settings/ui/citation viewer
+and before this all was hardcoded... and this shows what you can change..
+and we can look at ours..
+and see settings/ui/citation.. maps to our citation view
+    and in plugins section at bottom you can add your own rows, it comes from brief item,
+    so put this info in briefitem and it will use this spec to list/show postcard citation
+    so default citation set is the main citation, and you would change for main
+    and in column metadata term, it is the term that appears in the citation..
+    and the display term is what is displayed.
+    -it will by default honor your is a flag that says the displaylabel will be used (good for elsevier notes).
+    - the search code is the ufdc md search field key, to show place of publication,
+    now see in section subjects in spatial subjects, keywords.. under ...setting/sui/citation
+    and can create custom citation writers..
+    - in spatial coverage it searches say england--london term
+        so it seeks england under country and london under city
+        and your cusotm ciation writer (soon to come) will handle that..
+        -
+        -t1014
+        - see sobekcm/config/sobeckcm_citation_config.
+        and in that file see mdterrm=spatial coverage
+        and displayterm you can change (but do not change mdterm setting unless it matches brief item mapper,)
+    and on bottom of ui/citation is an email citation set  to specify what is sent in an email.. if you wish to customize
+- now see ui/microservices, long list of endpoints, and mostly are protobouf pcol
+- one thing about our engine is it not just serves user interface but potential user...
+    eg builder.Get_Builder_Logs_dataTable
+    and you can make your own nice table with feature of paging, anybody can do this..
+    also does sorting,
+    nice object..
+- now see ui configration/template elements under ..settings/ui/template
+    this table shows.. this is what maps the xml template files that control what you see when you edit or submit an item,
+    this is what maps bw type and sugbtype used in that file to what class or object is used to display it..
+    -so every single field that is displayed has it s own elt, and it controls the elts and sublets and also how it is saved back to the object..
+    the form that is run when you hit submit is run through each of these rows ..
+    to see whether to write it and  where to put the elt in the object
+    and so some will have multiple lines,
+        three rows for subject here.
+        see those with _form_ in the name implies a popup dialog
+    -so to lookup publishers vs an authority, create a new element that invokes that functionality
+WEB MENU INTERFACE SETTINGS FOR ITEM VIEWERS CONFIGURING:
+    now under settings.ui/viewers.. this is NEW, the whole architecture -
+    and every viewer has its own prototypers, eg the long names,
+    a prototyper is like a static class sitting in a dict of these things,
+        eg see GnuBooks_PageTurner_ItemViewer_Prototyper
+        and it can gen a GnuBooks Page Turner Item  viewer and gen one to view an item
+    So we got db data that says use jpeg item viewer, but the prototyper sees
+        what it  (a?) does the user have acccess
+        and (b), add it to this menu (that links to viewers available),
+        and also prototyper says does the item have a jpeg...
+            so if not why show it..?
+    -so prototyper controls
+        whether it appears per user perm,
+        and item contents, etc.
+    - and always add
+        is NOT always add, that column,
+        it should rather say mgmt viewer, on settings./ui/viewers..
+    - so generally should be mgmt types things, half are check in this column half not
+    last column -
+        you can specify which extensions to look for that would apply to the viewer
+        or if null default list is used
+    - that is viewers subviewers and only item-viewers stuff now.
+-and utilmately will also have section for
+    aggregation viewers, web content viewrs, my sobek viewers, and other generic viewers you want to add to the system
+so column viewer code is what maps from the url to the class,
+    so if it finds url with bibid it maps to viewer code,
+    and in future you may be able to do for everything,
+        if they come to url *ufdc//reports/ you can say ok go to this viewer
+and last section is html snippets -- just a few top level snippets used by the system,
+    and see settings/html/missing page
+        eg this one for a page is missing, so this is what will be shown
+    and another is NoResults HTML snippet, so when no material matches a user search ...
+    So it has [% sytnax to plugin  variable values%]
+-t1027
+- finally is the extensions on left hand margin of admin/settings... extensions will appear soon
+    -
+we will ultimately enable extensions and new versions..
+    so extensions could update your sql server and add new tables,
+    so you will be able to turn on and off exensions ...
+so that is all the configuration stuff, of both the new configuration and plugin structure.
+PostCardCore -
+    now see under git repo,  PostcarCore...
+    objects under plugins/PostcardCore is there,
+    and it can appear multiple times,
+    so see Postcardcore.xml
+    but here will not see clearalls,
+    and all should have a default so if no config file found it will have a clearall='true' for all under the config/defaultxxx.config files'
+    so in postcardcore.xml you can reference assemblies
+         you need to find named xx.dll,
+        and condition always the css is always added
+        and condition='item' means only added by item viewer.
+    -and clearall is set to false..
+    so you can reference other components..
+    - see endpoint componentID=.... may have ip range constraint.. somehow setup.
+    -
+    and still in (/that was )postcardcore.xml
+some configuration name and random stuff .. you can use for your plugin to utilize
+    and will be based as string to your plugin
+    and also has section where you can pass in key-value pairs that you can pass to your plugin
+    and see install add(itional) seetings, they will be exposed
+        but the passins are hardcoded in your config file
+    -for postcardcore.xml -- you can add a new postcardore2.xml in realtime
+        with same dll but diff key-value pair data and in 10 sec it will be picked up and used.
+-now seee sobekcm_aggr viewers.config.
+    and in there you can define your layouts,
+    order of 5 or so basic sections or omit some..
+    or used ADVANCED vs BASIC search types..
+    now going over Baldwin library webpage and comparing to the sobekcm_agg-viewersc.config xml code..
+    and can change order in real time and in 10 secs or so the change will be in production.web pages.
+    RE: that way to add config files with same dll.. ?
+        can do that dll make it call python 3.5 code and send it some key-value pairs..
+        and the kev pair one can say the python executable to run, then other args, etc..)
+    -this may give ultimate freedom on conf of aggregation pages in next version.
+- now for a break back at 11.
+Friday PM session: https://robertvernonphillips.com/admin/bills/log/10934/
+
+Next segment:
+
+20160401 friday sobek code camp 1pm session-
+ namespace is called customer reporting services now in vs2012 new project
+so back to overall design
+so go to see endpoints
+    eg dataservices.cs, there are the endpoints of these classes
+and see itemservices.cs,
+    there is an endpoint base class that just provides this void Serialize class that just serializes at last second to the type desired.
+now back to our custrept services.cs console app file...
+so we add references.. those of sobeckm_core, sobekcm_engine_library
+    those 2 check yes and check also sobekcm_tools
+now back to our new cust..cs file in public class CustomReportingSerivces:EndpointBase,
+    and using that base just because it has helpful pre-made serialization function
+and we need to implement the signature used in itemservices.css for our method,
+    not formally an interface, but it IS a required ordered set of args and types.
+    see GetItemCitation() in.. and also add ref to system.web ok
+    back to our new getitemcitation, use that signature required.. ok
+        -so endpoint pbase class
+        arg urlsegments i lastbibid and end of url segs and arg querystring is the ? param values and protocl has list including json, etc
+        and bool IsDebug is last arg,
+    so thats what is in the Signature,
+but we do not use name getitationcitation but now we use getitemsbytickler as the method name.
+    patrick wants to use this functionality
+    - and it includes  the private items.. the purpose of this..
+so next step...we have to add engine endpoint code which we started
+    and next step is add engine endpoints to config file:
+    almost always he looks at caching, so he assumes the data will not change each section
+        so we must add something to memory mgmt cache system for each endpoint, but we do not look at it here
+    that pretty much finishes your engine..
+    -so all calls to engine must go through sobekengineclient that sits in the engine library itself, sobekengineclient.cs file
+so how we customize ..
+we look at item-subwriter and constructor now under folder html, Item_Htmlsubwriter..
+    see it calls sobekengineclient.items.get_item_brief..
+so when you hit endpoints this
+    see line 119 is about the limit of what you need to do
+    so this currentItem = is what you do
+so now under core.client.sobekengingclient_item endpoint,
+    see lines 41=47 and it returns at line 47 if found otherwise it gets to line 5` the endpoint
+    (note: we also must list in microservices config)
+    so line 51 says go to msvc config and get the url linked to items.getitembriefxx
+    and we can see this ui at this endopint at items.getitemBrief in those tables or services.
+    now line 54 puts in the url
+    and 57 uses calls deserialize, and this line is what
+        goes out to engine endpoint,
+        grabs the info from the url
+        and endpoint.protocol tells how to deserialize.
+    and line 62,63 stores item in cache if needed soon again
+- so mem_management: see cacheddatamanger_item services, lines 310 or so is where we store to cache..
+    and param timespan frm minutes is the argu used,
+    see line 325 of cacheddatama...mservices.cs..
+    usu a minute is minimum, but 5 minutes is normal..
+-So it uses all those subendpoints
+so on sobek ui side, we did 2 or 3 things,
+    add to sobek engine client,
+    add  to microservices config file
+    and add to memorymgmt cache, file *.cacheddatamanagement..services.cs file
+    but this item is shared on both sides, a required thing to set up
+-
+but there is no promise that the cache will store the data for the full time..
+    so there is a race issue.. if you did use cache as a protocol
+    because in hard times the cache could disappear due to system conditions before very first attempt to access
+in the list of things..
+    FIRST we create the object -- say create a new endpoint that will pass back out the item usage.
+- so we added under sobekcm_core_items/item_monthly_usage.cs,
+    as we do not write directly to string but allow serialization to occur.
+- so that is gen process, but not ui part..
+-so now we do a search query..
+    and we start search query..
+    so go enginelib/endpoints/resultservices.cs
+    and see method get search_results_page line 154 or so
+and lets copy --so 150 to line 5?70 we copy paste over to our customreporting services.cs
+- and this is what we saw.. the url ufdc.ufl.edu/xmlcontains/?t=UF_Fall_2015&x=t..  (this is patricks url he has)
+    so now in customreporting services ,
+    and now lets go extend resultsServices
+    as we can copy it as it is already protected,
+    and so now we are addding stuff and do not need to paste in so much
+now see (endpoints)resultservices.cs to see how we did do searching..
+    see lines 159 and go down.. it assigns it to argument and line 168 we need that aggregation
+    or the 'all' one if not found...
+    and line 190 it uses get_search_results local method,
+    another good reason to inherit
+    and line 258 writes trace route and debug mode, and it is useful.
+    so in the url. .. tests.sobkcmlibrary.com/engine/aggregations/code/json/dukestryker/en that works,
+    so this is json of an aggregation, this one is smaller.. and if add ?debug=debug, we get nice little log.. - not exciting for this collection..
+    try another..
+    try iumcubanpostand get 2 or 3x of agg data in our log..
+    so there are 2 kinds of collection ,
+        the complete collection has all lang info
+        and type 2 is lang specific ,
+            so if we rerun looking for spanish...
+            lefthand integers are milliseconds... so 5 to 10 steps may complete with same msec count.
+    -so that is output from our traceroute call in the code.
+    so line 800 something is perform database search..
+    it is called..line 1610 is our include private items,
+    so we need to trace back to see where it originates...
+    that was in file database services (review: where did comments for this file start?)
+    and back in file endpointsresultsservices.we see INCLUDE PRIVATE...
+    -lines 182 183 use reflection,
+    and we get info and put classname in a string,
+    and you invoke that method...
+    rem you .. here we invoke this method in msvc handler...
+    lines 237 the only way it works is if the signature name matches...
+     as we use reflection and a string.. that's why it is not a real interface..
+.
+- now look at file custmomreporting services.cs... ...
+    mvs will test thsi later and send out the code..
+    best to put the test code and load directly to the engine, there is no debug functions, so you will get little error message, so after it functions in your own code then bring it out to use as a dll for an endpoint - our new best practice.
+    -we need info in viewer config file that maps to viewer code, see under config/default/sobekcm_item_viewers.config
+    see if these the type maps to the assembly,
+    and this is a case where the type value is fairly controlled, as the db has a table saying which views of thiese types should be aded to each table
+    see table sobekcm_item_viewer_types, viewType column.
+    - eg also exist a default view , that mans when a new item is created this type is auto added, and now they are citation, all_volumes, marc, metqadata, usage, jpeg, jpeg2000 and relted_images , and or you could ad more, perhaps download is a good one to ad
+    and also have columns order and menorder and order is also new, lower numbers have higher priorities..
+    -  so not sure wh we still need item_viewer_priority...
+    - this is the order of display of alternate viewers per item, per priorities
+    and these are attached via item view id...
+    see table sobekcm item viewers, have itemviewid, ... la.. orderoverr.. exclude menu or...
+    - so can see sp get item_detials2 it shows viewers per item
+    - so this is how an item is returned... in the apt order... so you can see menuorder ... affects display or presages it..
+    - the higher the menu order number, the farther to the right it appears
+    - and now lets add the download to this item..
+... omitted some details
+end

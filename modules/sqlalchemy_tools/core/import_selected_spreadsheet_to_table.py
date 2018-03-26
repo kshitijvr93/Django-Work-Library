@@ -810,7 +810,7 @@ env = 'windows2'
 env = 'windows3'
 env = 'windows4'
 env = 'windows5'
-env = 'uf_cuba_libro_item_fug'
 env = 'uf_cuba_libro_item_hls'
+env = 'uf_cuba_libro_item_fug'
 
 run(env=env)

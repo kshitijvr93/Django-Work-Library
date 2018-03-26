@@ -9,11 +9,12 @@ richard bernardy has been using plugins since december 2016
 
 rb is exploiting the html viewer.. and all the text fields..
 in some records that broke articles to pdfs,
-i just used the downloads viewer, and I used the html viewer for other
+I just used the downloads viewer, and I used the html viewer for other
 and if we could add order values to download viewer it would be good
 
 mvs - you just added the viewer
 rb - no that was my last viewer.. it seems to be the last pdf in the struct map
+
 mvs it should have a order, we can do that
 and make another demo viewer that acknowledges the order
 mvs so the html tags others have requested and we have another ticket from
@@ -25,14 +26,14 @@ rb but another thing we can think of is using the wiki context stuff, like
 ** becomes double-bulleted..
 or we could choose html slashes vs wiki style editing..
 and github does it.. and wikipedia does it..
-it seems slightly more accesible for other metadata, md, entry users
+it seems slightly more accessible for other metadata, md, entry users
 rb the other big thing is limited nature of the resource type dropdown
 mvs it is only r list for upcoming
-rb overall i need to do more work.. well i do local customizations in js,
+rb overall I need to do more work.. well I do local customizations in js,
 and other big one.. is .. updating iface from validation for html5 validation
 and mvs we want to be html5 valid, but if we are not,
 please change the core code and fix and resubmit
-rb - i had a demo that was mobile iface, started, and director of mktg killed that
+rb - I had a demo that was mobile iface, started, and director of mktg killed that
 and responsive design regular html i have not gotten to yet
 
 mvs is html 5 invalid
@@ -158,13 +159,14 @@ and give a chance to work on it.
 and helpful to show some of  the work we have done to show what we have done,
 or the group.
 and mvs has proposed some things...with the schedule.
+
 t0903 -
-mvs - the litltem fda xml files are now downloadable - an issue to fix.
+mvs - the litltem (titleitem?) fda xml files are now downloadable - an issue to fix.
 so maybe we should be able to add a sobek... xml file of different type.
 --
 rb new types of content like rti is jpegs and xml files and the 3d models
 and texture files are..
-mvs - if oen wanted to use viewer to make a thousand jpeg slices.
+mvs - if one wanted to use viewer to make a thousand jpeg slices.
 --
 mvs we switch the schedule a bit
 today we will cover add new engine endpoint
@@ -175,7 +177,7 @@ and we add in bulk uploading.. and we can propose anything else..
 so think of something you want to handle
 could include an entirely new structure to sobekcms database like a new ead
 viewer with a whole other structure, showing how containers link,
-and you wnat to pull that structure out for another external system
+and you want to pull that structure out for another external system
 and think of a report you might want to use
 so if you write a reporting thing it is simple to tie into html or serve
 item info a different way..
@@ -189,21 +191,21 @@ the endpoint topic is at 2:15 today that is..
 
 example repo: https://github.com/SobekDigital/HolaCampistas
 so github.. is .. all topics today are same for github or gitlab
-or sach, not svn though.
+or such, not svn though.
 
 mvs likes to use git app separately..
-and he usu closes visual studio and launches externally
+and he usually closes visual studio and launches externally
 installing git extensions, if you want it:
 download installer: https://gitextensions.github.io
 -
 -mvs we do not have anything watching the code now,
-i am looking itno an auto comipile when a code is committed..
+i am looking into an auto compile when a code is committed..
 so i want to reject commits that do not compile using jenkins or hudson..
 but team foundation is expensive so when I get the code working for jenkins
 or hudson... or it is travis, that has 'freemium'  minor editions..
 
-jl - travis is nice too
-- jl they also - can pay $70/month for their code..
+djl - travis is nice too
+- djl they also - can pay $70/month for their code..
 
 - today we do hands on to pull down repo and make changes,
 t1040
@@ -232,7 +234,7 @@ and it helps perceived life of the project if more committers..
 and over time if we get more contributors we will add pull requests
 
 and mvs knows of 2 companies adding to code,
-1) one is the universtiy of london
+1) one is the university of london
 2) and another group with more localization strings to support,
 about 14 asiatic languages, and that would be only a configuration file...
 - --
@@ -262,7 +264,7 @@ now looking at settings/system-wide settings
 and we have a new collection wizard
 but system-wide settings is newly organized..
 and it is most 90% now in config files and 10% in database, and
-the item viewers are in th db per item..
+the item viewers are in the db per item..
 so need some db data on viewers.
 and diff info on md? is in config files
 and new way to create own item viewers is here now too
@@ -285,7 +287,7 @@ email eg to system wide settings
 
 and this is first one ..
 
-jl - was an issue with the template themselves not including  the
+jl - was an issue with the template themselves not including the
 email address on them,
 jl so we should look at our templates
 mvs yes - and I will look at that with you...
@@ -1312,7 +1314,6 @@ got a usb key from mark, but downloaded it under my linux ubuntu
 host in Downloads because my vbox usb reader is not setup...
 -
 
-
 now see the latest code downloaded and see file under So ekCM in
 the webapplication and cd to directory Batch Files
 
@@ -1700,7 +1701,7 @@ so append segment robot to ta bit,  to see the seo info.
 it shows the citation, and the complete image, or full text or more pages,
 or if item has downloads the link would be here so here the builder does not
 build this page, but it goes to the web
-and builds it to serve quickly as anseo, an it is cached,
+and builds it to serve quickly as an seo, an it is cached,
 so takes 1 msec vs 45 msec if not cached..
 this robot is new, not released yet..
 
@@ -2050,52 +2051,55 @@ and changes in codecampbulder, config the extensioncode ane name attributes
 and changes the his config description tag and author tag for himself and changes assembly to . id to odeacam pulder modue
 and then in assembly take changes name and id for code camp values..
 -- t1221
+next topic will be:  builder plubins
 and now he new repo sobekcm-plugin-builder-demo-modules owned by SobekCM on github.
 -
+recap topic: creating item viewer
 
 As of now we have done with creating a new item viewer
-many reasons to do so, you may want a slight variable to a current item veiwer,
-and a bit more complicatd than some other things.
-so we create 2 clases often in same file for your item viewer
+many reasons to do so, you may want a slight variable to a current item viewer,
+and a bit more complicated than some other things.
+so we create 2 classes often in same file for your item viewer
 and see existing sobekcm library item viewers,
-and 2 classes in each file include the protyper and the viewer
-that relationship is itnertign
-under sobeckitemvier/viewers see cs files,
-and see downlaods_itemViewer.cs has 2 clases within it, the prototyper and the viewer
+and 2 classes in each file include the prototyper and the viewer
+that relationship is ineresting
+So, under sobeckitemvier/viewers see cs files,
+and see downloads_itemViewer.cs has 2 classes within it, the prototyper and
+the viewer
 
-and that is the trend for evey single one of these
+and that is the trend for every single one of these
 and the prototype is the factor
-and there are itemviewr protytpes it is what liks to the item viewer
+and there are itemviewer protytpes it is what links to the item viewer
 and also has basic info
 and when additional resource is loaded only a couple of strings come in
 and just a couple of strings and the ui the web will seek those strings
 and look for a matching string.
 and it will seek that string
 and it links types to items and links the items to the possible viewer types
-and the engine downloads that in the item dbasd
+and the engine downloads that in the item dbase
 and has tinvofo is passed to the webs
-so in that list of viewers is the acme viweer
-and so it says i got this object form the engine
+so in that list of viewers is the acme viewer
+and so it says i got this object from the engine
 and i will look at each of the viewers
 an see which one is valid
-and it tries each item viwer protyper..
-ad the first time it shows it it sees the item viwer prototyper,
+and it tries each item viewer prototyper..
+ad the first time it shows it, it sees the item viewer prototyper,
 and it is sort of a singleton class..
 there is only one prototyper for each viewer type
 and it will pass an item to it and ask the viewer prototyper
 if it should use this.
-and it uses Include_Viewr() call,
+and it uses Include_Viewer() call,
 and so each  item gomes
-and is it pdf, then it calls include_viwer for
+and is it pdf, then it calls include_viewer for
 the prototyper and gives the pdf viewer the chance to see the object
-an see whether it has ANY pdf in it... and say yes or no,
-I would be useful for this itme, or part of it, a quick lop
+and see whether it has ANY pdf in it... and say yes or no,
+It would be useful for this item, or part of it, a quick loop
 and if not to be included, it is removed form the web display for the item
-so that happens the first tie it gets the item from the engine
+so that happens the first time it gets the item from the engine
 and if you looked at that object in the web you would see many fewer viewers
-and the next q is whther the user has access (a normal user or a manager,
+and the next q is whether the user has access (a normal user or a manager,
 so it has method Has_access that can tell whether the user can use this viewer.
-and it takes the user_object - so here security can be implementd for diff viewers.
+and it takes the user_object - so here security can be implemented for diff viewers.
 so assume the user has access and then the next method to call is
 dd_Menu_items(_ that lists itself on the menu of viewers
 and so in db where we can set labels for each view, it adds to the menu item..
@@ -2106,67 +2110,76 @@ because could hae multiple menu item where it puts itself on 2 places on the men
 so this is all called before they click on the view,
 it provides the menu options apt for that item
 so the user has not clicked on a viewer yet
-and finally is iITemViewer Create_Viewer
+
+and finally we have/is itemViewer Create_Viewer
 that is only called when they click on the tab for the view
 and for the item that the viewer is created and
-now we see the viewer object it implement iITemviewer
-and so now some inmplemented classes
-and many itemviewers do not directly implement iITmViewer
-(pagination item viwer and nopagination item viewr are exampls
+now we see the viewer object it implements itemviewer
+
+and so now some implemented classes
+and many itemviewers do not directly implement itemViewer
+(pagination item viewer and nopagination item viewr are examples
 that share other common traits),
-so often the itemviewr does not directly extend iITemvier,
-but rather abstractPagiationItemviewr or.. paginationItemviewer
+so often the itemviewr does not directly extend itemviewer,
+but rather abstractPaginationItemviewr or.. paginationItemviewer
 so that answers a lot of questions for it.
 and it asks are you paged or not,
 and so the viewer just passes down to say I have only 1 page etc or no pages,
-so net and lat butons are automatically presented
+so next and last buttons are automatically presented
 on page quantity and number of current page
 and so have method write_with_html_head to writeie within the head
-and method Add-viwerspeici-oboyd-attriutes can write into the body tab
+and method Add-viwerspeci-oboyd-attriutes can write into the body tab
 and method write-leve-navemenu-section
-and method write_main_viweer_section..
-thee are the main things a viwer woud do...
-rb: so if has access is false .. the viewer is not presentted as a men otion..
+and method write_main_vieweer_section..
+these are the main things a viewer would do...
+rb: so if has access is false .. the viewer is not presented as a menu option..
 -
+NEXT TOPIC, VG: CREATING a NEW item viewer
 next vg..
-creating a new item veiwer
-1 create a new item viewer protypyer and 2 a new item viwers
+creating a new item viewer
+1 create a new item viewer prototypyer and 2 a new item viewers
+
+NEXT TOPIC VG: Create config info
+
 and now vg create config info
 1 start by adding a config file in the conf user suboflder
 an use sobekcm_item_viewers.config as source
 so put it under config/user, move it.
 
-so the config file does not ref the item viewer, only the item viewer protoypr..
+so the config file does not ref the item viewer, only the item viewer
+prototyper..
 but that just tells the website it exists
 but we must add it to the database..
-so when see systemwide sttings it shows a merge of the d dbase and config file
-so add to sobekcem item viewer tyeps table
+so when see systemwide settings it shows a merge of the d dbase and config file
+so add to sobekcem item viewer types table
 and viewertype should match the code from the config file..
 and that link shows how they are combined..
 and now we look at systemwide settings for that,
 and see the table of viewers..
 so see dataset codeob, reports and viewdata,
-rows appear sbe they are in the in the sobekcm item vier types table,
+rows appears be they are in the in the sobekcm item viewer types table,
 but not in the config file..
-so class here says not impleementd..
+
+so class here says not implemented..
 mvs - the key in this table is the viewertype is
-the code in the db is linked into an item viwer prototyper
+the code in the db is linked into an item viewer prototyper
 and the row if it has a class, shows the class does appear
 and the viewercode say for embedded video it is evideo,
 and it tells when the url has the evideo code in it,
 it is asking specifically for the this viewer.
-mvs: so the config file is in sobeckcm config default sobekcm_item_viewers.config
-(but we ove ours to default)
-so the itemr viewer list is important here..
-so the viewer ype attribute should match..
-the type name in the sdbase maybe and the viewercode attrib
+
+mvs: so the config file is in sobeckcm config default
+sobekcm_item_viewers.config (but we move ours to default)
+So the item viewer list is important here..
+so the viewer type attribute should match..
+the type name in the dbase maybe and the viewercode attrib
 is the url segment name,
 and you have assembly and class and whether enabled or not..
 so we are serious about always adding for only very few viewers,
 like the directory viewer, that is one of a few that is always added...
 not even the citation viewer is always added
 but/and it (the directory viewer) is always added on the webinterface side,
-and the d base says I am always going to add the dierctory..
+and the d base says I am always going to add the directory..
 -
 and two types of order, menu order and order
 and it is defined in the db

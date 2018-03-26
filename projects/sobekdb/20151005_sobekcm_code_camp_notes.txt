@@ -1,0 +1,2208 @@
+20151005 uflib sobek code camp notes settings installer rest apis endpoints coding architecture viewers issue copy from folder for bulder
+20151005 uflib sobek code camp notes monday issue copy from folder for builder
+
+notes - 20151005 monday: uflib sobek code camp monday
+
+Mark sullivan ms presents, accompanied by a jacksonville associate,  jeana or
+jeanie a bs student at UNF in comp sci
+- we have a handout and a folder with a schedule.
+the install (of  Sobek 4.9.0, just released) and config of sobek will be on
+one machine that Mark is demoing and he will go over the config options..
+-until noon, at noon we have lunch at faculty ctr
+and at 1pm we talk of sobek 5.0.. on the way..
+
+t0944 - now doing installation --on Mark's machine of sobek 4.9.0
+
+he is showing viewgraphs vgs, showing sobekrepository.org/software
+page..http://sobekrepository.org/software
+
+and now all current docs are here, and under project home we see a community site here
+http://sobekrepository.org/sobekcm/implementations
+.. the central spot for sobek cm docs...
+
+go to software on left margin in the tree, under download center/requirements,
+http://sobekrepository.org/software/requirements
+and some of this doc is old..
+and it requires net framework 4.5
+
+and the sobek 4.9.0 release includes ability to update all of the doc pages
+at sobek repo.org
+
+now looking at software/requirements
+Host machine requirements for Sobek install:
+re full text indexing, via the DB itself...
+    and the db uses full text ft searching that searches the metadata,
+so do install sql server advanced to include full text,  ft, searching..
+a rqt to have the full text search
+also need; iis , a default part of windows..
+
+- now a digression into windows menus to turn on iis....
+- t0949-
+select inet explorer 11, iis 6 mgmt cap of iis database and iis 6 config
+compat and iis mgmt console and app def features cat; check all except cgi
+and server-side includes and check media features.
+
+-Sobek-related developers at  FIU are
+Keven ,(boyuan guan) - bguan@fiu.edu
+Yang Zhang yzhan@fiu.edu
+
+t1009 - installing sqlserver 2012, mark is doing it, on the demo pc..
+mostly a default installation
+
+note: I have an install of sobek on virtualbox guest image win7...20150807,
+with all this, but older version of sobekcm, maybe 4.8.10
+-and today mark is installing sobekcm 4.9.0, which can now detect tomcat,
+per his personal email to me last week, .. but maybe only tomcat6?
+
+well, maybe not: he is choosing to not install tomcat6 here, so it still
+may not work yet for a full install afaik.
+
+-t1013 - he recommends we will retire apache tomcat and still use java in
+sobekcm 5.0..
+
+-t1015 - mark shows sobekcm 5.0 set of slides... maybe get a copy..or just
+wait to see what pans out.
+-
+-future feature - allow editing of datasets (db table rows?) via sobek,
+though now we can see them but just not edit
+also we will cover rest APIs..
+
+SobekCM overview:
+a general goal is to be simple and user friendly
+another goal is to be integrated -- removing the need for modules or components
+and it is standards-based (mets/mods/ etc)
+    -so it is easy to migrate into it or from it..
+-written in c# in .net 2.0 at first, and it has evolved along with .NET,
+now to version 4.5..
+- now it runs on windows servers, and it will change due to msoft work
+and in 5.1 we can/will be able to choose postgresql or linux server with
+slight limitations, but still .NET, so it seems .NET will be ported to
+linux by msoft someday...
+-In .net 5.0, .net will run on linux and macs.. and we will support that..
+but many database stored procedures sps are in SQL Server sql, and we have
+no certain plans to port sps to postgresql yet.
+
+.. and now doing sobek 4.9.0 installer
+and it accepts your webserver's virtual directory name (subdirectory under
+c:\inetpug\wwwroot) and other values, etc..
+
+like your server name (localhost or other name), database name
+and click install and then the install is pretty quick..
+
+and now you as an end-user register with it, via the a sobek web page that pops up
+and first person to register is de facto the system administrator..
+WARNING: the installer threw up a web page to create  a new account, but if
+the db already existed, it does not give it admin rights.
+so go to sql server management studio to edit the sobekcm_users table and
+give admin rights, say set to True fields like: isHost, isAdmin others.
+so this means 'the first person to ever register for any sobek release that
+has used this same database' will be given admin rights.
+
+and once installed you can install new collections, eg banners per
+collection, etc.. so when on the myufdc page as the admin, you see tab options,
+and one is for system admin, and under that common tasks, and see various
+features, wizards to use.
+
+a year ago we added feature to allow editing of your home page html..
+and we see some common tasks to add collections, so the collection wizard
+was added in v4.8 and gives some help..
+maybe next year they will  add capability to upload arbitrary spreadsheet
+(ssheet) files with xmlschema to describe each column..
+and Mark can show us that..
+exists another digital library system they WILL call fedora in a box..
+but vaporware so far..
+and they WILL look at small datasets for dataset support..
+Big areas like astronomy, which already know how to store their data...
+but small research datasets is where they need mgmt throughout the life
+cycle of the process
+with diff students coming in and going, though same professors may stay for
+a while..
+
+so the data will sit in the institutional repository, ir, by the pubs
+working with xml/xsd, that is the the xml schema and ultimately sobek will
+add sql access layer.. and add Hadoop access layer..
+
+.. for the architecture viewgraph vg, on our handout,
+we will NOT do soap, but will do json and xml..
+and his vg shown on screen has REST architecture/sobekcm5
+
+-for zoomable images they use iipimage and not the separate awareserver...
+
+ms t1033
+ms - regarding image files of type tif: aka tifs or tiffs.
+A difference exists between bw 'service' copy (of item images and files --
+used in realtime by sobekcm web app) and archival copy, tifs are very big,
+and performance pf is an issue..
+but the format of jpeg 2000 is like software as a service sas or saas
+and the format of  tiff  is archival.
+it is nice to have a master tif for archiving and for service we use the
+jpeg 2000, which  is 1/20 size of tif,
+and if we must store tifs, it is cheaper to store tifs on tape than on disk,
+a major savings... in money
+and pretty easy to make a viewer to treat it, tiff,  as if like a jpeg2000,
+(zoomable).
+
+ms - and the builder now (in new SobekCM version 4.9.0) should create cr
+jpeg2000 automatically from tiff
+
+note: but before this version, there was a problem if there was already a
+jpeg , then it did not create either jpeg or jp2..
+but now it should not get fooled
+
+ms - now for jpeg2000 format (filename extension is j2) it uses kakadu in
+builder subfolder.. it is used now to gen the j2 files
+
+Now Mark is browsing to the localhost SobekCM 4.9.0 demo server and he logs
+on to sobekcm as his admin user and if logged on as a system admin, eg for
+uf, see page http://ufdc.ufl.edu/l/admin
+
+see top menu option "System Admin", sub option "Settings", sub option
+"System-wide Settings", select that. and top section raised TAB is
+"ALL Settings", and under that see:
+
+field "Archive DropBox" .. is where to put the folder name of ...
+so if you submit digital resource with tifs and all else, it saves things in the folder named as archive dropbox, dbox.
+
+ISSUE - what is this default location? Because on 20151118 this UF field is empty...
+it looks at resource folder in hand, whether from webserver or reprocessing.
+this is the uf workflow
+and see, about 30 fields down, is the  field to specify the 'post archive files to delete' .
+
+and here it may be good to list many file types, eg intermediate products,  to delete,
+and after deletion of those then it moves what is left to archive dbox..
+so it works in archive folders as well as stuff on webserver..
+so if dun... tif iface.. it copies to archive dbox,
+so if you upload ul a tif and do not delete it (by listing it as a filetype
+to delete), then sobekcm should drop tifs into archive dbox..
+
+we want to talk of linking this more to archivematica or preservation systems.
+
+now it makes a copy, but then you can write your own scripts to take files
+from the archive dbox and send to tivoli, fda, wherever you archive.
+So in the field "PostArchive Files To Delete" we should put a substring in
+the value with a tif expression:
+
+Something like "(.*?)\.(tif)"
+So the fields: 'post archive files to delete' and also' pre-archive files
+to delete' fields can specify to delete QC.jpg files,
+and tif is (should be) deleted in post archive (but not pre-archive) to
+allow tif files to remain present to get archived to FDA, tivoli, wherever,
+and then, at post-archive time,  tifs should be locally deleted to save
+space on the 'service' servers.
+
+Now to see under tab 'ALL Settings' the settings that begin  "builder" in
+that region of these settings general notes on builder settings.
+
+now not as much connectivity between web builder and web app as there should be
+we will add ability to look at and manage all your builder folders .. that it looks into..
+each partner (satellite system like ncf, gulfcoast, seminole state) will have a diff incoming folder.."Main Builder Input Folder" setting
+so can set different modules to run on different incoming folders--
+in the future... not now in SobekCM  version 4.9.0 though
+and we also lack good access to the builder logs
+
+which are cleared out in the time of  the 'builder log expiration in days' field..
+and in next version (5.0?) we will have more visibility than now on what the builder is doing
+the first field: "Builder Add PageTurner ItemViewer":
+
+set to true to use it..
+
+another field: "Builder  IIS Logs Directory" set its value to create builder
+stats log files
+and richard bernardy, rb, wants 2 log levels of verbose and non-verbose..
+or maybe more levels, per rb.
+-t1043
+- field "Builder operation flag" .. eg standard operation, indicates the
+last time the builder ran?
+and if on hosted instance, user must have a new level or role of host
+administrator to see this.. not seen by standard admin,
+
+and some other ddlist option values here:
+pause requested, abort requested, standard operation, no builder requested
+and if set to abort requested and save all settings,
+then the builder should abort within a minute
+and when you refresh the page a dd list is added
+and it is set as the default,  to something like 'builder is stopped'.
+and field "Builder seconds between polls": 60 is standard default value
+field "Builder IIS Logs Directory": and putting a value in IIS Logs Directory;
+set its value to create builder stats log files
+it will try to generate, gen, stats and email monthly.. and it is now integrated into the system..
+ms - but a problem not collecting item stats, but is for collection stats
+The log files directory will go away, but  will (in version 5.0 ?) write logs to the db.
+Field "Main builder input folder" matters for smart tool and local instance being run.
+So if  I import a lot of ssheets using an external tool from a command line on the host, like the METS editor or SmartTool, this is where to put the ssheets, where the builder will seek new items every minute or so.
+However, self-submittal items are managed by the web application itself.
+now we discusss region "Email*" settings... basic stuff.. and this will change, as postgres does not have db mail, so the default will be simple smtp..
+and fields for "system email" and "system error" email
+and "privacy email address":
+If we find things that look like ssns, and if we find anything like that , this person gets an email about privacy concerns..
+but it gets false alarms.. with newspaper sports pages, the rbi baseball tables trigger this a lot- they may look like ss numbers.
+section help settings.
+help url should be http://sobekrepository.org and also help metadata url -- all help includes ..
+see general appearances,
+Field "can remove single search term".. use true,
+and field "facets collapsible", not in use yet
+and section interoperability settings,
+field 'create marc feed by default'--
+will change in new version..
+and see field 'marc cataloging source code' -
+set a value there like FUG for uf and mark repro agency and repo place...
+this helps us output marc records to other systems..
+or can populate 'marc xslt file' field -- so xslt just forms your xml,
+so when look at locally genned marc, xslt can remove fields you want to remove..
+so in your xml, keep/put max xml tags info in marc records,
+and later it is easy to remove
+(but not easy to add via xslt, as xslt does not query a db)..
+see  some global resource file settings
+field  - 'can submit items online': can temporarily set to false to prevent user changes when changing your filesystem fs.
+and another flag x says do not allow to logon so they cannot add a bookshelf, at least temporarily, as you upgrade
+and field 'convert office files to pdf'
+and field 'files to exclude from downloads' has a regex
+and field 'files to exclude from downloads' should probably also appear  in the builder region of settings ,
+so by default they will not appear as download dl file extension options for the user..
+all fields are either images or downloads, so images you see with a quality control tool that allows page turning , thumbnail view, etc.
+fields jpeg height ht and width are maximums if system creates jpegs
+and can set the kakadu jpeg2000 create command
+and can add ocr engine command --
+and they were using tesseract- it looks much better than 3 years ao..
+and may add another builder module to run tesseract soon
+and fields thumbnail ht and width can be set for max pixel values
+and fields 'upload file types' and 'upload image types'
+these allow uploads through online 'self submittal'  interface, so may have to add mp4, it may not be in the default..
+and field upload image types
+are things linked to the images..
+and pro and txt are assoc with images, though not actually images..
+cannot put in gif until we have a viewer for gifs..
+and pngs
+t1057-now settings section for server config -- and many fields optional
+and section system config -
+a bucket for many things like system default languages
+use field 'web output caching minutes'
+if you want server to recommend to powers that they can cache for a minute - the integer there is minutes.
+-field send email on added aggregation -
+This is the user to whom to send emails right now when/if add child collections
+so this adding of a child collection triggers such email
+and field static resources source:
+exist many dropdown, dd, options .. and js and little images,
+so with new system about half things linked to in the html header do not come from your server,
+but rather from a worldwide content delivery network cdn (cdn.sobekrepositry.org - it vastly increases speed..)
+as a browser can make requests to 2 servers or more simultaneously..
+and if request svc from india or china, the svcs will be served by the cdn node in those countries making for a good speedup.
+or may want to change to local if users have no internet, inet, access
+and we version things on the cdn as things come out..
+and.. but do leave it on cdn.. and you can override others that system gives you
+field system base abbrev:
+for UF, using UFDC
+summary- those were std settings.
+and now see tab "custom settings":
+custom settings can be added here
+eg ss library license.. a license key..
+eg elsevier api key: d91051fb976425e3b5f00750cbd33d8b
+or 6492f9c867ddf3e84baa10b5971e3e3d,
+so those are all top level settings not in the config file
+t1102 - now take a break.============================================================
+t1118 - we should install imagemagick - as it is used by builder, etc,  to create the jpegs, maybe thumbnails
+and it uses the registry- the imagemagick installer registers imagemagick into the Windows OS Registry
+NOTE: SobekCM WebApp uses the Windows OS Registry, NOT a config file, to locate imagemagick executable.
+and so need to restart Windows or log off and on before restarting it (Sobek) the first time
+goto WINDOWS binaries: http://www.imagemagick.org/script/binary-releases.php#windows
+downloading http://www.imagemagick.org/download/binaries/ImageMagick-6.9.2-4-Q16-x64-dll.exe
+it is widely used.. imagemagick does a lot.. we just installed it..
+rvp note: imagemagick says it is not required, but highly recommended to also install ghostscript on the PC host machine,
+because imagemagick and hence SobekCM will use ghostscript if available, for efficient and useful functionalities..
+and now we are in the SobekCM Digital Repository Setup wizard
+and if click full install it will try to install all SOLR if you want it all on 1 machine..
+but now the next step we do is web server install.
+This code camp audience consists of about 20 people,
+about 1/3 developers, and digital archivists and librarians
+from .. univ of miami, fiu, fiu gis, city of miami gis
+ms - recommends a web server and a separate back(end)/data server install.. --
+web server - has IIS, .net
+and the backend, be, server has the db and the builder running and solr, we generally recommend
+but we will do an advanced install, and will not install solr now
+(rvp: I think a SOLR install is still broken and could not install anyway)
+and you cannot turn off ms sql
+And this installer can upgrade from instances down to sobek 4.x but not 3.x..
+installers are meant to install and upgrade a single instance, but we would only do this to upgrade a single instance.
+but if you, like UF IS, are running a server serving multiple sobek instances,
+this install wizard will not work.. then you should do upgrades manually.
+so if your iis shows multiple websites, like UF, do not use this wizard..
+now continuing with the wizard 'msi installer' window of sobekcm prerequisites..
+See c:/program files/sobekcm/database (SQL installation updates upgrades)
+and files like Version_40804 --- these scripts upgrade db from prev version to next in version-to-version upgrades
+now the builder installation: first see builder exe file location: and see under c:\program files we see subfolder sobeckcm\builder
+and see under here is exe file for 'the builder'
+SobekCM_builder.exe
+the builder also does gen maintenance for your instance..
+it creates rss feeds when you add a new item, (for SEO optimization fodder)
+and it does some db admin stuff to speed up performance pf and cache, so it is always an integral part of the system.
+currently SobekCM_builder.exe is a scheduled task,
+and look at window task scheduler and expand task schedule library and see sobekCM Builder.. and actions shows the scheduled info.
+t1135 -
+so must shut down builder before you upgrade.
+via website myUFDC page, use tab System Admin and select settings/system-wide settings
+and set field Builder Operation Flag to ABORT REQUESTED setting
+wait a minute to refresh the page and that flag should say something like builder stopped.
+or go to scheduled task window and set it to restart back up in 10 minutes..
+IMPORTANT: so must grab builder files (maybe copy them from newly pulled git repo's working folders) if want to do an upgrade.
+rvp: (Will MSI installer copy them, or from where do you grab them? So but maybe only for a source code upgrade?),
+In my MSI install of 20151020 I did no manual copying, yet on 20151022 my examination showed folder c:\programfiles\sobekcm\builder and its subfolders have dates of 20151020, so the MSI installer it seems already did that? (the file-specific dates were older, but I guess thats ok).
+we (or maybe MSI) MUST COPY/PASTE all the Builder files for an upgrade.
+(but what are the from and to folders?)
+copy TO FOLDER: c:\program files\sobekcm\builder
+copy FROM folder: c:\inetpub\wwroot\?? nope.....
+well for UF, using the git repo, it is under the git repo working directory under ...sobekcm/builder
+after running the special "BAT" file we use to compile from the git repo
+And the other part of the sobekcm installation is under c:\inetpub\wwwroot
+these are all the files for the web server.. all the things intermingled
+so upgrade..recap for SINGLE website (not uf), or a simple development machine environment:
+run this upgrade, (msi installer)
+grab the builder (copy paste )
+and grab the db
+and grab wwwroot from the VIRTUALDIR folder name. note: msi installer puts it under c:\inetput\wwwroot\VIRTUALDIR) that you gave to the MSI installer.. so paste it into the WORKING server main folder also under wwwroot or wwwroot/working_virtual_dir if you set that when you installed production
+and in your WORKING webserver file hierarchy, (assume now it is plainly c:\inetpub\wwwroot, the default, with no suffix virtualdir having been set for production) do NOT delete:
+the ...wwwroot subfolder design folder...
+nor wwwroot subfolders user and default
+nor file wwwroot/config/sobekcm.config
+nor wwwroot/mySobek/templates
+and so these things like wwwroot/config/user are all examples (when production
+had no virtualdir subdirectory provided on set up).
+but all your customization is done in your (wwwroot/config/) user folder,
+so when the server starts up it looks in your default config and looks in
+these files and it does NOT overwrite your ..wwwroot/.. user folder
+and also .../mySobek/templates will have a 'user' folder and those will not be overwritten
+and you do need to save your production designs folder
+and do SAVE your sobekcm config file... as it has your db connection info..
+
+-t1140
+
+also exists a wwwroot/web.config file (by the way)
+see under inetpub/wwwroot/web.config file
+used by iis to add handlers eg for requests that come in to go to the engine
+
+eg the back part for the rest api,
+and there are some tiers for application level..
+and you must unlock it.. an issue allison hit in her install today
+
+and see the variable there for timeout is in minutes, 90 is 1.5 hours..
+one other thing in web.config .. maxAllowed ContentLength of  104857600 --
+that is, the max is 100mb to upload..
+but too small for videos, so may want to raise this number...
+in most instances that we host, it was raised to 100 gbytes..
+for audio and video.. and it never changes..
+and this file will not be changing the names of the fields used.
+but the values of your own you need to save between upgrades.
+
+other main config must be edited in the file wwwroot/config/sobekcm.config
+and it also has a config.template
+and it has only connections info.
+
+and it also has an errorpage..
+a last resort error message area that points to ufdc..
+and also set the error emails to get catastrophic event notices
+and if want to use sql authentication, remove 'integrated security=Yes;' area
+and this file should never change after its initial configuring.
+and flag isHosted='true' to allow your hosted institution..
+and a new level of user then is added for host level admin
+and it adds options like server names to settings.. and others.
+but keep it to false to keep private their network  nw settings,
+or sobekdigital's nw settings or your nw settings if you host to other people..
+and the type is MSSQL, and we will keep supporting mssql.
+-and see various links it has to go to
+and see the source..
+
+TOPIC of REST APIs:
+very nice to review -- writing out in diff formats using these extant
+endpoints may be useful. sort of like viewers?
+
+see ..samples/citation.html- http://sobekrepository.org/samples/citation.html
+See the javascript that shows what you can do easily on its own without asp.net.
+
+It is a nice demo, the last javascript simply assumes that we had created
+function parseItemCitation(data),
+
+and it provides all the data that the json-p link shows, for our implementation
+of that function to rely upon. also see: https://en.wikipedia.org/wiki/JSONP
+
+The actual json returned starts like:
+parseItemCitation({"description":[{"properties":[{"value":"SHANDS HOSPITAL AT THE  ...
+and hence it is pre-arranged that the client must have a function named parseItemCitation
+and that function also must  takes the following JSON in a pre-arranged format do deal with it.
+.
+also see: https://en.wikipedia.org/wiki/JSONP
+ctrl-u source: (see ufdc.ufl.edu sample source at:
+https://robertvernonphillips.com/admin/bills/log/10688/ )
+
+<html><head>    <title>Citation REST API Demo</title>
+<script type="text/javascript"
+src="http://cdn.sobekrepository.org/includes/jquery/1.10.2/jquery-1.10.2.min.js"></script>
+<link href="samples.css" rel="stylesheet" type="text/css" />
+</head>
+<body>    <h1 id="title"></h1>    ( <a id="view_original">view original</a> )
+<h2>Description</h2>    <div id="citation-placeholder" style="width: 800px"></div>
+<h2>REST API Microservice Endpoint</h2>
+<a href="http://digital.wolfsonian.org/engine/items/citation/json-p/WOLF037299/00001"
+id="rest_api_link">
+http://digital.wolfsonian.org/engine/items/citation/json-p/WOLF037299/00001</a>
+<script type="text/javascript">
+var citationBuilder;
+var base_url = "http://digital.wolfsonian.org/";
+// This routine is called by the JSON-P script included below
+function parseItemCitation(data) {
+// Insert the title into the h1 span
+document.getElementById("title").innerHTML = data["title"];
+// Add a link to the item
+$("#view_original").attr("href", base_url + data["bibid"] + "/" + data["vid"]);
+// Add the citation
+add_citation(data);
+}
+// Get the item citation information and put it in the citation-placeholder
+function add_citation(data) {
+// Start the citation definition list
+citationBuilder = "<dl class='citation'>";
+// Add each description element
+$.each(data["description"], function () {
+add_single_citation_element(this);
+});
+// End the citation definition list
+citationBuilder = citationBuilder + "</dl>";
+// Set the citation placeholder
+document.getElementById("citation-placeholder").innerHTML = citationBuilder;
+}
+// Adds information about a single citation element to the citation HTML builder var
+function add_single_citation_element(data) {
+// Add the term for the citation
+citationBuilder = citationBuilder + "<dt>" + data["term"] + ":</dt>";
+// Add the individual value(s)
+$.each(data["properties"], function () {
+// Add this value
+citationBuilder = citationBuilder + "<dd>" + this["value"];
+// If there was an authority show that
+if (this["authority"]) {
+citationBuilder = citationBuilder + " <span class='authority'>" + this["authority"] + "</span>";
+}
+// Add the first URL, if there was one
+if ((this["uris"]) && (this["uris"].length > 0)) {
+citationBuilder = citationBuilder + " ( <a href='"
++ this["uris"][0].replace("[%BASEURL%]", base_url)
+.replace("[%URLOPTS%]", "") + "'>view url</a> )";
+}
+citationBuilder = citationBuilder + "</dd>";
+});
+}
+</script>
+<!-- Add the reference to the JSON-P version of the item citation view -->
+<script type="application/javascript"
+src="http://digital.wolfsonian.org/engine/items/citation/json-p/WOLF037299/00001">
+</script>
+</body></html>
+
+-end source
+a good example of using the api -  it is link 3 under section sobek cm 5.0 architecture and apis on our handout ho
+http://sobekrepository.org/sobekcm/apis
+and view the source and see how we parse the item in jscript and it is not complex..
+so that tiny bit of javascript gives fine display coming directly from the api.
+-
+-Example, see samples/gallery.html under sobekrepository.org..http://sobekrepository.org/samples/gallery.html
+-and that uses fancybox-
+can do a SobekCM full install for working on a test laptop
+and then port any new modified software to a production server later
+and see final sample
+in file http://sobekrepository.org/samples/book.html
+and it uses turn.js too..
+and it goes to the end and pulls the json and you end up with a flip book even with only javascript
+and even easier todo in c# as you just grab the core class..
+just nice samples of using the endpoints..
+so good examples of using the item apis.
+-See sobek source code addressing  REST APIs
+and now see vs code from github git repo..
+and also have samples to parse the aggregation object endpoints as well, ie the aggregation or collection..
+so the whole point of these apis is to customize the look and feel for your library..
+so you could use the sobekcm admin interface and use the apis to create your own public iface if you wish..
+-ms - so London site (former UF employee X works there)  is running sobek and we hit one of their endpoints
+ms - we do not use api keys yet, just restrict now by ip.. we could add api keys when/if we want.
+-ms - but for deleting, posting and putting, we would want security, maybe different than the ip-restriction only method.
+and it should compile ok from scratch...
+but the builder has subfolders that are not in github...
+Summary: Install and Setup a dev machine:
+so to run on a new machine.. you run from the msi installer..
+[rvp] when it asks for server and database name
+and if already have a working dev system on a previous sobekcm release, it will have a config/sobekcm.config file with a connection string value that indicates the dev server and database.
+take it, your current  dev server and database name,  and use it when the msi installer asks for a database name
+if not: \you can keep the default or make it up
+but keep note of your database name for later.
+and download the code from github
+so all the folders required were /are present from the msi installer..
+t1536
+can go get most recent github sobek source into a local sobekCM folder..
+and it brings a lot down but not design folders or config.
+as a dev do look in the GitRepo/sql folder to make sure tables are what you expect.
+so 1 visual studio, vs,  'solution' is  for the web
+and 1 vs solution is for the builder
+and they use many common libraries.
+rvp: PLUS - edit the source code ...config/sobekcm.config file and set it to the same database you specified in your MSI file.
+so looking at the code in visual studio, vs -
+see endpoints and code for how endpoints are responded-to.
+see code file CustomServices.cs, public class CustomServices, see under celements
+local file is:  C:\Users\lib-adm-podengo\Downloads\git_repos\sobekcm-web-application\SobekCM-WEb-Application - and see under that is:
+\SobekCM_Engine_Library\Endpoints\CustomServices.cs(20):    public class CustomServices : EndpointBase
+Mark deployed this on a registration website page that we filled out to register for this code camp.
+it has main method Register_User that ... has no refs in OUR official 4.9.0 sobekcm codebase, but Mark added to his, it seems, for us to use to register.
+so this endpoint - the server-side code for it:
+it seems expects the request to include all the registration fields,
+and it does do some validations...
+so maybe he had a form page that we summoned and filled in that then called this endpoint...?
+It calls direct sql methods like sqlCommand.Parameters.AddWithValue('')
+and it sets/set sql_command
+// Create the SQL command
+SqlCommand sqlCommand = new SqlCommand("LOCAL_AddEventRegistration", sqlConnect)
+{
+CommandType = CommandType.StoredProcedure
+};
+-
+and see Title_main_element in file Element Factory.cs...  is how it translates from these types.
+in file ...SobekCM.Library.Citation.Elements.Title_Main_element... file Title_Main_Element.cs
+see the comments, ... it is "Element allows simple entry of a main title for an item"... see that code
+See Method public override voide Render_Template_HTML() and how it is used/created for this particular element as a simple override method... ok
+See method Save_To_Bib - with foreach syntax similar to sql to save the Bib info..
+https://msdn.microsoft.com/en-us/library/bb384087.aspx ab: shows C# LINQ select statement and see other MS docs on that..
+LINQ - language integrated query - guide: https://msdn.microsoft.com/library/bb397676%28v=vs.100%29.aspx
+more LINQ links: https://robertvernonphillips.com/admin/bills/log/10694/
+see file Element_factory.cs
+C:\Users\lib-adm-podengo\Downloads\git_repos\sobekcm-web-application\SobekCM-WEb-Application
+\SobekCM_Library\Citation\Elements\Element_Factory.cs(330):                        return new Title_Main_Element();
+Takes an argument string name of an element type to create (and optionally a subtype) and goes to a big switch to make the element of that type name, to call a constructor function of roughly that name, where some constructors, for example, are:
+Abstract_Complex_eElement, Acquisition_Note_Element, Additional_)Work_Needed_Element(), etc...
+that are already compiled into the sobekcm base,
+for example the foregoing Title_Main_Element() is one of them.
+May be multiple, say 2 ways to expose (a rendering of an element or editing area for it), for example Creator  where subtypes are: complex and the summary..
+So still in file Element_Factory.cs
+eg for MARC format, the type of abstract and the drop down,
+eg for creator we have subtype names of simple, complex..
+Eg for element_Type.Type we have subtypes of IR or simple or None
+Subject subtypes are simple and scheme or None
+Spatial subtype is simple or None
+SerialHierarhcy subtypes are panel or None,
+Rights subtypes is ir or None
+Creator has subtypes simple, comples, fixed_role or None
+Only those have/use subtypes, though.
+so this is a preview for tomorrow..
+and you would have an elt for creator and subtypes..
+and on bottom is Element_type.Zoological Taxonomy:
+and it all pops up with one function..called return new Zoological_Taxonomy...x
+- see at end of file.
+-t1608 - AO - needs a way to run a query vs all the mets files, make changes, and put them back in.
+20151006 uflib sobek code camp tuesday morning session at fiu floor 2 green library metadata topics searching smart tool templates more
+20151006 tuesday morning t0945AM start, notes:
+
+ms is mark sullivan
+derek merleaux - a person working at the Wolfsonian
+tNNNN, eg t0945 is time of 945am.
+cd is chelsea dinsmore, ao is allison odell, lp is laura perry,
+ao2 is the person sitting beside allison, I think later her name was probably Rochelle
+pat is patrick.
+pat2 is the person who sat beside patrick. jianyang is my closest memory/approximation of her name.
+q: means a question from some person I did not identify, sitting behind me.
+Many qs, from dim voice recognition, probably came from a person I later learned was Jamie.
+I think Keven and Yang, the FIU Sobek Developers were mainly quiet.
+rb is richard bernardy, the USF developer.
+rvp is I, but I probably failed to record some of my own questions.
+
+-t0945 - Mark Sullivan begins:  today's scheduling
+
+So today is metadata, md, and some md templates, and default md, and md in general, and searching
+part of searching is seeing what we are doing.. how we work with it, tying into gis..
+then we will swap the open sessions and ongoing projects and we will talk about ongoing projects and what people are working on
+so save the coding stuff for last.
+(this is based on sobekcm 4.9.0 release it seems)
+
+TOPIC: METADATA TEMPLATES
+
+Briefly review metadata md templates and we go into wwwroot/mySobek for folders:
+projects, templates, InProcess
+see folder 'project'  in wwwroot/mySobek/projects:
+this folder name may be changed
+This folder 'projects' was called default_metadata_projects and will be called just default metadata soon
+in the future we will reuse the term projects to represent a single digit project or single project in a collection,
+For example, for a collection of projects with multiple grant cycles
+like Aerials or Childrens Collection, and we only want to track new material
+so that would be easy to monitor, just look at collection and watch it grow
+It was tough, before, to track for 2d and 3d grants
+and good for tracking to add expectations, for example, we expect to have 10k digitized items, so later we can track progress on it
+and can assign people to projects, will be able to do.. later, so that is why we will reuse the term 'projects' soon.
+now we have under there various .pmets files,
+corresponding to template names that are available for METS template name dropdown choices when one adds an item on the website:
+DLOC.pmets, EVERGLADES.pmets... ORAL.pmets, UFIR.pmets, and more.
+-
+Now folder here is wwwroot/mySobek/templates and it may have 2 sub-folders, default and user,
+- see folder templates/default
+and all not in default folder you can delete --
+ie, if you edited any there, you should save them before an upgrade and re-merge them after an upgrade?
+and files under templates/default likely will be overwritten upon an upgrade,
+so the default subfolders will all be overlaid
+see under folder default/images ..
+we may or may not need them here, but can set more per-template images, eg, banner image file.
+see folder templates/default/standard, and it has files:
+addvolume.xml... itembehaviors.xml, project.xml more xml files
+these are tied to other buttons like addvolume, addvolume notracking (like born digital or rcvd-on date x)
+and groupbehaviors.xml  only updates the behaviors..
+and massupdate.xml - so the bulk update that works updates (it updates only behaviors not in the mets-- or not in the original mets 'cataloging or biblio info sections'? or just saved per aggregation?)
+so it, mass updates, updates all items with a single title to one of the handful of values given in its template
+so you digitized newspapers over time and half are in and half not in a collection,
+so you can use mass update to put in one collection, etc
+and project.xml is the template you see when create (item with) default md
+and default/standard - leave alone
+see folder templates/default/edit
+here you can assign people diff edit templates..
+and we tried to support this simple basic form,
+for file edit.xml, it says edit for simple file
+but for marc complexities,we have a more complex/complete template:
+and and one file is editmarc.xml, a more complicated template
+so the ones edit without word marks are usually usu just a single field
+like edit_catalog.xml
+and when you click "edit complex version" that is using the editmarc.xml template file.
+so we (the sobek website software) analyze the md in hand and when you click on the website button edit
+but if any md field would be lost with that template it will automatically use the complex template..
+in broad sweep we (the algorithm actually asks)
+ask if any md field has any subfields, that is the algo,
+they move the user to the complex (template and) editor,
+display that one for the user when they edit that particular xml file.
+some people use only the complex editor to prevent confusion from different editor templates popping up for different items
+see folder templates/user
+and any templates you change and maintain across SobekCM releases should go in the templates/users folder
+so those are templates
+
+TOPIC DEMO TEMPLATES: now under sobek/projects are demos
+
+See mysobek/templates/default, and look - only 3 templates under mysobek/templates/default,
+some are just examples to look at,
+and can see some examples in Database table mySobek_Template
+see 3 rows in that table, first is born digitized, ie uploaded,  material, so it does not ask for upload of any items nor ask for license agreement..
+--
+so the internal one skips the grant of permission on webpage my/submit/1
+and these are the template dropdown list settings
+so if click internal on the website you see no prompt for grant perms
+-
+and on website, ir has under top menu tab myaccount
+and template (dd options on demo site now are just dloc) and select dloc
+and .. (unlike UFDC production this demo site shows ?) no ir template,
+and it has field material type with 2 values or lines
+and if change ddlist option it just changes name of below field
+and it creates you as the creator by default
+and under template/default also see file oral.xml, and it is a template,
+see source and see special fields like SPOHB the fixed type
+and the title the user sees
+and type creator.
+so we can customize templates here
+
+TOPIC: EDITING, CREATING AND SAVING TEMPLATES:
+
+and no online way to create templates, but we have to look at xml (files on the webserver and edit them as we need)
+and there is no way to add a template (if we add a new template file) except to go into the db with an sql insert statement (which is what we need to do now manually as developers to enable sobekcm to see and offer the template)
+so in db sql he does sql:
+insert into table mySobek_Template (TemplateName, template id?, Description) values('ORAL History', 'Oral', ''),..
+adjust to your situation...
+ok it is added there
+and we come back to the website myufdc page and go to system admin, settings option reset cache to re-pull the info
+now  go into my account.. system tasks, users and groups edit..
+and under there (the dd list of x) is option 'ORAL',
+and we add ourself as authorized user to access the template (using a website access/edit page?) and log out an in again
+and start a new item and ORAL is now (displayed in the ddlist as) a template option.
+and now we see standard std fields, no new elements, we just changed the title of what people see when they enter data...
+so see that is a nice small template to look at ,
+and if worked with sobekcm editor application it is a similar setup
+chelsea q: does this apply in same way to brief views where it says publisher.display?
+we can do it at uflib, it is just different labels.
+- cd it also says subject.display,
+sure. Just remove the .display from the label..
+cd will enter a grover ticket..
+mark will review
+and here is the schema as well that shows the next element to use
+under mySobjek/templates/default/oral.xml file.
+-t1001
+-now mark is editing a template ..
+now he changed interview title mapping as an eg ..
+see url ...AA00001/0001/citation,  it shows the mapping of the field names to the values actually. a nice view
+and the template --
+richard, rb -
+some labeling.. you control what it maps to.
+see type is title and label is interview title,
+so label is what the user sees
+and can add fixed_type to a creator under an element elt
+or, still in oral.xml, can show help
+ms will pull together a master list of all elts to send to rb ..
+allison, ao - has an issue -- spreadsheet ss or ssheet import
+when doing the ssheet import, to get the creator type attached to a spreadsheet -- issue:
+ms: ss imports is tricky
+as our md is not dublin core,
+so we eke out as much of a relation between the diff columns that we can..
+and if you have a creator column and a creator type.. it will work,
+and you just put the name in the creator and the type in the type..
+laura perry, lp - has been ingesting multiple creator roles but it does not import using smart
+-- ms will look at it..
+- so there are a couple of small fields like that to augment the column before that type of thing,
+and ms is in general not working with the smart tool
+q - eg how to add fields for committee chair.. etc q
+-
+and mark shows when looking to make up a template in general under mysobek templates default
+Go to templates/default/edit and look at editmarc_internal.xml, a good model template file.
+and it should have everything..  this is a good example to look at.
+and these are all ETD, see lines 102-112 ETD stuff , they are there, and you can put these in there.. so lets do it
+first lets go back to oral.xml and see we divide inputs into pages and panels ,
+the same way the md editor works to show diff pages and panels..
+-so now in default/oral.xml, this is the same way the md works.. say a panel goes from lines 26-57
+and an input is divided into pages, and this one has one page
+but see editmarc_internal.xml has 4 pages in that one
+and you can do multiple page inputs.. so inputs are divided into pages
+if do not divide into pages, then  it just makes a long edit form
+and back to website... and each tab in the editor at top is another page, so can label them to create tab labels.
+and we divide them into panels.. with regions and some indented field labels and controls
+now back to simpler file oral.xml, see panel at line 57 called 'enter abstract'
+-so see the panels on the website also appear properly.
+and within the panel elt you can add name with lang and name and .. each element has subtags
+now see editmarc_internal.xml it has pages and various panels..
+t1010 -
+so here is the ETD stuff under some items/4#complete template
+so can just copy  a panel from one xml (template) file and stick into another.. paste into..
+a question - if make change to field label in a template, it just is the input form field label...
+so a diff between name and label
+now we did edit and save template changes
+and should do ADMIN WEBSITE CONTROLS:
+system admin/... reset cache, every time we change a template
+and now continue with oral history
+and if do not want to reset cache
+go to start and open file explorer and go to IIS Manager window and reset iis (if do not want to reset cache)..
+and we re-logout,login.. and go to.. wait...
+now select oral history again and now it says Step 2 of 4 Interview info..
+and it may have a name if we added it, say etd info in "step 3 of 4: ETD Info"
+-t1014
+-ms - so here the mets editor does show
+(that a mets file has) many more fields than the ddlist of the ssheet importer
+as seen in the SMART tool
+marc thinks the smarttool can allow this
+later WHEN we update the ssheet importer it will use this ,
+but the SmartTool spreadsheet importer does NOT do this (multiple creators?)  now..
+and you can do this in code of course to create the met files...
+ms - you can do bulk updates in 10 lines of code, easy
+-ao - now lets see file oral.xml and in a panel.. we add an elt
+ms does set: element type = subject . repeatable = true..
+(allows list of elements editable by user on a template element, ie the field displays with green + icon/buttons) etc in the template editor session.
+and to reset cache and to look at template oral, and here will see addable list of subject keywords
+ao - at uf we have expandable menu and too-many options, questions about the options
+now.. the .. note that says at top of the form you are using simple form, and click here for full form and you now get the popup.
+-allison, say sees label topical terms on the website form:
+now are they - the N of terms -  just 4 terms total.
+and can I have more than 4... ?
+ms  - you can change the form..
+and enter stuff there and scan see where they go into mets and marc, both..
+ms - this is one single subject for the entire form that popped up..
+and asks - how does it choose the order..
+and under marc ddlist, see fields, one is 655 genre/form..
+and if only had a geo name, put it to 651, but only a topic and no genre, force it to 655..
+ao but it will use order of... -
+t1019--
+ao - this menu does not work to spit out correct marc in order..
+and ao says the order is not always topic topic topic and then geographic..
+so need more info from ao and a grover ticket..to fix this issue
+ie to control the order of the elements more finely
+person beside allison -- ao2 -- knows this issue too..
+mark says you need
+another md element to ask what is the next elt you want to add
+and then to enter it and add it
+and next asks what is the next elt you want to add, etc.
+laura p - randall issue also with 650 field.. issue:
+here, ms says.. there is no way in the mets to say where you want it to appear like to map this into a 650 or 656...
+lets look at the mets..
+so he is seeing the mods subject element in an example
+mods subject id is subj 655_1
+and to force it to be a 655, you are supposed to say -1, -2, -2
+and lang and authority is lcsh
+and sub-elts are topic (multiple ok) and mode geographic and tag temporary and tag genre,
+and so we would need to create a new md elt to provide the order element..
+-ao - should just uf fix this or does sobek need a general solution..
+ms - people can say.. how to fix
+and ms may fix it
+or one of us may fix it and submit a grover ticket..
+so - subj655-1 is actually wrong here just to show you can force it ..
+Summary - we looked at a template example
+------------------
+now default metadata topic (subtopic under templates)
+------------------
+go to system admin menu selection, sub? items sub b default metadata
+now metadata code is ORAL he types,
+and base metadata can be some other to pull in but he chose none here
+and can click it and provide ability to make all changes here..
+-ms: browsers are more interested in posting back on any control,
+but maybe try to tell them not to.. to allow the default value to populate
+-and if you type in , your value will overwrite the default as expected, and in newer version 4.9 that will work
+aside: stats issues are NOT fixed in 4.9
+now if you select dd list it populates when you select in a form input
+see the xml shows
+the value has the code a pipe sign and default text..
+and return false would prevent, in this html, the browser from posting back..
+now back to a form, typing a full name..
+-so see mysobek/projects and these now are __name, and each is an example..
+and one is __Oral.pmets, a sample default mets/mods file.. the default md
+ms - this is not used enough.
+we have used with natl archives of haiti, digitizing large scale negatives,
+we put much md in here
+and ended up with more rich md as a result
+and you can do system admin/users/users and groups
+and assign the default metadata with checkmark to diff users and groups
+and if have mult ones (default metadata sets)  assigned to a user...
+it will appear in the ddlist for that user.. after user logs out and in..
+and it has a field default metadata if more than 1 for the user
+here the holding location is brought in
+it first reads that file and makes that the base and all you add here on the form goes in also..
+any qs on templates..
+t1032-Templates - RECAP
+So the template controls fields the user sees, and the default md is the md tags that have default values
+ms when you click start a new item it asks if there is a project for it
+and if so it reads the mets file and then it figures out which template to show,
+so you can have fields in the md (that appear in the default md specification file) that do not appear in the template
+when you hit save it goes through each elt and halfway through the save the 5 fields changes are empty..
+and then it goes through again and assigns values from the default md file..
+so useful say
+if it says the institution that submitted in the default md,
+you don't want users in your employ to change that.
+-when they change type from newspaper to photo it just changes the type
+and see database tables,
+Table mysobek_template is the table into which to insert
+templatename, templatecode and description
+(not sure where templatename appears, and description also may not appear to a user.. except when editng the db)
+-any template project qs remaining?
+
+TOPIC: METADATA
+
+now wrt derek, he once said that md was being too bibliographic.. derek does not recall details of this ... a lost issue..
+now lets discuss other flavors of md to make accessible - derek asks..
+we try to put stuff into sobek that does not work well with mods or marc much more so,
+like vacuum cleaners and toasters..
+and msmts and material types,
+so the vra extension that is a bubble in the big sobekcm md bubble chart at outside at 2:30pm position
+so describing the zool taxonomy..
+we want to describe and want to bring more into the middle.. into the basic core md.
+so derek is not opposed to mods with extensions,
+but would like to describe something with diff schema inside the mets except the mods
+ms: there may be a place to set this to say my primary md type is either mods mets or dublin core and in theory we could add vra core
+-- derek - but maybe vra core is not the fix.. need more info about fine arts md solutions..
+-person near allison ao2- dublin core has a lot of that and thesauri is a concept that may help..
+derek: one of the source data issues is a non-schema non-authority db, ao2(person near ao) -
+derek - our objects are weird
+but sometimes we get well built records,
+from getty museum eg, and would be handy to accept their schema..
+derek does not know their schema
+ao -  related things - materials is a good eg -- and we really want cco based descriptions (cataloging cultural objects)
+and vra core is more  simplisitic than cco ..
+so vracore does not meet all cco stds..
+and cco says you can specify the etnt (extent?) of elts, it is super granular.  - a cataloging std,
+see cco.vrafoundation.org/ and it is derived from the getty standards.
+-ao - if you catalog art in marc to encode descr of art resource in marc format, you would index materials in a 655 genre form field,
+and in sobkecm we have both a materials and 655 field, a user is confused where to put the data, it is for the same value,
+so ao would recommend to not extend mods but consider a universal sobek schema to map to mods/mets/vracore, whatever you need.
+ms is opposed to departing from std .. or creating own standard.
+ms - we will host any new md schema going forward and ms plans to not build new schemas
+-derek - re local authority ..
+ms this is dbase driven stuff,
+and derek talks of subject term authorities
+and ms is considering places people and names too..
+so if only want assistance through subject term.. just use getty endpoint
+
+RE: Authorities
+
+re authorities
+authorities is pulling data out of your record (losing the local data)--
+eg you create auth record for local faculty member, and say they have own page for the person... with links to wikipedia, nato, other places..
+ao-  approaches -
+doing the suggestion thing eg to search 10 variations of a name.. is bad..
+or make the search be for the uri or the way the record is expressed,
+and ao2 says that is the way loc authority is done..
+ms-  we need new columns to lookup..
+ao - it would be simpler to have the uri in with the record.. the uri for lcauth? maybe..
+ms - but people will not search on the uri
+ms - when I do the first lookup..
+- t1049
+derek - re alt spellings - they will not be replaced with the uri  soon.
+eg you can rebuild the solr indexes when new authority updates arrive.
+-liberty square is aka quirky bean
+-q: can we search and get a specific page/photo in a collection say with a search hit, ?
+ms - yes we are doing that
+- q: there is a weekly lcauth update,
+ms - we would /could try to update that in the future..
+if we could have a copy of lc authority records...
+rvp - note to self:
+review my design of authority records management processing
+ms - to patrick partner.. pat2,
+pat2 says flvc loads a copy each week, and you can contribute back to the authority record.. and they use marc format.
+ao - and your update  goes through nico to let them vet your submitted correction or addition to authority records. flvc does it..
+we talked about authority stuff and custom schemata
+AND  we have 1 small custom schema thing
+we had an oral history schema we used that is a sobek local schema..
+we are OK to augment or extend schemas .. to add more info
+ms: mets is bad at holding locations of publishers,
+so we made a custom schema to link that data,
+so we can add new particular elements
+rb: for ieee loan.. ms added, and he can show how to add to it.. we will do it this pm.
+any more md things..?
+-t1101:
+
+TOPIC:  THE METS EDITOR
+
+ms is downloading and describing where to download dl,
+but the current METS editor, lacks some new things compared to the SmartTool
+but we did something interesting with type here..
+now opening METS Editor
+he picked install type MODS
+and select your addons to enable, and he selected all 4 or 5 items and fcla
+and now it  is setting up default viewers ..
+and when you first get a mets file,
+procparam is sobek custom schema that will accept some data for the first mets you submit,
+and for it you can tell what viewers you want, etc, that is put in the database
+-he seeks an option that would allow entering the types you like,
+SEE controlled list:resource types
+and this is the mapping thing we have here, it really says MODS Resource Type at top,
+and sobekcm genre is not used anymore
+is newspapers are diff from serials,
+but it is really derived from marc,
+and for types the only thing we do..
+and newspapers usu. you can see year, then date, in a drill down tree
+-
+so we could add here your own types, controlled list of types ..
+ms - so would that be good, to show your types in a ddown in your template but limit these types to a marc type?
+ms - it would only matter when you look at marc records and would not change the html generated when changed to marc type..
+q: at top of mets is a commented out type ..
+but it is just for a person to see the comment.. not used ,
+but it is also stored under mods type,
+but sometimes it differs, the comment,
+but the comment does not matter..
+ms: aside there is a a sobekcm_list that includes newspapers, others, compared to this mets editor window with controlled list resource types.
+ms will try to fix mets editors so we can use it.. --
+so the resolution is
+you can manage your own terms
+and use the map to map marc types.
+ao: marc mapping from x to rda..
+ao - it needs doing, and ao can send out to md group for comments
+ms - and it is easy sw change..
+ms: what is up with bibframe? must I support it?
+ao: no bibframe is not  one thing,
+the loc contracted with a k to develop,
+and got a draft
+and moved direction to be granular like marc,
+and lmm is a driver to go into other direction for bibframe light and exists rdms task force to extend bibframe light,
+so now will be flavors of bf, that are customizeable and extensible..
+but not just an output format, but bibframe is a link database, so must support triples and xvris.
+t1122: re the md committee -- ao
+the MD committee is just like there is a sobek dev group  the sobek advisory board ..
+and now have a md group to jointly talk about our md issues and work on specific projects
+together..
+so if anyone wants to be involved, please email ms or ao
+and two things we are starting as our big tackling points is
+(1) filling out the sobek site md help pages,
+and ms can give you access
+and other thing is looking at diff crosswalks or blocks.. ms says yes..
+ms: to a good place to look at for rda
+ao had an ade we did, of putting together a bucket list
+ms - as impt as md is,
+we have seen no major ch in our md, only minor in 2 or 3 years
+and no major ch in 5 or 6 years
+so time to look at needed changes..
+another q: jamie? of fiu? - the best way to do batch updates...
+the best way to do batch updates...
+idea: offer free online webpage to make such translations...
+jean or jamie? has been doing updates with mets xml files,
+so with mets files produced by digital coll ctr, we keep local copies,
+but not all depts keep local copies,or may not be mets files to start but a webform,
+when we need to get a dl, of the mets files,
+and we do manual changes of mets files with an xml editor and make the updates...
+and it is how we also do deletes.. at very top of mets files it is record status...
+so the complete gets left alone, and x updates it..
+MS: and delete and not delete are only status ms uses now as we do not want people to accidentally overwrite..
+so wd.. so now it only looks for delete and defaults to update?
+ms - there is a flag to see whether it will accept delete mets as a status
+and the delete record set value ismuc (music?)  in us
+ms - we have not kept copies of mets,
+so we go out to encode and make change in resource library
+and make the change and drop the mets back to the builder
+derek does it differently - he just makes mods and forces ms to create mets.
+ms only choses object or library - and if you have 2 diff folders to put it in on
+derek has 2 folders for update folder vs new folder...
+but mark needs it not
+but derek can leave them together, but the only change is.. the check is whether bibid exists..
+if bibid does exist, then it updates and if it is not a bibid.. it checks forms..
+and if it had the same identifier also it would match and end up overlaying.
+so could not cr 2 dup ids.. so nice.
+ms is pretty sure we added that.
+so update record status is not qd,
+but do need status delete
+a q: what if someone accidentally overlays a batch
+ms: we have backup - go to folder..wwwroot/content. and see 'sobek_files' subfolder under each vid,
+there is a backup of every mets file - a great feature.
+and if it starts with recd.. received mets...
+it is a copy of what the builder got, so you have what came in and what the last one was..
+with the bibid in its filename...mets.bak
+and in folder ..content you may have a folder recycle-bin along with folder AA, etc.
+t1131 -
+rb: asks about the whole folder... recycle bin?
+derek: one more md q - relates to .. fields in common bw schemas.
+and the field of interest is creation date, coming from marc catalog with loc stylesheet..
+for pub date and change to date issues in modes, that is his goal,
+and it shows up as publ date in marc records
+and the date of publication goes to date of creationand also shows up as date of publication. is that the intention?
+It is not really date created, but pub date,
+but objects coming in with date of creation as their date.. not the same as pub date, but both display as same.
+ms: so both date issued and creation date map to pub date in the marc record,
+but looks weird with publication date of a 'steam iron'
+ao - and this is a change with rda, it is not just pub date, and in marc fomat it says what kind of date it is, it is date of publication or mfgr or copyright.. and manufacture is ... creation..
+ao - has another date q: the year range - say year to year.. what is it..
+ms: it is one of the few things in a custom schema so it is subject "temporal coverage", it gives you a chance to name it.. like the first .
+ao: and date of distribution
+ms; date other, copyright, modified, .. others.. and exist marc date.
+see subelement date other at ww.loc.giv
+/standards/modes/userguide/origininfo.html
+-t1137
+ao: in marc xml
+ms: if populate 4 date fields sparsely, user may have trouble searching by date.
+ao: re date searching - on her sobekcm she cheked box to give user search box to include date limits..
+ms: it hides date range search field if no items have any dates,
+so that may be the reason of no search field seen for items.
+see ncf.sobek.ufl.edu -
+cd - we want to set up a temporary system... for the fl collection - john (nemmers) should be working on it
+ncf.sobek.ufl.edu/theses/results/?t=
+see ncf.sobek.ufl.edu/theses --
+ms for some search in sql.. look at the collection.. browse_results_display.. a stored procedure, sp.
+or aka a stored query..-
+see display sql (a column perhaps in the db for a select...)
+See in DB the table,column:
+SobekCM_Item_Aggregation,Browse_Results_Display_SQL,231,U
+select from.. sobekcm_item_aggregation where s.ItemId --
+So change select so say s.[Publisher,Display] as Publisher.. change the sql.. so you can change the report labels..
+so you do have to show diff fields in the results or field names, etc.
+so when it does a search it queries 3 tables, it has to know the vid, item title, maybe coordinates,
+and then it results in a title..
+and this table is all the bib  data you want to appear in your results
+1-std item, 2-std title info of the system, and 3- this table,
+the display table sobekCM_Item_aggregation..
+now it is browses results display sql --
+it is a view by that name..
+no it is the
+field name browse_results_display_sql
+under table sobek-cm-item-aggregation
+so this is where you customize your displayed labels and what appears in your result set
+ao - back to the date searching, the ddlist of years.. if the date range is too long,
+it will show hundreds (too old = too numerous) of dateyear selections --
+ms wants to change the search results screen to always integrate the mapping of the time always..maybe a slider..
+ao: how about endless scrolling -- if you look at nypublic digital collections.. it just loads the page.. and google images does that now..
+derek: but the flickr implementation at first was too slow..
+ms - this is the right way, you page down a couple of times
+and it just loads in the next group (as you get close to end of display results)
+ao: also the results 150-200 helps you keep your place..
+(rvp: here also add a field to type in the desired page number..)
+ms: you can do the same with a viewer.. page number
+
+TOPIC SEARCHING:
+
+ms: so searching is in the db and it includes spatial searching ..
+and ties into a solr/lucene spatial plugin.
+we will not stop saving into these.. for the base system if you enable spatial it will ... use it and it will still load into footprints.. table.. ok
+so any qs on default searching systems.. are they working for you or against..
+rb: q on adv search.. and it has the in fields on the right, and option IEEE would exist if the collection has any...
+so the ddlist is created based on extant data.. and it caches for 5 minutes..
+you have to wait before the ddlist new option may appear..
+Now -  see digitalauraria.edu/photodserver/map page or /photodriver/map
+and it uses new spatial stuff in 4.9, brand new
+and now go under search and way at bottom it says map search default area (zoom to extent)
+or can select custom zoom or default of North America,
+or start with NA and ,
+or start with custom and get sup-fields for zoom level and latitude and longitude..
+and last field now is map browse default area, under aggregation mgmt under search.
+so when it pulls collection info it pulls a lot of this... to set defaults for mapit area.
+t1200
+ms: in mets editor..
+pat2 is on md advisory board. mets editor creator defaults to type individual , but not desired,
+ms took a note to change
+ms - and is an ability to rotate 90 degrees
+and Eric asked to rotate arbitrary degrees,
+and new seadragon has option of rotation degrees param..
+and 90 degrees is definitely possible
+and now for tickets or enhancements to seek, go to:
+support.sobekdigital.com
+and register there, and you may be able to see the issues without signing in,
+and you can see outstanding tickets that are left since last release, so lodge requests here..
+and notify of your work on  any.
+this is the public sobekcm queue
+and should be a board there to see on what ms and others work on
+and a button 'create' should appear at top.
+==    break for lunch    ==
+
+20151006t1320-TOPIC - SOBEK PROJECTS
+
+What Sobek-related projects do we work on?
+ms: eric x is asking ms about a text encoded initiative, (TEI)  project to do soon..  eric was/is with univ of london,
+see digital.soas.ac.uk http://digital.soas.ac.uk/
+or www.soas.ac.uk - http://www.soas.ac.uk/
+he eric has interesting stuff there, and testing unicode searching there.
+rb: put in a request for zammon ? platform.
+(rvp: cannot find zammon or zammon on google)
+the webskin is ufdc.css in cdn.sobekrepositry.org/css. the last one to load in the head section that you would change,
+and it will inherit but last one listed in the html file wins
+ms: now working with univ of london and they add tei support to the system and it is tei, text encoded initiative,
+and it has full text and can mark up with bib data..
+and can upload tei and edit it and it impacts metadata and searching, and working on an integrated authority system.
+rb: is working on
+custom dl system,
+and mobile phone with apache cordova to cr gen mobile apps
+and a touch table app, a company CFO donated much equipment to usf and donated a large touchtable to cr an app to access digital collection
+they use archon with sobek for interoperatiblity
+and uses sobek api to do a custom pkg to migrate diff system,..
+Chelsea and I spoke about Elsevier:
+I did not take notes. Basically I spoke about the loading and the data and MD contents
+and Chelsea spoke about the authentication that Elsevier will do for entitlement checks.
+Derek is working on:
+-derek - working with masters students to do md remediation -(clean up METS md)
+to review recs from objects collection some created decades ago..
+with vendor-supplied inaccurate data aka not verified aka flawed data.
+So they go back to do batch fixes and research and they reupload mets files with cleaned data..
+and they have issue - how to indicate to user the record is verified vs not verified.. (maybe add a date_verified) ..to show the user..
+cd -- we put a note it was created from a provisional record
+to show vendor supplied info is there.
+and derek uses qc tool, rochelle is using it..
+and their lib, wolfsonian.. so they gen bib recs in marc for orig descr rec in sobek, and use qc tool to add caption info
+so in a book of images, may be many images of a notable person..
+so add that data to help to find the person's photos.
+so they are referring bugs in the qc tool,
+and ms got an email or bugs,
+and derek has usability ideas on qc tool,
+especially about autonumbering and dangers or it-- blanking out stuff you explicitly added.
+it generally is great and powerfu (oz like)
+They had to put in the page in the z56? field for each page number, now saved..
+but a bug to autonumber to overwrite captions of images..
+now rochelle maybe the ao2 person.. with derek --  can add more subject heading terms in the records eg to add persons names who appear in photoes..
+--t1343
+ms - one thing he considers is to add a place to add descriptions
+so see an item with pages, afterlife of .. its fun to dance.. haitian meringue..
+so on page number dropdown..
+so he considers to edit the page ddlist label when on the ddown itself
+and instead of going next on each page.. just do the edits on the ddlist... much faster.
+rochelle - pressure now is to not pile in the captions now...
+derek - exist cases we need to display more caption info, but nicer if not always displayed in dropdown..
+ms in brief item,
+there is a section with division
+and one with pages that are cross-referenced
+rb:  a hover over to see more on the goto field would be nice..
+ms: would like to do opposite if you listed the label and clicked it would beome a dd..
+but not intuitive..
+-- or we can ruminate ...
+ms: or maye the goto can be small, and if you click on it the full label will appear, but on top control it is shorter text
+-pat2 - or have a toc on the left that shows chapters and sub-units of page labels... could be good..
+ao: it could still be on a menu on a mobile device.
+-ms - and other projects..
+ao: project is to take images and some md and put an image gallery into an archive
+so ao queries sobek to get bibids and titles
+but ao heard rumours on sobek that EAD mgmt work is upcoming
+ms - and we will , do a lot more ajax, and he thinks of ferris bryant?
+with 30k nodes (eg, to populate for a tree view)
+so we try to do ajax  by loading all nodes - but now it takes 30 sec to load,
+but it will load a minimal amount and load more as you click down into it..
+and u of sc .. is a services of containers is archival content -
+ms - the other idea -
+if view a single item from ead,
+we will have a traceroute (like breadcrumbs) of the containers it is in.
+a tree view like file explorer ..
+ao: the q is -
+we digitized selected content from a given archives collection,
+so it will be a path for digitized objects
+and that paradigm has been shown by smithsonian and it is a good model.
+lp - - laura - so we continue to ingest large spreadsheets,
+we did a 3100 items of citrus labels, with separate bib ids,
+and we have fields that do not map well to universe of mets fields in dd list
+and we have general notes
+lp - so is there a way to map to the full formed fields once logged into..
+ms: not really - we have to add every note type to the ddlist or another way,
+add addl columns related to the notes, but you can do note type then,
+note language, note display label ,, to which you have access in the full form.
+in the near future he hopes to get ss imports happening in the web form itself, it is a good note.
+chelsea- would there be a limitation on the size ..
+ms - no, there is a spreadsheet..
+lp: there was a 9x9 measurements column, but in  brief view you don't see it unless you save individual records..
+so if you are in...
+ms: i need to see what mets had before, and then after you saved it.. it is not in the brief view..
+ms - needs example
+-- any other gen improvements? .. silence...
+t1356 -
+ms: has question about elsevier,
+ms: how to allow/manage any manual mets edits (potential conflicts) of elsevier records
+rvp: we can
+put a lock record embargo date so elsevier records,  new ones, cannot be edited for x time to save risk of manual editing being rewritten..
+or add to api reader a filter to not load rows that have been manualy edited 'recently' and  produce emails
+or employ github file tracking-change management per item
+and provide some way to merge changes from Elsevier.. (could actually add list edit date and author for each manually edited item)
+
+GENERAL AREA: Sobek Source CODE:
+
+Now we are in vs, visual studio, looking at Sobek Code.
+Adding an existing lib to the solution--
+and added it to the reference so now we can use it.
+Go now.. going to content/bib/id/ooo/xx , now in vs on file program.cs,  namespace Console App, class Program, static void Main, line 1 is string mets_directory="some dir"
+string mets-files = System.io.Directory.Getfiles(mets_directory, "*.mets.xml");
+foreach (string this MetsfILe in mets_files):
+{
+SobekCM_Item this Item=SobekCM_Item.READ_
+// note ann read various but we continue
+Read_mets(thismetsFile)
+/// we read the mets file there and now we make changes, and switch into diff
+//objects we have..
+thisItem.Bib_Info.Add_Note() and intellisense shows 6 overloaded options for arg patterns)
+// so here:
+thisITem.bibinfo.addnote("Acquired from loan that we stole", Note_Type_Enum.)
+//    at top add using Sobek.Resource Object.
+//so we can run it..h0
+
+thisItem.Finalize_METS(): // not nec, ub used to do it to shceck checksums..
+it saes as .mets
+thisItem.Save_Mets();
+}
+
+
+it now has  2 copies here, , it just wrote a new copy.. and there it is..
+
+the note type we added..
+
+and there are a few helpers..
+
+now.. to get the mets files..
+
+ps: can we retract a note.
+
+yes, can use nlien Note_Info removeNote=null;
+
+foreach(Note_info thisnote in thisItem.Bib_info.notes)
+{
+// do something .. and in here Notes is prob not null, but inside the bib
+// indfo objects notes may be a null collection.. but expensive to maek an
+// empty list so he precedss te  for each with envelope if
+// thisItem.bibInf.notes_count > )
+and in the foreah he has : if (string.cmpare(thisNote.Note, "Acquired from
+loan that we stoel"< true: then: removeNote = thisNote and after the foreach
+have: thisITem.Bib_info.RemoveNote(removeNote)
+
+and at end before wsafe, hdo add _note("Acquired from loan that we DID not steal)"
+and so we collect it to see what is it and then we did removeNote,
+but if a read only collection...
+(ps is aware of this technique).
+and when at uf we did this a lot
+so if we started with a spreadsheet importer we ran something like this many times
+as we corrected mets files incrementally..
+now see on right utilities and SobekCM_Mets_finder.cs
+and you can validate the mets if you want..
+and many say we need to validate, but anything this can write should be valid,
+so it is a waste to spend time to check.
+but see sobekcm_mets_finder.cs, as it is useful to look at.
+it steps thru multiple  places it could possibly be.
+-
+we should add a method to this to pass in root source and content..
+in  namespace sobekcm.resource_object.utilities..
+this object is useful and improvements are useful to the community
+He would pull data out of a file and load it into a mets and then must give it a bib and a vid so we can save.
+So for most things to save
+you must set thisItem.bibid, thisItem.vid and thisItem.source_directory,
+those three things must be set to create a mets file from scratch..
+rb is a big fan of this method and
+dep on project type he loves to be able to create for the markc,
+so simple, rather than add_mets, you use read)Mark,
+this sets it apart from all the systems he used..
+and so we have these objects to use.. and can use xslt offline..
+and this method was chosen before xslt appeared saliently... this works very well
+now when we save the mets()
+so under x seek sobekcm_item.cs.. file
+and this only saves to the mets file in the resources (Image Network) key-pair-folders, not the db,
+and it does not set the additionalWorkNeeded flag.
+ms: so now lets change the filename to add the final .xml extension...on the name of  the  outputted mets file..
+so now in sql manager,
+run sql: update SobekCM_Item set AdditionalWorkNeeded to 'true' where 1=1;
+now we pull this item up in our local instance under view items..
+and it looks like it works - our changes are seen...
+and when you click on an item it reads that mets file..
+and a little data is retrieved..
+however, the 'behaviors' are retrieved , ie the collection it is in,
+the permissions info, the wordmarks, and where the mets file is.
+but it shows, but if you searched for it you would not find it (as not in db tables yet).
+and you can also put the info here and in Save_Mets(x) you can specicfy x as a new file
+so modify code and before save item set NameInfo newauthor = new Name-info
+and newAuthor.family_name="so,[sp    , other is Homer
+and terms of address is Mr.  and after say thisItem.Bib_Info.add_named_entity(newAuthor)
+we could have also set the role, say nameauthor.Add_Roll="ill");
+and it is under creator and in marc view  see it item 700,710, others and not in viewall items because we did not load
+so now back to sql mgr
+-and run sql :
+update sobeckcm item set additionalworkneeded=true where xxx
+select from sobekcm_builder_log where bibid_vid like aa000002% order  by locdate Desc
+and now we see builder logs file as it gets new message rows... nice
+so this is the beautiful sobekcm_builder_log
+now out of curiosity.. because it did not do the work due to errors...
+so you set the AdditionalWorkNeeded flag
+and the next time the builder runs you would see it appearing here in the log
+and you can add code to simply save it to the db
+so can att code.
+and there are a couple of db name spaces,
+see Sobekcm.resource_object-Database-Sobekcm_Database.Save_DigitalResource(thisItem, null)
+and that would save it, but do NOT recommend ever doing that,
+let the  builder do its job, that is best... as builder also has to save to solr,  etc..
+ms recommends saving such temp mets jobs in any special folder,
+just see  thisItem.Source_directory "C:\\GitRepository\\"
+
+and next line save this_save_Mets,
+and then copy paste all the files to the builder folder.
+- it is really quick, you can do 1000 in a minute.
+ask mark - drop the whole directory or just the files?
+t1428-
+-ms - one hope for the new search screen is to do checkboxes there to say just select from these items to bulkchange to make it safer..
+see the big bubble diagram,
+and it shows all items in pink are in the sobekcm resourceobject = all the bibinfo stuff..
+and that is stuff we can access that way.
+and it is tougher to use the outer bubbles
+satellites
+and go under solution explorer for metadata modules,
+so go look in vs for vracore, and see the file for vracore_info.cs wih materials-info,
+so this is all the data the vra_core makes available
+so to actually use those.. go into that .cs file and add a line after thisitem.bib_info
+add line: vracore_info vrainfo = new VraCore_info)_);
+and line: -vra info.dd_styel_Period("rennaissance");
+and to add back into the item do: thisItem.add_metdata_mdoule(x)
+and x used to be a beautiful enumeration, so instead-
+for x use GlobalVars.VraCORE_METADTA_MODULE_KEY, vraInfo,
+so we created a new module and added to the new item, added a metadata module
+and you can add a metadata module to anywhwere on the hierarchy
+so if you had line- thisItem.Divisions.Physical_tree.Pages_preOrder[].
+and this is .. and
+divisions includes all,
+downloads and toc images,
+and phys tree gives you addes to toc
+and pages preoorder gives acces to all pages in preoorder and [[[0]
+so we can add after [0]. addMetadta.
+and next line- GeoSpatial_Information geoInfo = new GeoSpatial_Information() (add before,
+and also add dline - geoinfo.Add-point(-86,12);
+those 2 lines before the thisITem..Phys tgree .. lien,
+and at its end is:
+Add_metadata_module(GlobvalVar.GEOSPATIALMODULEKEY,
+aside, now add a page looking for images - add a koalas.jpg picture...
+and now he edits beh of the photo and sets thumbnail as the koala..
+so a gigantic jpeg will be made smaller...
+and should save tiff at same tme,
+and so if you load a gigagntic jpeg and now and at end of that line is MODULE_KEY, geoInfo);
+and what this line exposes is a hash table.. it returns a string to a metadata module, you can add at any level, chapter, page or top level
+now look at our mets that we created..
+and it is aa...xxx.mets and rename with end part .xml so editors work better
+and so we have top level mods and we hae VRACore" in other dmdtype value
+so it goe sin the mets ad DMD03 and our coordinates are set in DMD4 as gml in dmd4.
+so the top level of each structure map will ..
+and dmd4 we associagted with this page...
+at end of line in csharp can use suffix as VRACORE_INFO; handy to avoid
+errors with nulls..
+so use as VRACore_Info, more elegant and rb agrees
+so before .. after that line ending geoinfo
+have if vrainfo -- null then vrainfo = new vracore_info) and
+thisItm.add_MEtadata_moduel(Globl var.VRACORE.meta.. vraInfo);
+and now .. how to put in db
+so a metadata module is named and it needs this in Metadata searchterms,
+see adddate_module.cs
+so see in vracore.info.cs what it returns, and it returns a list of key-value pairs that it builds.
+see if cultural context_count. if so, add that..
+so add that for each, this is how we load things into the db as a md module, the default way to add things for searching.
+and in metadate module.cs
+we also have save_additionalinfo_todatabase(),
+but we like to avoid that, so we have list <keyvaluepair<string,string>
+so see code under database function save_item-mtaat_information(sobekcm_Item thisPackage0
+and this meth creates its own kv pair and creates aati ctufff in file sobeckcm_database.c
+and it has thipackage.bib_info.metdata_search terms) all
+and after that it goes through all modules ands saves kv pairs,
+and the sp that saves it is tricky..
+it is in db, we call the db once per 10 pieces of md, to avoid new call for each piece of md..
+so it i sobekccm_save_..we wait win cs we call save ..metadat,
+and it calls sp sobeccm-metadata_save_single..
+and it takes 10 types... a list of kv paris of type and value, not exciting,
+and it just calls sobekcm metadata save single.. and see that procedure
+and we update this proc often when we add md, this is a big chea at tiop these fields..
+so when we look at our table of md types in sobekcm_metdata_types,
+you could do a select everytime, so this chat is a big switch case for speed purpsoes,
+and it falls through this when switch, and there if not found we do do our select against this statement,
+and we set @metadatatypeid
+and then it has funny fields, we use them...
+so if a new type for user field, so we will get new field maybe primarycolor hatdee
+and in this code if display term undefined then basically tie take it, and see sobekcm_metadata_types,
+and it will claim a row in this table, so primary colorcshare will appear
+so we can add one per week, a new user defined field, and we will do this with solr too,
+solr will use these undefined fields..
+derek - and will those translate to the api?
+ms yes, as we are not just passing these out as kv pairs,
+it sort of becomes this as brief item
+and it is just groups of key value pairs..
+and you may need a way to make user display code handle it.
+
+---
+s isjust here, and someone can write a new md module to just let you add what you wanted from another database..
+WRITE NEW METADATA MODULE TO IMIPORT OTHER DATABASE: so now lets do one for fun.
+so we will cr a new md module under solution explorer
+first create a new project a console application, mycustomsobeklibrary, a console app...
+and we reference sobekcresourceobejct in mycustom sobek library..
+so we talk of adding new custom md elt..
+and under my custom sobek lib we add a new class, colorProile_info.cs
+and the new projetc is a dll project mycustomsobeklibrary which is holding colorProfile_info.cs
+now the method in there is public class ColorProfile_ifn: iMetadat_module
+and we have things to impelment.
+so save addl info to db, we just return true for that method,
+and method retrieve addl info from db .. also return true
+and like the coord view, under geospatial info file geospactial_information.cs
+It saves kml and calls Save_item_Footprint().
+back to colorprofileinfo.cs and in method retrieve additionalinfo
+we set error message = string empty and return true
+so that takes care of iface methods , some of them
+and public string moduel name we have get{return  "Color Profile;
+}
+and add member at top of cclasw public List <sting PRmaryOcolor_shades;
+an aanother member : public List<string> Secondary_c0lor Shades;
+and in file singel_colorprofile_info.cs new file ,c reate a class
+public class IGnel_colroPrifle_iifno no base
+here put public string hexshade {get:set;}
+public flaot Perentage {get;set;}
+
+and badck in colorprofile)info.cs,
+we have public list
+singel_colorProfileinfo> coolors
+and in method list <key value pari<stirng,string>
+and return value .. well under get ahve [if coors==null or  or
+color.count==0)) return null;
+next line is list keyvalue pari string,string, return value =xxxnew..
+and we will say-set percentage is 10% white or x pct white
+and the 2 entpty functions are emtpy
+and now we just implement the key value pair
+so in list<> metadata_seardh-terms we return return value
+and now we create return value
+foreach(signle_olorProfile_info thisColor in Colors ..
+{
+if (thisCOlro.Percentage > 50 ) returnValue.Add(new Keyvaluepari>stirng,
+string(Primary color", colrochshade
+else returnvalue.add (new keyavalue apri string string (Seoncaryd color", this color.hexshade
+
+}
+}
+so  back to our object, under program.cs
+after vrainfo.add_style_period("Rennaissance'
+we add seciton commetn // add new custom metadata module
+
+// add geospatial data to onc eage (commetn above geospatial lines)
+and we need to put under console application references check ref to mck to the program.cs add line in section
+
+Colroprofile_infcolrofinfo = new colroprofile_info
+aline add: colorinfo.colors.add(new Singlecolro_rfoile info("p----", xxx
+and must in colorprofielinfo.cs
+add a sconstructor for colroprofile info(sing0, args hexchsade and float percent
+and back to progrma.cs
+add.. singlecolor profile info "fff", 28, "same with 00aa00, 10))
+so now we add it into the objectadd  2lines (or wrap with iffas in vrainfo)
+thisItem.Add_metadata_moduel("COLORPROFILE", olorInfo);
+so we added ti
+so we created the md module and populated it and added it to the object, so now we run it..
+oops, we ysobekclibrary
+ok we needed to cr a constructor so our collection was null..
+so now we look at our mets file.
+but we have not told how to writ it ir read
+it yet, we only added an objec tin memory.
+so now we look at our db,  the builder kows notheing yet about the item,
+so now asdd line to save to db oursleves
+add line sobecm _database.save digital_resource9this item, null)
+and before that line set the connection string  so we copypaste the connection string...
+sobemcm. intiail catlog.. etc
+so now we should be able to save to database with these 2 final commands..
+and we run and no error showed and now look at table sobekcm_metadata_types
+and now the 2 ud fiels were grapepd ub
+and didsplay term and facet termfor 11 is primary color
+and 2d new row says secondary color,
+so nwo it shoudl appear in system admin setting reset cache
+in advanced search, and see it is in the ddlist of in in the advanced search.
+so the probelm is. .many places.. so we still need a reader and writer for pri,ary color,
+but we save it to the dbase
+and to expose to the iface we need to make changes to expose in the citation
+and then add something to edit it..
+so adding new md elts is not trivial
+in futrue nice to have [sobekTextBoxEntry] tht uses the decoration above it to do
+this of file colorprofile_info.cs
+-
+ADD A READER AND WRITER - to add a reader and writer is not hard but it is very similar to do..
+see under sobeck cm resource object under metadata file readerwriters..
+we just stuffed it into the object,
+but say create a new reader and writer
+so waddding file colorprofile_.cs say under mets_sec_readerwriterw (mets
+section)
+so looking at solution explorer using DC_MEts model, lets add a class
+colorprofile_readerWRiter.cs
+namespae myscutosmsobkeibrayr public class  reader writer..
+and so l: xmls writing base, ipackages_dmdSec_(likd dc core).
+and we have all the .. methods
+see ipackeage_dmdsec_REaderWrtier.cs for docs on the iface..
+and so we do need admdsec..
+this bool says we DO have data to write.... no backwards
+no IncludedmdSec is the flag to say does  it need to be included
+so back in colorprofilereader_writer method include_dmdsec
+have line colorprofle info colroinfo MEts-item:tetmetadatamodjel(CIolorproifle info;
+and if colorinfo not null and colorinfo count > 0 return true ;;
+ie need to have a dmdsec written for it if this module and it has colors return false
+otherwise to no need and for scheamr)ref)rqd package we return false
+we do not need to reference a schema here.
+now we are just reaing and writing a dmdsec.
+so go steal some code from vracore_mets_dmdsec.readers.
+andn now we stoke read dmdsec and write dmdsec code
+and change writeiline to ahsve </sobekc:colors>", typical changes..
+and we are in wriete_dmdsec..changinge some stuff.
+we change refs in pasted code from vrainfo to colorInfo, etc or ColorProfile_info as apt..
+and we use same key styoee colorprofile as colorprofile.info..
+here now go back to signle colroprofile_ifno.cs our little dll under mycustomsobeklibrary..
+and now we write our percentage also to our file.. and the shade..
+and we callit sobekcolor and in our read_dmdSec we now just return true.
+we just need a writer now..
+-
+so we have to reference this, this is where we have our dll stuff,
+so sometheiwer (viewer?) you tell it to use this reader writer,
+so look under metadatafile reader writers in x,
+and in file mets file readerwriter.cs
+in METS WRITING profile profiel it stores all info on wha t it need sot write
+look under wwwroot config default sobekcm_metadata file it is xml
+and ther we see the list of all mets section reader writers
+you add xml code here the namespace object, the label to write under
+and we add something here  to do that..
+-
+so before it writes the mets it seeks one of these files..
+it must b. seek in sx.. under mets sec.. no under.. configuratino ,
+mets writing profile.cs there it is
+this gets deep into it..
+we see package and division level and file level readers and writers
+we can see file under rmetadata file reader writers.. ..
+so under program.cs
+before we do save-mets, add line
+metadata_configuration.default.addpackage level dmdsecwriteronfig
+(new mets section file reader writer..)
+and you can
+do this here in code
+or go chang the wwwroot config default xxx xml file we saw.
+so under metadat _configuration...cs file a long file
+we tell it and we add to sobekcm metadataconfig.cs
+we copy and edit add and edit that reader writer
+ID="COLORS" label-"colorprofile"...'
+class=colorprofile-readerwriter lavel -
+color profiel info namespace=sobekcm.resourceobejt.mets_sec_readerwriters
+and mapping other.. colors. colorprofile..
+so and we added it as a reader writer
+and under profile we had line readerwriter ref id='colors' afer ieee-lom
+we wont have to do this in our code ?
+and in programc.cs after metadataconfiguration.reametadatconiguration("the full path to soekcem matadata config')
+and run and go to mets file ...
+see if it wrote.. it did not work. no color not found.
+so reveiw metadata-configuration.cs file..
+breakpint set at if not return value..
+and see private static mets_writring_profile member of type defaultwriting profiel..
+or var name. on line Metadate_configuration...
+we forgot to say which assemply to read from..
+so in metadata configuration.cs.. oli.. no..
+now open the sobekcm_metadata config file...
+we added a section and also we added line under metw_writings
+--
+--
+so put bp at mets section reader writer_config..
+some issue with reflection..
+so in mets section reader rwriter _config.cs..
+go back to config under elt mapping
+no under elt readerwriter
+add before
+namespace assembly="MycustomSobekLibrary.dll"
+ok ok. we will retry.. to run the writer..
+now review
+no, still missing it, maybe be we did not load it in the gac, the assembly...
+-
+so our assemlbly in mets_section_readerrwriter_config.cs..
+the problem is the namespace value is not right, it is (still) SobekCm
+so change namespace to just MyCustomSobekLibrary...
+and now it works (change in the sosbek cmetadata xml config )
+and now we examine our generated file.. seek col...
+ok, now we can write the mets file OK~
+get files from ms.
+and now we have the writer..
+ms will put all this code out on the ite..
+we created new md module and readerwriter,
+and the only things left is how to exposed this to a user to make edits, but not now, as it will change drastically,
+but not in this console app class
+you need to reopen vs with webapplication solution
+so you have to use the new config file and put it out into web builder
+and put this dll in your gac on both the webserver and the builder, the right way
+now  look unde sobekcmm librrydcitation/element_factory.cs
+and this element_ factory reads the files
+so now we need to add enumeration of element type,
+but it will change to a string in a global var,
+so you must recompile  the code and add to elt type..
+so later will use trings and in date-element.cs.. eg you could copy from that datelement.s
+and  rather than use "DateIssued  ue COlorProfile or use VRA)STATEEDTION_ELEMENTcs..
+and use that as a bbae module to add ..
+and modify for your new md element
+and you could expose it in your templates and add to your xml,
+but you would also add your own schema to support it.
+best if we add a folder under sobekcm called mods
+and there have a file to drop to say if you have this term, then add it to the element..?
+so if you find colorprofile in there, use textbox but have it mapped to colorprofile to make web changes much easier...
+or if you want a colorwheel to show to select the color,
+but this approach is a real goal of ms  to support for text  box-selectable types of md fields..
+----------
+and now the builder modules -  they are easier
+look under sobekcmbuilder..
+now mark creates a project to send to use the md...
+so we talked a bit about bldg dev env
+we grab things from installed instance, like designs
+same for setting up dev environment for the builder
+one place look under sobekcm builder..
+where installed it.. bo under soekcm/builder/
+and see kakadu logs and other folders and copy them over to dev environmnt to make them work,
+and you need config as well..
+so a builder may be running.. and we are on loclhost
+and we check menu admin items builder status
+and for next status click abort reqeustsed
+and click save..
+and the builder is running
+and when it wakes up in a minute it shuts itself down..
+until we go to the builder as a service...
+now refresh and see current status is last exeuction aborted
+and it will be dead until 4am the next morning...
+so you can count on this.. or you could add a test to make it trigger at a decent time to make sure the trigger works,
+then kill it here and reset a tigger, or keep a trigger for 4am
+now in sobekcm builder in the solution explorer
+and it is set as start progject whcih builds it and it runs ok..
+now we are in vs
+now looking in vs and see the builder moduels in our handout sheet..
+the types
+and under preprocess is an item processpending dareportmodule.cs just for use
+so we have a folder that is generated when we get erports bak from fda,
+someone manually takes theses reports back from fcla website and puts in a folder
+andbuilder processs them
+now creat new class custompreprocessmodule
+and in code .. class and we do : iPreprocessModule
+and in db we set args for these modules..
+so back to sql mgr, and in table sobeckcmbuilder_module,
+fields for argument1, argument2 argument3 you can set to run the process,
+like location for fda input an output folders..
+now lets base it on :abstractPreProcessModule so we dont have to support
+interfaces
+here we have one method override void Dowork(instancewide-settings ettings)
+so only pass in setting here, and then throw new NotImplementdException--
+change that line to
+OnProdeww9"ustomPRocessing', "SOME LOG TUPE, maybe STANDARD', "PREPROCESS",
+string.Emtpy (mets type), -1 (no related log id));
+now we can run this, and see in the cmd window..
+oops we need to add under sobekcmbuilder a command  line arg of --verbose and
+--background
+now we go into the db and add a row to sobekcm_builder-module to add this to our modules..
+see the rows here ins sl mgr use fuly qualified class name
+and can set to true or false if you wish here
+and we copy our module to the last row..
+and it also has an assembly column we can keep to default nul now..
+and add the row and enable and order can be set but not impt
+-
+and moduelsetId.. just copy one..?
+so it the row was accepted..
+now see table sobekccm-builder-module-set -
+has 10 rowss for the set naems
+1 is standard preproscess.
+nwo runit again and the cd wndow dow s show "CUSTOM PRocessing",
+so this is the overall level of builder module,
+not the folder level  module.. this may be o1 thing to do with preprocessing..
+-
+seee  one savetosolrlucenemoduel.cs ..
+see its code ok, pretty small code that does useful things..
+so we could write a custom save to solr lucent module and tell your db to use this one instead of yours..
+or you could add a thing to the db to say it did a milestone on  the items say
+to save to solr you could do this here
+or you could put in your history workflow also via code here..
+or also could use this to save addl fields to solr index..
+ms: for stuff we discussed earlier in sobekcbuilderlibrary folders .
+the default folder modules,eg move aged packegestoprocessmodule.cs..
+make sure they are old enough
+and if aged proeprly moved to prodessed foler
+and see updateNonBibFOlders.cs..
+see what it does, a perfect eg of the top level, before items are processed,
+this module looks at all folders in the inbound folder
+and says if there are files, is it a mets file,
+does it look like a mets id,
+and it will read and create mets file before enters the workflow,
+a great example of what can be done with folder modules
+
+a new thing with sobek 4.9.0
+
+if you see wswroot/design/webcontent/missing
+
+and if you change that missing.html it will show users std msg when something is missing..
+so you can update that and test it easily..
+same thing with file noresultsfound.html -- some html that appears in  place  of results,
+so if you add a file named noresults.html it will be used or add a  file missing.html or help.html
+and ms will send out the equivalent of what  default is..
+
+so in solution explorer in results viewer section, file no_results_resutlsviewer.cs
+it seeks some special contexts or block vars like MatchesFound DivDisplay,  MangoSpan DIsplay, etc..
+and see under this code and see what it does...
+
+these are instance-wide settings possible to set, these names,
+and if you  have a mangos results set it will reach out to mango for its results wrt
+your own library it seems..
+
+ms will send out default one it is the html written in no _results_resultsviewer.cs code.. basically.
+
+
+Next log:
+20151006 tuesday afternoon pm sobek code camp source code management and adding metadata
+notes
+around t1400
+GENERAL AREA: Sobek Source CODE - Adding Metadata
+-
+Now we are in vs, visual studio, looking at Sobek Code.
+add new consoleapplication1?
+.. adding an existing lib to the solution--
+and added it to the reference so now we can use it..
+Go now.. going to content/bib/id/ooo/xx ,
+now in vs and see file program.cs,  namespace ConsoleApp, class Program, static void Main, line 1 is string mets_directory="some dir"
+using Sobek.Resource_Object;
+static void Main...
+string mets-files = System.io.Directory.Getfiles(mets_directory, "*.mets.xml");
+foreach (string thisMetsFile in mets_files):
+{
+SobekCM_Item this Item=SobekCM_Item. Read_mets(thismetsFile)
+// note can access various members here but we continue
+// we read the mets file there
+// and now we make changes, and switch into changing specific different objects we have..
+//  thisItem.Bib_Info.Add_Note() // and intellisense shows 6 overloaded options for arg patterns after typing the prior left-paren
+// so here use this arg set to add a note to the object(s) of interest.
+thisItem.Bib_Info.Add_Note("Acquired from loan that we stole", Note_Type_Enum.)
+// and here we save it
+thisItem.Finalize_METS(): // not nec, but it can be used to do it to setup sobek checksums..
+// it saves as .mets
+thisItem.Save_Mets();
+} // end of foreach
+} // end of method Main
+So say the input/output directory it now has  2 copies here of mets files, because our run just wrote a new copy.. and there it is.. So we view/edit the new mets file added:
+- the note type we added..    we check it is there. Yes.
+and there are a few helpers..
+now.. to get to the mets files..
+ps: Question: can we retract or remove a node?
+ms:  yes, can use a code line like Note_Info removeNote=null;
+-
+foreach(Note_info thisnote in thisItem.Bib_info.notes)
+{
+// do something .. and in here Notes is prob not null, but inside the bib
+// info objects notes may be a null collection.. but expensive to make an
+// empty list so he wraps that foreach with an envelope:
+// if  thisItem.bibInf.notes_count >0 ) {//above foreach}
+
+and in the foreach he has:
+if (string.compare(thisNote.Note, "Acquired from loan that we stole"=true){ removeNote = thisNote
+and after the foreach  have:
+thisItem.Bib_info.RemoveNote(removeNote)
+and at end after the string.compare clause and before we save, do:
+add _note("Acquired from loan that we DID not steal)"
+review this code:
+and so we collect each item first to see what its note is, that is if we want to remove it, then we did removeNote,
+but if  a read only collection... it is a different issue
+(ps is aware of this technique).
+and when at uf we did this a lot.
+so if we started with a spreadsheet importer we ran something like this many times as we corrected/adjusted mets files incrementally..
+now see in vs on right in solution explorer sx tree node utilities and under it see SobekCM_Mets_finder.cs
+and you can validate the mets if you want..
+and many say we need to validate.
+However, anything this can write should be valid, so may waste efforts to spend time to check validity
+But see file sobekcm_mets_finder.cs - it is useful to look at.
+it steps thru multiple  places(folders?) where it (a mets file) could possibly be.
+
+we should add a method to this to pass in root source and content
+in  namespace sobekcm.resource_object.utilities, this object is useful and improvements are useful..
+MS  would pull data out of a file and load it into a mets and then we  must give it a bib and a vid so we can save.
+So for most things to save you must set 3 things:
+set thisItem.bibid,
+thisitem.vid
+thisItem.source_directory,
+these three things must be set to create a mets file from scratch..
+rb is a big fan of this method and dep on project type he loves to be able to create for the marc,
+It is so simple, rather than add_mets, you use read_Marc, ..
+this sets it apart from all the systems he used..
+and so we have these objects to use.. and can use xslt offline..
+and this method was chosen before xslt gained prominence
+and  this still works very  well
+now when we save the mets()
+so under x see sobekcm_item.cs.. file,
+and this only saves to the mets, not the db, and it does not set the addl work needed flag..
+ms: so now we will .. lets change it to add the final .xml extension, so just rename the outputted mets file
+so now in sql manager, run sql:
+update SobekCM_Item set AdditionaWorkNeede'true' where ... the id is your id of interest or an apt 'where' clause for your needs;
+now we pull this up in our local website instance under view items..
+and it looks  like it works.. and when you click on an item it reads that mets file..
+and little data is retrieved.. the behaviors are retrieved , ie the collection it is in, the perm info, the wordmarks, and where the mets file is.
+So now it shows on the website, but if you searched for it you would not find it (as not in db tables yet).
+and you can also put the info here and in Save_Mets(x) you can specify x as  a new file,
+So modify code and before you call save_item set
+NameInfo newauthor = new Name-info    and
+newAuthor.family_name="simpson" , newAuthor.given_name="Homer", etc
+termOfAddres... 'Mr.', etc
+// and add to this Bib
+thisItem.Bib_Info.add_named_entity(newAuthor)
+could have also set the role, say
+nameauthor.Add_Roll="ill");
+and it is under creator and in marc view  see it for this item and see codes 700,710, others,   and not in viewall items because we did not load
+so now back to sql mgr  and run sql
+update sobeckcm item set AdditionalWorkNeeded = true ;
+select from sobekm_bulder_log where biid_vid like 'aa00000002%' order    by logdate Desc;
+and now we get logs message rows... nice
+so this is the beautiful log...
+- now out of curiosity.. because it did not do the work due to errors...
+so you set the [additional work] flag and the next time the builder runs you would see it appearing here in the log
+and you can add code to simply save it to the db
+so can att code.
+and there are a couple of db name spaces
+see line:   Sobekcm.resource_object-Database-Sobekcm_Database.save-digitalResource(thisItem, null)
+and that would save it, but do NOT recommend ever doing that, rather let the builder do its job
+that is best... as builder also has to save to solr, and more.
+ms recommends saving such temp mets jobs in any special folder, just use  thisItem.Source_directory = "C:\\GitRepository\\"
+and next line save:  this_save_Mets,
+and then copy paste all the files to the  builder folder.
+- it is really quick, you can do 1000 in a minute.
+ask mark - paste the whole directory or just the files?
+t1428-
+ms - one hope for the new search screen is to do check boxes there to say just select from these items to bulk change to make it safer..
+==============================
+Metadata Modules
+==============================
+See the big bubble diagram, and it shows all items in pink are in the sobekcm resourceobject = all the bibinfo stuff.. and that is stuff we can access that way.
+and it is tougher to use the outer bubbles
+and now use VS and go under solution explorer sx  for metadata modules,
+so go look in vs for vracore, and see the file for
+vracore_info.cs, with materials-info,
+so this is all the data the vra_core makes available (see the bubble diagram vracore bubble):
+so to actually use those.. go into that vracore_info.cs file
+and add a line after line: this.ItemBib_info.
+add line: vracore_info vrainfo = new VraCore_info(---);
+and line: vra info.Add_Style_Period("rennaissance");
+and to add back into the item do: thisItem.add_metdata_module(x)
+and x used to be a beautiful enumeration,
+so instead (now) for x use GlobalVars.VraCORE_METADTA_MODULE_KEY, vraInfo,
+so we created a new module and added to the new item a metadata module(set of metadata for vracore was added for this item)
+and you can add metadata modules to anywhere on the hierarchy
+so if you had line:
+thisItem.Divisions.Physical_tree.Pages_PreOrder..[0].AddMetadata
+and this is .. and divisions includes all, downloads and toc images, and phys tree gives you access to toc
+and pages preorder gives access to all pages in preorder and [0] ...
+so we can add after line ending "[0]. addMetadata".
+and for this line:
+GeoSpatial_Information geoInfo = new GeoSpatial_Information() (add before)
+and also add before, add line: geoinfo.Add-point(-86,12);
+add those 2 lines before the " thisItem.Divisions.Physical_tree.Pages_preOrder..AddMetadata[0]"  line,
+and at its end is line: Add_metadata_module(GlobvalVar.GEOSPATIALMODULEKEY,..?)
+aside, now add a page looking for images, so we add a koalas.jpg picture...
+and now he edits behavior of the photo and sets thumbnail as the koala.. so a gigantic jpeg will be made smaller...
+and should save tiff at same time, and so if you load a gigantic jpeg
+and now and at end of that code line is:  MODULE_KEY, geoInfo);
+and what this line exposes is a hash table.. it returns a string to a metadata module, you can add at any level, chapter, page or top level
+now look at our mets file that we just created..and it is aa...xxx.mets and rename the filename with end part .xml so editors work better
+and so we view/edit that mets file and we have top level mods, and we have VRACore" in other dmdtype value
+so it goes in the mets and see in the file string DMD03 and see our coordinates are set in DMD04 and gml in DMD04.
+so the top level of each structure map will .. and dmd4 we associated with this page...
+at end of line in csharp can use suffix "as VRACORE_INFO;" and  that is handy to avoid errors with nulls..
+so use suffix "as VRACore_Info", as it is more elegant
+rb agrees
+so before .. after that line ending geoinfo have
+if vraInfo -- null then vrainfo = new vracore_info)
+and: thisItem.add_MEtadata_module(Global var.VRACORE.meta.. vraInfo);
+==============
+and now .. how to put in db
+=====================
+so a metadata module is named and it needs this thin Metadata searchterms, see file: adddate_module.cs
+so see in vracore.info.cs what it returns, and it returns a list of key-value pairs that it builds..
+see line:  if cultural context_count...
+if so, add that.. so add that for each,
+this is how we load things into the db as a md module, the default way to add things for searching..
+and in metadata module.cs we also have have_additional info_todatabase(), but we like to avoid that,
+so we have list <key-valuepair<string,string>
+so see code under function:  save_item-mat_information(sobekcm_ItemthisPackage0
+and this meth creates its own key pair and creates aati ctufff in file sobeckcm_databaes.c
+and it has the package.bib_info.metdate_search terms) all
+and after that it goes through all modules and saves kev pairs,
+and the sp that saves it is tricky..
+it is in db, we call the db once per 10 pieces of md, to avoid new call for each piece of md..
+so it is sobekcm_save_.., wait in cs we call save_metadata,
+and it calls a sp, sobekcm-metadata_save_single.. and it takes 10 key-value kv pairs, kvs.
+it is a list of kv pairs of type and value, not exciting, and it just calls sobekcm metadata save single..
+and see that procedure, and  we update this proc often when we add md, this is a big cheat at top, in this switch that has fieldnames and an integer index for each.
+so when we look at our db table of md types in table sobekcm_metadata_types,
+you could do a select every time and skip this 'when w, so this code at the top of this sp is a cheat is a big switch case for speed purposes to yield the proper integer id.
+and it falls through this 'when switch',
+and then if not found we do our select again with this statement x,
+and we set @metadatatypeid and then it has funny fields, we use them...
+so if a new type for user [defined]  field, so we will get new field maybe primarycolor hatdee
+and in this code if display term undefined then basically tie take it,
+and see sobekcm_metdata_types, and it will claim a row in this table,
+so primary color shade will appear so we can add one per week, a new user defined field,
+and we will do this with solr too, solr will use these undefined fields..
+derrick - and will those translaet to the api,
+ms yes, as we are not just passing these out as kv pairs, it sort of becomes this as brief item
+and it is just groups of key value pairs.. and you may need a way to make user display code handle it.
+it is just here, and someone can write a new md module to just let you add what you wanted from another database..
+=====================================
+So now lets add one new metadata module for fun.
+=====================================
+so we will cr a new md module under solution explorer sx
+first create a new project, a console application, name it mycustomsobeklibrary, a console app...
+and we reference sobekresourceobject in mycustomsobek library..
+so we talk of adding a new custom md element
+and under mycustomsobeklib we add a new class, colorProfile_info.cs
+and the new project is a dll project mycustomsobeklibrary which is holding colorProfile_info.cs
+now the method in there is in our public class ColorProfile_info: iMetadata_module
+and we have things to implement because we base on an interface
+so see method  save addl info to db, and make it so we just return true for that method,
+and method retrieve addl info from db .. also return true
+and like the coordinates view, under geospatial info file, geospatial-information.cs .. it saves kml and calls Save_item_Footprint().
+back to file colorprofileinfo.cs
+and in method retrieve_addl_info
+we set error message = string empty and return true
+so that takes care of 'implementing' some iface methods
+and see: public string module name function, and it has:  get{return  "Color Profile;}
+and add member at top of class: public List <string PrimaryColor_Shades;
+add another member: public List<string> Secondary_Color_Shades;
+and in file single_colorprofile_info.cs new file, create a class
+public class SingleColorProfile_info no base
+here put: public string hexshade {get:set;}
+public float Perentage {get;set;}
+and back in colorprofile_info.cs, we have:
+public list single_colorProfileinfo> colors
+and in method list <key value pair-<string, string>
+and return value .. well under get we have [if colors==null or color.count==0)) return null;
+next line is list key-value pair string, string, return value =xxx new..
+and we will sah percentage is 10% white or x pct white, and the 2 empty functions are empty
+and now we just implement the key value pair
+so in list<> metadata_search-terms we return return value
+and now we create return value:
+foreach(single_colorProfile_info thisColor in Colors ..
+{
+if (thisColor.Percentage > 50 ) returnValue.Add(new Keyvaluepari>stirng,
+string(Primary color", colorShade
+else return value.add (new keyvalue pair string string (Secondary color", this color.hexshade
+
+}
+}
+so  back to our object, under program.cs
+after vrainfo.add_style_period("Rennaissance"
+we add section comment // add new custom metadata module
+// add geospatial data to... (comment above geospatial lines)
+and we need to put under console application references check ref  to
+mck to the program.cs add line in section
+ColorProfile_info colorinfo = new colorprofile_info
+line add: colorinfo.colors.add(new Singlecolor_profile info("p----", xxx
+and must in colorprofileinfo.cs add a constructor for colorprofile info(sing0, args hexshade and float percent
+and back to program.cs
+add.. singlecolor profile info "fff", 28, "same with 00aa00, 10))
+so now we add it into the objectid  2 lines (or wrap with 'if clause check' as in vrainfo)
+thisItem.Add_metadata_module("COLORPROFILE",c olorInfo);
+so we added it
+so we created the md module and populated it and added it to the object, so now we run it..
+ok first we need to cr a constructor so our collection was null at first run attempt.
+so now we look at our mets file, but we have not told how to write it or read it yet,
+we only added an object in memory.
+so now we look at our db,
+the builder knows nothing yet about the item, so now add line to save to db ourselves
+add line: sobekcm _database.save digital_resource(this item, null)
+-and before that line see we also add  the connection string  so we copypaste the connection string...sobemcm. intial..  catalog=x.. etc
+so now we should be able to save to database with these 2 final commands..
+and we run and no error showed and now look at table sobekcm_metadata_types
+and now the 2 user defined ud fields were grapepd ub (grabbed up?) and display term
+and facet term for 11 is primary color
+and 2d new row says secondary color, so now it should appear in system admin setting reset cache
+in advanced search, and see it is in the ddlist of in in the advanced search.
+so the problem is. we much modify code in many places to add metadata
+so we still need a reader and writer for primary color but we saved it to the database
+and to expose to the iface we need to make changes to expose in the citation
+and then add something to edit it.. so adding new md elts is not trivial
+in future nice to have [sobekTextBoxEntry] that uses the decoration above this function to do this same work of file colorprofile_info.cs
+===================================================
+to add a reader and writer is not hard but it is very similar to do..
+==================================================
+see under sobeck cm resource object under metadata file readerwriters..
+we just stuffed it, the new metadata, into the object,
+but say create a new reader and writer
+so addding file colorprofile_.cs say under mets_sec_readerwriter(mets section)
+so looking at solution explorer using DC_Mets model,
+lets add a class colorprofile_readerWriter.cs
+namespace myscutosmsobklibrary
+public  class  reader writer.. and so l (base classes or interfaces follow): xmls_writing_base, ipackages_dmdSec_( like dublin core dc).
+and we have all the .. methods
+see ipackage_dmdsec_ReaderWrtier.cs for docs on the iface..
+and so we do need a dmdsec.. this bool says we DO have data to write.... no wait, it is backwards
+no IncludeDmdSec is the flag to say does  it need to be included
+so back in colorprofilereader_writer method include_dmdsec have line:
+colorprofle info colroinfo MEts-item:tetmetadatamodjel(CIolorproifle info;
+and if colorinfo not null and colorinfo count > 0 return true;
+ie need to have a dmdsec written for it if this module and it has colors return false otherwise to no need
+and for schema_ref_rqd pakkeg we return false as we do not need to reference a schema here.
+now we are just reading and writing a dmdsec.
+so go steal some code from vracore_mets_dmdsec.readers.
+and now we stole read dmdsec and write dmdsec code
+and change writeline to have </sobekc:colors>", typical changes..
+and we are in write_dmdsec..changing some stuff.
+we change refs in pasted code from vrainfo to colorInfo, etc or ColorProfile_info as apt..
+and we use same key styoee colorprofile as colorprofile.info..
+here now go back to single colroprofile_info.cs, our little dll under mycustomsobeklibrary..
+and now we write our percentage also to our file.. and the shade..
+and we call it sobekcolor
+and in our read_dmdSec we now just return true.
+we just need a writer now..
+so we have to reference this, this is where we have our dll stuff,
+so sometheiwer you tell it to use this reader writer,
+so look under metadatafile reader writers in x,
+and in file mets file readerwriter.cs in METS WRITING profile it stores all info on what it needs to write
+look under wwwroort config default sobekcm_metadata file and  it is xml
+and there we see the list of all mets section reader writers
+and  you add xml code
+here the namesapace object, the label to write under and we add something here  to do that..
+so before it writes the mets it seeks one of these files..
+Now see in solution explorer sx.. under configuration , mets writing_profile.cs
+this gets deep into it.. we see package and division level and file level readers  and writers
+so we can see file under metadata file reader writers.. .. so under  program.cs
+before we do save-mets, add line:
+metadata_configuration.default.addpackage level dmdsecwriterconfig (new mets section file reader writer..
+and you can do this here in code or go change the wwwrroot config default xxx xml file we saw.
+so under metadata _configuration...cs file a long file
+we tell it and we add to sobekcm metadataconfig.cs we copy and edit add
+and edit that reader writer ID="COLORS" label-"colorprofile"...' class=colorprofile-readerwriter label - color profile info namespace=sobekcm.resourceobject.mets_sec_readerwriters
+and mapping other.. colors. colorprofile..
+so and we added it as a reader writer and under profile we add line readerwriter ref id='colors' afer ieee-lom
+we won't have to do this in our code ? (ie, because we do it in a config file?)
+and in program.cs after metadataconfiguration.readmetadataconfiguration("the full path to soekcem matadata config')
+and run and go to mets file ... see if it wrote.. but did not work. no color , not found.
+so review metadata-configuration.cs file.. breakpoint set at if not return value..
+and see private static mets_writring_profile member of type defaultwriting profile.
+or var name.
+on line Metadata_configuration...
+we forgot to say which assembly to read from..
+so in metadata configuration.cs.. no..
+now open the sobekcm_metadata (xml) config file... we added a section and also we added line under meta_writings
+so put bp at mets section reader writer_config..
+some issue with reflection..
+so in mets section reader writer _config.cs..
+so back to config under element mapping, no under elt readerwriter add before:
+namespace assemply="MycustomSobekLibrary.dll" ok
+ok. we will retry.. to run the writer.. now review
+no, still missing it, maybe we did not load it in the gac, the assembly...
+so our assembly in mets_section_readerwriter_config.cs..
+the problem is the namespace value is not rightk, it is SobekCm
+so change namespace to just MyCustomSobekLibrary... and now it works
+(changed it in the sobek_metadata xml config)
+and now we examine our generated file.. seek 'color'...
+ok, now we can write the mets file OK~
+ms says he will send us these files, so get files from ms.
+and now we have the writer.. for our two new metadata
+ms will put all this code out on the site..
+we created new md module and readerwriter, (that just writes now)
+and the only things left is how to expose this to a user to make edits, but not now, as it will change dramatically,
+but not in this console app class
+you need to reopen vs with webapplication solution
+so you have to use the new config file and put it out into web builder and put this dll in your gac on both the weserver and the builder, the right way
+============================================
+now  look under sobekcm library/citation/element_factory.cs
+=================================
+and this element factory reads these files
+so now we need to add enumeration of element type,
+but it will change to a string in a global var, so you must recompile  the code and add to elt type
+so later will use string
+and in date-element.cs, eg you could copy from that date-element.cs
+and  rather than use "DateIssued"  use "ColorProfile"
+or use VRA_STATE EDTION_ELEMENTcs..
+and use that as a base module to add ..
+and modify for your new md element and you could expose it in your templates and add to your xml,
+========================================
+but you would also add your own schema to support it. ***
+========================================
+best if we add a folder under sobekcm called mods and there have a f ile to
+drop to say if you have this term, then add it to the element..?
+so if you find colorprofile in there, use textbox but have it mapped to colorprofile to make web changes much easier...
+or if you want a clorwheel to show to select the color,
+but this appraoch is a real goal of ms  to first just support for text box-selectable types of md fields as we have here.
+and now the builder modules they are easier
+look under  sobekcmbuilder..
+now mark creates a project to send to use the md...
+so we talked a bit about bldg a dev env, we grab things from installed instance, like designs
+so it is same for builder
+one place look under sobekcmbuilder.. where installed it..
+go under sobekcm/builder/ and see kakadu logs and other folders
+and copy them over to dev environment to make them work, and you need config as well..
+so a builder may be running..
+and now we are on in a browser browsing the website under localhost
+and we check menu admin items builder status and for field "next status' click to select ddlist field 'abort requested'  and click save..
+and the builder is running and when it wakes up in a minute it shuts itself down..
+until we go to the builder as a service...we will be able to do this technique
+now refresh and see current status is last exeuction aborted
+and it will be dead until 4am the next morning...
+so you can count on this..
+or you could add a test to make it trigger at a decent time to make sure the trigger works,
+then kill it here and reset a tigger, or keep the trigger for 4am and it will run
+now in sobekcm builder in the solution eplorer
+and it is set as start project which builds it and it runs ok..
+now we are in vs now looking in vs and see the builder modules in our handout sheet.. the types
+and under preprocess is an item 'process pending' fda reportmodule.cs just for use
+so we have a folder that is generated when we get reports back from fda,
+someone manually takes theses reports back from fcla's website and puts in a folder for the builder
+and the builder processes them
+======================================
+now create new class custompreprocessmodule
+======================================
+and in code .. class and we do : iPreprocessModule
+and in db we set args for these modules..
+so back to sql mgr, and in table sobeckcmbuilder_module, see fields for  argument1, argument2 argument3
+these you can set to run the process, like location for fda input an output folders..
+now lets base it on :abstractPreProcessModule so we dont have to support interfaces
+here we have one method override void DoWork(instancewide-settings settings)
+so only pass in setting here, and then throw new NotImplementedException--
+change that line to
+OnProdeww9CustomPRocessing', "SOME LOG TUPE, maybe STANDARD', "PREPROCESS", string.Emtpy (mets type), -1 (no related log id));
+now we can run this, and see in the cmd window..
+oops we need to add under sobekcmbuilder a command line arge of --verbose and --background
+now we go into the db and add a row to sobekcm_builder-module to add this to our modules..
+see the rows here ins sl mgr use fully qualified class name and can set to true or false if you wish here
+and we copy our module to the last row..
+and it also has an assembly column we can keep to default null now..
+and add the row and enable and order can be set but that value now is  not impt
+and modulesetId.. just copy one..?
+so it the row was accepted..
+now see table sobekccm-builder-module-set - has 10 rows for the set names and 1 is standard preprocess.
+now run it again and the cd wndow does show "CUSTOM PRocessing",
+so this is the overall level of builder module, not the folder level  module..
+this may be o1 thing to do with preprocessing..
+see  one save to solr lucene module.cs ..
+see its code ok, pretty small code that does useful things..
+so we could write a custom save to solr lucene module and tell your db to use this one instead of yours..
+or you could add a thing to the db to say it did a milestone on  the items, say
+to save to solr you could do this here  or you could put in your history workflow also via code here..
+or also could use this to save additional fields to solr index..
+ms: for stuff we discussed earlier in sobekcbuilderlibrary folders .
+the default folder modules, eg move aged packegestoprocessmodule.cs..
+makes rule they are old enough and if aged properly moved to processed folder
+and see updateNonBibFOlders.cs..
+see what it does, a perfect eg of the top level,
+before items are processed, this module looks at all files in the inbound folder and says, if  there are files, if  it is a mets file, and does it look like a mets id,
+and it will read and create mets file before it enters the wrokflow, a great example of what can be done with folder modules..
+===================
+New default HTML files
+===================
+a new thing with sobek 4.9.0
+if you see file wwwroot/design/webcontent/missing
+and if you change that missing.html it will show users its std msg when  something is missing..
+so you can update that and test it easily..
+same thing with file noresultsfound.html -- it is some html that appears in  place
+of results,
+so if you add a file named noresults.html it will be used
+or add a  file missing.html or help.htm
+and ms will send out the equivalent of what  default is..
+so in visual studio vs solution explorer sx in results viewer section,
+see file no_results_resultsviewer.cs
+it seeks some special contexts or block vars like MatchesFound DviDisplay,  MangoSpan DIsplay, etc..
+and see under this code and see what it does..
+these are instancewide settings possible to set, these names,
+and if you  have a mangos results-set it will reach out to mango for its results wrt your own library it seems..
+ms will send out default one it is the html written in no_results_resultsviewer.cs code.. basically..
+==================
+end.

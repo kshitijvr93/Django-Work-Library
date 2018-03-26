@@ -92,11 +92,12 @@ def agent_uf_to_available(modeladmin, request, queryset):
 agent_uf_to_available.short_description = "Change UF agent to Available agent"
 
 class ItemAdmin(CubaLibroModelAdmin):
-    list_display = ['holding',
-         'accession_number',
+    list_display = [
          'title_primary',
          'pub_year_span',
          'reference_type',
+         'holding',
+         'accession_number',
          'agent',
          'agent_modify_date',
          ]
