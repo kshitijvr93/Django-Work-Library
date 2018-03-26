@@ -92,20 +92,76 @@ def agent_uf_to_available(modeladmin, request, queryset):
 agent_uf_to_available.short_description = "Change UF agent to Available agent"
 
 class ItemAdmin(CubaLibroModelAdmin):
+
+    #admin change list display fields to show
     list_display = [
+         'accession_number',
          'title_primary',
          'pub_year_span',
          'reference_type',
          'holding',
-         'accession_number',
          'agent',
          'agent_modify_date',
          ]
-    search_fields = ['accession_number', 'reference_type','holding',
-        'authors_primary', 'title_primary','call_number','pub_year_span']
-    list_filter = ['agent', 'reference_type', 'data_source',
-         ]
-    date_hierarchy = 'agent_modify_date'
+
+    list_filter = ['agent', 'reference_type', 'publisher'
+        ,'language', 'place_of_publication'
+        ]
+
+    # admin item detailed view order of display fields
+
+    # We also have 'Other Fields' in the database, but Jessica did not
+    # select any as important fields to edit.
+    # Consider setting editable=False for them?
+    fieldsets = (
+        ( None,
+            {'fields':(
+                 'accession_number',
+                 'title_primary',
+                 'pub_year_span',
+                 'agent',
+                 'authors_primary',
+                 'notes',
+                 'personal_notes',
+                 'place_of_publication',
+                 'publisher',
+                 'language',
+                 'link_url',
+                 'links',
+                 'edition_url',
+                 'sub_file_database',
+                 'reference_type',
+                 #'agent_modify_date',
+        )}),
+        ( 'Other Fields', {
+             'classes': ('collapse',),
+             'fields': (
+                 'holding',
+                 'periodical_full',
+                 'periodical_abbrev',
+                 'pub_date_free_from',
+                 'volume', 'issue', 'start_page', 'other_pages',
+                 'keywords','abstract',
+                 'title_secondary', 'titles_tertiary',
+                 'authors_secondary', 'authors_tertiary',
+                 'authors_quaternary', 'authors_quinary',
+                 'edition',
+                 'isbn_issn', 'availability', 'author_address',
+                 'classification', 'original_foreign_title',
+                 'doi', 'pmid','pmcid', 'call_number',
+                 'database', 'data_source', 'identifying_phrase',
+                 'retrieved_date',
+                 )
+            }
+        )
+    )
+
+    search_fields = ['accession_number'
+        ,'reference_type', 'language'
+        ,'authors_primary', 'title_primary'
+        ,'pub_year_span', 'place_of_publication'
+        ,'isbn_issn', 'call_number','doi', 'pmid','pmcid'
+        ]
     # See raw_id_fiels = ('some foreigh key') when you have a foreign key
     #
     actions = [agent_uf_to_available, agent_available_to_uf]
