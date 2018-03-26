@@ -103,6 +103,7 @@ class ItemAdmin(CubaLibroModelAdmin):
         ]
 
     date_hierarchy = 'agent_modify_date'
+    
     # See raw_id_fiels = ('some foreigh key') when you have a foreign key
     #
     actions = [agent_uf_to_available, agent_available_to_uf]

@@ -468,8 +468,8 @@ citationBuilder = citationBuilder + "</dl>";
 // Set the citation placeholder
 document.getElementById("citation-placeholder").innerHTML = citationBuilder;
 }
-// Adds information about a single citation element to the citation HTML builder var
-function add_single_citation_element(data) {
+// Adds information about a single citation element to the citation HTML
+builder var function add_single_citation_element(data) {
 // Add the term for the citation
 citationBuilder = citationBuilder + "<dt>" + data["term"] + ":</dt>";
 // Add the individual value(s)
@@ -502,8 +502,10 @@ http://sobekrepository.org/sobekcm/apis
 and view the source and see how we parse the item in jscript and it is not complex..
 so that tiny bit of javascript gives fine display coming directly from the api.
 -
--Example, see samples/gallery.html under sobekrepository.org..http://sobekrepository.org/samples/gallery.html
+-Example, see samples/gallery.html under sobekrepository.org..
+http://sobekrepository.org/samples/gallery.html
 -and that uses fancybox-
+
 can do a SobekCM full install for working on a test laptop
 and then port any new modified software to a production server later
 and see final sample
