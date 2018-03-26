@@ -94,6 +94,18 @@ agent_uf_to_available.short_description = "Change UF agent to Available agent"
 class ItemAdmin(CubaLibroModelAdmin):
 
     #admin change list display fields to show
+    # CHANGE LIST VIEW
+    search_fields = ['accession_number'
+        ,'reference_type', 'language'
+        ,'authors_primary', 'title_primary'
+        ,'pub_year_span', 'place_of_publication'
+        ,'isbn_issn', 'call_number','doi', 'pmid','pmcid'
+        ]
+
+    date_hierarchy = 'agent_modify_date'
+    # See raw_id_fiels = ('some foreigh key') when you have a foreign key
+    #
+    actions = [agent_uf_to_available, agent_available_to_uf]
     list_display = [
          'accession_number',
          'title_primary',
@@ -104,9 +116,11 @@ class ItemAdmin(CubaLibroModelAdmin):
          'agent_modify_date',
          ]
 
-    list_filter = ['agent', 'reference_type', 'publisher'
-        ,'language', 'place_of_publication'
+    list_filter = ['agent', 'reference_type'
+        #,'language', 'place_of_publication',
         ]
+
+
 
     # admin item detailed view order of display fields
 
@@ -131,8 +145,9 @@ class ItemAdmin(CubaLibroModelAdmin):
                  'edition_url',
                  'sub_file_database',
                  'reference_type',
-                 #'agent_modify_date',
         )}),
+
+        # DETAILED VIEW
         ( 'Other Fields', {
              'classes': ('collapse',),
              'fields': (
@@ -156,15 +171,6 @@ class ItemAdmin(CubaLibroModelAdmin):
         )
     )
 
-    search_fields = ['accession_number'
-        ,'reference_type', 'language'
-        ,'authors_primary', 'title_primary'
-        ,'pub_year_span', 'place_of_publication'
-        ,'isbn_issn', 'call_number','doi', 'pmid','pmcid'
-        ]
-    # See raw_id_fiels = ('some foreigh key') when you have a foreign key
-    #
-    actions = [agent_uf_to_available, agent_available_to_uf]
 
 
 admin.site.register(Item, ItemAdmin)

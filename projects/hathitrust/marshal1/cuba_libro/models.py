@@ -89,9 +89,11 @@ class Item(models.Model):
         ( '','Unavailable but unknown agent')
     )
 
-    agent = models.CharField('Agent', null=True, default='Available', blank=True, max_length=50,
-        choices=PARTNER_CHOICES)
-    agent_modify_date = models.DateTimeField(null=True, auto_now=True, editable=False)
+    agent = models.CharField('Agent', null=True, default='Available',
+        blank=True, max_length=50, choices=PARTNER_CHOICES)
+
+    agent_modify_date = models.DateTimeField('Agent Modify Date (UTC)',
+        null=True, auto_now=True, editable=False)
 
     # Original source data for holding is of the form XXX[-NNN[-MMM]]
     # Later I may modify this model to separate them into: holder,
