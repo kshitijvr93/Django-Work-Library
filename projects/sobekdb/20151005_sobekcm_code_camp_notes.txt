@@ -770,7 +770,8 @@ method... ok
 See method Save_To_Bib - with foreach syntax similar to sql to save the Bib info..
 https://msdn.microsoft.com/en-us/library/bb384087.aspx ab:
   shows C# LINQ select statement and see other MS docs on that..
-LINQ - language integrated query - guide: https://msdn.microsoft.com/library/bb397676%28v=vs.100%29.aspx
+LINQ - language integrated query - guide:
+https://msdn.microsoft.com/library/bb397676%28v=vs.100%29.aspx
 more LINQ links: https://robertvernonphillips.com/admin/bills/log/10694/
 
 see file Element_factory.cs
