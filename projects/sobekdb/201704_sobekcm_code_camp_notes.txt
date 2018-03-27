@@ -161,7 +161,9 @@ or the group.
 and mvs has proposed some things...with the schedule.
 
 t0903 -
-mvs - the litltem (titleitem?) fda xml files are now downloadable - an issue to fix.
+mvs - the litltem (titleitem?) fda xml files are now downloadable - an issue
+to fix.
+
 so maybe we should be able to add a sobek... xml file of different type.
 --
 rb new types of content like rti is jpegs and xml files and the 3d models
@@ -172,13 +174,15 @@ mvs we switch the schedule a bit
 today we will cover add new engine endpoint
 and we add in bulk uploading.. and we can propose anything else..
 -
-------- topic new engine endpoint
+<topic>engine endpoint</topic>
+endpoint is like a rest api<kw>
 
 so think of something you want to handle
 could include an entirely new structure to sobekcms database like a new ead
 viewer with a whole other structure, showing how containers link,
 and you want to pull that structure out for another external system
 and think of a report you might want to use
+
 so if you write a reporting thing it is simple to tie into html or serve
 item info a different way..
 
@@ -187,7 +191,9 @@ so lets think about that..
 
 the endpoint topic is at 2:15 today that is..
 
---------- Now topic is git basics..
+</topic>
+<topic name='git basics'>
+Now topic is git basics..
 
 example repo: https://github.com/SobekDigital/HolaCampistas
 so github.. is .. all topics today are same for github or gitlab
@@ -198,8 +204,12 @@ and he usually closes visual studio and launches externally
 installing git extensions, if you want it:
 download installer: https://gitextensions.github.io
 -
+<topic kws='autocompile'>
 -mvs we do not have anything watching the code now,
 i am looking into an auto compile when a code is committed..
+
+</topic>
+<topic kws="continuous;integrated;testing">
 so i want to reject commits that do not compile using jenkins or hudson..
 but team foundation is expensive so when I get the code working for jenkins
 or hudson... or it is travis, that has 'freemium'  minor editions..
@@ -208,27 +218,34 @@ djl - travis is nice too
 - djl they also - can pay $70/month for their code..
 
 - today we do hands on to pull down repo and make changes,
-t1040
-
+</topic>
+<time>t1040<time>
+<topic kw="process; pull requests">
 fedora is one of largest open source projects,
 but for now only 5 of us here, and he may delegate authority to approve
 pull requests to one of us...
 
-rb: one plugins came out, it is safer now.. for us to work with
+</topic><topic kw="plugins">
+rb: once plugins came out, it is safer now.. for us to work with
 and so now the pace of the sobek changes have slowed down in last month or so
-mvs: and in general velocity of changes will slow because we make ore things
+mvs: and in general velocity of changes will slow because we make more things
 configuration and plugin driven..
+
 and for example changing base functionality will be rarely neeed
 
 So please do merge and submit any code you do..
+</topic></topic>
 
+<topic kws="endpoint;viewer:results">
 mvs - So we will talk about results viewer here .. but if we did
 make changes and wanted to add some functionality..
-and mvs says for rb one example is timeline..
+
+and mvs says for rb one example results viewer is timeline..
 and we talked about harvesting.. ..
 
 -- and mvs says there are some things like generic harvesting sources..
 are good candidates to add to base code.
+
 and we will still have some cases to push code (after plugins are widespread).
 and it helps perceived life of the project if more committers..
 and over time if we get more contributors we will add pull requests
@@ -239,7 +256,9 @@ and mvs knows of 2 companies adding to code,
 about 14 asiatic languages, and that would be only a configuration file...
 - --
 submit often and submit a lot is mvs invitation
+</topic>
 
+<kws>directives</kws>
 rb: says he needs to learn the cpt variable name, the inserts or the 'directives'
 
 mvs yes we call them directives, where we insert version number or id
@@ -1113,7 +1132,7 @@ mvs looks at his vs setup
 under.. sobekcm/config/default/sobekcm_engine_co.donfig.
 and see line 178 or so path segment with autotod endopoint
 and now down to lines 362+ we see verbs
-now skip down to lines 782 seee verb mapping tag there
+now skip down to lines 782 see verb mapping tag there
 in this case we have a path milestones'json,
 and that the tail of our path (engine something/milestons/json
 and this is more like a rest api as we can do either a get or a post
