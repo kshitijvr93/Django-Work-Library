@@ -1,4 +1,6 @@
-20151005 uflib sobek code camp notes settings installer rest apis endpoints coding architecture viewers issue copy from folder for bulder
+20151005 uflib sobek code camp notes settings installer rest apis endpoints
+coding architecture viewers issue copy from folder for builder
+
 20151005 uflib sobek code camp notes monday issue copy from folder for builder
 
 notes - 20151005 monday: uflib sobek code camp monday
@@ -16,7 +18,9 @@ t0944 - now doing installation --on Mark's machine of sobek 4.9.0
 he is showing viewgraphs vgs, showing sobekrepository.org/software
 page..http://sobekrepository.org/software
 
-and now all current docs are here, and under project home we see a community site here
+and now all current docs are here, and under project home we see a community
+site here
+
 http://sobekrepository.org/sobekcm/implementations
 .. the central spot for sobek cm docs...
 
@@ -29,6 +33,7 @@ and the sobek 4.9.0 release includes ability to update all of the doc pages
 at sobek repo.org
 
 now looking at software/requirements
+
 Host machine requirements for Sobek install:
 re full text indexing, via the DB itself...
     and the db uses full text ft searching that searches the metadata,
@@ -89,12 +94,15 @@ c:\inetpug\wwwroot) and other values, etc..
 like your server name (localhost or other name), database name
 and click install and then the install is pretty quick..
 
-and now you as an end-user register with it, via the a sobek web page that pops up
-and first person to register is de facto the system administrator..
+and now you as an end-user register with it, via the a sobek web page that
+pops up and first person to register is de facto the system administrator..
+
 WARNING: the installer threw up a web page to create  a new account, but if
 the db already existed, it does not give it admin rights.
+
 so go to sql server management studio to edit the sobekcm_users table and
 give admin rights, say set to True fields like: isHost, isAdmin others.
+
 so this means 'the first person to ever register for any sobek release that
 has used this same database' will be given admin rights.
 
@@ -106,6 +114,7 @@ features, wizards to use.
 a year ago we added feature to allow editing of your home page html..
 and we see some common tasks to add collections, so the collection wizard
 was added in v4.8 and gives some help..
+
 maybe next year they will  add capability to upload arbitrary spreadsheet
 (ssheet) files with xmlschema to describe each column..
 and Mark can show us that..
@@ -119,7 +128,7 @@ with diff students coming in and going, though same professors may stay for
 a while..
 
 so the data will sit in the institutional repository, ir, by the pubs
-working with xml/xsd, that is the the xml schema and ultimately sobek will
+working with xml/xsd, that is the the xml schema and ultimately sobekcm will
 add sql access layer.. and add Hadoop access layer..
 
 .. for the architecture viewgraph vg, on our handout,
@@ -129,14 +138,18 @@ and his vg shown on screen has REST architecture/sobekcm5
 -for zoomable images they use iipimage and not the separate awareserver...
 
 ms t1033
+
 ms - regarding image files of type tif: aka tifs or tiffs.
 A difference exists between bw 'service' copy (of item images and files --
-used in realtime by sobekcm web app) and archival copy, tifs are very big,
+used in realtime by sobekcm web app) and archival copy,
+because tifs are very big, and stored only in archival copy, not service copy,
 and performance pf is an issue..
+
 but the format of jpeg 2000 is like software as a service sas or saas
 and the format of  tiff  is archival.
 it is nice to have a master tif for archiving and for service we use the
 jpeg 2000, which  is 1/20 size of tif,
+
 and if we must store tifs, it is cheaper to store tifs on tape than on disk,
 a major savings... in money
 and pretty easy to make a viewer to treat it, tiff,  as if like a jpeg2000,
@@ -161,53 +174,72 @@ see top menu option "System Admin", sub option "Settings", sub option
 "ALL Settings", and under that see:
 
 field "Archive DropBox" .. is where to put the folder name of ...
-so if you submit digital resource with tifs and all else, it saves things in the folder named as archive dropbox, dbox.
+so if you submit digital resource with tifs and all else, it saves things
+in the folder named as archive dropbox, dbox.
 
-ISSUE - what is this default location? Because on 20151118 this UF field is empty...
+ISSUE - what is this default location? Because on 20151118 this UF field is
+empty...
 it looks at resource folder in hand, whether from webserver or reprocessing.
 this is the uf workflow
-and see, about 30 fields down, is the  field to specify the 'post archive files to delete' .
+and see, about 30 fields down, is the  field to specify the 'post archive
+files to delete' .
 
-and here it may be good to list many file types, eg intermediate products,  to delete,
+and here it may be good to list many file types, eg intermediate products,
+to delete,
 and after deletion of those then it moves what is left to archive dbox..
 so it works in archive folders as well as stuff on webserver..
 so if dun... tif iface.. it copies to archive dbox,
-so if you upload ul a tif and do not delete it (by listing it as a filetype
-to delete), then sobekcm should drop tifs into archive dbox..
+
+so if you:
+(1) upload ul a tif,  AND
+(2) do NOT delete it (by listing it as a filetype to delete),
+then sobekcm should move/drop tifs into archive dropbox, dbox..
 
 we want to talk of linking this more to archivematica or preservation systems.
 
 now it makes a copy, but then you can write your own scripts to take files
 from the archive dbox and send to tivoli, fda, wherever you archive.
+
 So in the field "PostArchive Files To Delete" we should put a substring in
 the value with a tif expression:
 
 Something like "(.*?)\.(tif)"
+
 So the fields: 'post archive files to delete' and also' pre-archive files
 to delete' fields can specify to delete QC.jpg files,
-and tif is (should be) deleted in post archive (but not pre-archive) to
-allow tif files to remain present to get archived to FDA, tivoli, wherever,
-and then, at post-archive time,  tifs should be locally deleted to save
+
+and tif is (should be) :
+(1) deleted in post archive
+(2) BUT tifs should NOT be deleted from pre-archive) to
+    allow tif files to remain present to get archived to FDA, tivoli, wherever,
+
+and then, at POST-archive time,  tifs should be locally deleted to save
 space on the 'service' servers.
 
 Now to see under tab 'ALL Settings' the settings that begin  "builder" in
 that region of these settings general notes on builder settings.
 
-now not as much connectivity between web builder and web app as there should be
-we will add ability to look at and manage all your builder folders .. that it looks into..
-each partner (satellite system like ncf, gulfcoast, seminole state) will have a diff incoming folder.."Main Builder Input Folder" setting
+Now not as much connectivity between web builder and web app as there should be
+we will add ability to look at and manage all your builder folders .. that
+it looks into.. each partner (satellite system like ncf, gulfcoast, seminole
+state) will have a diff incoming folder..
+"Main Builder Input Folder" setting
 so can set different modules to run on different incoming folders--
 in the future... not now in SobekCM  version 4.9.0 though
 and we also lack good access to the builder logs
 
-which are cleared out in the time of  the 'builder log expiration in days' field..
-and in next version (5.0?) we will have more visibility than now on what the builder is doing
+which are cleared out in the time of  the 'builder log expiration in days'
+field..
+and in next version (5.0?) we will have more visibility than now on what
+the builder is doing
+
 the first field: "Builder Add PageTurner ItemViewer":
 
 set to true to use it..
 
 another field: "Builder  IIS Logs Directory" set its value to create builder
 stats log files
+
 and richard bernardy, rb, wants 2 log levels of verbose and non-verbose..
 or maybe more levels, per rb.
 -t1043
@@ -225,141 +257,246 @@ and it is set as the default,  to something like 'builder is stopped'.
 and field "Builder seconds between polls": 60 is standard default value
 field "Builder IIS Logs Directory": and putting a value in IIS Logs Directory;
 set its value to create builder stats log files
-it will try to generate, gen, stats and email monthly.. and it is now integrated into the system..
+it will try to generate, gen, stats and email monthly..
+and it is now integrated into the system..
 ms - but a problem not collecting item stats, but is for collection stats
-The log files directory will go away, but  will (in version 5.0 ?) write logs to the db.
-Field "Main builder input folder" matters for smart tool and local instance being run.
-So if  I import a lot of ssheets using an external tool from a command line on the host, like the METS editor or SmartTool, this is where to put the ssheets, where the builder will seek new items every minute or so.
+
+The log files directory will go away, but  will (in version 5.0 ?) write
+logs to the db.
+
+Field "Main builder input folder" matters for smart tool and local instance
+being run.
+
+So if  I import a lot of ssheets using an external tool from a command line
+on the host, like the METS editor or SmartTool, this, the MAIN BUILDER FOLDER,
+is where to put the ssheets, where the builder will seek new items every
+minute or so.
+
 However, self-submittal items are managed by the web application itself.
-now we discusss region "Email*" settings... basic stuff.. and this will change, as postgres does not have db mail, so the default will be simple smtp..
+Now we discusss region "Email*" settings... basic stuff.. and this will
+change, as postgres does not have db mail, so the default will be simple smtp..
 and fields for "system email" and "system error" email
 and "privacy email address":
-If we find things that look like ssns, and if we find anything like that , this person gets an email about privacy concerns..
-but it gets false alarms.. with newspaper sports pages, the rbi baseball tables trigger this a lot- they may look like ss numbers.
-section help settings.
-help url should be http://sobekrepository.org and also help metadata url -- all help includes ..
-see general appearances,
+
+If we find things that look like ssns, and if we find anything like that,
+this person gets an email about privacy concerns..
+but it gets false alarms.. with newspaper sports pages,
+the rbi baseball tables trigger this a lot- they may look like ss numbers.
+
+TOPIC: SEE SECTION help settings.
+
+help url should be http://sobekrepository.org and also help metadata url --
+all help includes .. see general appearances,
+
 Field "can remove single search term".. use true,
 and field "facets collapsible", not in use yet
 and section interoperability settings,
-field 'create marc feed by default'--
-will change in new version..
-and see field 'marc cataloging source code' -
-set a value there like FUG for uf and mark repro agency and repo place...
+field 'create marc feed by default' will change in new version..
+and see field 'marc cataloging source code' - set a value there like FUG for
+uf and mark repro agency and repo place...
 this helps us output marc records to other systems..
-or can populate 'marc xslt file' field -- so xslt just forms your xml,
+
+or can populate 'marc xslt file' field, so xslt just forms your xml,
 so when look at locally genned marc, xslt can remove fields you want to remove..
 so in your xml, keep/put max xml tags info in marc records,
 and later it is easy to remove
+
 (but not easy to add via xslt, as xslt does not query a db)..
-see  some global resource file settings
-field  - 'can submit items online': can temporarily set to false to prevent user changes when changing your filesystem fs.
-and another flag x says do not allow to logon so they cannot add a bookshelf, at least temporarily, as you upgrade
+
+TOPIC: see  some global resource file settings
+
+see field  - 'can submit items online': can temporarily set to false to
+prevent user changes when changing your filesystem fs.
+and another flag x says do not allow to logon so they cannot add a bookshelf,
+at least temporarily, as you upgrade
 and field 'convert office files to pdf'
 and field 'files to exclude from downloads' has a regex
-and field 'files to exclude from downloads' should probably also appear  in the builder region of settings ,
-so by default they will not appear as download dl file extension options for the user..
-all fields are either images or downloads, so images you see with a quality control tool that allows page turning , thumbnail view, etc.
+and field 'files to exclude from downloads' should probably also appear  in
+the builder region of settings ,
+
+so by default they will not appear as download dl file extension options for
+the user..
+
+all fields are either images or downloads, so images you see with a quality
+control tool that allows page turning , thumbnail view, etc.
+
 fields jpeg height ht and width are maximums if system creates jpegs
+
 and can set the kakadu jpeg2000 create command
 and can add ocr engine command --
 and they were using tesseract- it looks much better than 3 years ao..
 and may add another builder module to run tesseract soon
 and fields thumbnail ht and width can be set for max pixel values
 and fields 'upload file types' and 'upload image types'
-these allow uploads through online 'self submittal'  interface, so may have to add mp4, it may not be in the default..
+these allow uploads through online 'self submittal'  interface, so may have
+to add mp4, it may not be in the default..
+
 and field upload image types
 are things linked to the images..
+
 and pro and txt are assoc with images, though not actually images..
+
 cannot put in gif until we have a viewer for gifs..
 and pngs
+
+TOPIC: SETTINGS FOR SYSTEM CONFIG
+
 t1057-now settings section for server config -- and many fields optional
 and section system config -
+
 a bucket for many things like system default languages
 use field 'web output caching minutes'
-if you want server to recommend to powers that they can cache for a minute - the integer there is minutes.
+if you want server to recommend to powers that they can cache for a minute -
+the integer there is minutes.
 -field send email on added aggregation -
 This is the user to whom to send emails right now when/if add child collections
 so this adding of a child collection triggers such email
 and field static resources source:
 exist many dropdown, dd, options .. and js and little images,
-so with new system about half things linked to in the html header do not come from your server,
-but rather from a worldwide content delivery network cdn (cdn.sobekrepositry.org - it vastly increases speed..)
+so with new system about half things linked to in the html header do not
+come from your server,
+but rather from a worldwide content delivery network cdn
+(cdn.sobekrepositry.org - it vastly increases speed..)
+
 as a browser can make requests to 2 servers or more simultaneously..
-and if request svc from india or china, the svcs will be served by the cdn node in those countries making for a good speedup.
+and if request svc from india or china, the svcs will be served by the cdn
+node in those countries making for a good speedup.
 or may want to change to local if users have no internet, inet, access
 and we version things on the cdn as things come out..
+
 and.. but do leave it on cdn.. and you can override others that system gives you
 field system base abbrev:
+
 for UF, using UFDC
-summary- those were std settings.
-and now see tab "custom settings":
+
+recap: summary- those were std settings.
+
+TOPIC: and now see tab "custom settings":
 custom settings can be added here
 eg ss library license.. a license key..
 eg elsevier api key: d91051fb976425e3b5f00750cbd33d8b
 or 6492f9c867ddf3e84baa10b5971e3e3d,
+
 so those are all top level settings not in the config file
 t1102 - now take a break.============================================================
-t1118 - we should install imagemagick - as it is used by builder, etc,  to create the jpegs, maybe thumbnails
-and it uses the registry- the imagemagick installer registers imagemagick into the Windows OS Registry
-NOTE: SobekCM WebApp uses the Windows OS Registry, NOT a config file, to locate imagemagick executable.
-and so need to restart Windows or log off and on before restarting it (Sobek) the first time
-goto WINDOWS binaries: http://www.imagemagick.org/script/binary-releases.php#windows
-downloading http://www.imagemagick.org/download/binaries/ImageMagick-6.9.2-4-Q16-x64-dll.exe
+
+t1118 - we should install imagemagick - as it is used by builder, etc,  to
+create the jpegs, maybe thumbnails
+and it uses the registry- the imagemagick installer registers imagemagick
+into the Windows OS Registry
+
+NOTE: SobekCM WebApp uses the Windows OS Registry, NOT a config file, to
+locate imagemagick executable.
+and so need to restart Windows or log off and on before restarting it (Sobek)
+the first time
+
+goto WINDOWS binaries:
+    http://www.imagemagick.org/script/binary-releases.php#windows
+downloading
+    http://www.imagemagick.org/download/binaries/ImageMagick-6.9.2-4-Q16-x64-dll.exe
 it is widely used.. imagemagick does a lot.. we just installed it..
-rvp note: imagemagick says it is not required, but highly recommended to also install ghostscript on the PC host machine,
-because imagemagick and hence SobekCM will use ghostscript if available, for efficient and useful functionalities..
+
+rvp note: imagemagick says it is not required, but highly recommended to
+also install ghostscript on the PC host machine,
+because imagemagick and hence SobekCM will use ghostscript if available,
+for efficient and useful functionalities..
+
 and now we are in the SobekCM Digital Repository Setup wizard
-and if click full install it will try to install all SOLR if you want it all on 1 machine..
+and if click full install it will try to install all SOLR if you want it
+all on 1 machine..
 but now the next step we do is web server install.
+
 This code camp audience consists of about 20 people,
 about 1/3 developers, and digital archivists and librarians
 from .. univ of miami, fiu, fiu gis, city of miami gis
+
 ms - recommends a web server and a separate back(end)/data server install.. --
 web server - has IIS, .net
-and the backend, be, server has the db and the builder running and solr, we generally recommend
+and the backend, be, server has the db and the builder running and solr, we
+generally recommend
 but we will do an advanced install, and will not install solr now
 (rvp: I think a SOLR install is still broken and could not install anyway)
 and you cannot turn off ms sql
-And this installer can upgrade from instances down to sobek 4.x but not 3.x..
-installers are meant to install and upgrade a single instance, but we would only do this to upgrade a single instance.
+
+And this installer can upgrade from instances down to sobek 4.x but not from
+older 3.x..
+
+installers are meant to install and upgrade a single instance, but we would
+only do this to upgrade a single instance.
 but if you, like UF IS, are running a server serving multiple sobek instances,
+
 this install wizard will not work.. then you should do upgrades manually.
+
 so if your iis shows multiple websites, like UF, do not use this wizard..
 now continuing with the wizard 'msi installer' window of sobekcm prerequisites..
+
 See c:/program files/sobekcm/database (SQL installation updates upgrades)
-and files like Version_40804 --- these scripts upgrade db from prev version to next in version-to-version upgrades
-now the builder installation: first see builder exe file location: and see under c:\program files we see subfolder sobeckcm\builder
+and files like Version_40804 --- these scripts upgrade db from prev version
+to next in version-to-version upgrades
+
+TOPIC: BUILDER installation
+
+Now the builder installation: first see builder exe file location:
+and see under c:\program files we see subfolder sobeckcm\builder
 and see under here is exe file for 'the builder'
 SobekCM_builder.exe
-the builder also does gen maintenance for your instance..
+
+the builder also does general maintenance for your instance..
 it creates rss feeds when you add a new item, (for SEO optimization fodder)
-and it does some db admin stuff to speed up performance pf and cache, so it is always an integral part of the system.
+and it does some db admin stuff to speed up performance pf and cache, so it
+is always an integral part of the system.
 currently SobekCM_builder.exe is a scheduled task,
-and look at window task scheduler and expand task schedule library and see sobekCM Builder.. and actions shows the scheduled info.
+and look at window task scheduler and expand task schedule library and see
+sobekCM Builder.. and actions shows the scheduled info.
+
 t1135 -
 so must shut down builder before you upgrade.
-via website myUFDC page, use tab System Admin and select settings/system-wide settings
+Via website myUFDC page, use tab System Admin and select settings/system-wide
+settings
+
 and set field Builder Operation Flag to ABORT REQUESTED setting
-wait a minute to refresh the page and that flag should say something like builder stopped.
+
+wait a minute to refresh the page and that flag should say something like
+builder stopped.
+
 or go to scheduled task window and set it to restart back up in 10 minutes..
-IMPORTANT: so must grab builder files (maybe copy them from newly pulled git repo's working folders) if want to do an upgrade.
-rvp: (Will MSI installer copy them, or from where do you grab them? So but maybe only for a source code upgrade?),
-In my MSI install of 20151020 I did no manual copying, yet on 20151022 my examination showed folder c:\programfiles\sobekcm\builder and its subfolders have dates of 20151020, so the MSI installer it seems already did that? (the file-specific dates were older, but I guess thats ok).
+IMPORTANT: so must grab builder files (maybe copy them from newly pulled
+git repo's working folders) if want to do an upgrade.
+
+rvp: (Will MSI installer copy them, or from where do you grab them?
+So but maybe only for a source code upgrade?),
+
+In my MSI install of 20151020 I did no manual copying, yet on 20151022 my
+examination showed folder c:\programfiles\sobekcm\builder and its subfolders
+have dates of 20151020, so the MSI installer it seems already did that?
+(the file-specific dates were older, but I guess thats ok).
+
 we (or maybe MSI) MUST COPY/PASTE all the Builder files for an upgrade.
 (but what are the from and to folders?)
+
 copy TO FOLDER: c:\program files\sobekcm\builder
 copy FROM folder: c:\inetpub\wwroot\?? nope.....
-well for UF, using the git repo, it is under the git repo working directory under ...sobekcm/builder
+
+well for UF, using the git repo, the COPY FROM FOLDER is under the git repo
+working directory under ...sobekcm/builder
+
 after running the special "BAT" file we use to compile from the git repo
 And the other part of the sobekcm installation is under c:\inetpub\wwwroot
 these are all the files for the web server.. all the things intermingled
-so upgrade..recap for SINGLE website (not uf), or a simple development machine environment:
+so upgrade..recap for SINGLE website (not uf),
+or a simple development machine environment:
+
 run this upgrade, (msi installer)
 grab the builder (copy paste )
 and grab the db
-and grab wwwroot from the VIRTUALDIR folder name. note: msi installer puts it under c:\inetput\wwwroot\VIRTUALDIR) that you gave to the MSI installer.. so paste it into the WORKING server main folder also under wwwroot or wwwroot/working_virtual_dir if you set that when you installed production
-and in your WORKING webserver file hierarchy, (assume now it is plainly c:\inetpub\wwwroot, the default, with no suffix virtualdir having been set for production) do NOT delete:
+and grab wwwroot from the VIRTUALDIR folder name. note: msi installer puts
+it under c:\inetput\wwwroot\VIRTUALDIR) that you gave to the MSI installer..
+so paste it into the WORKING server main folder also under wwwroot or
+wwwroot/working_virtual_dir if you set that when you installed production
+and in your WORKING webserver file hierarchy,
+(assume now it is plainly c:\inetpub\wwwroot, the default, with no suffix
+virtualdir having been set for production) do NOT delete:
+
 the ...wwwroot subfolder design folder...
 nor wwwroot subfolders user and default
 nor file wwwroot/config/sobekcm.config
@@ -374,6 +511,8 @@ and you do need to save your production designs folder
 and do SAVE your sobekcm config file... as it has your db connection info..
 
 -t1140
+
+TOPIC: wwwroot/web.config file:
 
 also exists a wwwroot/web.config file (by the way)
 see under inetpub/wwwroot/web.config file
@@ -391,6 +530,8 @@ in most instances that we host, it was raised to 100 gbytes..
 for audio and video.. and it never changes..
 and this file will not be changing the names of the fields used.
 but the values of your own you need to save between upgrades.
+
+TOPIC: file sobekcm.config
 
 other main config must be edited in the file wwwroot/config/sobekcm.config
 and it also has a config.template
@@ -410,25 +551,31 @@ and the type is MSSQL, and we will keep supporting mssql.
 -and see various links it has to go to
 and see the source..
 
-TOPIC of REST APIs:
+TOPIC: REST APIs
+
 very nice to review -- writing out in diff formats using these extant
 endpoints may be useful. sort of like viewers?
 
 see ..samples/citation.html- http://sobekrepository.org/samples/citation.html
 See the javascript that shows what you can do easily on its own without asp.net.
 
-It is a nice demo, the last javascript simply assumes that we had created
+It is a nice demo, the last javascript simply assumes that we had
+locally created on our own web server machine that serves a web page with js
 function parseItemCitation(data),
 
-and it provides all the data that the json-p link shows, for our implementation
-of that function to rely upon. also see: https://en.wikipedia.org/wiki/JSONP
-
-The actual json returned starts like:
-parseItemCitation({"description":[{"properties":[{"value":"SHANDS HOSPITAL AT THE  ...
-and hence it is pre-arranged that the client must have a function named parseItemCitation
-and that function also must  takes the following JSON in a pre-arranged format do deal with it.
-.
+and the REST API provides all the data that the json-p link shows,
+for our implementation of that function to rely upon.
 also see: https://en.wikipedia.org/wiki/JSONP
+
+The actual json data returned from the Sobekcm REST API to our client
+(with the client running the code that our server put on
+the client web page) starts like:
+
+parseItemCitation({"description":[{"properties":[{"value":"SHANDS HOSPITAL AT THE  ...
+and hence it is pre-arranged that the client must have a function named
+parseItemCitation and that function also must  takes the following JSON
+in a pre-arranged format do deal with it.
+
 ctrl-u source: (see ufdc.ufl.edu sample source at:
 https://robertvernonphillips.com/admin/bills/log/10688/ )
 
@@ -497,62 +644,109 @@ src="http://digital.wolfsonian.org/engine/items/citation/json-p/WOLF037299/00001
 </body></html>
 
 -end source
-a good example of using the api -  it is link 3 under section sobek cm 5.0 architecture and apis on our handout ho
+
+a good example of using the REST api -  it is link 3 under section sobek
+cm 5.0 architecture and apis on our handout ho
 http://sobekrepository.org/sobekcm/apis
-and view the source and see how we parse the item in jscript and it is not complex..
+
+and view the source and see how we parse the item in jscript and it is not
+complex..
+
 so that tiny bit of javascript gives fine display coming directly from the api.
 -
 -Example, see samples/gallery.html under sobekrepository.org..
 http://sobekrepository.org/samples/gallery.html
 -and that uses fancybox-
 
-can do a SobekCM full install for working on a test laptop
+Can do a SobekCM full install for working on a test laptop
+
 and then port any new modified software to a production server later
 and see final sample
+
 in file http://sobekrepository.org/samples/book.html
 and it uses turn.js too..
+
 and it goes to the end and pulls the json and you end up with a flip book even with only javascript
 and even easier todo in c# as you just grab the core class..
 just nice samples of using the endpoints..
 so good examples of using the item apis.
 -See sobek source code addressing  REST APIs
 and now see vs code from github git repo..
-and also have samples to parse the aggregation object endpoints as well, ie the aggregation or collection..
-so the whole point of these apis is to customize the look and feel for your library..
-so you could use the sobekcm admin interface and use the apis to create your own public iface if you wish..
--ms - so London site (former UF employee X works there)  is running sobek and we hit one of their endpoints
-ms - we do not use api keys yet, just restrict now by ip.. we could add api keys when/if we want.
--ms - but for deleting, posting and putting, we would want security, maybe different than the ip-restriction only method.
+
+and also have samples to parse the aggregation object endpoints as well, ie
+the aggregation or collection..
+so the whole point of these apis is to customize the look and feel for your
+library..
+so you could use the sobekcm admin interface and use the apis to create
+your own public iface if you wish..
+
+-ms - so London site (former UF employee X works there)  is running sobek
+and we hit one of their endpoints
+ms - we do not use api keys yet, just restrict now by ip.. we could add api
+keys when/if we want.
+-ms - but for deleting, posting and putting, we would want security, maybe
+different than the ip-restriction only method.
+
 and it should compile ok from scratch...
 but the builder has subfolders that are not in github...
+
 Summary: Install and Setup a dev machine:
 so to run on a new machine.. you run from the msi installer..
+
 [rvp] when it asks for server and database name
-and if already have a working dev system on a previous sobekcm release, it will have a config/sobekcm.config file with a connection string value that indicates the dev server and database.
-take it, your current  dev server and database name,  and use it when the msi installer asks for a database name
+and if already have a working dev system on a previous sobekcm release, it
+will have a config/sobekcm.config file with a connection string value that
+indicates the dev server and database.
+take it, your current  dev server and database name,  and use it when the
+msi installer asks for a database name
 if not: \you can keep the default or make it up
 but keep note of your database name for later.
 and download the code from github
+
 so all the folders required were /are present from the msi installer..
 t1536
 can go get most recent github sobek source into a local sobekCM folder..
-and it brings a lot down but not design folders or config.
+
+and it brings a lot down
+but not design folders or config.
+
 as a dev do look in the GitRepo/sql folder to make sure tables are what you expect.
-so 1 visual studio, vs,  'solution' is  for the web
+So 1 visual studio vs,  'solution' is  for the web
+
 and 1 vs solution is for the builder
+
 and they use many common libraries.
-rvp: PLUS - edit the source code ...config/sobekcm.config file and set it to the same database you specified in your MSI file.
+rvp: PLUS - edit the source code ...config/sobekcm.config file and set it
+to the same database you specified in your MSI file.
+
+
+TOPIC: SOURCE CODE FOR REST ENDPOINTS - REVIEW
+
 so looking at the code in visual studio, vs -
 see endpoints and code for how endpoints are responded-to.
+
 see code file CustomServices.cs, public class CustomServices, see under celements
-local file is:  C:\Users\lib-adm-podengo\Downloads\git_repos\sobekcm-web-application\SobekCM-WEb-Application - and see under that is:
-\SobekCM_Engine_Library\Endpoints\CustomServices.cs(20):    public class CustomServices : EndpointBase
-Mark deployed this on a registration website page that we filled out to register for this code camp.
-it has main method Register_User that ... has no refs in OUR official 4.9.0 sobekcm codebase, but Mark added to his, it seems, for us to use to register.
-so this endpoint - the server-side code for it:
+
+local file is:
+ C:\...git_repos\sobekcm-web-application\SobekCM-WEb-Application
+
+and see under that is:
+\SobekCM_Engine_Library\Endpoints\CustomServices.cs(20):
+   public class CustomServices : EndpointBase
+
+Mark deployed this on a registration website page that we filled out to
+register for this code camp.
+
+it has main method Register_User that ... has no refs in OUR official 4.9.0
+sobekcm codebase, but Mark added to his, it seems, for us to use to register.
+
+So this endpoint - the server-side code for it:
 it seems expects the request to include all the registration fields,
 and it does do some validations...
-so maybe he had a form page that we summoned and filled in that then called this endpoint...?
+
+so maybe he had a form page that we summoned and filled in that then called
+this endpoint...?
+
 It calls direct sql methods like sqlCommand.Parameters.AddWithValue('')
 and it sets/set sql_command
 // Create the SQL command
@@ -561,18 +755,31 @@ SqlCommand sqlCommand = new SqlCommand("LOCAL_AddEventRegistration", sqlConnect)
 CommandType = CommandType.StoredProcedure
 };
 -
-and see Title_main_element in file Element Factory.cs...  is how it translates from these types.
-in file ...SobekCM.Library.Citation.Elements.Title_Main_element... file Title_Main_Element.cs
-see the comments, ... it is "Element allows simple entry of a main title for an item"... see that code
-See Method public override voide Render_Template_HTML() and how it is used/created for this particular element as a simple override method... ok
+and see Title_main_element in file Element Factory.cs...
+   is how it translates from these types.
+in file ...SobekCM.Library.Citation.Elements.Title_Main_element...
+   file Title_Main_Element.cs
+see the comments,
+   ... it is "Element allows simple entry of a main title for an item"...
+see that code
+
+See Method public override void Render_Template_HTML()
+and how it is used/created for this particular element as a simple override
+method... ok
+
 See method Save_To_Bib - with foreach syntax similar to sql to save the Bib info..
-https://msdn.microsoft.com/en-us/library/bb384087.aspx ab: shows C# LINQ select statement and see other MS docs on that..
+https://msdn.microsoft.com/en-us/library/bb384087.aspx ab:
+  shows C# LINQ select statement and see other MS docs on that..
 LINQ - language integrated query - guide: https://msdn.microsoft.com/library/bb397676%28v=vs.100%29.aspx
 more LINQ links: https://robertvernonphillips.com/admin/bills/log/10694/
+
 see file Element_factory.cs
-C:\Users\lib-adm-podengo\Downloads\git_repos\sobekcm-web-application\SobekCM-WEb-Application
-\SobekCM_Library\Citation\Elements\Element_Factory.cs(330):                        return new Title_Main_Element();
-Takes an argument string name of an element type to create (and optionally a subtype) and goes to a big switch to make the element of that type name, to call a constructor function of roughly that name, where some constructors, for example, are:
+C:\...git_repos\sobekcm-web-application\SobekCM-WEb-Application
+\SobekCM_Library\Citation\Elements\Element_Factory.cs(330):
+    return new Title_Main_Element();
+
+Takes an argument string name of an element type to create (and optionally a
+subtype) and goes to a big switch to make the element of that type name, to call a constructor function of roughly that name, where some constructors, for example, are:
 Abstract_Complex_eElement, Acquisition_Note_Element, Additional_)Work_Needed_Element(), etc...
 that are already compiled into the sobekcm base,
 for example the foregoing Title_Main_Element() is one of them.
