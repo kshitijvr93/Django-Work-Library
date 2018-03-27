@@ -1,4 +1,5 @@
 20170424 monday sobekcm code camp
+for overview slides - see: http://sobekrepository.org/events/codecamp/fl2017/schedule
 t0820 start
 
 Had less coding before.. and now pure code camp...
@@ -1196,113 +1197,213 @@ configuration on left, subitem engine server endpoints
 and go to aggregations/all/json
 and in url location just type localhost/engine/aggregations/alljson
 (and protobuf and jsonp etc, xml are examples of formats)
+
 so one thing to do was create a simple...
 well...
 
 mvs is talking with rb
-now we look at th EDS one under richard bernardy github
+
+now we look at the EDS one under richard bernardy github
 a simple results endpoint..
 
 we needed to have a config file..
 sobekcm-plugin-endpoint-EDS
-this is ultimately what the plugin folder is,  a config file and a dll
+
+TOPIC: Robert - later notes 20180327
+
+ALSO see sobekcm code in github, under
+...SobekCM\config\samples\sobek_cm_egin_example.config
+and follow along with the below narrative.. to find similar features of
+
+See node Engine/Mapping/PATH shows Segment = /\'aggregations'
+Which indicates this file defines active/served endpoints starting with
+a URL like "...aggregations/"
+Deeper into the xml are also other enclosing xml tags "Path Segment='xxx'""
+where xxx is the next level deeper of the serviced URL, and the terminal
+segment is defined in <ComplesEndpoint Segment='some_protocol'> where prototocol
+may be json, json-p, protobuf or xml, and within this tag are multiple tags like:
+<VerbMapping Verb= "POST",
+
+[NOTE that at end it also  gives IP restriction ranges that may use
+endpoints ]
+
+
+END robert later notes...20180327
+
+TOPIC: Engine endpoints and back to original class notes
+
+this is ultimately what the plugin folder is, a config file and a dll
 so his config file, for the entire plugin,
+
 here he has extension code="EbscoServices"
-and will add guides in the future like version guide and plugin guid
-and has adin invo..
-and most importantly, see the <Assembly id - and the name=somemyplugin.dll">
+and he (Richard..?) will add (developer) guides in the future like version guide and plugin guide
+
+and he has admin info..
+and most importantly, see the
+<Assembly id - and the name=somemyplugin.dll">
 is most important
 
 and you only need to add assemblies with sobek code in them,
-so if you have your own dll, in the same lib, your refs are now loaded.. so easier..
+so if you have your own dll, in the same lib, your refs are now loaded..
+so easier..
 so this has not changed much.. we just have md about the plugin
-then section <Engine> has actual changes
+
+The main section <Engine> has actual changes like atribute ClearAll;
 so <Engine ClearAll="false"> and we define path segment plugins,
 path segment ebsco, and autodoc had for docs
 and endpoints are there with method seg Ebsco_Results_Json" prrotcol="JSON"
+
 and similar line for segment = xml, component id=EBSCO_COMP,
 method=EBSCO_Results_XML, protocol XML
+
 -
 mvs - actually 2 ways to show this, see his 2 endpoint tags,
-the verb is not the, so default assumption is only "GET",
+when the "Verb=" attribute is not there, the default assumption is only "GET",
 so cannot post to this one,
 
-future? so a better way mvs will convey to allow get and post.. etc.
+future? so a better way -  mvs will convey to allow get and post.. etc.
 and the component ID appears again at bottom in section COMPONENTS.
+So you can define a short id for a component and easily reference in multiple
+VerbMapping elements
 
-now to another eg of this config file... would be..
-mvs looks at his vs setup
-under.. sobekcm/config/default/sobekcm_engine_co.donfig.
-and see line 178 or so path segment with autotod endopoint
+Now to another eg of this config file... would be..
+mvs looks at his VS setup
+
+under.. (see github, eg commit x ) filename:
+sobekcm/config/default/sobekcm_engine.config.
+
+and see line 178 or so path segment with autotodoc endpoint
+[
+<Path Segment="briefitemmapping">
+  <AutoDoc>
+    <Description> Gets the brief item mapping configuration information from the configuration files </Description>
+    <RequestType>This endpoint does not support updates or deletes and only the GET HTTP verb is supported</RequestType>
+    <Arguments>none</Arguments>
+    <Returns>BriefItemMapping_Configuration object</Returns>
+  </AutoDoc>
+  <Endpoint Segment="json" ComponentID="C9" Method="GetConfigurationBriefItemMapping" RestrictionRangeID="R1" Protocol="JSON" />
+  <Endpoint Segment="json-p" ComponentID="C9" Method="GetConfigurationBriefItemMapping" RestrictionRangeID="R1" Protocol="JSON-P" />
+  <Endpoint Segment="protobuf" ComponentID="C9" Method="GetConfigurationBriefItemMapping" RestrictionRangeID="R1" Protocol="PROTOBUF" />
+  <Endpoint Segment="xml" ComponentID="C9" Method="GetConfigurationBriefItemMapping" RestrictionRangeID="R1" Protocol="XML" />
+</Path>
+
+]
 and now down to lines 362+ we see verbs
+[
+<Path Segment="custom">
+  <ComplexEndpoint Segment="register">
+    <VerbMapping Verb="GET" ComponentID="CUSTOM" Method="Register_User" Protocol="JSON" />
+    <VerbMapping Verb="DELETE" ComponentID="CUSTOM" Method="Register_User" Protocol="JSON" />
+    <VerbMapping Verb="POST" ComponentID="CUSTOM" Method="Register_User" Protocol="JSON" />
+    <VerbMapping Verb="PUT" ComponentID="CUSTOM" Method="Register_User" Protocol="JSON" />
+  </ComplexEndpoint>
+</Path>
+]
+
 now skip down to lines 782 see verb mapping tag there
-in this case we have a path milestones'json,
-and that the tail of our path (engine something/milestons/json
+
+[
+<ComplexEndpoint Segment="json">
+  <VerbMapping Verb="GET" ComponentID="C5" Method="Get_Single_Milestones" Protocol="JSON" />
+  <VerbMapping Verb="POST" ComponentID="C5" Method="Add_Milestone" Protocol="JSON" />
+</ComplexEndpoint>
+]
+in this case we have a path ..../milestones/json,
+and that the tail of our path (engine something/milestones/json
+
+TOPIC: Engine endpoint rest api
+
 and this is more like a rest api as we can do either a get or a post
 so here we add a milestone to a webcontent page..
 so in this eg, you config like this to support more verbs than just GET
 
--now back to rb github repo
+TOPIC: -now back to rb github repo (put a link here...?)
+URL https://github.com/rbernardy/SobekCM-plugin-endpoint-EDS
+
 see pluginfo-folder-
 and see subdir source and EbscoServices/EbscoServics.cs
-and see the two methods.. with HttpResponse Respons, List UrlSeegments.. etc..
--
-mvs: so to program plugsins, it is easiest to work within SobekCM
-in the VS objects and maybe go within SobekCM_Engine_Libary/endpoints
-and create new endpoints, call it a class, simpleEndpoint.cs
+https://github.com/rbernardy/SobekCM-plugin-endpoint-EDS/blob/master/source/EbscoServices/EbscoServices.cs
 
-and we get our default using stmts and notice that it extends
-EndpointBase,
-it is just a peer class Endpoints.EndpintBase you can use,
-but not nec, but a helper class to give you basics
-So here define public clsass SimpleEndpoints:EndpoindBase
+and see the two methods.. with args HttpResponse Response, List UrlSegments, etc:
+
+public void EBSCO_Results_XML(HttpResponse Response, List<string> UrlSegments, NameValueCollection QueryString, Microservice_Endpoint_Protocol_Enum Protocol, bool IsDebug)
+
+and:
+
+public void EBSCO_Results_JSON(HttpResponse Response, List<string> UrlSegments, NameValueCollection QueryString, Microservice_Endpoint_Protocol_Enum Protocol, bool IsDebug)
+
+---
+
+TOPIC: walkthrough example using easiest way to program endpoints plugins
+
+mvs: so to program plugins, it is easiest to :
+-- work within SobekCM in the VS objects
+-- and maybe go within SobekCM_Engine_Libary/endpoints
+-- and create new endpoints, call it a class, simpleEndpoint.cs
+-- and we get our default using stmts and notice that it extends
+   EndpointBase,
+-- it is just a peer class Endpoints.EndpintBase you can use,
+-- but not nec, but a helper class to give you basics
+
+So here define public class SimpleEndpoints:EndpointBase
 and put code there
+
 and also in VS for sobek go for the config,
-go to sobekcm and go to plugisn
-OR just add it into the confg/usr folder as a separate config file,
+go to sobekcm and go to plugins
+
+OR just add it into the config/usr folder as a separate config file,
 which we will do now.
 so creating new file using windows explorer first..
 
 So start with RB example plugin..
 just grab his folder put it on your webroot
+
 and under webroot/plugins
 and rename it simpleEndpoint Services the folder,
 
-and rename his Ebsco ..config file to ours
+and rename his Ebsco '.config' file to our config folder x.
+
 and we can add any number of config files or .config of xml files in this folder
 or any and all subfolders will be read..
+
 a good eg is creating custom md, and if so, you might want a subfolder for each md.
-may need a folder for the endpoint, and another for briefitem mapper, whatever
+
+you may need a folder for the endpoint, and another for briefitem mapper, whatever
 makes your code eaiser to manage, and just put in apt config files..
 
-now we edit, our copied file we renamed simpleendpoint services.conf based
-on rb changing name="Simple endpoint services"  version="1.0",
-add a description... change author names
+now we edit, our copied config file we renamed
+to be simpleendpoint services.conf,
+based on rb changing name="Simple endpoint services"  version="1.0",
+and add a description... change author names
 and leave <permissions? as is
 and <assembly .. we can add our dll name (anticipated dll after we make it,
 but comment it out now)
-
-now under engine mapping/path say plugins and subpath simple and subpath2 is
+now (still in the config xml file)
+under engine mapping/path say plugins and subpath simple and subpath2 is
 also called simple
-and request type is english saying it is get only
+
+and request type is english saying it is "GET" only
 and under component change id to SIMPLE_COMP and change class..
-and refer to them i the prior <Endoint tagg(s)... etc and
+and refer to them in the prior <Endpoint tag(s)... etc and
 change the path now in the xml to plugins simple/results..
+
 and now he just copied the code into his mouse and in vs now is creating
-file under config /usr new file templseimpleservicesconfigconfi
-and now in vs is pasting in the text for our new xml.
-so we are creating this 'plugin code and config' in our entire web VS
+file under config/usr new file
+simple_endpoint_services.config?
+
+and now in vs mvs is pasting in the text for our new xml.
+
+So we are creating this 'plugin code and config' in our entire NEW web VS
 project just for convenience, but when we get it working, we can
 extract our two files, the dll and config and call that our plugin - nice.
--
 
-so now we go unde sytem settings i config, last item
+so now we go under sytem settings in config, last item
 and see it did find our new  file
 and so we look in the reading log and we see it found our new config.. fine.
 
 t1412
 
-topic? and now looking at engine server endpoints..
+topic: continue looking at engine server endpoints on system settings web page
 so now at bottom under plugins/simple are our 2 new endpoints..
 and it shows our component info in the component table of the web page
 under system wide settings for this ... these endpoints..
@@ -1310,8 +1411,8 @@ under system wide settings for this ... these endpoints..
 now we add our source code for the methods.
 we just used  endpointbase to help us out as it has certain methods.
 to tell sobek how to invoke it..
-and to define the expected signatirue per web verb, etc.. some nicities..
--so see the method arguments.. include url segemnts, etc,
+and to define the expected signature per web verb, etc.. some nicities..
+-so see the method arguments.. include url Segments, etc,
 and request form provides get vs post verb type
 and the protocol was given in the config file to serve
 so now we go back to our config info..
@@ -1321,17 +1422,19 @@ and can just do a Response.Write("In Simple_results=_JSON_method"):
 and test it out, whether it is getting there when url is being visited..
 and he goes out to add some usings..
 using sytem.web, using system.collections.generic..
-is all he needs to just those 2..
+is all he needs to compile - just those 2..
 and now testing both the xml and json ..
-also added the suing System.Collections.Specialized;
+also added the using System.Collections.Specialized;
 
 -
-and adds using sobckcmcore.configuration.engine also
-and system.web..
+and adds
+using sobckcmcore.configuration.engine
+also and
+system.web..
 ok now compiles and tests the url..
-so if he sets aggregataions /code/json/dloc/en?debug=debug..
+so if he sets aggregations /code/json/dloc/en?debug=debug..
 it shows all the good trace info..
-and our code we must put a stmt to say if deug==true to show this trace..
+and our code we must put a stmt to say if debug==true to show this trace..
 very useful..
 =
 now engine/plugins/simple/results trying
@@ -1346,45 +1449,50 @@ so now we make it DO something that we want it to do besides saying I am in meth
 
 ok, now looking in resultsservices.cs for some stuff to copy over..
 -
-note DO extend class ResutlsServices
-as it is better than just extending endpointbase,
-but has more good stuff for results  helper methods like enumerabtion info
+note DO extend class ResultsServices
+as it is BETTER than just extending endpointbase,
+but has more good stuff for results  helper methods like enumeration info
 and Get_Search_Statistics..
 and so here we can use all the search helper stuff..
-now at line 65 in resutlsservices.cs
+now at line 65 in resultsservices.cs
 mvs - so when you do a search it gets both things,
-the search stats ohat does not really change,
+the search stats that does not really change,
 it says the number of hits
 and the facets we will display --
 they will not change during listing 20 results..
 -
 so struggle 1 is objects are a bit complicated maybe a bit deep,
 and the second complication is to make 2 calls
-to see how many items are in the results and 2 is to get the results..
+to see how many items are in the results and struggle 2 is to get the results..
 -
 so that is explanation of why we are doing this now..
-so now we are implemetning something..
-and tyring to implement what we want in our new little methods Simple_Results_Json,
+so now we are implementing something..
+and trying to implement what we want in our new little methods
+Simple_Results_Json,
 and in here you can make another db call, say you can do:
 
 using System.Data
-DataTable fromDb =new tabase.Engine_Databse.Builder_lgo_search..
+DataTable fromDb =new Database.Engine_Database.Builder_log_search..
 whatever, intellisense gives a lot..
-see could see builder logs or Get_All_User_groups to get webskin
+see we could see builder logs or Get_All_User_groups to get webskin
 but first line should really be
 Tracer localTrace = new(Custom_Tracer();
 
-so now you have a tracer (but do using SobekCM>tools) to use tracer:
+so now you have a tracer,  but do 'using SobekCM>tools' to use tracer:
 and now we have a trace and a DataTable
-now it is a List<User_Group>from  (and must do using SobekCM.Core.User)
+now it is a List<User_Group>from
+and must do:
+using SobekCM.Core.User
 and next line just says
 Serialize(fromDb, Response, protocol< string,Empty);
 
-and in 3 lines you can create this enpdoint
-to cr tracer, get usergrups frmm db, and call serialize..
+and in 3 lines you can create this endpoint
+to create tracer, get usergroups frmm db, and call serialize..
 
-now test the url again local/engine/pluins/simple/resutlts/json..
+now test the url again local/engine/plugins/simple/results/json..
 cool, it works..
+
+See: https://github.com/SobekCM/SobekCM-plugin-simple-endpoints
 --
 
 t1441

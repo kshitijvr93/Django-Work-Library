@@ -103,7 +103,7 @@ class ItemAdmin(CubaLibroModelAdmin):
         ]
 
     date_hierarchy = 'agent_modify_date'
-    
+
     # See raw_id_fiels = ('some foreigh key') when you have a foreign key
     #
     actions = [agent_uf_to_available, agent_available_to_uf]
@@ -111,10 +111,10 @@ class ItemAdmin(CubaLibroModelAdmin):
          'accession_number',
          'title_primary',
          'pub_year_span',
-         'reference_type',
-         'holding',
+         #'reference_type',
+         #'holding',
          'agent',
-         'agent_modify_date',
+         #'agent_modify_date',
          ]
 
     list_filter = ['agent', 'reference_type'
@@ -152,6 +152,7 @@ class ItemAdmin(CubaLibroModelAdmin):
         ( 'Other Fields', {
              'classes': ('collapse',),
              'fields': (
+                 'reference_type',
                  'holding',
                  'periodical_full',
                  'periodical_abbrev',
