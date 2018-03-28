@@ -5,8 +5,10 @@ t0820 start
 Had less coding before.. and now pure code camp...
 
 Mark provided a new item viewer jpeg plugin that we now use at uf..
-and now we have a plugin.. and
-richard bernardy has been using plugins since december 2016
+and now we have a plugin.
+
+TOPIC: Richard Bernardy sobekcm plugins experience and issues
+and richard bernardy has been using plugins since December 2016
 
 rb is exploiting the html viewer.. and all the text fields..
 in some records that broke articles to pdfs,
@@ -16,11 +18,13 @@ and if we could add order values to download viewer it would be good
 mvs - you just added the viewer
 rb - no that was my last viewer.. it seems to be the last pdf in the struct map
 
-mvs it should have a order, we can do that
+mvs it should have an order, we can do that
 and make another demo viewer that acknowledges the order
+
 mvs so the html tags others have requested and we have another ticket from
 london to put in a carriage return tab..
 and so we need a solution to talk about more maybe here
+
 rb and here another
 
 rb but another thing we can think of is using the wiki context stuff, like
@@ -28,72 +32,97 @@ rb but another thing we can think of is using the wiki context stuff, like
 or we could choose html slashes vs wiki style editing..
 and github does it.. and wikipedia does it..
 it seems slightly more accessible for other metadata, md, entry users
+
 rb the other big thing is limited nature of the resource type dropdown
 mvs it is only r list for upcoming
+
 rb overall I need to do more work.. well I do local customizations in js,
 and other big one.. is .. updating iface from validation for html5 validation
+
 and mvs we want to be html5 valid, but if we are not,
 please change the core code and fix and resubmit
+
 rb - I had a demo that was mobile iface, started, and director of mktg killed that
 and responsive design regular html i have not gotten to yet
 
 mvs is html 5 invalid
+
 rb I used, I am switching to chrome but use firefox now and I use validation
-all the time and there are tons of warnings and error with respect to (wrt)
-responsiveness tags
+all the time
+and there are tons of warnings and error with respect to (wrt) responsiveness tags
 mvs - the responsive thing is another topic we want to address.
 
 mvs my feeling is this site is image driven, and there are many options you can do..
+
 It is not like take my corp website and make it responsive
-and have been working on making the web also a mobile sie..
+and have been working on making the web also a mobile site..
 maybe with new webskins and simpler features..
 and if you want to do it.. and you can do it as a plugin..
+
 and when at menu.. item or collection level you can create, cr, a new viewer
-and offer as a new pluin,..
+and offer as a new plugin,..
+
 rb i will have to, and ai work with another entity and launch deadline is
 first day of fall classes, and i need more guidance, and i realized it could
 be done in new top level directory so we can preserve our digital url
 and
-mvs and admin pages i have no itention of changing...
+
+TOPIC: no plugin changes for admin, language support
+mvs - and admin pages i have no intention of changing...
 mvs and wrt better support for other langs, i do not intend to offer for
 admin pages.. too many
+
 rb has a couple of examples to discuss..
-mvs - and good exmaples.. and item viewer you should/can make look like dml?
-or etc.
+
+TOPIC: mvs - and good examples of using item viewer plugins
+
+and item viewer you should/can make look like dml? or etc.
 and we will talk about item layout more
 and the new strucutre will use the item layout model for collections,
 and you can also use that for collections, for config, viewers or layout template,
 and the new version out there i believe has the layout as well.
 -
+TOPIC: UF Patrick projects
 patrick projects - nothing special except looking at some errors and stuff
 that they think it should be and we are doing retooling of backend pieces
 that does bulk stuff.
-and mvs wants to sit down with us, as the new stuff, and t
-patrick and the lem serer, and jacskon is rewriting some ndnp stuff..
+
+and mvs wants to sit down with us, as the new stuff, and talk..
+patrick and the lem server,
+
+TOPIC: UF DJL stuff
+and jacskon is rewriting some ndnp stuff..
 jackson- there was an issue, 4.10 had to include new libraries and the
 connection string handling in ndnp and open
 and save of mets also changed in 4.10 so all had to be updated.
 ands when new bibs a new call has to be made.. j
+
+TOPIC: LEM server and DLC issues, scanner 'copi' aka copy book
 mvs and you can define workflows of image cleanup with lem server,..
 and it is easy to apply too much cleanup and load to an ftp server.
 mvs - and can meet with mark along with chelsea, and fiu also uses it...
 ie the lem stuff mvs saw the guy who is doing images work
 and there is a gigantic list --
+
 rb we got a new copy book to replace our boren one and they wanted to sell
 us a lot fo software
-mvs -and with lem stuff you wont need to use the dlc toolbox, and it uses,
-changes the windows app the qc tool they have been using forever..
-and patrick
+
+mvs -and with lem stuff you wontt need to use the dlc toolbox, and it uses,
+changes the windows app the qc tool they have been using forever...
+
+and patrick re lem server and dlc
 ps jane penn, she does use both the web version and desktop version
 it would be good to know why she is not using the web completely
 all the dlc toolbox did was build image derivs which builder now does
 and lem will do, and does some qc and ftps it up to the server,
 but now can only defrag and drop to the folder..
 and we can drop support with the toolbox.
-jl jackson looney stuff
-he has beenworking on nonsobeke elated and our tivoli has been acting up
-mvs do you pay fro tivoli
-jl we do pay for it and is more expensive that google cloud
+
+TOPIC: UF DJL dj looney stuff, tivoli, archiving glacier google cloud
+djl has been working on nonsobek related and our tivoli has been acting up
+mvs do you pay for tivoli
+
+djl we do pay for it and is more expensive than google cloud
 mvs - we charge by size of repos to our customers, but we do not keep their
 master tiffs, and we consider a sobek integrated archival system ..
 that looks at glacier, microsoft,
@@ -107,34 +136,43 @@ jl - google cloud has retrievals..
 t0841
 - mvs for us we want to spread it across multiple vendor..
 i have not priced google cloud in a while.. but bit.
+
+TOPIC: Paul Sullivan stuff
 and paul sullivan
-is with sobek digital and operations.. and the archving thening they look at,
-and beten strating to look work with per metrics and sobek cm in the cloud
+is with sobek digital and operations.. and the archving thing they look at,
+and between starting to look work with per metrics and sobek cm in the cloud
 and paul sullivan is on amazon.. psul..
 
+TOPIC: MVS stuff - sobek and dloc history too
 mvs and a good oppty ..
 mvs has been developing uf for 10 or 12 years, orig for dloc project
 and another we started sobek, for historical societies to submit materials...
 then we open sourced in 6 years ago and I left UF to be able to market the
-software.. and we have been around for about 3 years.. and supporing storage
+software.. and we have been around for about 3 years.. and supporting storage
 ud using oreo libray is using sobek and wanted mvs to host it
 and we have been writing as open source, and trying to drive to 5.0
-and mvs is seeing light at end of tunnell
+and mvs is seeing light at end of tunnel
+
+TOPIC: future sobekcm 5.0 details
 and 5.0 is big next step
 and some plugins will be open sourced and some subscription based
-and we will have an app store to register plugins..
--
+and we will have an app store to register plugins.
+
+TOPIC: future SOLR changes for sobekcm 5.0
+
 mvs the last switch ... per the roadmap, we have to re-index every item in repo,
-so we do that in verison 5.0
+so we do that in version 5.0
 we have had problems with our solr service  host stopping responding...
-so why not support old solr and new solr simulatatneosusly..
-we can run 3.6 and 6.0 is now out so in 6.0 can connect to it and it will
-connect as a sql complient db, and can do some nice selects, so less of a
+so why not support old solr and new solr simultaneosusly..
+we can run solr 3.6 and 6.0 is now out so in 6.0 can connect to it and it will
+connect as a sql compliant db, and can do some nice selects, so less of a
 black box
 mvs continuing..
 can look at all data indexed on it, and we may switch to it and have option
-to go the nwer solr soon, but not nec md searching at first,
+to go the newer solr soon, but not nec md searching at first,
 and probably 4 months out, as with 5.0..
+
+TOPIC: rb full text search needs at USF
 
 rb so they wanted full text search as default, and not all items have full text..
 and that has proved popular..
@@ -145,16 +183,19 @@ his collection, and he thingks something i wrong, but no, but a challenge to exp
 rb and I returned to the prof a forensic analysis of search results
 and stil not satisfied..
 --
+TOPIC: full text indexing also newspapers nndp
 mvs I was thinking about newspapers and helpful to look for "gainesville sun"
 together
 mvs and I want to be able to collapse newspapers into titles..
 mvs and search for gainesville sun...
 can get you into tons and tons of issues... maybe a problem?
+
 and we use full text indexing on the sql is how we do full text indexing,
-and problems a is have to choose language for the dict and b identifiers
-with periods are splitted and it causes failures, so we need special code
-for identifier search
+and problems A is: we have to choose language for the dict
+and problem B: identifiers with periods are split and it causes failures,
+so we need special code for identifier search
 --
+TOPIC: CODE CAMP SCHEDULE
 and now we look at our schedule... and we will talk for a short bit
 and give a chance to work on it.
 and helpful to show some of  the work we have done to show what we have done,
@@ -162,6 +203,8 @@ or the group.
 and mvs has proposed some things...with the schedule.
 
 t0903 -
+
+TOPIC: SobekCM content types like RTI and FDA xml files downloadable
 mvs - the litltem (titleitem?) fda xml files are now downloadable - an issue
 to fix.
 
@@ -175,15 +218,16 @@ mvs we switch the schedule a bit
 today we will cover add new engine endpoint
 and we add in bulk uploading.. and we can propose anything else..
 -
-<topic>engine endpoint</topic>
+TOPIC: engine endpoint example nested EAD new db structures
 endpoint is like a rest api<kw>
 
 so think of something you want to handle
-could include an entirely new structure to sobekcms database like a new ead
-viewer with a whole other structure, showing how containers link,
+could include an entirely new structure to sobekcm database like
+a new ead viewer with a whole other structure, showing how containers link,
 and you want to pull that structure out for another external system
 and think of a report you might want to use
 
+TOPIC: engine endpoint application examples
 so if you write a reporting thing it is simple to tie into html or serve
 item info a different way..
 
@@ -192,9 +236,7 @@ so lets think about that..
 
 the endpoint topic is at 2:15 today that is..
 
-</topic>
-<topic name='git basics'>
-Now topic is git basics..
+TOPIC: git basics
 
 example repo: https://github.com/SobekDigital/HolaCampistas
 so github.. is .. all topics today are same for github or gitlab
@@ -205,12 +247,11 @@ and he usually closes visual studio and launches externally
 installing git extensions, if you want it:
 download installer: https://gitextensions.github.io
 -
-<topic kws='autocompile'>
+TOPIC: autocompile
 -mvs we do not have anything watching the code now,
 i am looking into an auto compile when a code is committed..
 
-</topic>
-<topic kws="continuous;integrated;testing">
+TOPIC: continuous integrated testing
 so i want to reject commits that do not compile using jenkins or hudson..
 but team foundation is expensive so when I get the code working for jenkins
 or hudson... or it is travis, that has 'freemium'  minor editions..
@@ -218,26 +259,26 @@ or hudson... or it is travis, that has 'freemium'  minor editions..
 djl - travis is nice too
 - djl they also - can pay $70/month for their code..
 
-- today we do hands on to pull down repo and make changes,
-</topic>
+today we do hands on to pull down repo and make changes,
+
 <time>t1040<time>
-<topic kw="process; pull requests">
+TOPIC: process, pull requests
 fedora is one of largest open source projects,
 but for now only 5 of us here, and he may delegate authority to approve
 pull requests to one of us...
 
-</topic><topic kw="plugins">
+TOPIC: plugins
 rb: once plugins came out, it is safer now.. for us to work with
 and so now the pace of the sobek changes have slowed down in last month or so
+
 mvs: and in general velocity of changes will slow because we make more things
 configuration and plugin driven..
 
 and for example changing base functionality will be rarely neeed
 
 So please do merge and submit any code you do..
-</topic></topic>
 
-<topic kws="endpoint;viewer:results">
+TOPIC: endpoint results viewer
 mvs - So we will talk about results viewer here .. but if we did
 make changes and wanted to add some functionality..
 
@@ -257,9 +298,8 @@ and mvs knows of 2 companies adding to code,
 about 14 asiatic languages, and that would be only a configuration file...
 - --
 submit often and submit a lot is mvs invitation
-</topic>
 
-<kws>directives</kws>
+TOPIC: config files use of directives
 rb: says he needs to learn the cpt variable name, the inserts or the 'directives'
 
 mvs yes we call them directives, special syntax within config files or
@@ -268,12 +308,14 @@ other places, where we insert version number or id
 mvs I have considered a way to make that extensible to create your own
 small chunk of code...
 
-So we are talking now, next topic is on the road to version 5
+So we are talking now, on the schedule:
+The next topic is on the road to version 5
 slated for time range from t1045 to t1130
 
 We will talk thru the changes..
 and we will talk about plugins later from 1130-1230
 
+TOPIC: sobekcm version 5.0 philosophy
 version 5 idea is more api driven architecture, less monolithic code
 and we are 2 years into this change
 
@@ -284,7 +326,7 @@ Now we are pushing enumerations into configurations files for easier changes
 and another major part is to expose data through the config files
 so we can understand what code is doing, how configured...
 
-<topic kws='walkthrough;settings;system settings;system wide'>
+TOPIC: walkthrough settings system settings system wide
 mvs continues
 now looking at settings/system-wide settings
 and we have a new collection wizard
@@ -304,8 +346,8 @@ technical help/development/future...
 
 that section of page links is now lately maintained.. see text there..
 now it shows version 4.11  list, today.
-</topic>
-<topic>kw="Dreamware">
+
+TOPIC: Future work on verion 5.0
 So biggest change, there now is finishing the item viewer architecture
 changes.. where you create your own layout and viewer plug into
 the layout.. and this will come out quite soon, much already on
@@ -317,8 +359,7 @@ and we add more system wide editable settings.. adding usage
 email eg to system wide settings
 
 and this is first one ..
-</topic>
-<topic kw="email;addresses">
+TOPIC: config files or templates and email addresses
 
 jl - was an issue with the template themselves not including the
 email address on them,
@@ -327,10 +368,10 @@ mvs yes - and I will look at that with you...
 yes, another major change.. is now.. under config/user,
 and also under many places we have added user folders and default folders.
 
-So now see mySobek/templates/default is there.. the default templates
-had removed the email addresses
-</topic>
-<topic kw="directory;priority">
+So now see mySobek/templates/default that folder is there..
+and the default templates had removed the email addresses
+
+TOPIC: config file containing directory order priority ranking
 
 So if make a dlocxml and .. so it will look in default first and
 then look in mySobek/templates/user
@@ -340,9 +381,9 @@ so the same now with config files, and we should not update the default ..
 I can make a user folder that will be honored to hold the
 configuration of item viewers.
 
-</topic>
-
 -- and we also .. now the
+
+TOPIC: future builder changes
 mvs: re the usage email info
 and two more are not now schedulable,
 but if builder just starts there are a few that are done..
@@ -355,13 +396,16 @@ startup... really, so it will handle schedulable tasks..
 so it will become scheduled tasks, in the db, and we work on
 finishing web gui to set them ..
 
-<topic kw="future;dream;version;4.12">
+TOPIC: future version 4.12  changes in templates editing md and behaviors templates
+
 now looking at version 4.12.
 and we are doing more item mgmt stuff,
 and the time beh screen will change and the templates
 and now you just assign little elements, elts, in the template files, for
 also editing md and editing behaviors
 and it will change..
+
+TOPIC: 4.12 item viewer changes
 and can say create a whole item template page
 and the thumbnail will be its own whole item page
 and we added a lot of possibility for item viewers
@@ -373,9 +417,12 @@ So for individual item you may want the google map to be the
 first view or you may want it to say tiles instead of map.. and so now you
 can label your viewers, and it will become available via the user iface..
 
+TOPIC: aggregations
 mvs does not like to tie anything to aggregations, but items can
 be in multiple aggregations and it becomes a free-for-all..
 
+
+TOPIC: Future 5.0 concept of projects
 
 mvs - and also in v5.0 is idea of projects - and you would tie
 diff info to the project like viewers
@@ -392,21 +439,27 @@ t1102
 mvs maybe some v4.12 features will come out sooner, ie
 the system wide settings
 
+TOPIC: version 4.12 bulk spreadsheet and marc importer
 and v 4.12 item 3 - add bulk spreadsheet and marc importer to the
 web interface -- mark is going to support soon..
 and may make a way to save their mappings, and it will be sent
 to builder to do the importing..
 
 mvs So that is a gigantic piece -
+
+TOPICL sobek purchased a new company
 we purchased a new company last year with 8 or 9 new customers who
 need these bulk spreadsheet features..
 --
 and we will look at item viewer and widgets
+
+TOPIC: version 4.12 changes for collections management viewers:
+
 and version 4.13 is just the collections stuff..
 meaning you can do what you want with collection home page,
 and each collection may have multiple collection viewers..
 
--rb: one staffer just updates the text
+rb: one staffer just updates the text
 but we want to prevent staffer from updating other stuff...
 for safety... to have more granular editing rights..
 
@@ -415,10 +468,12 @@ mvs also is idea of viewing rights on diff collection viewers..
 
 mvs maybe the same way item (editing) permissions, also the viewers will work...
 will be similar to item viewer
+
+TOPIC: verison 5.0 searches all on Solr and builder as windows service.
 and version 5.0 will move all searching into new Solr indexes and
 make builder run as windows service.
 
-TOPIC: other alternative databases
+TOPIC: After 5.0 - future other alternative databases
 rb: other db support? (rb/USF uses MySQL)
 
 mvs: we added construct to ask what is the db type and then
@@ -426,6 +481,7 @@ a gateway to get to it and a layer that gets to that, but no
 coding yet to get to the db..
 and postgres is a priority after 5.0..
 
+TOPIC: USF RB looking for postgres, GIS support
 We were looking for postgres but rb is working on msyql
 rb: a colleague must look for failover and disaster recovery..
 rb: our gis people are able to go to the cloud for backup, so why not us
@@ -437,7 +493,8 @@ runs on amazon and azure too--
 
 mvs biggest thing is just keeping it updated...
 
-TOPIC: builder threads speedups
+TOPIC: multiple builder threads performance throughput speedups
+
 djl question: we are hitting the limit of how fast builder can
 run on a single thread.. and we have 2 ways to approach.
 and we look at .. logging issue
@@ -454,7 +511,7 @@ way to represent single vs multiple builder in the db..
 --
 t1115
 
-TOPIC: ideas on bulder updates speedups
+TOPIC: ideas on builder updates speedups
 
 all: builder may need some updates
 mvs I was thinking ..for solr and could also work for builder,

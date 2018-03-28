@@ -88,10 +88,10 @@ class Item(models.Model):
         ( 'NC State','North Carolina State University'),
     )
 
-    agent = models.CharField('Agent', null=True, default='Available',
+    agent = models.CharField('Partner', null=True, default='Available',
         blank=True, max_length=50, choices=PARTNER_CHOICES)
 
-    agent_modify_date = models.DateTimeField('Agent Modify Date (UTC)',
+    agent_modify_date = models.DateTimeField('Parner Modify Date (UTC)',
         null=True, auto_now=True, editable=False)
 
     # Original source data for holding is of the form XXX[-NNN[-MMM]]
