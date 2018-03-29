@@ -203,7 +203,7 @@ class Upload(models.Model):
       blank=True)
 
   def __str__(self):
-        return self.name
+        return 'Upload'
 
 # end class Upload
 
@@ -279,6 +279,6 @@ class File(models.Model):
   url = models.CharField('url',max_length=256,default='tmpfile');
 
   def __str__(self):
-        return self.name
+        return 'File'
 
 # end class File
