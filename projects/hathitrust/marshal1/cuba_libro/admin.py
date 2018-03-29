@@ -84,12 +84,12 @@ class CubaLibroModelAdmin(admin.ModelAdmin):
 def agent_available_to_uf(modeladmin, request, queryset):
         queryset.filter(agent='Available').update(agent='UF')
 
-agent_available_to_uf.short_description = "Change Available agent to UF agent"
+agent_available_to_uf.short_description = "Change Available to UF Partner"
 
 def agent_uf_to_available(modeladmin, request, queryset):
         queryset.filter(agent='UF').update(agent='Available')
 
-agent_uf_to_available.short_description = "Change UF agent to Available agent"
+agent_uf_to_available.short_description = "Change UF partner to Available "
 
 class ItemAdmin(CubaLibroModelAdmin):
 
@@ -120,8 +120,6 @@ class ItemAdmin(CubaLibroModelAdmin):
     list_filter = ['agent', 'reference_type'
         #,'language', 'place_of_publication',
         ]
-
-
 
     # admin item detailed view order of display fields
 

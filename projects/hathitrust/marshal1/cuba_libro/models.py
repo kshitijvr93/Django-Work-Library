@@ -8,9 +8,8 @@ from django.utils import timezone
 
 '''
 NOTE: rather than have a separate file router.py to host HathiRouter, I just
-put it here. Also see settings.py should include this dot-path
-as one of the listed strings in the list
-setting for DATABASE_ROUTERS.
+put it here. Also see settings.py should include this python import dot-path
+as one of the listed strings in the list setting for DATABASE_ROUTERS.
 
 '''
 # Maybe move the HathiRouter later, but for now keep here
@@ -70,17 +69,19 @@ class Cuba_LibroRouter:
 
 class Item(models.Model):
 
-    # Field 'id' is 'special', and if not defined, Django defines
-    # it as I do below.
-    # However I do include it per python Zen: explicit is better than implicit.
+    # Field 'id' is 'special', and if not defined here, Django defines
+    # it as I do below anyway.
+    # However I do include it per python Zen:
+    # explicit is better than implicit.
     id = models.AutoField(primary_key=True)
 
-    # Many fields based on Jessie English UF email of 20180319
-    # Note: make sure initial test db data has unique accession_number before
-    # resetting unique=True
+    # Many fields based on Jessica English UF email of 20180319
+    # Jessica informed us that accession_number is or should be
+    # unique to UF and all other cuba_libro partners.
     accession_number = models.CharField(max_length=255, unique=True,
         default="Enter accession number here", editable=True)
 
+    # Add to these PARTNER_CHOICES as we learn of more partners.
     PARTNER_CHOICES = (
         ( 'UF' ,'University of Florida'),
         ( 'Available' ,'Available'),
@@ -89,7 +90,8 @@ class Item(models.Model):
     )
 
     agent = models.CharField('Partner', null=True, default='Available',
-        blank=True, max_length=50, choices=PARTNER_CHOICES)
+        blank=True, max_length=50, choices=PARTNER_CHOICES,
+        help_text="Interested partner to verify or edit this item.")
 
     agent_modify_date = models.DateTimeField('Parner Modify Date (UTC)',
         null=True, auto_now=True, editable=False)
@@ -105,15 +107,17 @@ class Item(models.Model):
     holding = models.CharField(null=True,max_length=20, default='',
         blank=True, editable=True)
 
-    #reference type seems on imported files seems to empirically comport with
-    #one of the values: [' Book, Whole', 'Journal Article', 'Map',
-    #    'Web Page', ]
+    #reference type on imported files from UF and Harverd as of 20180320
+    # seems to empirically comport with one of the values: [' Book, Whole', 'Journal Article', 'Map',
+    #    'Web Page', 'Generic','Music Score', 'Book,Section']
+    # New received from partners' import data may expand the list..
 
-    # import colum 1
+    # import column 1
     reference_type = models.CharField(null=True, default='',
         max_length=20, blank=True, editable=True)
     # import column 2
-    authors_primary = models.TextField(null=True, default='',blank=True, editable=True)
+    authors_primary = models.TextField(null=True, default='',blank=True,
+        editable=True)
 
     title_primary = models.TextField(null=True,
       default='', blank=True, editable=True)
@@ -121,51 +125,84 @@ class Item(models.Model):
       default='', blank=True, editable=True)
 
     # pub_year_span spreadsheet index = 5
-    periodical_abbrev = models.TextField(null=True, default='', blank=True, editable=True)
+    periodical_abbrev = models.TextField(null=True, default='', blank=True,
+        editable=True)
 
-    pub_year_span = models.CharField(null=True, max_length=50,default='2018', editable=True,)
-    pub_date_free_from = models.TextField(null=True, default='', blank=True, editable=True)
-    volume = models.CharField(null=True, max_length=30, default='', blank=True, editable=True)
-    issue = models.CharField(null=True, max_length=30, default='', blank=True, editable=True)
+    pub_year_span = models.CharField(null=True, max_length=50,default='2018',
+        editable=True,)
+    pub_date_free_from = models.TextField(null=True, default='', blank=True,
+        editable=True)
+    volume = models.CharField(null=True, max_length=30, default='', blank=True,
+        editable=True)
+    issue = models.CharField(null=True, max_length=30, default='', blank=True,
+        editable=True)
 
     # index k =  10
-    start_page = models.CharField(null=True, max_length=30, default='', blank=True, editable=True)
-    other_pages = models.CharField(null=True, max_length=30, default='', blank=True, editable=True)
+    start_page = models.CharField(null=True, max_length=30, default='',
+        blank=True, editable=True)
+    other_pages = models.CharField(null=True, max_length=30, default='',
+        blank=True, editable=True)
     keywords = models.TextField(null=True,  default='', blank=True,editable=True)
     abstract = models.TextField(null=True,  default='', blank=True,editable=True)
-    personal_notes = models.TextField(null=True,  default='', blank=True,editable=True)
+    personal_notes = models.TextField(null=True,  default='',
+        blank=True,editable=True)
 
-    authors_secondary = models.TextField(null=True,  default='', blank=True,editable=True)
-    title_secondary = models.TextField(null=True,  default='', blank=True,editable=True)
-    edition = models.TextField(null=True, default='',  blank=True, editable=True)
-    publisher = models.CharField(null=True, default='', max_length=255, blank=True, editable=True)
-    place_of_publication = models.CharField(null=True, default='', max_length=255, blank=True, editable=True)
+    authors_secondary = models.TextField(null=True,  default='',
+        blank=True,editable=True)
+    title_secondary = models.TextField(null=True,  default='',
+        blank=True,editable=True)
+    edition = models.TextField(null=True, default='',
+        blank=True, editable=True)
+    publisher = models.CharField(null=True, default='', max_length=255,
+        blank=True, editable=True)
+    place_of_publication = models.CharField(null=True, default='', max_length=255,
+        blank=True, editable=True)
 
     #index 20
-    authors_tertiary = models.TextField(null=True, default='', blank=True, editable=True)
-    authors_quaternary = models.TextField(null=True, default='', blank=True, editable=True)
-    authors_quinary = models.TextField(null=True, default='', blank=True, editable=True)
-    titles_tertiary = models.TextField(null=True, default='', blank=True, editable=True)
-    isbn_issn = models.CharField( "ISSN/ISBN",null=True, max_length=255, blank=True, editable=True)
+    authors_tertiary = models.TextField(null=True, default='',
+        blank=True, editable=True)
+    authors_quaternary = models.TextField(null=True, default='',
+        blank=True, editable=True)
+    authors_quinary = models.TextField(null=True, default='',
+        blank=True, editable=True)
+    titles_tertiary = models.TextField(null=True, default='',
+        blank=True, editable=True)
+    isbn_issn = models.CharField( "ISSN/ISBN",null=True, max_length=255,
+        blank=True, editable=True)
 
-    availability = models.TextField(null=True, default='', blank=True, editable=True)
-    author_address = models.TextField( "Author/Address", null=True,default='' ,blank=True,editable=True)
-    language = models.TextField(null=True, default='', blank=True,editable=True)
-    classification = models.TextField(null=True, default='', blank=True,editable=True)
+    availability = models.TextField(null=True, default='',
+        blank=True, editable=True)
+    author_address = models.TextField( "Author/Address", null=True,default='' ,
+        blank=True,editable=True)
+    language = models.TextField(null=True, default='',
+        blank=True,editable=True)
+    classification = models.TextField(null=True, default='',
+        blank=True,editable=True)
 
     #index=30
-    original_foreign_title = models.TextField(null=True, default='', blank=True,editable=True)
-    links = models.TextField(null=True, default='', blank=True,editable=True)
-    url = models.TextField( 'URL',null=True, default='', blank=True,editable=True)
-    doi = models.TextField( 'DOI',null=True, default='', blank=True,editable=True)
-    pmid = models.TextField( 'PMID',null=True, default='', blank=True,editable=True)
-    pmcid = models.TextField( 'PMCID',null=True, default='', blank=True,editable=True)
+    original_foreign_title = models.TextField(null=True, default='',
+        blank=True,editable=True)
+    links = models.TextField(null=True, default='',
+        blank=True,editable=True)
+    url = models.TextField( 'URL',null=True, default='',
+        blank=True,editable=True)
+    doi = models.TextField( 'DOI',null=True, default='',
+        blank=True,editable=True)
+    pmid = models.TextField( 'PMID',null=True, default='',
+        blank=True,editable=True)
+    pmcid = models.TextField( 'PMCID',null=True, default='',
+        blank=True,editable=True)
 
-    call_number = models.TextField(null=True, default='', blank=True,editable=True)
-    database = models.TextField(null=True, default='', blank=True,editable=True)
-    data_source = models.TextField(null=True, default='', blank=True,editable=True)
-    identifying_phrase = models.TextField(null=True, default='', blank=True,editable=True)
-    retrieved_date = models.CharField(null=True, max_length=255, blank=True, editable=True)
+    call_number = models.TextField(null=True, default='',
+        blank=True,editable=True)
+    database = models.TextField(null=True, default='',
+        blank=True,editable=True)
+    data_source = models.TextField(null=True, default='',
+        blank=True,editable=True)
+    identifying_phrase = models.TextField(null=True, default='',
+        blank=True,editable=True)
+    retrieved_date = models.CharField(null=True, max_length=255,
+        blank=True, editable=True)
 
     # index 40
     user_1 = models.TextField(null=True, default='', blank=True, editable=False)
@@ -197,9 +234,10 @@ class Item(models.Model):
     def __str__(self):
         return str(self.id)
 
-    ''' note: DO not set db_table. Let Django do its thing
+    ''' note: Do -not- set db_table. Let Django do its thing
         and create the db table name via a prefix of the table
-        class of app_name and _. It makes
+        class of app_name and _.
+        It makes future
         migrations and many management operations much easier down the line.
         Changing it after doing some migrations will
         confuse migrations, too, which can be somewhat messy, or require

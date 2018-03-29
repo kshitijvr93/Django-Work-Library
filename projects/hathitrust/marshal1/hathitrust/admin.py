@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Item
+from .models import Item, File, Upload
 
 class HathiModelAdmin(admin.ModelAdmin):
     # Using should be a settings.py DATABASES key, a 'connection' name,
@@ -37,5 +37,7 @@ class ItemAdmin(HathiModelAdmin):
     search_fields = ['name','status',]
 
 admin.site.register(Item, ItemAdmin)
+admin.site.register(Upload, HathiModelAdmin)
+admin.site.register(File, HathiModelAdmin)
 
 # Register your models here.
