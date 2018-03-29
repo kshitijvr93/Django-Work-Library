@@ -514,6 +514,7 @@ t1115
 TOPIC: ideas on builder updates speedups
 
 all: builder may need some updates
+
 mvs I was thinking ..for solr and could also work for builder,
 create an engine endpoint to give the health of solr (and maybe
 another endpoint also for the builder)
@@ -523,6 +524,7 @@ for a specific service.. a shortcut status notice.
 -mvs uses statuscake to check urls
 
 TOPIC: new wolfsonion builder module
+
 - we have a new wolfsonion builder module..
 they create a mets file and use their accession number
 mvs: and we worked on another builder module that extracts
@@ -531,6 +533,7 @@ and creates the bibid with an id that it reserves
 and the builder module is really powerful
 
 TOPIC: mvs has been doing folder level builder modules he has been writing..
+
 - mvs has a good feeling that when we load it out...
 we will end up saying or they will that they want other md loaded as well..
 - that is our current list of pending projects..
@@ -539,10 +542,13 @@ TOPIC:  rb: you have google map editor listed..?
 and it is under additional planned changes - originally written by laurie..
 --
 mvs - st augustine grant was supposed to add user interface for adding
-coordinates and that became funky I will try to add again..
+coordinates and that became funky
+and I will try to add again..
+
+TOPIC: Sobekcm image server
 
 and bullet 4 - sobekcm image server -- to draw a circle around say a
-stadium on a tile., and we will eventually use also to hightlight
+stadium on a tile., and we will eventually use also to highlight
 the text version as well.
 
 adding lat long was most complex, and then adding rectangles,
@@ -560,8 +566,7 @@ drill down, and with ajax node expansion it will say just give me
 newest what is in this container..
 
 we will work on this , and we will charge non-hosting custs,
-and john nemmers helped a lot, so
-uf will get it free.
+and john nemmers helped a lot, so uf will get it free.
 -
 TOPIC: and other ones we will get is better support for authority control..
 we are looking and also mvs and I should just say digital commons
@@ -572,12 +577,15 @@ rb we plan ahead for the md thing by expanding author field and
 putting the id number..
 
 mvs some things we will baby step toward -
+
 TOPIC: at first we will just support open id, just a small amount
 
 TOPIC: and re prepping for new sobekcm versions -
 it will take a while to reindex your items again..
 
-we will give a small thing that only does a solr, it is a point of
+
+TOPIC: Future SOLR tools to index only new files for an item_monthly_usage
+mvs: we will give a small thing that only does a solr, it is a point of
 no return, it runs through all your text and runs solr
 
 so next time you have an item with 500 text files, the next time you need
@@ -602,7 +610,7 @@ rb our catalogger works with a traditional catalogger who has done
 a poster project with european data model and will next do a full
 conference session on it
 
-TOPIC: authorities
+TOPIC: future support authorities metadata keywords
 mvs - so the way we will handle them is just another table in the
 db  for all your authorities
 
@@ -627,7 +635,7 @@ so now we open VS and dive through it..
 
 looking at sobek github source file: sobekcm_item_viewers.config
 
-TOPIC: now we see demo of web page for system-wide settings...
+TOPIC: now we see demo of web page for system-wide settings
 on web interface..
 -
 now it will be dry..
@@ -641,6 +649,7 @@ which is a good source to look at other examples..
 so the wolfsonion one is nice for builder..
 and custom md is a long and intricate process..
 
+TOPIC: need metadata creation helper class
 rb and mvs we need a helper class
 
 rb started a new one that needs many fields...
@@ -648,7 +657,8 @@ item viewer plugins exist, see links on this page for rti item
 viewer, and 2 more and richard created.
 and so if create a plugin..
 
-TOPIC: also engine api endpoint plugins work.. will be some changes..
+TOPIC: Changes coming - also engine api endpoint plugins work..
+
 but until version 5 there may be more configuration..
 and we had to change some tags when we dled the new jpeg viewer..
 make your new viewer, if it is a plugin, in a separate github repo
