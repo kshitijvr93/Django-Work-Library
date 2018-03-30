@@ -1,10 +1,18 @@
 from django.contrib import admin
 from .models import Item, File, Upload
+from django.db import models
+from django.forms import TextInput, Textarea
 
 class HathiModelAdmin(admin.ModelAdmin):
     # Using should be a settings.py DATABASES key, a 'connection' name,
     # actually, as called in misc Django messages
     using = 'hathitrust_connection'
+
+    formfield_overrides = {
+      models.CharField: { 'widget': TextInput( attrs={'size':'100'})},
+      models.TextField: { 'widget': Textarea( attrs={'rows':1, 'cols':'100'})},
+      }
+
     #On admin change list page, show item name, not uuid(the default)
     #list_display = ('item_name',)
 
