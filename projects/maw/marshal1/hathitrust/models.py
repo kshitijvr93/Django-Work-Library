@@ -111,101 +111,7 @@ class Item(models.Model):
 
 #end class Item(models.Model)
 
-'''
-Model Item_file will be a single file that a user uploads that will be
-associated with a particular Hathitrust item.
-So it will have a foreign key to a Hathitrust item.
-'''
-class Item_file(models.Model):
-    #id is a default integer auto field, which is perfect, so let django make itself.
-    item_id = models.ForeignKey('Item', on_delete=models.CASCADE,)
-
-    def __str__(self):
-        return self.name
-
 #end class Item
-
-class Upload(models.Model):
-  #{{{ docstring
-  """
-  Each row in the model Upload describes a file that the user has uploaded onto the webserver.
-  The row  may also include metadata for the uploaded file.
-  In the next phase, when a user uploads a file a new FileMeta object is added that has the sha5 hash, and a new Upload row is added with a foreign key to the filemeta object, and a new Download row is added with a foreign key to the filemeta object and to the upload row. Upload is a proper subset of FileMeta and Download is also a proper subset of FileMeta.
-
-  Model Upload is not designed to be populated manually, but rather
-  via the mysite.files.upload method.
-
-  Future: When a user uploads a file, the upload method uploads it and adds
-  a row in model Upload  to indicate that the file is now uploaded onto
-  the webserver and available for linking via URL ../file/filemeta_id, where
-  filemeta_id is the id of the corresponding FileMeta , Upload row.
-
-  The upload process physically puts the uploaded file to a URL named
-  http://localhost/mysite/priv/files/file_id.
-
-  This design  assumes use of the usergroups application that requires a department owner for each row of the model Upload.
-
-  The up_name is the name used by the original uploader for the file,
-  saved to support a method that will re-download the file to the original uploader so that this may be used as a backup.
-
-  (future: add args to method upload  or add method 'backdown' to indicate
-  a backed-up directory name of the original uploader so it may be
-  restored later)
-
-  The content_type is the purported content type by the uploader, possibly to be validated. It is aka "mimetype", eg: "image/jpeg" or "application/pdf", etc.
-
-  The sha5 hash is used to uniquely identify the file contents.
-  This is useful to support an application to identify duplicate files
-  both within the Django site and among other hosts that may be
-  over-duplicating files and wasting space or retaining files too long.
-  """
-  #}}}
-  # {{{ header: department, date_time, topic, description, sha2
-  # department owner of the uploaded file
-  department = models.CharField('Dept',max_length=255,default='RVP',
-      db_index=True)
-  #date_time the file row was added
-  date_time = models.DateTimeField('datetime',auto_now=True,db_index=True)
-  # }}} header
-  #{{{ main fields url, down_name, topic,  description
-
-  url = models.CharField('url',max_length=255,default='tmpfile');
-
-  # If down_name column is blank, then when one downloads this from this
-  # website,use the original upload name
-  #
-  down_name= models.CharField('down_name',max_length=255,default='tmpfile',
-      null=True,blank=True);
-
-  #key words or topical info about the file contents, context
-  topic = models.CharField(max_length=255,db_index=True,blank=True,null=True)
-  description = models.TextField(null=True,blank=True)
-
-  # NB: Must use hashlib module to make the hash re-calculable across
-  # operating systems, future releases of python, etc.
-  # sha512 is 512bits, hench 128 'hex chars' each representing 4 bits.
-  sha512 = models.CharField(max_length=255, db_index=True,null=True,
-      blank=True)
-
-  # django 1.1 file object attributes per
-  #  http://docs.djangoproject.com/en/dev/topics/http/file-uploads/#uploadedfile-objects ao 091123
-  # 20091126 - yet need to change table colname to up_name from uploaded name
-  up_name = models.CharField('up_name',max_length=255,default='tmpfile');
-
-  # size of file in 8-bit bytes
-  size = models.IntegerField(default=0)
-
-  # uploadedfile objects - mirrored django1.1 attributes.
-  content_type = models.CharField('content_type',max_length=255,
-      default='text/plain')
-  #charset applies to 'text/*' content types.
-  charset = models.CharField('char_set',max_length=128,null=True,
-      blank=True)
-
-  def __str__(self):
-        return self.name
-
-# end class Upload
 
 class File(models.Model):
   """
@@ -242,6 +148,7 @@ class File(models.Model):
   both within the Django site and among other hosts that may be
   over-duplicating files and wasting space or retaining files too long.
   """
+
   # department owner of the uploaded file
   department = models.CharField('Dept',max_length=64,default='RVP',db_index=True)
   public     = models.BooleanField('Public',default=False)
@@ -279,6 +186,7 @@ class File(models.Model):
   url = models.CharField('url',max_length=256,default='tmpfile');
 
   def __str__(self):
-        return 'File'
+        #2018
+        return "File"
 
 # end class File
