@@ -1,0 +1,15 @@
+{% extends "hathitrust/base_mysite.html" %}
+{% block main_left %}
+<h3 id="h3_upload">Upload a File</h3>
+<p>
+</p>
+<form enctype="multipart/form-data" action="/hathitrust/upload/" method="POST">
+{% csrf_token %}
+{{ form.as_p }}
+<input type="submit" value="Submit" />
+</form>
+<script type="text/javascript">
+document.getElementById("id_file").size=64;
+document.getElementById("id_file").maxlength=64;
+</script>
+{% endblock main_left %}

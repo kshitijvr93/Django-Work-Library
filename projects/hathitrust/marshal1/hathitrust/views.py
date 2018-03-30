@@ -1,8 +1,9 @@
-from django.shortcuts import get_object_or_404, render
-from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, render, render_to_response
+
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 
-from .models import Item
+from .models import Item, File
 
 def detail (request, item_id):
     item = get_object_or_404(Item, pk=item_id)
@@ -26,6 +27,7 @@ def index(request):
 
 from django import forms
 from django.contrib.auth.decorators import login_required
+
 class FormUploadFile(forms.Form):
     description = forms.CharField(required=False
         ,widget=forms.widgets.Textarea())
@@ -35,13 +37,20 @@ class FormUploadFile(forms.Form):
     file  = forms.FileField(max_length=128)
 
 def upload_success(request, file_id):
-    #{{{ use template for output
-    template = loader.get_template('success.html')
+
+    template_file= 'hathitrust/upload_success.html'
+    #template = loader.get_template(template_file)
     message = ( "You succeeded uploading your file_id = '" + file_id
         + "' ! Congratulations!")
-    context = RequestContext (request, { 'a' : 'a', 'main_left' : message })
-    output = template.render(context)
-    return HttpResponse(output)
+    #
+    # context = RequestContext (request, { 'a' : 'a', 'main_left' : message })
+    rendered = render(request, template_file,
+        { 'a' : 'a', 'main_left' : message })
+
+    #output = template.render(context)
+    #return HttpResponse(output)
+    return HttpResponse(rendered)
+
 #end def upload_success}}}
 
 def handle_uploaded_file(ufo, form):
@@ -92,9 +101,9 @@ def handle_uploaded_file(ufo, form):
         topic_value = topic_value.replace('.', ' ')
         topic_value = topic_value.replace('_', ' ')
 
-    # create a row in model "ModelFile" to represent this uploaded file.
-    file = ModelFile(department='rvp'
-           ,date_time=datetime.datetime.now()
+    # create a row in model "File" to represent this uploaded file.
+    file = File(department='rvp'
+           #,date_time=datetime.datetime.now()
            ,up_name=ufo.name
            ,down_name=down_filename
            ,size=ufo.size
@@ -109,7 +118,9 @@ def handle_uploaded_file(ufo, form):
     id = file.id
 
     # create saved file name in MEDIA_URL, simply named by the file id.
-    pathname = "%s%d" % ("/home/rvp/dj1.1/mysite/priv/files/file_", id)
+    file_dir=r'U:\\django\\data\\hathitrust\\files\\'
+    pathname = ("{}file_{}"
+       .format(file_dir, id))
 
     #open the file for writing, write the ufo.chunks of file content into it.
     destination = open(pathname, 'wb+')
@@ -138,19 +149,20 @@ def handle_uploaded_file(ufo, form):
 
 # upload a file that a user selects on the client web browser's machine
 @login_required
-def file_upload(request):
+def file_upload(request, file_id='tmp'):
     if request.method == 'POST':
         # We have to pass request.FILES into the form's constructor; this is
         # how file data gets bound into a form.
         form = FormUploadFile(request.POST, request.FILES)
         if form.is_valid():
             file_id = handle_uploaded_file(request.FILES['file'],form)
-            return HttpResponseRedirect('/files/upload/success/' + str(file_id) + '/')
+            return HttpResponseRedirect('/hathitrust/upload/success/' + str(file_id) + '/')
     else:
         form = FormUploadFile()
-    return render_to_response('files/upload.html'
-    , {'form': form,})
-
+    # Per https://stackoverflow.com/questions/41606754/django-csrf-token-generation-render-to-response-vs-render
+    # Avoid and replace the deprecated (now commented out) next line.
+    # return render_to_response('hathitrust/upload.html', {'form': form,})
+    return render(request, 'hathitrust/upload.html', {'form': form,})
 
 # depends on FormUploadFile, handle_uploaded_file, upload_success
 @login_required
@@ -208,7 +220,7 @@ def file_download(request, file_id):
     #}}}
     #{{{ Use Django to read the source file and write it into the response
     # the file name is rooted in priv (get this from settings.py later)
-    root_path = '/home/rvp/dj1.1/mysite/priv'
+    root_path = '/c/home/rvp/dj1.1/mysite/priv'
 
     fs_name = root_path + '/files/file_' + str(filerow.id)
 
