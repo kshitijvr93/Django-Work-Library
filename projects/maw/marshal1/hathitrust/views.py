@@ -4,6 +4,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 
 from .models import Item, File
+from django.forms import TextInput, Textarea
 
 def detail (request, item_id):
     item = get_object_or_404(Item, pk=item_id)
@@ -30,25 +31,29 @@ from django.contrib.auth.decorators import login_required
 
 class FormUploadFile(forms.Form):
     description = forms.CharField(required=False
-        ,widget=forms.widgets.Textarea())
+           ,widget=forms.widgets.Textarea()
+        )
 
-    topic = forms.CharField(max_length=128,required=False)
-    down_name = forms.CharField(max_length=128,required=False)
-    file  = forms.FileField(max_length=128)
+    topic = forms.CharField(max_length=128,required=False,
+      widget=TextInput( attrs={'size':'100'}))
+    down_name = forms.CharField(max_length=128,required=False,
+      widget=TextInput( attrs={'size':'100'}))
+
+    # Note: do NOT define widget 'TextInput' params here else the
+    # required FileField widget with the Browse button is overridden.
+    file  = forms.FileField(max_length=128,
+        # widget=TextInput( attrs={'size':'100'})
+      )
+# end class FormUploadFile
 
 def upload_success(request, file_id):
 
     template_file= 'hathitrust/upload_success.html'
-    #template = loader.get_template(template_file)
     message = ( "You succeeded uploading your file_id = '" + file_id
         + "' ! Congratulations!")
-    #
-    # context = RequestContext (request, { 'a' : 'a', 'main_left' : message })
     rendered = render(request, template_file,
         { 'a' : 'a', 'main_left' : message })
 
-    #output = template.render(context)
-    #return HttpResponse(output)
     return HttpResponse(rendered)
 
 #end def upload_success}}}
@@ -79,8 +84,6 @@ def handle_uploaded_file(ufo, form):
     then a files_quota row should be updated with the incremented N of bytes
     used for a department.
     """
-
-    # {{{ Set down_filename
 
     #If the form provdes no name for future downloads of this file, reuse the
     # original ufo.name that was used on the uploading machine for the file.
