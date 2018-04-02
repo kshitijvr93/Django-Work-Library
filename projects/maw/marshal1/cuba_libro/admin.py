@@ -7,6 +7,9 @@ from django.db import models
 Nice ExportCvsMixin class presented and covered, on 20180402 by:
 https://books.agiliq.com/projects/django-admin-cookbook/en/latest/export.html
 '''
+import csv
+from django.http import HttpResponse
+
 class ExportCvsMixin:
     def export_as_csv(self, request, queryset):
         meta = self.model._meta
