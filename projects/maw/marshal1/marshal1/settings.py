@@ -47,6 +47,10 @@ INSTALLED_APPS = [
 
 STATIC_URL = '/static/'
 
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# RVP EXPERIMENT MEDIA_URL
+MEDIA_URL =  '/media/'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

@@ -5,6 +5,7 @@ from django.template import loader
 
 from .models import Item, File
 from django.forms import TextInput, Textarea
+from django.conf import settings
 
 def detail (request, item_id):
     item = get_object_or_404(Item, pk=item_id)
@@ -135,7 +136,7 @@ def handle_uploaded_file(ufo, form):
     id = file.id
 
     # create saved file name in MEDIA_URL, simply named by the file id.
-    file_dir=r'U:\\django\\data\\hathitrust\\files\\'
+    file_dir = 'C:\\rvp\\data\\hathitrust\\files\\'
     pathname = ("{}file_{}"
        .format(file_dir, id))
 
@@ -148,10 +149,11 @@ def handle_uploaded_file(ufo, form):
     # Set the file's now-established server url and save it.
     # Then we are done except for some wrap-up.
     # set the url for future downloads of this server-saved file:
-    url = "%s%d" % ("https://robertvernonphillips.com/files/download/", id)
-    file.url = url
+    media_url_path = "files/download/{}".format(id)
+    file.url = media_url_path
 
-    anchor_html = '<html><body>[<a href="' + url + '">click here</a>]'
+    anchor_html = ('<html><body>[<a href="{}{}">click here</a>'
+        .format(settings.MEDIA_URL,media_url_path))
 
     file.description = ( anchor_html + form.cleaned_data['description']
         + "</body></html>" )
