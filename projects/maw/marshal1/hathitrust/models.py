@@ -162,7 +162,7 @@ class File(models.Model):
 
   item = models.ForeignKey('Item', on_delete=models.CASCADE,
       db_index=True, blank=True, null=True)
-  
+
   description = models.TextField(null=True,blank=True)
 
   # NB: Must use hashlib module to make the hash re-calculable across

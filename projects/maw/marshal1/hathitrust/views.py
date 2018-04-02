@@ -29,10 +29,24 @@ def index(request):
 from django import forms
 from django.contrib.auth.decorators import login_required
 
-class FormUploadFile(forms.Form):
+#class FormUploadFile(forms.Form):
+#derive from ModelForm so admin can use it to add..
+class FormUploadFile(forms.ModelForm):
+
     description = forms.CharField(required=False
            ,widget=forms.widgets.Textarea()
         )
+    #{ See https://stackoverflow.com/questions/29112847/the-value-of-form-must-inherit-from-basemodelform
+    class Meta:
+
+        model = File
+        # https://stackoverflow.com/questions/36953940/creating-a-modelform-without-either-the-fields-attribute-or-the-exclude-attr
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(FormUploadFile, self).__init__(*args, **kwargs)
+    #} See https://stackoverflow.com/questions/29112847/the-value-of-form-must-inherit-from-basemodelform
+
 
     topic = forms.CharField(max_length=128,required=False,
       widget=TextInput( attrs={'size':'100'}))

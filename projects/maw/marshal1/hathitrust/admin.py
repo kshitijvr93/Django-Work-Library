@@ -62,10 +62,10 @@ class FileInline(admin.TabularInline):
     extra = 0 # show no extra blank rows to enter data
     fields = ('topic','content_type','size')
     readonly_fields = ('content_type','size')
-    
+
     def has_add_permission(self,request, obj=None):
-        # With this, no 'add' button should appear per item
-        return False
+        # With False, no 'add' button/link should appear for this inline table.
+        return True
 
 
 class ItemModelAdmin(HathiModelAdmin):
@@ -81,6 +81,7 @@ from django import forms
 class FileModelAdmin(HathiModelAdmin):
   #{{{ custom field widget settings
   def formfield_for_dbfield(self, db_field, **kwargs):
+    # Set form to upload form to use for adding...
     form_field = super(FileModelAdmin, self).formfield_for_dbfield(db_field, **kwargs)
     dw = form_field.widget.attrs
 
@@ -91,10 +92,12 @@ class FileModelAdmin(HathiModelAdmin):
     return form_field
   # end def formfield-for_dbfield
 
+  form = FormUploadFile
+  add_form = FormUploadFile
   readonly_fields = ('date_time',)
 
   # fields to display on the 'select' list
-  list_display = ('id','item','topic','content_type','size')
+  list_display = ('id','item','topic','content_type','size',)
   search_fields = [ 'topic', 'upload_name' ]
 
   list_filter = ['content_type',]
@@ -102,18 +105,16 @@ class FileModelAdmin(HathiModelAdmin):
 
   # fieldsets for edit-form display
   fieldsets = (
-    ('Header', {
-      'classes': ('collapse',),
-      'fields': ('department','public','date_time')
-    }),
-
     (None, {
-      'fields': ('item', 'up_name','url','topic','description',)
+      'fields': ( 'topic', 'up_name',  'item','file')
     }),
 
     ('Details', {
       'classes': ('collapse',),
-      'fields': ('down_name','content_type','charset','size', 'sha512')
+      'fields': ('url','down_name','content_type','charset','size', 'sha512',
+      'description',
+      'department','public','date_time'
+      )
     }),
     )
     # end fieldsets
@@ -124,8 +125,8 @@ class FileModelAdmin(HathiModelAdmin):
     Remove the _exp method name suffix to implement.
   '''
   def has_add_permission(self,request, obj=None):
-        # With this, no 'add' button should appear per item
-        return False
+        # With False, no 'add' button should appear per item
+        return True
 
   # classes Meta, Media
   class Meta:
