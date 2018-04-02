@@ -42,6 +42,17 @@ class HathiModelAdmin(admin.ModelAdmin):
         # on the 'other' database.
         return super().formfield_for_manytomany(db_field, request,
             using=self.using, **kwargs)
+
+    '''
+    From the django admin cookbook: method to delete an action from admin,
+    and in this case it is the 'delete_selected' action.
+    '''
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        action_to_delete = 'delete_selected'
+        if action in actions:
+            del actions[action_to_delete]
+
 #end class HathiRouter
 
 

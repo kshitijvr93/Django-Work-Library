@@ -4,46 +4,31 @@ from django.forms import TextInput, Textarea
 from django.db import models
 
 '''
-todo: complete testing of class UsingModelAdmin(admin.ModelAdmin)
-where the __init__.py takes the using argument
-class UsingModelAdmin(admin.ModelAdmin):
-    #On admin change list page, show item name, not uuid(the default)
-    #list_display = ('item_name',)
-
-    def save_model(self, request, obj, form, change):
-        # Tell Django to save objects to the 'other' database.
-        obj.save(using=self.using)
-
-    def delete_model(self, request, obj):
-        # Tell Django to delete objects from the 'other' database
-        obj.delete(using=self.using)
-
-    def get_queryset(self, request):
-        # Tell Django to look for objects on the 'other' database.
-        return super().get_queryset(request).using(self.using)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        # Tell Django to populate ForeignKey widgets using a query
-        # on the 'other' database.
-        return super().formfield_for_foreignkey(db_field, request,
-            using=self.using, **kwargs)
-
-    def formfield_for_manytomany(self, db_field, request, **kwargs):
-        # Tell Django to populate ManyToMany widgets using a query
-        # on the 'other' database.
-        return super().formfield_for_manytomany(db_field, request,
-            using=self.using, **kwargs)
-
-class CubaLibroModelAdmin2(UsingModelAdmin):
-    using = 'cuba_libro_connection'
-
-#end class
-
+Nice ExportCvsMixin class presented and covered, on 20180402 by:
+https://books.agiliq.com/projects/django-admin-cookbook/en/latest/export.html
 '''
+class ExportCvsMixin:
+    def export_as_csv(self, request, queryset):
+        meta = self.model._meta
+        field_names = [field.name for field in meta.fields]
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename={}.csv'.format(meta)
+        writer = csv.writer(response)
+
+        writer.writerow(field_names)
+        for obj in queryset:
+            row = writer.writerow([getattr(obj, field) for field in field_names])
+
+        return response
+
+    export_as_csv.short_description = "Export Selected"
+
+# end class ExportCvsMixin
 
 class CubaLibroModelAdmin(admin.ModelAdmin):
-    # Using should be a settings.py DATABASES key, a 'connection' name,
-    # actually, as called in misc Django messages
+    # Using value should be a settings.py DATABASES key,
+    # actually called a 'connection' name in misc Django messages
     using = 'cuba_libro_connection'
     # Smaller text form regions
     formfield_overrides = {
@@ -80,6 +65,7 @@ class CubaLibroModelAdmin(admin.ModelAdmin):
         return super().formfield_for_manytomany(db_field, request,
             using=self.using, **kwargs)
 
+#end class CubaLibroModelAdmin
 
 def agent_available_to_uf(modeladmin, request, queryset):
         queryset.filter(agent='Available').update(agent='UF')
@@ -91,7 +77,7 @@ def agent_uf_to_available(modeladmin, request, queryset):
 
 agent_uf_to_available.short_description = "Change UF partner to Available "
 
-class ItemAdmin(CubaLibroModelAdmin):
+class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 
     #admin change list display fields to show
     # CHANGE LIST VIEW
@@ -104,9 +90,13 @@ class ItemAdmin(CubaLibroModelAdmin):
 
     date_hierarchy = 'agent_modify_date'
 
-    # See raw_id_fiels = ('some foreigh key') when you have a foreign key
-    #
-    actions = [agent_uf_to_available, agent_available_to_uf]
+    actions = [
+        'export_as_csv', # Mixin: so set the method name string value.
+                         # Need reference doc?
+        agent_uf_to_available, #External, so set the function value
+        agent_available_to_uf, #External, so set the function value
+    ]
+
     list_display = [
          'accession_number',
          'title_primary',
@@ -170,6 +160,32 @@ class ItemAdmin(CubaLibroModelAdmin):
             }
         )
     )
+    '''
+    From the django admin cookbook: method to delete an action from admin,
+    and in this case it is the 'delete_selected' action.
+    '''
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        action_to_delete = 'delete_selected'
+        if action_to_delete in actions:
+            #print("actions='{}'".format(repr(actions)))
+            del actions[action_to_delete]
+        return actions
+
+    '''
+    More django admin cookbook tips: to delete add and delete buttons (as all
+    CubaLibro data should be imported?)
+    Remove the _exp method name suffix to implement.
+    '''
+    def has_add_permission_exp(self,request, obj=None):
+        # With this, no 'add' button should appear per item
+        return False
+
+    def has_delete_permission_exp(self,request, obj=None):
+        # With this, no 'delete' button should appear per item
+        return False
+
+#end class ItemAdmin
 
 
 
