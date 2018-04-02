@@ -156,8 +156,13 @@ class File(models.Model):
   #date_time the file row was added
   date_time = models.DateTimeField('datetime',auto_now=True,db_index=True)
 
-  #key words or topical info about the file contents, context
+  # Key words or topical info about the file contents, context
+  # It is meant to be a django-admin-searchable field
   topic = models.CharField(max_length=128,db_index=True,blank=True,null=True)
+
+  item = models.ForeignKey('Item', on_delete=models.CASCADE,
+      db_index=True, blank=True, null=True)
+  
   description = models.TextField(null=True,blank=True)
 
   # NB: Must use hashlib module to make the hash re-calculable across
@@ -183,6 +188,7 @@ class File(models.Model):
   #charset applies to 'text/*' content types.
   charset = models.CharField('char_set',max_length=32,null=True,blank=True)
 
+  # Url is the reference url to use to download the file
   url = models.CharField('url',max_length=256,default='tmpfile');
 
   def __str__(self):

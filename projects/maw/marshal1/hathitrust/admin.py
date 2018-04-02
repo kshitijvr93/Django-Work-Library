@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Item, File
+from .views import FormUploadFile
 from django.db import models
 from django.forms import TextInput, Textarea
 
@@ -50,15 +51,27 @@ class HathiModelAdmin(admin.ModelAdmin):
     def get_actions(self, request):
         actions = super().get_actions(request)
         action_to_delete = 'delete_selected'
-        if action in actions:
+        if action_to_delete in actions:
             del actions[action_to_delete]
 
 #end class HathiRouter
+
+class FileInline(admin.TabularInline):
+    model = File
+    show_change_link = True
+    extra = 0 # show no extra blank rows to enter data
+    fields = ('topic','content_type','size')
+    readonly_fields = ('content_type','size')
+    
+    def has_add_permission(self,request, obj=None):
+        # With this, no 'add' button should appear per item
+        return False
 
 
 class ItemModelAdmin(HathiModelAdmin):
     list_display = ['name', 'status', 'folder_path', 'modify_date',]
     search_fields = ['name','status',]
+    inlines = (FileInline,)
 
 admin.site.register(Item, ItemModelAdmin)
 
@@ -71,23 +84,7 @@ class FileModelAdmin(HathiModelAdmin):
     form_field = super(FileModelAdmin, self).formfield_for_dbfield(db_field, **kwargs)
     dw = form_field.widget.attrs
 
-    if db_field.name == 'topic':
-       dw['class'] = 'special'
-       dw['size'] = '128'
-
-    elif db_field.name == 'up_name':
-       dw['class'] = 'special'
-       dw['size'] = '128'
-
-    elif db_field.name == 'down_name':
-       dw['class'] = 'special'
-       dw['size'] = '128'
-
-    elif db_field.name == 'link_name':
-       dw['class'] = 'special'
-       dw['size'] = '128'
-
-    elif db_field.name == 'url':
+    if db_field.name in ('topic', 'up_name', 'down_name', 'link_name', 'url'):
        dw['class'] = 'special'
        dw['size'] = '128'
 
@@ -97,27 +94,38 @@ class FileModelAdmin(HathiModelAdmin):
   readonly_fields = ('date_time',)
 
   # fields to display on the 'select' list
-  list_display = ('id','department','topic','public','date_time')
-  search_fields = [ 'topic' ]
+  list_display = ('id','item','topic','content_type','size')
+  search_fields = [ 'topic', 'upload_name' ]
 
-  list_filter = ['date_time','department','public']
-  ordering = ['-date_time']
+  list_filter = ['content_type',]
+  ordering = ['-id']
 
-#{{{ fieldsets for edit-form display
+  # fieldsets for edit-form display
   fieldsets = (
     ('Header', {
       'classes': ('collapse',),
       'fields': ('department','public','date_time')
     }),
+
     (None, {
-      'fields': ('url','down_name','topic','description',)
+      'fields': ('item', 'up_name','url','topic','description',)
     }),
+
     ('Details', {
       'classes': ('collapse',),
-      'fields': ('up_name','content_type','charset','size', 'sha512')
+      'fields': ('down_name','content_type','charset','size', 'sha512')
     }),
     )
-  # end fieldsets
+    # end fieldsets
+
+  '''
+    More django admin cookbook tips: to delete add and delete buttons (as all
+    CubaLibro data should be imported?)
+    Remove the _exp method name suffix to implement.
+  '''
+  def has_add_permission(self,request, obj=None):
+        # With this, no 'add' button should appear per item
+        return False
 
   # classes Meta, Media
   class Meta:
@@ -128,8 +136,8 @@ class FileModelAdmin(HathiModelAdmin):
           'wymeditor/jquery.wymeditor.js',
           'admin_textarea.js')
 
-  # classes Media, Meta
-# end FileModelAdmin
+  # end classes Media, Meta
+# end class FileModelAdmin
 
 admin.site.register(File,FileModelAdmin)
 
