@@ -10,12 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
-import os
-
+import os, sys
 APPEND_SLAH = True
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+print("\n\n\n--------------------------\n\nSTART RUNSEERVER:\nbase_dir_path='{}'"
+    .format( BASE_DIR),file=sys.stdout)
+print("--------------------------\n\n")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -27,7 +29,6 @@ SECRET_KEY = '@0-(8hq&*mj^ctt!x%118=s5w1c^l^)#6j*a#710se@)76jmwb'
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -47,7 +48,8 @@ INSTALLED_APPS = [
 
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media_root','')
+
 # RVP EXPERIMENT MEDIA_URL
 MEDIA_URL =  '/media/'
 

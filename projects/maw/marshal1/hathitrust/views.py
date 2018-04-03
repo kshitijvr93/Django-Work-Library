@@ -64,8 +64,9 @@ class FormUploadFile(forms.ModelForm):
 def upload_success(request, file_id):
 
     template_file= 'hathitrust/upload_success.html'
-    message = ( "You succeeded uploading your file_id = '" + file_id
-        + "' ! Congratulations!")
+    message = (
+        "You succeeded uploading file '{}{}'! Congratulations!"
+        .format(settings.MEDIA_ROOT,file_id))
     rendered = render(request, template_file,
         { 'a' : 'a', 'main_left' : message })
 
@@ -136,7 +137,7 @@ def handle_uploaded_file(ufo, form):
     id = file.id
 
     # create saved file name in MEDIA_URL, simply named by the file id.
-    file_dir = 'C:\\rvp\\data\\hathitrust\\files\\'
+    file_dir = settings.MEDIA_ROOT
     pathname = ("{}file_{}"
        .format(file_dir, id))
 
