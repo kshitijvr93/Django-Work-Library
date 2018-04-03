@@ -200,3 +200,65 @@ class File(models.Model):
         return "File"
 
 # end class File
+
+'''
+Legacy UploadFile object designed for more uses than is the leaner File model
+used by the Hathitrust app.
+
+If later will register with admin ... remember it has its own uploadform,
+so do not enable the Add permissions via admin, but admin views are OK.
+Can use the upload() method in views.py to invoke this if wanted.
+'''
+
+class UploadFile(models.Model):
+
+  # department owner of the uploaded file
+  department = models.CharField('Dept',max_length=64,default='RVP',db_index=True)
+  public     = models.BooleanField('Public',default=False)
+
+  #date_time the file row was added
+  date_time = models.DateTimeField('datetime',auto_now=True,db_index=True)
+
+  # Key words or topical info about the file contents, context
+  # It is meant to be a django-admin-searchable field
+  topic = models.CharField(max_length=128,db_index=True,blank=True,null=True)
+
+  item = models.ForeignKey('Item', on_delete=models.CASCADE,
+      db_index=True, blank=True, null=True)
+
+  description = models.TextField(null=True,blank=True)
+
+  # If you to change upload_to, make sure it is a writeable directory
+  location = models.FileField(upload_to="hathitrust/")
+
+  # NB: Must use hashlib module to make the hash re-calculable across
+  # operating systems, future releases of python, etc.
+  # sha512 is 512bits, hench 128 'hex chars' each representing 4 bits.
+  sha512 = models.CharField(max_length=128, db_index=True,null=True,blank=True)
+
+  up_name = models.CharField('up_name',max_length=128,default='tmpfile');
+
+  down_name= models.CharField('down_name',max_length=128,default='tmpfile',
+      null=True,blank=True);
+
+  link_name= models.CharField('link_name',max_length=128,default='click here',
+      null=True,blank=True);
+
+  # size of file in 8-bit bytes
+  size = models.IntegerField(default=0)
+
+  # uploadedfile objects - mirrored django1.1 attributes.
+  content_type = models.CharField('content_type',max_length=128,
+      default='text/plain')
+
+  #charset applies to 'text/*' content types.
+  charset = models.CharField('char_set',max_length=32,null=True,blank=True)
+
+  # Url is the reference url to use to download the file
+  url = models.CharField('url',max_length=256,default='tmpfile');
+
+  def __str__(self):
+        #2018
+        return "UploadFile"
+
+# end class UploadFile

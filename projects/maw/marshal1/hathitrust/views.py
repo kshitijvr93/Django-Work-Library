@@ -3,7 +3,8 @@ from django.shortcuts import get_object_or_404, render, render_to_response
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 
-from .models import Item, File
+from .models import Item, File, UploadFile
+
 from django.forms import TextInput, Textarea
 from django.conf import settings
 
@@ -31,7 +32,10 @@ from django import forms
 from django.contrib.auth.decorators import login_required
 
 #class FormUploadFile(forms.Form):
-#derive from ModelForm so admin can use it to add..
+#derive from ModelForm so admin can use it to add...
+# No - using admin's own form works fine, and using the FileField's
+# parameter 'upload_to'.
+# Now keep this object for future development calling it UploadFile object
 class FormUploadFile(forms.ModelForm):
 
     description = forms.CharField(required=False
@@ -40,7 +44,7 @@ class FormUploadFile(forms.ModelForm):
     #{ See https://stackoverflow.com/questions/29112847/the-value-of-form-must-inherit-from-basemodelform
     class Meta:
 
-        model = File
+        model = UploadFile
         # https://stackoverflow.com/questions/36953940/creating-a-modelform-without-either-the-fields-attribute-or-the-exclude-attr
         fields = '__all__'
 

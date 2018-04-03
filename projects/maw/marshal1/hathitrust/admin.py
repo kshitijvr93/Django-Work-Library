@@ -76,7 +76,8 @@ class ItemModelAdmin(HathiModelAdmin):
 admin.site.register(Item, ItemModelAdmin)
 
 
-#from django import forms
+from django import forms
+
 
 class FileModelAdmin(HathiModelAdmin):
   #{{{ custom field widget settings
