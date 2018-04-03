@@ -93,7 +93,7 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
         ,'isbn_issn', 'call_number','doi', 'pmid','pmcid'
         ]
 
-    date_hierarchy = 'agent_modify_date'
+    #date_hierarchy = 'agent_modify_date'
 
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.

@@ -1,4 +1,5 @@
 import uuid
+import os
 from django.db import models
 #from django_enumfield import enum
 
@@ -164,6 +165,9 @@ class File(models.Model):
       db_index=True, blank=True, null=True)
 
   description = models.TextField(null=True,blank=True)
+
+  # If you to change upload_to, make sure it is a writeable directory
+  location = models.FileField(upload_to="hathitrust/")
 
   # NB: Must use hashlib module to make the hash re-calculable across
   # operating systems, future releases of python, etc.

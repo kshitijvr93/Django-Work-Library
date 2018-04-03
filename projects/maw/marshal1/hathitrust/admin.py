@@ -76,7 +76,7 @@ class ItemModelAdmin(HathiModelAdmin):
 admin.site.register(Item, ItemModelAdmin)
 
 
-from django import forms
+#from django import forms
 
 class FileModelAdmin(HathiModelAdmin):
   #{{{ custom field widget settings
@@ -92,8 +92,8 @@ class FileModelAdmin(HathiModelAdmin):
     return form_field
   # end def formfield-for_dbfield
 
-  form = FormUploadFile
-  add_form = FormUploadFile
+  # form = FormUploadFile
+  # add_form = FormUploadFile
   readonly_fields = ('date_time',)
 
   # fields to display on the 'select' list
@@ -106,7 +106,7 @@ class FileModelAdmin(HathiModelAdmin):
   # fieldsets for edit-form display
   fieldsets = (
     (None, {
-      'fields': ( 'topic', 'up_name',  'item','file')
+      'fields': (  'topic', 'up_name',  'item', 'location')
     }),
 
     ('Details', {
@@ -140,7 +140,7 @@ class FileModelAdmin(HathiModelAdmin):
   # end classes Media, Meta
 # end class FileModelAdmin
 
-admin.site.register(File,FileModelAdmin)
+admin.site.register(File, FileModelAdmin)
 
 
 #admin.site.register(Upload, HathiModelAdmin)

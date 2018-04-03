@@ -11,13 +11,9 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os, sys
-APPEND_SLAH = True
+APPEND_SLASH = True
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-print("\n\n\n--------------------------\n\nSTART RUNSEERVER:\nbase_dir_path='{}'"
-    .format( BASE_DIR),file=sys.stdout)
-print("--------------------------\n\n")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -216,3 +212,9 @@ CKEDITOR_CONFIGS = {
 }
 
 ###################################
+
+print("\n\n\n--------------------------\n\nSTART RUNSEERVER:\nbase_dir_path='{}'"
+    .format( BASE_DIR),file=sys.stdout)
+print("MEDIA_ROOT={}".format(MEDIA_ROOT))
+print("--------------------------\n\n")
+sys.stdout.flush()

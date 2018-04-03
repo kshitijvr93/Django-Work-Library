@@ -93,7 +93,7 @@ class Item(models.Model):
         blank=True, max_length=50, choices=PARTNER_CHOICES,
         help_text="Partner to verify or edit this item.")
 
-    agent_modify_date = models.DateTimeField('Parner Modify Date (UTC)',
+    agent_modify_date = models.DateTimeField('Modify Date (UTC)',
         null=True, auto_now=True, editable=False)
 
     # Original source data for holding is of the form XXX[-NNN[-MMM]]
