@@ -135,7 +135,7 @@ class FileModelAdmin(HathiModelAdmin):
 
   class Media:
     js = ('jquery/jquery.js',
-          'wymeditor/jquery.wymeditor.js',
+          # 'wymeditor/jquery.wymeditor.js',
           'admin_textarea.js')
 
   # end classes Media, Meta

@@ -7,4 +7,5 @@ __pycache__/*
 *.pyc
 *.out
 ~*
-media_root/*
+#Ignore any directory named media_root - special syntax
+media_root/

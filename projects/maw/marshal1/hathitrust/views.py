@@ -31,11 +31,18 @@ def index(request):
 from django import forms
 from django.contrib.auth.decorators import login_required
 
-#class FormUploadFile(forms.Form):
-#derive from ModelForm so admin can use it to add...
-# No - using admin's own form works fine, and using the FileField's
-# parameter 'upload_to'.
-# Now keep this object for future development calling it UploadFile object
+# class FormUploadFile(forms.Form):
+#
+# Purpose: derive from ModelForm so admin can use it to add...
+# See view method file_upload() which uses this form
+# does. It has been useful since using it in 2009 to serve a model "File",
+# and in 2018 it is modified  to use new model "UploadFile"
+# See also django 2.0 implementation of 2018 now for model "File"
+# and its admin and form, and associated code.
+# This is less featured than the 2009 version, but adequate for many uses, and
+# it is uses now-'standard' supported django 2.0 features so it can be used by
+# django standard admin.
+#
 class FormUploadFile(forms.ModelForm):
 
     description = forms.CharField(required=False
@@ -80,6 +87,7 @@ def upload_success(request, file_id):
 
 def handle_uploaded_file(ufo, form):
     """
+
     Param ufo is an UploadedFileObject (see Django Docs)
     which has in Django 1.1 the contents of the uploaded file (into Django
     "chunks"), attributess of name, size, chunks, content_type.
@@ -168,7 +176,7 @@ def handle_uploaded_file(ufo, form):
 
 # end def handle_uploaded_file()
 
-#NB: def file_upload() depends on FormUploadFile,handle_uploaded_file,
+# NB: def file_upload() depends on FormUploadFile,handle_uploaded_file,
 # upload_success
 
 # upload a file that a user selects on the client web browser's machine
@@ -180,11 +188,12 @@ def file_upload(request, file_id='tmp'):
         form = FormUploadFile(request.POST, request.FILES)
         if form.is_valid():
             file_id = handle_uploaded_file(request.FILES['file'],form)
-            return HttpResponseRedirect('/hathitrust/upload/success/' + str(file_id) + '/')
+            return HttpResponseRedirect(
+                '/hathitrust/upload/success/{}/'.format(file_id))
     else:
         form = FormUploadFile()
     # Per https://stackoverflow.com/questions/41606754/django-csrf-token-generation-render-to-response-vs-render
-    # Avoid and replace the deprecated (now commented out) next line.
+    # Replace the by django 2.0 deprecated (now commented out) next line.
     # return render_to_response('hathitrust/upload.html', {'form': form,})
     return render(request, 'hathitrust/upload.html', {'form': form,})
 
@@ -193,28 +202,31 @@ def file_upload(request, file_id='tmp'):
 def file_download(request, file_id):
     row_list = ''
 
-    #{{{ If user may, get the file row corresponding to the file_id.
     #NOTE: the user data appears to be hosted in a client cookie, and the side effect is that it is dependent on domain NAME, not domain IP address, so if one is using a browser tab visiting lawcloud.com and another tab is visiting robertvernonphillips.com, and a link on the latter page is for the former page then by visiting the 'other' domain name, though the IP is the same, the same physical user appears to be a different user  due to different user cookies, set per domain name.
     if not request.user.is_staff:
       # if user is not staff, must filter for only public files
-      row_list = list(ModelFile.objects.filter(id = file_id).filter(public=True))
+      row_list = list(ModelFile.objects.filter(id=file_id).filter(public=True))
     else:
       #{{{ get the file row corresponding to the file_id
-      row_list = list(ModelFile.objects.filter(id = file_id))
-    #}}}
+      row_list = list(ModelFile.objects.filter(id=file_id))
 
     if not row_list:
+       # No file found, so return some meta info only
        msg =""
-       msg=msg + "Download file_id=" + str(id) + "for first_name='" + request.user.first_name +"', "
-       msg=msg + "is_authenticated()='" + str(request.user.is_authenticated()) +"', "
+       msg=msg + ("Download file_id=" + str(id) + "for first_name='" +
+           request.user.first_name +"', ")
+       msg=msg + ("is_authenticated()='" +
+           str(request.user.is_authenticated()) +"', ")
        msg=msg + "is_active='" + str(request.user.is_active)  + "', "
        msg=msg + "is_staff='" + str(request.user.is_staff)  + "', "
        msg=msg + "is_superuser='" + str(request.user.is_superuser) +"'."
-       msg=msg+ "</br>You are not logged in with permission to see your requested link. </br>You may close this page. Please try another link."
+       msg=msg+ ("</br>You are not logged in with permission to see your "
+            "requested link. </br>You may close this page. "
+            "Please try another link.")
        return HttpResponse(msg)
 
+    #
     filerow = row_list[0]
-
     #{{{ future: do this for mod_xsendfile:
     # Create response with proper mimetype
     # response = HttpResponse(mimetype='application/force-download')
@@ -225,12 +237,13 @@ def file_download(request, file_id):
     #{{{ Set response headers properly to serve this file.
 
     # quick first cut - though Django is not as efficient, use to start.
-    # set the content_type that django set at upload from the file suffix.
-    response = HttpResponse(mimetype = filerow.content_type)
+    # set the content_type that django set at upload from the file suffix,
+    # or that possibly was changed in the database.
+    response = HttpResponse(mimetype=filerow.content_type)
 
     # set the downloaded file name
     # if filerow has no download name, set it to the same name as the
-    #uploader used to upload the file
+    # uploader used to upload the file
     #sample:response['Content-Disposition'] = 'attachment; filename=fatdog.jpg'
     if filerow.down_name == "":
       att_info = 'attachment; filename='  + filerow.up_name
@@ -241,8 +254,7 @@ def file_download(request, file_id):
     #except change all underbars and periods to spaces to keywords are apparent for searches.
 
     response['Content-Disposition'] = att_info
-    #}}}
-    #{{{ Use Django to read the source file and write it into the response
+
     # the file name is rooted in priv (get this from settings.py later)
     root_path = '/c/home/rvp/dj1.1/mysite/priv'
 

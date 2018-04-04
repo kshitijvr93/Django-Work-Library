@@ -79,7 +79,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'marshal1.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 DB_ENGINE_BACKENDS_STANDARD=['sqlite3','postgresql','mysql','oracle']
