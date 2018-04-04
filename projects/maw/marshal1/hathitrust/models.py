@@ -166,7 +166,11 @@ class File(models.Model):
 
   description = models.TextField(null=True,blank=True)
 
+  #Create a subdirectory under media_root for the containing item of this file
+  #
+
   # If you to change upload_to, make sure it is a writeable directory
+
   location = models.FileField(upload_to="hathitrust/")
 
   # NB: Must use hashlib module to make the hash re-calculable across
