@@ -30,6 +30,6 @@ piis= [
 for i in range(len(piis)):
     pii = piis[i]
     normal = (pii.replace('(','').replace(')','').replace('-',''))
-    url = ("http://api.elsevier.com/content/article/pii/" + str(normal)
+    url = ("https://api.elsevier.com/content/article/pii/" + str(normal)
     + "?httpAccept=application/pdf&apiKey=d91051fb976425e3b5f00750cbd33d8b&cdnRedirect=true&amsRedirect=true")
     print(i+1,url)

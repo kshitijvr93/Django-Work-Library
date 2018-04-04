@@ -2,21 +2,28 @@
 # new name crafatxml (Cross Ref Api Filter Affiliation to xml AND
 # affiliation target "University of Florida" is used here.
 # NOTE: 20170828 - TODO: make sure this works after 201708 because I left this
-# code untested then, to pursue primping and running crafdtxml.py for an important analysis.
+# code untested then, to pursue primping and running crafdtxml.py for an
+# important analysis.
 #
-# NOTE: However, this afffiliation "University of Florida" argument in crossref has no wildcard
-# options and it will NOT find somewhat nonuniform decorated affiliation names like
-# "Univeristy of Florida, Gainesville", nor any with department names prefixed, with semicolon
-# separators in the text, etc.
-# BUT - see the crawxml.xml program that queries the cross ref "Works" api that provides a specific DOI,
-# eg from Scopus of Elsevier or other sources, and then one CAN see the author and affiliation string,
-# although a harvester program (like exoldxml) would have to do its own pattern matching on affiliation name
-# to find variants of UF.
-# SO - the upshote is that crossref affiliation filter in 20161217 DOES find some DOIs metadata, but
-# only those that exactly match the sought affiliation.
+# NOTE: However, this afffiliation "University of Florida" argument in
+# crossref has no wildcard options and it will NOT find somewhat
+# nonuniform decorated affiliation names like
+# "Univeristy of Florida, Gainesville", nor any with department names
+# prefixed, with semicolon # separators in the text, etc.
+#
+# BUT - see the crawxml.xml program that queries the cross ref "Works" api that
+# provides a specific DOI, eg from Scopus of Elsevier or other sources,
+# and then one CAN see the author and affiliation string,
+# although a harvester program (like exoldxml) would have to do its own
+# pattern matching on affiliation name # to find variants of UF.
+#
+# SO - the upshot is that crossref affiliation filter in 20161217 DOES
+# find some DOIs metadata, but only those that exactly match the sought
+# affiliation.
 # This is python 3.5.1 code
-# Use the Crossref API to harvest metadata for affiliations that match "University of Florida" for
-# dates specified by Crossref params from-index-date and until-index-date.
+# Use the Crossref API to harvest metadata for affiliations that match
+# "University of Florida" for dates specified by Crossref params
+# from-index-date and until-index-date.
 # ONLINE API DOCS: see https://github.com/CrossRef/rest-api-doc/blob/master/rest_api.md
 import sys, os, os.path, platform
 def get_path_modules(verbosity=0):
@@ -42,10 +49,14 @@ import shutil
 from datetime import datetime
 
 '''
-This notebook is meant to develop, test, house, and entomb crafatxml (CrossRef Api To Xml)
-It is initially based on ealdxml (Elsevier Api To Xml), and others (from oadoixml it borrows
-json conversion to xml method etl.add_subelements(). It writes out
-to ..output_crafatxml a file for each doi/item encountered by querying the crossref api for
+This program is meant to develop, test, house, and entomb crafatxml
+(CrossRef Api To Xml)
+It is initially based on ealdxml (Elsevier Api To Xml), and others
+(from oadoixml it borrows
+json conversion to xml method etl.add_subelements().
+
+It writes out to ..output_crafatxml a file for each doi/item encountered
+by querying the crossref api for
 affiliation of the University of Florida
 
 Crafatxml reads information from CrossRef API as of 20161215, for
@@ -97,14 +108,17 @@ Sample usage by caller who wants xml instead:
 NOTE: see nice url of results to examine while finishing this method:
 http://api.crossref.org/works?filter=affiliation:University%20of%20Florida,from-index-date:2016-12-01,until-index-date:2016-12-01
 --
-Method crafatxml: CrossRef API To XML - Read the CrossRef REST API github docs for details.
+Method crafatxml: CrossRef API To XML -
+Read the CrossRef REST API github docs for details.
 
 Get XML Metadata for each DOI-identified article and save it to a file named
 doi_{doi-normalized}.xml under the given output directory.
 
-Params cymd_lo and hi are load date ranges for the crossref search API parameters
-'from-index-date' and 'until-index-date' used to select for which articles to return metadata.
+Params cymd_lo and hi are load date ranges for the crossref search API
+parameters 'from-index-date' and 'until-index-date' used to select for
+which articles to return metadata.
 '''
+
 def crafatxml(d_params, verbosity=0):
     #
     # VALIDATE d_params
@@ -113,7 +127,6 @@ def crafatxml(d_params, verbosity=0):
     me = 'crafatxml'
     dt_day = datetime.datetime.strptime(d_params['cymd_start'],'%Y%m%d')
     dt_end = datetime.datetime.strptime(d_params['cymd_end'], '%Y%m%d')
-
 
     day_delta = datetime.timedelta(days=1)
 
@@ -158,10 +171,10 @@ def crafatxml(d_params, verbosity=0):
         except:
             print("Cannot make folder {}. File might be in use?".format(output_folder_ymd))
             raise
-
+        protocol = 'https'
         url_worklist_day = (
-            "http://api.crossref.org/works?rows=1000&filter=affiliation:University%20of%20Florida,"
-            "from-index-date:{},until-index-date:{}".format(y4md, y4md))
+            "{}://api.crossref.org/works?rows=1000&filter=affiliation:University%20of%20Florida,"
+            "from-index-date:{},until-index-date:{}".format(protocol,y4md, y4md))
         print("{}: using url={}".format(me,url_worklist_day))
 
         d_json = etl.get_json_result_by_url(url_worklist_day)
@@ -262,10 +275,11 @@ def run():
 
     verbosity = 0
     cymd_start = '20160206'
+    cymd_start = '20170309'
     #cymd_start = '20161213'
     # cymd_end = '20160206'
     # CRAFATXML - Here, we do only one day at a time...
-    cymd_end = '20170308'
+    cymd_end = '20170309'
 
     utc_now = datetime.datetime.utcnow()
     # secsz_start: secz means seconds in utc(suffix 'z') when this run started

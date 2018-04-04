@@ -417,7 +417,7 @@ def crafdtxml(d_params, verbosity=0):
                 # Here, this must have been the end of the results because we did not find
                 # quantity the maximum requested n_batch_rows articles in the result.
                 # Crossref API client Code must check this now and avoid submitting
-                # a final query which returns nothing, else result is http server error 500.
+                # a final query which returns nothing, else result is https server error 500.
                 break;
 
             # Wrap up this response and if neeed, prepare cursor for another request

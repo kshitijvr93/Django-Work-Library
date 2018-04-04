@@ -13,7 +13,7 @@
  the native xml api offers more useful data than the json api flavor. 20171116.
 
  sample xml query
- http://api.crossref.org/works/doi/10.1200/jco.2017.74.6032/transform/application/vnd.crossref.unixsd+xml
+ https://api.crossref.org/works/doi/10.1200/jco.2017.74.6032/transform/application/vnd.crossref.unixsd+xml
 
  On 20171116, that url works, but have not found any data of use today that is not given by the json
  api (and crawdxml already converts that to xml for UF use.)
@@ -125,7 +125,7 @@ def get_json_result_by_url(url):
 #end get_json_result_by_url
 '''
 NOTE: see nice url of results to examine while finishing this method:
-http://api.crossref.org/works?filter=affiliation:University%20of%20Florida,from-index-date:2016-12-01,until-index-date:2016-12-01
+https://api.crossref.org/works?filter=affiliation:University%20of%20Florida,from-index-date:2016-12-01,until-index-date:2016-12-01
 --
 Method crawdxml: CrossRef API for Works by DOI To XML -
 Read the CrossRef REST API github docs for details.
@@ -178,9 +178,11 @@ def crawdxml(d_params=None, input_file_name=None, verbosity=0):
 
     for line in input_file:
         doi_string = line.replace('\n','')
-
+        # 20180404 - modify url to include mailto param
+        # See - https://github.com/CrossRef/rest-api-doc#crossref-rest-api
         url_worklist_doi = (
-            "http://api.crossref.org/works/doi/{}".format(doi_string))
+            "https://api.crossref.org/works/doi/{}?{}"
+            .format(doi_string,'mailto=podengo@ufl.edu'))
         print("{}: using url={}".format(me,url_worklist_doi))
 
         d_json = get_json_result_by_url(url_worklist_doi)

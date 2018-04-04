@@ -125,13 +125,14 @@ class EamAPI(object):
     def initial_search_url_by_affil_pubyear(self, affil=None, pubyear=None):
         if not (affil and pubyear):
             raise ValueError('Affil and pubyear not all given.')
-        search_url_initial = ('{}apiKey={}&query=affil({{{}}}) and pubyear is {}&view=COMPLETE&{}'
-               .format(self.url_base_content_search, self.apiKey
-               , affil, pubyear,'httpAccept=application/xml'))
+        search_url_initial = ('{}apiKey={}&query=affil({{{}}}) and "
+           "pubyear is {}&view=COMPLETE&{}'
+           .format(self.url_base_content_search, self.apiKey
+             ,affil, pubyear,'httpAccept=application/xml'))
         #return etree.parse(search_url_initial)
         return search_url_initial
     def get_url_affiliation_search(self,subject_area=None):
-        base_url = 'http://api.elsevier.com/content/search/affiliation'
+        base_url = 'https://api.elsevier.com/content/search/affiliation'
         d_qparams = self.d_qparams
         d_qparams.update({'query':'affil({University of Florida})'})
         url = '{}?{}'.format(base_url, urllib.parse.urlencode(d_qparams))
@@ -139,7 +140,8 @@ class EamAPI(object):
 #end class EamAPI(object)
 
 #
-def eam_response_entries_collect(eam_api=None,d_scopus_info=None, pubyear=None, subjarea=None, n_batch=None
+def eam_response_entries_collect(eam_api=None,d_scopus_info=None, pubyear=None
+    , subjarea=None, n_batch=None
     , results_tree=None, d_namespaces=None
     , d_params=None, d_batch=None, verbosity=1):
     '''
@@ -168,7 +170,7 @@ def eam_response_entries_collect(eam_api=None,d_scopus_info=None, pubyear=None, 
     out_base_dir = d_params.get('output_folder','')
     output_folder = '{}/{}/'.format(out_base_dir,d_params['aft_pubdate'][0:4])
 
-    entry_tag = '{http://www.w3.org/2005/Atom}entry' # could use instead of {*} in '{*}entry' below.
+    # entry_tag = '{http://www.w3.org/2005/Atom}entry' # could use instead of {*} in '{*}entry' below.
     result_link_next = ""
 
     result_root = results_tree.getroot()

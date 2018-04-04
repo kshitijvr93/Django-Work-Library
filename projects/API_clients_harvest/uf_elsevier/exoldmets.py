@@ -893,7 +893,7 @@ def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None
 
     #Produce the location_url, the seed for the Builder to set the SobekCM_Item.link value
     d_sobek_track.update({ 'location_url' : (
-        'http://www.sciencedirect.com/science/article/pii/{}'.format(pii))
+        'https://www.sciencedirect.com/science/article/pii/{}'.format(pii))
         })
 
     node_serial_item = node_root_input.find('.//xocs:serial-item', namespaces=d_ns)

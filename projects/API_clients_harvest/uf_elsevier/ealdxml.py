@@ -131,7 +131,7 @@ def get_elsevier_api_uf_query_url_by_dates(d_run_params, verbosity):
       "and orig-load-date bef {}"
       .format(cymd_bef, cymd_aft))
 
-    search_base_url = "http://api.elsevier.com/content/search/scidir"
+    search_base_url = "https://api.elsevier.com/content/search/scidir"
 
     d_qparams = {
         "query":query,
@@ -198,7 +198,7 @@ def result_entries_collect(d_params, results_tree, d_batch, verbosity=1, scopus_
     output_dir = '{}/{}/{}/{}'.format(out_base_dir, cymd_day[0:4],cymd_day[4:6], cymd_day[6:8])
     os.makedirs(output_dir, exist_ok=True)
 
-    entry_tag = '{http://www.w3.org/2005/Atom}entry' # could use this instead of '{*}entry' used below.
+    #entry_tag = '{http://www.w3.org/2005/Atom}entry' # could use this instead of '{*}entry' used below.
     result_link_next = ""
 
     result_root = results_tree.getroot()

@@ -22,10 +22,10 @@ from lxml.etree import tostring
 from collections import OrderedDict
 ###
 
-import  http.client
+#import  http.client
 
-http.client.HTTPConnection._http_vsn = 10
-http.client.HTTPConnection._http_vsn_str = 'HTTP/1.0'
+#http.client.HTTPConnection._http_vsn = 10
+#http.client.HTTPConnection._http_vsn_str = 'HTTP/1.0'
 
 #print urllib2.urlopen('http://localhost/').read(
 
@@ -137,7 +137,8 @@ def output_oadoi_xml(url_base=None, dois=None, output_folder=None):
         if doi is None or doi == '':
             continue
         # Some dois from scopus have illegal embedded spaces - remove them
-        url_request = '{}/{}'.format(url_base,doi).replace(' ','')
+        # Updated this url 20180402 for new https service v2
+        url_request = '{}/v2/{}'.format(url_base,doi).replace(' ','')
         print("{}:Using url_request='{}'".format(me,url_request))
         sys.stdout.flush()
         d_result = get_result_by_url(url_request)
@@ -170,8 +171,10 @@ def run(doi_string):
     output_folder_run = etl.data_folder(linux='/home/robert/', windows='U:/',
         data_relative_folder='data/outputs/oadoi/run/{}/'
             .format(secsz_start))
+    # TODO: 20180402+ -- use new urls, see doc at:
+    #  https://unpaywall.org/api/v2
+    url_base =  'https://api.oadoi.org'
 
-    url_base =  'http://api.oadoi.org'
 
     dois = doi_string.split('\n')
     output_oadoi_xml(url_base=url_base,dois=dois, output_folder=output_folder_run)

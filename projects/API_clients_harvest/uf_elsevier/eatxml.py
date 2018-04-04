@@ -74,7 +74,7 @@ def get_elsevier_api_uf_query_url_by_dates(d_run_params, verbosity):
           "aff(university of florida) and orig-load-date aft {}"
           .format(cymd_low))
 
-    search_base_url = "http://api.elsevier.com/content/search/scidir"
+    search_base_url = "https://api.elsevier.com/content/search/scidir"
 
     d_qparams = {
         "query":query,
@@ -83,6 +83,7 @@ def get_elsevier_api_uf_query_url_by_dates(d_run_params, verbosity):
         "apikey":api_key,
     }
     api_get_qparams = urllib.parse.urlencode(d_qparams)
+
     # print(" *** *** *** Using get_params='{}' *** *** ***".format(get_qparams))
     d_run_params.update ({
         'search-base-url': search_base_url,

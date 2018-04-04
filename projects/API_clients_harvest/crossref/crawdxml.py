@@ -111,7 +111,7 @@ def get_json_result_by_url(url):
 #end get_json_result_by_url
 '''
 NOTE: see nice url of results to examine while finishing this method:
-http://api.crossref.org/works?filter=affiliation:University%20of%20Florida,from-index-date:2016-12-01,until-index-date:2016-12-01
+https://api.crossref.org/works?filter=affiliation:University%20of%20Florida,from-index-date:2016-12-01,until-index-date:2016-12-01
 --
 Method crawdxml: CrossRef API for Works by DOI To XML -
 Read the CrossRef REST API github docs for details.

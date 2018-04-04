@@ -279,7 +279,7 @@ def sequence_entitlements(
     if (batch_size < 1) or (batch_size > 100) :
       raise ValueError("Parameter batch_size must be 1-100.")
 
-    url_base = "http://api.elsevier.com/content/article/entitlement/pii/"
+    url_base = "https://api.elsevier.com/content/article/entitlement/pii/"
     url = url_base
     sep = ''
     index_pii = 0
