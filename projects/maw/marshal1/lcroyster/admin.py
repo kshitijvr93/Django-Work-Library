@@ -5,6 +5,26 @@ from .models import Location, Project, Sensor, SensorDeploy, WaterObservation
 from django.db import models
 from django.forms import TextInput, Textarea
 
+class ExportCvsMixin:
+    def export_as_csv(self, request, queryset):
+        meta = self.model._meta
+        field_names = [field.name for field in meta.fields]
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = (
+            'attachment; filename={}.csv'.format(meta))
+        writer = csv.writer(response)
+
+        writer.writerow(field_names)
+        for obj in queryset:
+            row = writer.writerow(
+                [getattr(obj, field) for field in field_names])
+
+        return response
+
+    export_as_csv.short_description = "Export Selected"
+
+
 class LcroysterModelAdmin(admin.ModelAdmin):
     # Using should be a settings.py DATABASES key, a 'connection' name,
     # actually, as called in misc Django messages
@@ -14,8 +34,8 @@ class LcroysterModelAdmin(admin.ModelAdmin):
     # Where a form is defined, its form.CharField(..widget params...) widgets
     # will NOT be overridden by these overrides.
     formfield_overrides = {
-      models.CharField: { 'widget': TextInput( attrs={'size':'100'})},
-      models.TextField: { 'widget': Textarea( attrs={'rows':1, 'cols':'100'})},
+      models.CharField: { 'widget': TextInput( attrs={'size':'60'})},
+      models.TextField: { 'widget': Textarea( attrs={'rows':1, 'cols':'60'})},
       }
 
     #On admin change list page, show item name, not uuid(the default)
@@ -69,10 +89,21 @@ class SensorModelAdmin(LcroysterModelAdmin):
     pass
 admin.site.register(Sensor, SensorModelAdmin)
 
-class SensorDeployModelAdmin(LcroysterModelAdmin):
-    pass
+class SensorDeployModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
+    list_display = ['sensor_id',]
+
+    actions = [
+      'export_as_csv',
+    ]
+#end class SensorDeployModelAdmin
+
 admin.site.register(SensorDeploy, SensorDeployModelAdmin)
 
-class WaterObservationModelAdmin(LcroysterModelAdmin):
-    pass
+class WaterObservationModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
+
+    actions = [
+      'export_as_csv',
+    ]
+# end class WaterOvservationModelAdmin
+
 admin.site.register(WaterObservation, WaterObservationModelAdmin)

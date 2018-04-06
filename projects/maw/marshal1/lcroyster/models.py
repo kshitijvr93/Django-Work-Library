@@ -109,7 +109,7 @@ class SensorDeploy(models.Model):
     sensor_deploy_id = models.AutoField(primary_key=True)
     sensor = models.ForeignKey(Sensor, models.DO_NOTHING)
     location = models.ForeignKey(Location, models.DO_NOTHING)
-    event_datetime = models.DateTimeField()
+    #deploy_datetime = models.DateTimeField()
     notes = models.TextField(blank=True, null=True)
 
     class Meta:
