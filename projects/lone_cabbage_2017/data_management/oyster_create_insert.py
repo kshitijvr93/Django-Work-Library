@@ -23,6 +23,11 @@ platform_name = register_modules()
 import my_secrets
 import etl
 
+'''
+    sys.path.append('{}'.format(modules_root))
+from my_secrets.sa_engine_by_name import get_sa_engine_by_name
+'''
+
 print("Using sys.path={}".format(repr(sys.path)))
 
 import datetime

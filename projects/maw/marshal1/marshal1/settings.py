@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'hathitrust.apps.HathitrustConfig',
     'cuba_libro.apps.CubaLibroConfig',
     'maw_home.apps.MawHomeConfig',
+    'lcroyster.apps.LcroysterConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -130,9 +131,20 @@ DATABASES = {
         'HOST': '127.0.0.1',
         'PORT': '3306',
     },
-}
 
-'''
+    'lcroyster_dev_connection': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'lcroyster1',
+        'USER': 'podengo',
+        'PASSWORD': '20MY18sql!',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+        'OPTIONS' : {
+            # Heed a warning during manage.py migrate runs
+            'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
+        },
+    },
+
     'lcroyster_prod_connection': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'LCRoysterproject',
@@ -145,7 +157,21 @@ DATABASES = {
             'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
         },
     },
-'''
+    # The code uses this name, but keep other lcroyster* stanzas above as
+    # templates to copy  back to name lcroyster_connection as needed
+    'lcroyster_connection': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'lcroyster1',
+        'USER': 'podengo',
+        'PASSWORD': '20MY18sql!',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+        'OPTIONS' : {
+            # Heed a warning during manage.py migrate runs
+            'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
+        },
+    },
+}
 
 DATABASE_ROUTERS = [
     'hathitrust.models.HathiRouter',
