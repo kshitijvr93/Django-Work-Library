@@ -66,6 +66,7 @@ def register_modules():
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
+    sys.path.append('{}'.format(modules_root))
     sys.path.append('{}git/citrus/modules'.format(modules_root))
     return
 register_modules()
@@ -97,7 +98,7 @@ from sqlalchemy.sql import ( select, and_, or_, not_,)
 import sqlalchemy.sql.sqltypes
 
 # Import slate of databases that podengo can use
-from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+from my_secrets.sa_engine_by_name import get_sa_engine_by_name
 from api.utilities import get_api_result_by_url
 
 print("Sys.path={}".format(sys.path))
@@ -406,7 +407,7 @@ def  xxcreate_elsevier_entitlement_uf(env=None):
     else:
         engine_name = 'hp_psql'
 
-    engine = get_db_engine_by_name(name=engine_name)
+    engine = get_sa_engine_by_name(name=engine_name)
     create_table_elsevier_entitlement_uf(engine=engine)
     return
 
@@ -451,7 +452,7 @@ def run_elsevier_entitlement_updates(
     env = 'uf'
     if env == 'uf':
         engine_nick_name = 'uf_local_mysql_marshal1'
-        update = get_db_engine_by_name(name=engine_nick_name)
+        update = get_sa_engine_by_name(name=engine_nick_name)
         update_table_name = 'elsevier_entitlement_uf'
         pass
     else:
@@ -467,7 +468,7 @@ def run_elsevier_entitlement_updates(
     # plus an engine.inspector, at init time.
     # It's a bit convoluted to make all these calls, though I guess separation
     # saves some time and space, not usually a win-win for UF Library apps.
-    engine = get_db_engine_by_name(name=engine_nick_name)
+    engine = get_sa_engine_by_name(name=engine_nick_name)
     metadata = MetaData(engine)
     #Use reflection to get the tables
     metadata.reflect(engine)

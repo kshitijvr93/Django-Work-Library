@@ -29,6 +29,7 @@ def register_modules():
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
+    sys.path.append('{}'.format(modules_root))
     sys.path.append('{}git/citrus/modules'.format(modules_root))
     return
 register_modules()
@@ -56,7 +57,7 @@ from sqlalchemy.schema import CreateTable
 from sqlalchemy.sql import select, and_, or_, not_
 import sqlalchemy.sql.sqltypes
 # Import slate of databases that this user can use
-from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+from my_secrets.sa_engine_by_name import get_sa_engine_by_name
 import sys
 
 def am4ir_update_by_pii(engine=None, table_name_am4ir=None,
@@ -104,7 +105,7 @@ def am4ir_update_by_pii(engine=None, table_name_am4ir=None,
 
 # MAIN PROGRAM
 engine_nick_name = 'uf_local_mysql_marshal1'
-engine_write = get_db_engine_by_name(name=engine_nick_name)
+engine_write = get_sa_engine_by_name(name=engine_nick_name)
 table_name_am4ir = 'am4ir_item'
 table_name_write = 'item_elsevier_ufdc_test'
 # table_name_write = 'item_elsevier_ufdc' #production ufdc

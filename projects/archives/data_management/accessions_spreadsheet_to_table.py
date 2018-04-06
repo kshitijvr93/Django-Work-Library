@@ -14,6 +14,7 @@ def register_modules():
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
+    sys.path.append('{}'.format(modules_root))
     sys.path.append('{}git/citrus/modules'.format(modules_root))
     return
 register_modules()
@@ -21,8 +22,8 @@ register_modules()
 print("Using sys.path={}".format(repr(sys.path)))
 
 import etl
-# Import slate of databases that podengo can use
-from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+# Import slate of databases that user can use
+from my_secrets.sa_engine_by_name import get_sa_engine_by_name
 
 #### Sqlalchemy
 import datetime
@@ -367,7 +368,7 @@ def spreadsheet_to_table(
       raise ValueError(msg)
 
     metadata = MetaData()
-    my_db_engine = get_db_engine_by_name(name=engine_nick_name)
+    my_db_engine = get_sa_engine_by_name(name=engine_nick_name)
 
     #Create the in-memory sqlalchemy table_core object.
     table_core = sqlalchemy_core_table(

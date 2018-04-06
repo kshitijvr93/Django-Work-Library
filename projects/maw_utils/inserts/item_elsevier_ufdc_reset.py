@@ -66,6 +66,7 @@ def register_modules():
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
+    sys.path.append('{}'.format(modules_root))
     sys.path.append('{}git/citrus/modules'.format(modules_root))
     return
 register_modules()
@@ -95,7 +96,7 @@ from sqlalchemy.sql import select, and_, or_, not_
 import sqlalchemy.sql.sqltypes
 
 # Import slate of databases that this user can use
-from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+from my_secrets.sa_engine_by_name import get_sa_engine_by_name
 
 '''
 <summary name='get_elsevier_bibinfo'>
@@ -298,8 +299,8 @@ def test_translate(
       print("{}: Using engine_read_nickname={}, engine_write_nickname={}"
           .format(me, engine_nickname, engine_write_nickname))
 
-    engine_read = get_db_engine_by_name(name=engine_read_nickname)
-    engine_write = get_db_engine_by_name(name=engine_write_nickname)
+    engine_read = get_sa_engine_by_name(name=engine_read_nickname)
+    engine_write = get_sa_engine_by_name(name=engine_write_nickname)
 
     if verbosity > 1:
       print("{}: getting rows from engine_read={}, writing to db engine {}"

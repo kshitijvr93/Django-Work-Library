@@ -16,6 +16,7 @@ def register_modules():
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
+    sys.path.append('{}'.format(modules_root))
     sys.path.append('{}git/citrus/modules'.format(modules_root))
     return
 register_modules()
@@ -44,7 +45,7 @@ from sqlalchemy.sql import select, and_, or_, not_
 import sqlalchemy.sql.sqltypes
 
 # Import slate of databases that this user can use
-from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+from my_secrets.sa_engine_by_name import get_sa_engine_by_name
 import sys
 
 import inspect
@@ -58,7 +59,7 @@ def get_rows_test(conn=None, table=None):
     return result.fetchall()
 
 def run_test2(engine_nick_name=None, table_name=None):
-    engine = get_db_engine_by_name(name=engine_nick_name)
+    engine = get_sa_engine_by_name(name=engine_nick_name)
     print('Connecting to nick_name {}'.format(engine_nick_name))
 
     conn = engine.connect()

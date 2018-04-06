@@ -14,11 +14,13 @@ def register_modules():
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
+    sys.path.append('{}'.format(modules_root))
     sys.path.append('{}git/citrus/modules'.format(modules_root))
     return
 register_modules()
+
 import etl
-from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+from my_secrets.sa_engine_by_name import get_sa_engine_by_name
 #### Sqlalchemy
 from sqlalchemy import (
   Boolean, create_engine,
@@ -33,9 +35,7 @@ from sqlalchemy.schema import CreateTable
 import sqlalchemy.sql.sqltypes
 from sqlalchemy.dialects.postgresql import ARRAY
 
-
 print("Using sys.path={}".format(repr(sys.path)))
-
 
 # MAIN CODE
 def run(env=None):
@@ -48,7 +48,7 @@ def run(env=None):
         engine_nick_name = 'hp_psql_lcroyster1'
         engine_nick_name = 'hp_mysql_lcroyster1'
 
-    engine = get_db_engine_by_name(name=engine_nick_name)
+    engine = get_sa_engine_by_name(name=engine_nick_name)
     metadata = MetaData(engine)
     metadata.reflect(engine)
     # NOTE, we MUST list these tables in order of most-dependent (on foreign

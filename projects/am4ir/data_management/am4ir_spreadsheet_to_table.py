@@ -39,6 +39,7 @@ def register_modules():
         # assume rvp office pc running windows
         repo_root = "C:\\rvp\\git\\citrus\\"
 
+    sys.path.append('{}'.format(modules_root))
     repo_modules = '{}modules/'.format(repo_root)
     print("repo_modules = {}".format(repo_modules))
     sys.path.append(repo_modules)
@@ -52,7 +53,7 @@ print("sys.path={}".format(repr(sys.path)))
 import etl
 
 # Import slate of databases that podengo can use
-from podengo_db_engine_by_name import get_db_engine_by_name
+from my_secrets.sa_engine_by_name import get_sa_engine_by_name
 
 #### SqlAlechemy stuff
 import datetime
@@ -200,7 +201,7 @@ else:
         '20171101_from_elsevier_letitia_am4ir_masterlist.xlsx'.format(repo_root))
     engine_name = 'hp-psql'
 
-engine = get_engine_by_name(name=engine_name)
+engine = get_sa_engine_by_name(name=engine_name)
 
 test_run(workbook_path=workbook_path,
     engine=output_engine,table_name=table_name)

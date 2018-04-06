@@ -36,6 +36,7 @@ def register_modules():
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
+    sys.path.append('{}'.format(modules_root))
     sys.path.append('{}git/citrus/modules'.format(modules_root))
     return
 register_modules()
@@ -62,7 +63,7 @@ from sqlalchemy.sql import select, and_, or_, not_
 import sqlalchemy.sql.sqltypes
 
 # Import slate of databases that this user can use
-from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+from my_secrets.sa_engine_by_name import get_sa_engine_by_name
 import sys
 import inspect
 
@@ -139,7 +140,7 @@ engine_write_nickname = 'uf_local_mysql_marshal1'
 input_folder = ''
 cymd_start = '19990101'
 cymd_end = '20180102'
-engine_write = get_db_engine_by_name(name=engine_write_nickname)
+engine_write = get_sa_engine_by_name(name=engine_write_nickname)
 output_table_name = 'uf_elsevier_harvest'
 
 test_run(

@@ -37,7 +37,7 @@ addresses = Table('addresses', metadata,
 
 metadata.create_all(engine)
 # NOTE: add your engine here, or create a python module
-# like podengo_db_engine_by_name.py to capture your personal creds for
+# like sa.py to capture your personal creds for
 # your personal engines of interest.
 
 print("======================================")

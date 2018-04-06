@@ -13,6 +13,7 @@ def register_modules():
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
+    sys.path.append('{}'.format(modules_root))
     sys.path.append('{}git/citrus/modules'.format(modules_root))
     return
 register_modules()
@@ -34,7 +35,7 @@ from sqlalchemy.sql import select, and_, or_, not_
 import sqlalchemy.sql.sqltypes
 
 # Import slate of databases that this user can use
-from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+from my_secrets.sa_engine_by_name import get_sa_engine_by_name
 
 # First we have some xslt strings used to transform Elsevier documents for submission
 # to SobekCM Builder as mets files.
@@ -2340,7 +2341,7 @@ def run(verbosity=0, cymd_start=None, cymd_end=None, items_elsevier_engine=None)
 
   # Settings for UFDC elsevier item info
   # eg 'uf_local_mysql_marshal1',
-  engine_ufdc = get_db_engine_by_name(name=items_elsevier_engine_name,
+  engine_ufdc = get_sa_engine_by_name(name=items_elsevier_engine_name,
     verbosity=verbosity)
   eumd = MetaData(engine_ufdc)
   table_ufdc = Table('item_elsevier_ufdc', eumd, autoload=True,

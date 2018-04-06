@@ -1,5 +1,5 @@
 '''
-python 3.6 code to create the lone cabbage oyster project 'main'
+Python 3.6 code to create the lone cabbage oyster project 'main'
 database tables to hold project, sensors, locations, info that will not
 often change, and is easily initialized via hard coding to
 facilitate set up of other applications.
@@ -16,17 +16,19 @@ def register_modules():
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
+    sys.path.append('{}'.format(modules_root))
     sys.path.append('{}git/citrus/modules'.format(modules_root))
     return platform_name
 platform_name = register_modules()
+import my_secrets
 import etl
 
 print("Using sys.path={}".format(repr(sys.path)))
 
 import datetime
 from collections import OrderedDict
-# Import slate of databases that podengo can use
-from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+# Import slate of databases that user can use
+from my_secrets.sa_engine_by_name import get_sa_engine_by_name
 
 #### Sqlalchemy
 from sqlalchemy import (
@@ -168,6 +170,8 @@ def table_location_create(metadata=None):
              comment='Possibly other name designation of the location.'),
       UniqueConstraint('alias2'.format(table_name),
           name='uq_alias2_{}'.format(table_name) ),
+      Column('notes', Text(),
+          comment='Notes about the location'),
       )
     return table_object
 #end def table_location_create
@@ -352,9 +356,9 @@ def table_sensor_populate(engine=None,verbosity=1):
     return
 #end def table_sensor_populate
 
-def table_sensor_history_create(metadata=None):
+def table_sensor_deploy_create(metadata=None):
 
-    table_name = "sensor_history"
+    table_name = "sensor_deploy"
     # Create SA relation 'table object', and later we will use
     table_object = Table('{}'.format(table_name), metadata,
       Column('{}_id'.format(table_name), Integer,
@@ -362,10 +366,11 @@ def table_sensor_history_create(metadata=None):
              comment='Automatically incremented row id.'),
       UniqueConstraint('{}_id'.format(table_name),
           name='uq1_{}'.format(table_name) ),
-      Column('sensor_id', Integer),
-      Column('location_id', Integer),
-      Column('event_type', String(150)), #Empty string means PLACEMENT
-      Column('event_date', DateTime),
+      Column('sensor_id', Integer, nullable=False),
+      Column('location_id', Integer, nullable=False),
+      Column('event_datetime', DateTime, nullable=False),
+      Column('notes', Text(),
+          comment='Notes about the deployment (or undeployment to location 0)'),
       # constraints
       ForeignKeyConstraint(
         ['sensor_id'], ['sensor.sensor_id'],
@@ -518,7 +523,7 @@ def tables_create(engine=None, metadata=None):
     # Drop more dependent tables first
     drop_if_exists(engine=engine, table_name='sensor_observation')
     drop_if_exists(engine=engine, table_name='water_observation')
-    drop_if_exists(engine=engine, table_name='sensor_history')
+    drop_if_exists(engine=engine, table_name='sensor_deploy')
     drop_if_exists(engine=engine, table_name='sensor')
     drop_if_exists(engine=engine, table_name='location')
     drop_if_exists(engine=engine, table_name='project')
@@ -533,7 +538,7 @@ def tables_create(engine=None, metadata=None):
 
     d_name_table['location'] = table_location_create(metadata=metadata)
     d_name_table['sensor'] = table_sensor_create(metadata=metadata)
-    d_name_table['sensor_history'] = table_sensor_history_create(
+    d_name_table['sensor_deploy'] = table_sensor_deploy_create(
         metadata=metadata)
     d_name_table['water_observation'] = table_water_observation_create(
         metadata=metadata)
@@ -553,8 +558,8 @@ def tables_populate(engine=None, metadata=None,d_name_table=None):
     table_location_populate(engine=engine,
         table_object=d_name_table['location'])
     table_sensor_populate(engine=engine)
-    #table_sensor_history_populate(engine=engine,
-    #    table_object=d_name_table['sensor_history'])
+    #table_sensor_deploy_populate(engine=engine,
+    #    table_object=d_name_table['sensor_deploy'])
     # No need to initialize water_observtion table, as an import
     # program is now working
     d = get_d_sensor_deployments()
@@ -579,7 +584,7 @@ def run(env=None):
         engine_nick_name = 'hp_psql_lcroyster1'
         engine_nick_name = 'hp_mysql_lcroyster1'
 
-    engine = get_db_engine_by_name(name=engine_nick_name)
+    engine = get_sa_engine_by_name(name=engine_nick_name)
     metadata = MetaData()
 
     d_name_table = tables_create(engine=engine,metadata=metadata)

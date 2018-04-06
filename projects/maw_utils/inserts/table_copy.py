@@ -20,6 +20,8 @@ def register_modules():
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
+
+    sys.path.append('{}'.format(modules_root))
     sys.path.append('{}git/citrus/modules'.format(modules_root))
     return
 register_modules()
@@ -29,8 +31,9 @@ print("Using sys.path={}".format(repr(sys.path)))
 
 import datetime
 from collections import OrderedDict
-# Import slate of databases that podengo can use
-from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+
+# Import slate of databases that user can use
+from my_secrets.sa_engine_by_name import get_sa_engine_by_name
 
 #### Sqlalchemy
 from sqlalchemy import (
@@ -92,8 +95,8 @@ if 1 == 1:
       engine_nick_name_dest = 'uf_local_mysql_marshal1'
       engine_nick_name_dest = 'uf_local_rvp_test_sobekdb'
 
-      engine_source = get_db_engine_by_name(engine_nick_name_source)
-      engine_dest = get_db_engine_by_name(engine_nick_name_dest)
+      engine_source = get_sa_engine_by_name(engine_nick_name_source)
+      engine_dest = get_sa_engine_by_name(engine_nick_name_dest)
 
     #
     meta_source = MetaData(engine_source)

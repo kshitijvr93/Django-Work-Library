@@ -30,6 +30,7 @@ def register_modules():
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
+    sys.path.append('{}'.format(modules_root))
     sys.path.append('{}git/citrus/modules'.format(modules_root))
     return platform_name
 
@@ -49,7 +50,7 @@ from sqlalchemy import (
   )
 
 from sqlalchemy.schema import CreateTable
-from sqlalchemy_tools.podengo_db_engine_by_name import get_db_engine_by_name
+from my_secrets.sa_engine_by_name import get_sa_engine_by_name
 
 import sqlalchemy.sql.sqltypes
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -948,7 +949,7 @@ def run(env=None,do_diver=1, do_star=1, verbosity=1):
     log_file = open(log_file_name, mode="w", encoding='utf-8')
 
 
-    engine = get_db_engine_by_name(name=engine_nick_name)
+    engine = get_sa_engine_by_name(name=engine_nick_name)
 
     oyster_project = OysterProject(engine=engine, log_file=log_file)
 
