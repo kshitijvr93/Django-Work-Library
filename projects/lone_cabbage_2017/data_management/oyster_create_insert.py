@@ -16,8 +16,10 @@ def register_modules():
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
+
     sys.path.append('{}'.format(modules_root))
-    sys.path.append('{}git/citrus/modules'.format(modules_root))
+    s = os.sep
+    sys.path.append('{}git{}citrus{}modules'.format(modules_root,s,s))
     return platform_name
 platform_name = register_modules()
 import my_secrets
@@ -33,7 +35,7 @@ print("Using sys.path={}".format(repr(sys.path)))
 import datetime
 from collections import OrderedDict
 # Import slate of databases that user can use
-from my_secrets.sa_engine_by_name import get_sa_engine_by_name
+from my_secrets.settings_sqlalchemy import get_engine_spec_by_name
 
 #### Sqlalchemy
 from sqlalchemy import (
@@ -589,7 +591,9 @@ def run(env=None):
         engine_nick_name = 'hp_psql_lcroyster1'
         engine_nick_name = 'hp_mysql_lcroyster1'
 
-    engine = get_sa_engine_by_name(name=engine_nick_name)
+    sa_engine_spec = get_engine_spec_by_name(name=engine_nick_name)
+    engine = create_engine(sa_engine_spec)
+
     metadata = MetaData()
 
     d_name_table = tables_create(engine=engine,metadata=metadata)
