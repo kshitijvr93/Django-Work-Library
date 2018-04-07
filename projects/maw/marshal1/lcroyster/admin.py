@@ -4,6 +4,7 @@ from .models import Location, Project, Sensor, SensorDeploy, WaterObservation
 # from .views import FormUploadFile
 from django.db import models
 from django.forms import TextInput, Textarea
+from django import forms #For ModelForm
 
 class ExportCvsMixin:
     def export_as_csv(self, request, queryset):
@@ -25,10 +26,26 @@ class ExportCvsMixin:
     export_as_csv.short_description = "Export Selected"
 
 
+class LocationModelForm(forms.ModelForm):
+    # Set order of fields on add form so do not have to do a migrate
+    # just to affect the admin add form field order
+    fields = [
+        'location_id',
+        'name',
+        'notes',
+        'alias1',
+        'alias2',
+        'latitude',
+        'longitude',
+        'tile_id',
+        ]
+
+
 class LcroysterModelAdmin(admin.ModelAdmin):
     # Using should be a settings.py DATABASES key, a 'connection' name,
     # actually, as called in misc Django messages
     using = 'lcroyster_connection'
+    form = LocationModelForm
 
     # Note, these overrides are for model fields withough explicit forms
     # Where a form is defined, its form.CharField(..widget params...) widgets
@@ -82,7 +99,22 @@ class ProjectModelAdmin(LcroysterModelAdmin):
 admin.site.register(Project, ProjectModelAdmin)
 
 class LocationModelAdmin(LcroysterModelAdmin):
-    pass
+    fields = [
+        'location_id',
+        'name',
+        'notes',
+        'alias1',
+        'alias2',
+        'latitude',
+        'longitude',
+        'tile_id',
+    ]
+    list_display = ['location_id','name','alias1', 'latitude','longitude']
+    actions = [
+      'export_as_csv',
+    ]
+
+
 admin.site.register(Location, LocationModelAdmin)
 
 class SensorModelAdmin(LcroysterModelAdmin):
@@ -100,7 +132,6 @@ class SensorDeployModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
 admin.site.register(SensorDeploy, SensorDeployModelAdmin)
 
 class WaterObservationModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
-
     actions = [
       'export_as_csv',
     ]
