@@ -54,7 +54,7 @@ class HathiModelAdmin(admin.ModelAdmin):
         if action_to_delete in actions:
             del actions[action_to_delete]
 
-#end class HathiRouter
+#end class HathiModelAdmin
 
 class FileInline(admin.TabularInline):
     model = File

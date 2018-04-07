@@ -18,8 +18,6 @@ def index(request):
     msg += ("\nLatest item modified is '{}'"
         .format(latest_item_list[0].name))
 
-    #admin_href = "localhost:8000/admin/hathitrust"
-    #msg += "</br><a href='{}''>Hathitrust Administration</a>".format(admin_href)
     context = {
         'latest_item_list' : latest_item_list,
         'item_count' : len(latest_item_list),

@@ -4,6 +4,16 @@ database tables to hold project, sensors, locations, info that will not
 often change, and is easily initialized via hard coding to
 facilitate set up of other applications.
 as of January 2018 or so...
+
+As of April 2018, also see Django project UF Lib MAW, application Lcroyster
+manages creation and also manual editing of oyster project tables, and
+UF may deprecate or retire this code in favor of using that
+MAW Application.
+
+See also utility import_sensor_data.py - it will be modified in two phases:
+First phase it will delete all rows of imported tables and in phase two it
+will not delete any rows, but rther honor a paramater of minimum date of
+water observation rows to insert when it seeks files/observations to import.
 '''
 
 import sys, os, os.path, platform
@@ -60,7 +70,7 @@ As of sqlalchemy 1.2.2, scanning google searches, it seems this is the best if
 not only apparent way I could find to check if a table exists and then to drop
 that table generically for engines psql and MySQL and possible others engines.
 '''
-def drop_if_existsw(engine=None,table_name=None):
+def drop_if_exists(engine=None,table_name=None):
 
     required_params = ['engine','table_name']
     if not all(required_params):
@@ -120,7 +130,6 @@ def table_project_populate(engine=None,table_object=None):
         },
         {
            #'project_id': 2,
-          'name':'Lone Cabbage Oyster',
           'name':'Lone Cabbage Fish 1',
           'start_date':'2018/01/01',
           'status':'GO',
@@ -128,7 +137,6 @@ def table_project_populate(engine=None,table_object=None):
         },
         {
            #'project_id': 3,
-          'name':'Lone Cabbage Oyster',
           'name':'Lone Cabbage Fish 2',
           'start_date':'2018/01/01',
           'status':'GO',
@@ -292,8 +300,14 @@ def table_sensor_create(metadata=None):
           comment='Automatically incremented row id.'),
       UniqueConstraint('{}_id'.format(table_name),
           name='uq1_{}'.format(table_name) ),
-      Column('project_id', Integer),
-      Column('location_id', Integer),
+      Column('project_id', Integer,
+         comment="Main or owner project of this sensor"),
+      Column('location_id', Integer,
+          comment="The most recent deployed location of this sensor. "
+            + "Maintaining this automatically by some method when "
+            + "table sensor_deployment is updated may be convenient."
+      # is updated.
+          "),
       Column('manufacturer', String(150)),
       Column('serial_number', String(150)),
       Column('model_type', String(150)),
@@ -374,8 +388,10 @@ def table_sensor_deploy_create(metadata=None):
       UniqueConstraint('{}_id'.format(table_name),
           name='uq1_{}'.format(table_name) ),
       Column('sensor_id', Integer, nullable=False),
-      Column('location_id', Integer, nullable=False),
-      Column('event_datetime', DateTime, nullable=False),
+      Column('deploy_datetime', DateTime, nullable=False),
+      Column('location_id', Integer, nullable=False,
+          comment="Location id where sensor is deployed as of the "
+              "deploy_datetime, but where location 0 means not in service"),
       Column('notes', Text(),
           comment='Notes about the deployment (or undeployment to location 0)'),
       # constraints
@@ -387,7 +403,7 @@ def table_sensor_deploy_create(metadata=None):
         name='fk_{}_location_id'.format(table_name)),
       )
     return table_object
-#def table_sensor_create
+#def table_sensor_deploy_create
 
 def get_d_sensor_deployments():
 
@@ -488,6 +504,7 @@ def table_water_observation_create(metadata=None):
       Column('observation_datetime', DateTime),
       UniqueConstraint('sensor_id','observation_datetime',
           name='uq2_{}'.format(table_name) ),
+      #
       Column('in_service', Integer),
       # location_id can be derived, maybe no need to populate via imports?
       Column('location_id', Integer, default=1),
@@ -519,11 +536,11 @@ def table_water_observation_create(metadata=None):
 #end def table_water_observation_create
 
 '''
-<summary name="tables_create">
+<summary name="tables_drop_create">
 </summary>
 
 '''
-def tables_create(engine=None, metadata=None):
+def tables_drop_create(engine=None, metadata=None):
     #metadata = MetaData()
     d_name_table = {}
 
@@ -554,7 +571,7 @@ def tables_create(engine=None, metadata=None):
 
     metadata.create_all(engine, checkfirst=False)
     return d_name_table
-#end def tables_create
+#end def tables_drop_create
 
 def tables_populate(engine=None, metadata=None,d_name_table=None):
     #print("Got metadata.tables={}".format(repr(metadata.tables)))
@@ -577,7 +594,7 @@ def tables_populate(engine=None, metadata=None,d_name_table=None):
 
 # MAIN CODE
 def run(env=None):
-    me="run (oyster_tables_create)"
+    me="run (oyster_tables_drop_create)"
     print("STARTING: {}: starting".format(me))
     if env == 'uf':
         #something all messet up.. THIS works for UF! using env of uf...
@@ -596,7 +613,7 @@ def run(env=None):
 
     metadata = MetaData()
 
-    d_name_table = tables_create(engine=engine,metadata=metadata)
+    d_name_table = tables_drop_create(engine=engine,metadata=metadata)
 
     # Populate only certain constant hard-coded table data
     tables_populate(engine=engine,metadata=metadata,d_name_table=d_name_table)

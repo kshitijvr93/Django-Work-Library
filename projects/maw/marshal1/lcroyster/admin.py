@@ -75,7 +75,7 @@ class LcroysterModelAdmin(admin.ModelAdmin):
         if action_to_delete in actions:
             del actions[action_to_delete]
 
-#end class HathiRouter
+#end class LcroysterModelAdmin
 
 class ProjectModelAdmin(LcroysterModelAdmin):
     pass
@@ -90,7 +90,7 @@ class SensorModelAdmin(LcroysterModelAdmin):
 admin.site.register(Sensor, SensorModelAdmin)
 
 class SensorDeployModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
-    list_display = ['sensor_id',]
+    list_display = ['sensor_id', 'deploy_datetime']
 
     actions = [
       'export_as_csv',
