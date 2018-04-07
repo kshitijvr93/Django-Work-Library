@@ -485,6 +485,10 @@ def sequence_paths(input_folders=None, input_path_globs=None, verbosity=0):
     # end for input folder
 # end def sequence_paths
 
+#
+def get_db_engine_by_name():
+    return
+    
 # TEST
 def test_sequence_days():
     days = sequence_days(cymd_start='20170715', cymd_end='20170825')

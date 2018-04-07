@@ -50,7 +50,7 @@ from sqlalchemy import (
   )
 
 from sqlalchemy.schema import CreateTable
-from my_secrets.sa_engine_by_name import get_sa_engine_by_name
+from my_secrets.settings_sqlalchemy import get_engine_spec_by_name
 
 import sqlalchemy.sql.sqltypes
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -558,14 +558,15 @@ class Star():
         # Key is 'serial number' from a raw sensor file, a string really.
         # Value is the db inter id value of the sensor
         self.d_serial_sensor = {
-            '8814' : 2,  #loc 1 implied by folder name 20180218
-            '9058' : 4,  #loc 3 was implied by folder name 20180218
-            '9060' : 5,  #loc 3 was implied by folder name 20180218
-            '9061' : 6,  #loc 3 was implied by folder name 20180218
-            '9035' : 7,  #loc 3 was implied by folder name 20180218
-            '9062' : 8,  #loc 3 was implied by folder name 20180218
-            '9036' : 9,  #loc 3 was implied by folder name 20180218
-            '9059' : 10,  #loc 3 was implied by folder name 20180218
+            '8814' : 1,  #Values not used yet
+            '9058' : 2,
+            '9060' : 3,
+            '9061' : 4,
+            '9035' : 5,
+            '9062' : 6,
+            '9036' : 7,
+            '9059' : 8,
+            '9238' : 9,
         }
 
     def __init__(self,project=None, input_file_folders=None,
@@ -677,7 +678,7 @@ class Star():
                .format(repr(ex)))
 
             print(msg)
-            stdout.flush()
+            sys.stdout.flush()
             print(msg, file=log_file)
             d_row = None
 
@@ -765,7 +766,7 @@ class Star():
                         msg=("Input_file_name: {}\n"
                              "Found serial number '{}' not in '{}'"
                             .format(input_file_name,serial_number,
-                            d_serial_sensor.keys()))
+                            repr(d_serial_sensor.keys())) )
                         raise ValueError(msg)
 
                     sensor_id = self.d_serial_sensor[serial_number]
@@ -878,6 +879,8 @@ class Oyster_Sensor():
                 'DST CTD 9035' : 7, # LC-WQ7 folder on 20180218
                 'DST CTD 9062' : 8, # LC-WQ8 folder on 20180218
                 'DST CTD 9036' : 9, # LC-WQ9 folder on 20180218
+                # Stuck this in to test parsing 20180407
+                'DST CTD 9238' : 9,
             }
         else:
             self.serial_location = d_serial_location
@@ -928,7 +931,16 @@ def run(env=None,do_diver=1, do_star=1, verbosity=1):
     if env == 'uf':
         input_folder=(
           # 'U:\\data\\oyster_sensor\\2017\\'
-          'T:\\WEC\\Groups\\Oyster Project\\wq_robert\\Raw\\Latest'
+          'T:\\WEC\\Groups\\Oyster Project\\project_task\\'
+          't7_data_management\\wq\\'
+          )
+        print("Using 'uf' input folder='{}'"
+           .format(input_folder), file=sys.stdout)
+        engine_nick_name = 'uf_local_mysql_lcroyster1'
+    elif env == 'thinkpad':
+        input_folder=(
+          # 'U:\\data\\oyster_sensor\\2017\\'
+          'C:\\rvp\\data\\Oyster Project\\wq'
           )
         print("Using 'uf' input folder='{}'"
            .format(input_folder), file=sys.stdout)
@@ -942,14 +954,15 @@ def run(env=None,do_diver=1, do_star=1, verbosity=1):
         engine_nick_name = 'hp_psql_lcroyster1'
         engine_nick_name = 'hp_mysql_lcroyster1'
 
-    log_file_name="{}/log_import.txt".format(input_folder)
+    log_file_name="{}{}log_import.txt".format(input_folder,os.sep)
     print("{}: STARTING: Using log_file_name={}".format(me,log_file_name),
         file=sys.stdout, flush=True)
 
     log_file = open(log_file_name, mode="w", encoding='utf-8')
 
 
-    engine = get_sa_engine_by_name(name=engine_nick_name)
+    engine_spec = get_engine_spec_by_name(name=engine_nick_name)
+    engine = create_engine(engine_spec)
 
     oyster_project = OysterProject(engine=engine, log_file=log_file)
 
@@ -967,7 +980,7 @@ def run(env=None,do_diver=1, do_star=1, verbosity=1):
     if do_diver == 1:
         diver = Diver(project=oyster_project,
             input_file_folders=input_file_folders,
-            input_file_globs=['**/*.MON'])
+            input_file_globs=['**/*diver.MON'])
         diver.parse_files(verbosity=verbosity)
     # star = Star(input_folders=input_folder,
     #    input_file_globs = ['**/Star*WQ[0-9]'])
@@ -976,7 +989,7 @@ def run(env=None,do_diver=1, do_star=1, verbosity=1):
         star = Star(project=oyster_project,
             input_file_folders=input_file_folders,
             #input_file_globs=['**/Star*WQ[0-9]']
-            input_file_globs=['**/Star*.DAT',]
+            input_file_globs=['**/*star.DAT',]
             )
 
         print("{}: calling parse_files".format(me),file=log_file)
@@ -996,7 +1009,9 @@ if testme == 1:
     if platform_name == 'linux':
         env = 'home'
     else:
-        env = 'uf'
+        #env = 'uf'
+        # 20180407  - another windows planform, my thinkpad
+        env = 'thinkpad'
 
     run(env=env, do_diver=do_diver, do_star=do_star, verbosity=1)
     print("Done",flush=True)
