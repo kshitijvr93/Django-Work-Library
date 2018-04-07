@@ -31,8 +31,8 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'hathitrust.apps.HathitrustConfig',
     'cuba_libro.apps.CubaLibroConfig',
-    'maw_home.apps.MawHomeConfig',
     'lcroyster.apps.LcroysterConfig',
+    'maw_home.apps.MawHomeConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -176,6 +176,7 @@ DATABASES = {
 DATABASE_ROUTERS = [
     'hathitrust.models.HathiRouter',
     'cuba_libro.models.Cuba_LibroRouter',
+    'lcroyster.models.LcroysterRouter',
 ]
 
 
