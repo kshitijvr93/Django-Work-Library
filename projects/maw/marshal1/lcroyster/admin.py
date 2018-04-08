@@ -82,11 +82,27 @@ class LcroysterModelAdmin(admin.ModelAdmin):
 #end class LcroysterModelAdmin
 
 
-class ProjectModelAdmin(LcroysterModelAdmin):
+class ProjectModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
+    using = 'lcroyster_connection'
     list_display = [
       'project_id','name','principal_investigators'
       ]
-    pass
+
+    actions = [
+      'export_as_csv',
+    ]
+
+    '''
+    From the django admin cookbook: method to delete an action from admin,
+    and in this case it is the 'delete_selected' action.
+    '''
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        action_to_delete = 'delete_selected'
+        if action_to_delete in actions:
+            #print("actions='{}'".format(repr(actions)))
+            del actions[action_to_delete]
+# end class ProjectModelAdmin
 
 admin.site.register(Project, ProjectModelAdmin)
 
@@ -105,7 +121,6 @@ class LocationModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
         'longitude',
         'tile_id',
         ]
-
 
     search_fields = [
         'name', 'alias1', 'alias2', 'tile_id'
@@ -133,20 +148,68 @@ class LocationModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
 
 admin.site.register(Location, LocationModelAdmin)
 
-class SensorTypeModelAdmin(LcroysterModelAdmin):
-    pass
+class SensorTypeModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
+
+    actions = [
+      'export_as_csv',
+    ]
+
+    '''
+    From the django admin cookbook: method to delete an action from admin,
+    and in this case it is the 'delete_selected' action.
+    '''
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        action_to_delete = 'delete_selected'
+        if action_to_delete in actions:
+            #print("actions='{}'".format(repr(actions)))
+            del actions[action_to_delete]
+        return actions
+
 admin.site.register(SensorType, SensorTypeModelAdmin)
 
-class SensorModelAdmin(LcroysterModelAdmin):
+class SensorModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
     list_display = [
         'sensor_type','serial_number',
         'location_id',
       ]
 
+    actions = [
+      'export_as_csv',
+    ]
+
+    '''
+    From the django admin cookbook: method to delete an action from admin,
+    and in this case it is the 'delete_selected' action.
+    '''
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        action_to_delete = 'delete_selected'
+        if action_to_delete in actions:
+            #print("actions='{}'".format(repr(actions)))
+            del actions[action_to_delete]
+        return actions
+
 admin.site.register(Sensor, SensorModelAdmin)
 
-class SensorServiceModelAdmin(LcroysterModelAdmin):
-    pass
+class SensorServiceModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
+    actions = [
+      'export_as_csv',
+    ]
+
+    '''
+    From the django admin cookbook: method to delete an action from admin,
+    and in this case it is the 'delete_selected' action.
+    '''
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        action_to_delete = 'delete_selected'
+        if action_to_delete in actions:
+            #print("actions='{}'".format(repr(actions)))
+            del actions[action_to_delete]
+        return actions
+
+# end class SensorServiceModelAdmin
 admin.site.register(SensorService, SensorServiceModelAdmin)
 
 class SensorDeployModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
@@ -155,7 +218,21 @@ class SensorDeployModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
     actions = [
       'export_as_csv',
     ]
+
+    '''
+    From the django admin cookbook: method to delete an action from admin,
+    and in this case it is the 'delete_selected' action.
+    '''
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        action_to_delete = 'delete_selected'
+        if action_to_delete in actions:
+            #print("actions='{}'".format(repr(actions)))
+            del actions[action_to_delete]
+        return actions
+
 #end class SensorDeployModelAdmin
+
 
 admin.site.register(SensorDeploy, SensorDeployModelAdmin)
 
@@ -163,6 +240,18 @@ class WaterObservationModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
     actions = [
       'export_as_csv',
     ]
+
+    '''
+    From the django admin cookbook: method to delete an action from admin,
+    and in this case it is the 'delete_selected' action.
+    '''
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        action_to_delete = 'delete_selected'
+        if action_to_delete in actions:
+            #print("actions='{}'".format(repr(actions)))
+            del actions[action_to_delete]
+        return actions
 # end class WaterOvservationModelAdmin
 
 admin.site.register(WaterObservation, WaterObservationModelAdmin)
