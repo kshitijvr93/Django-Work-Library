@@ -59,7 +59,7 @@ class LcroysterRouter:
 
 class Project(models.Model):
     project_id = models.AutoField(primary_key=True)
-    project_name = models.CharField(max_length=255,unique=True,
+    name = models.CharField(max_length=255,unique=True,
       help_text="UF name for this project"
       )
     proposal_id = models.CharField(max_length=200,unique=True,blank=True)
@@ -94,6 +94,10 @@ class Project(models.Model):
     notes = models.TextField(max_length=255, blank=True, null=True,
         help_text='Notes about this project and related info in free form.')
 
+    def __str__(self):
+        return 'Project: {}'.format(self.name)
+#end class Project
+
 class Location(models.Model):
     location_id = models.IntegerField(primary_key=True)
     tile_id = models.IntegerField(blank=True, null=True)
@@ -101,16 +105,20 @@ class Location(models.Model):
     longitude = models.FloatField(blank=True, null=True)
     name = models.CharField(unique=True, max_length=200, blank=True,
         null=True,
-        help_text='Location name, eg LC_WQ1, LC_WQ2. Shorter for reports.')
+        help_text='Location name, eg LCR Buoy One.')
     alias1 = models.CharField(unique=True, max_length=200, blank=True,
         null=True,
-        help_text='Possibly other name designation of the location')
+        help_text='Alternative name designation of the location')
     alias2 = models.CharField(unique=True, max_length=200, blank=True,
         null=True,
-        help_text='Possibly other name designation of the location')
+        help_text='Alternative name designation of the location')
 
-    notes = models.TextField(max_length=255, blank=True, null=True,
+    notes = models.TextField(max_length=2550, blank=True, null=True,
         help_text='Notes about the location')
+
+    def __str__(self):
+        return '{}'.format(self.name)
+#end class Location
 
 class SensorType(models.Model):
     # NOTE: consider: make all these fields read-only and require manual
@@ -124,6 +132,9 @@ class SensorType(models.Model):
       help_text='For example: vanEssen usually has type Diver, '
          'and Star-Oddi usually has type CT. '
       )
+
+    def __str__(self):
+        return '{}:{}'.format(self.manufacturer, self.model_type)
 # end class SensorType
 
 class Sensor(models.Model):
@@ -136,25 +147,27 @@ class Sensor(models.Model):
        help_text='This identifies the manufacturer and sensor type.'
        )
     serial_number = models.CharField(max_length=150, blank=True, null=True,
-       help_text='For example: Vnnnn for a diver or Snnnn for a Star ODDI. '
-       'This must match exactly how the import program parses out the serial '
-       'number from the *diver.Mon or *star.DAT files. See the first nine '
-       'sensors and their serial numbers for examples.'
+       help_text='For example: VNNNN for a vanEssen:diver sensor '
+       'or simply NNNN for a Star-Oddi:CT sensor. '
+       'For example, one '
+       'vanEssen:Diver sensor serial number is V5602 and one '
+       'Star-Oddi:CT serial number is 8814.'
       )
+    location = models.ForeignKey(Location, models.DO_NOTHING, blank=True,
+        null=True,
+        help_text='This field is reserved to report the most recent deployed '
+        'location of this sensor. Value 0 or Null means sensor not in service.'
+        'Unless and until a new database view is implemented, this '
+        'field is reserved to be updated automatically by some '
+        'program when table sensor_deploy is updated, '
+        'so manual edits could be overwritten',
+        )
 
     initial_deployment_datetime = models.DateTimeField(blank=True, null=True,
       help_text='Date of initial employment.')
 
     manufacture_date = models.DateField(blank=True, null=True)
     battery_expiration_date = models.DateField(blank=True, null=True)
-    location = models.ForeignKey(Location, models.DO_NOTHING, blank=True,
-        null=True,
-        help_text='This field is reserved to report the most recent deployed '
-          'location of this sensor. '
-          'Unless and until a new database view is implemented, this '
-          'field may be available to be updated automatically by some '
-          'program when table sensor_deploy is updated.'
-        )
 
     '''
     Retire these fields: they may vary between readings, and in any case are
@@ -188,6 +201,24 @@ class Sensor(models.Model):
     notes = models.TextField(max_length=255, blank=True, null=True,
         help_text='More notes about the sensor'
         )
+
+    # See how to support order by ForeignKey  on change list form
+    # https://stackoverflow.com/questions/8992865/django-admin-sort-foreign-key-field-list
+    # come back to this... still cannot order by location_id on the
+    # sensor change list form in admin...
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "location_id":
+            kwargs["queryset"] = Location.objects.order_by('name')
+        return (super(MyModelAdmin, self)
+            .formfield_for_foreignkey(db_field, request, **kwargs))
+
+    def __str__(self):
+        return '{}:{} {}'.format(self.sensor_type.manufacturer
+          ,self.sensor_type.model_type, self.serial_number)
+
+    class Meta:
+        unique_together = (('sensor_type', 'serial_number'),)
 # end class Sensor
 
 
@@ -198,10 +229,12 @@ class SensorDeploy(models.Model):
     location = models.ForeignKey(Location, on_delete=models.DO_NOTHING,
         help_text='Location id where the sensor is deployed as of the '
             + 'deploy date-time, where special location 0 means not in service')
-    meters_above_seafloor = models.FloatField(blank=True, null=True)
     notes = models.TextField(max_length=255, blank=True, null=True,
         help_text='Notes about the deployment'
         )
+
+    def __str__(self):
+        return '{}:{}'.format(self.sensor.serial_number, self.deploy_datetime)
 # end class SensorDeploy
 
 
@@ -236,10 +269,13 @@ class SensorService(models.Model):
       'active when extracted or (2) whether it was set to be active when '
       're-inserted at the end of this service? '
       )
+    measurements_downloaded = models.IntegerField(blank=True, null=True)
     heavily_fouled = models.BooleanField(
       help_text='Y or N: Whether heavily fouled.'
       )
-    battery_life_remaining_percent = models.IntegerField(blank=True, null=True)
+    battery_life_remaining_percent = models.IntegerField(blank=True, null=True,
+      help_text="Enter an integer from 0 to 100."
+      )
     notes = models.TextField(max_length=255, blank=True, null=True,
       help_text='Notes about the deployment'
       '\nISSUE: Dropped download_time, next_download,measurements_downloaded, '
@@ -247,6 +283,9 @@ class SensorService(models.Model):
       'and redeployed because this is coverd by water_observations, '
       'service_datetime and sensor_deploy data.'
         )
+
+    def __str__(self):
+        return '{}:{}'.format(self.sensor.serial_number, self.service_datetime)
 # end class SensorService
 
 
@@ -277,4 +316,8 @@ class WaterObservation(models.Model):
         )
     class Meta:
         unique_together = (('sensor', 'observation_datetime'),)
+
+    def __str__(self):
+        return '{}:{}'.format(self.sensor.serial_number,
+          self.observation_datetime)
 #end class waterobservation

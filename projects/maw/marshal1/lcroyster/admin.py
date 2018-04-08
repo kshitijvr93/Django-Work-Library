@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import Location, Project, Sensor, SensorDeploy, WaterObservation
+from .models import (Location, Project,
+  SensorType, Sensor, SensorService, SensorDeploy, WaterObservation
+  )
 
 # from .views import FormUploadFile
 from django.db import models
@@ -41,7 +43,6 @@ class LcroysterModelAdmin(admin.ModelAdmin):
     # Using should be a settings.py DATABASES key, a 'connection' name,
     # actually, as called in misc Django messages
     using = 'lcroyster_connection'
-    #form = LocationModelForm
 
     # Note, these overrides are for model fields withough explicit forms
     # Where a form is defined, its form.CharField(..widget params...) widgets
@@ -80,27 +81,31 @@ class LcroysterModelAdmin(admin.ModelAdmin):
 
 #end class LcroysterModelAdmin
 
-class LocationModelForm(forms.ModelForm):
-    # Set order of fields on add form so do not have to do a migrate
-    # just to affect the admin add form field order
-    fields = [
-        'location_id',
-        'name',
-        'notes',
-        'alias1',
-        'alias2',
-        'latitude',
-        'longitude',
-        'tile_id',
-        ]
 
 class ProjectModelAdmin(LcroysterModelAdmin):
+    list_display = [
+      'project_id','name','principal_investigators'
+      ]
     pass
+
 admin.site.register(Project, ProjectModelAdmin)
 
 class LocationModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
     #Maybe need this to show action list ?
     using = 'lcroyster_connection'
+
+    # Field order for admin 'ADD' Form
+    fields = [
+        'location_id',
+        'name',
+        'alias1',
+        'alias2',
+        'notes',
+        'latitude',
+        'longitude',
+        'tile_id',
+        ]
+
 
     search_fields = [
         'name', 'alias1', 'alias2', 'tile_id'
@@ -128,9 +133,21 @@ class LocationModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
 
 admin.site.register(Location, LocationModelAdmin)
 
-class SensorModelAdmin(LcroysterModelAdmin):
+class SensorTypeModelAdmin(LcroysterModelAdmin):
     pass
+admin.site.register(SensorType, SensorTypeModelAdmin)
+
+class SensorModelAdmin(LcroysterModelAdmin):
+    list_display = [
+        'sensor_type','serial_number',
+        'location_id',
+      ]
+
 admin.site.register(Sensor, SensorModelAdmin)
+
+class SensorServiceModelAdmin(LcroysterModelAdmin):
+    pass
+admin.site.register(SensorService, SensorServiceModelAdmin)
 
 class SensorDeployModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
     list_display = ['sensor_id', 'deploy_datetime','location_id']
