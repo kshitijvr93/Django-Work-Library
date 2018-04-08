@@ -63,17 +63,22 @@ class Project(models.Model):
       help_text="UF name for this project"
       )
     proposal_id = models.CharField(max_length=200,unique=True,blank=True)
-    sponsor_names = models.CharField(max_length=200,blank=True)
-    sponsors_award_id = models.CharField(max_length=200,unique=True)
-    uf_award_id = models.CharField(max_length=200,unique=True)
+    sponsor_names = models.CharField(max_length=200,blank=True, null=True)
+    sponsors_award_id = models.CharField(max_length=200,unique=True,
+      blank=True, null=True)
+    uf_award_id = models.CharField(max_length=200,unique=True, blank=True)
     #Management ccommand inspect_db did not pick up the unique
-    contact_investigator = models.CharField(max_length=255,unique=True)
-    principal_investigators = models.TextField(blank=True,null=True,unique=True,
+    contact_investigator = models.CharField(max_length=255,unique=True,
+      blank=True, null=True)
+    principal_investigators = models.TextField(max_length=255, blank=True,
+      null=True,
       help_text='Usually this is a single investigator, but some sponsors '
       'like NSF allow multiple principal investigators'
       )
-    co_principal_investigators = models.TextField(max_length=200,unique=True)
-    collaborators = models.TextField(max_length=200,unique=True)
+    co_principal_investigators = models.TextField(max_length=200,
+      blank=True, null=True)
+    collaborators = models.TextField(max_length=200,
+      blank=True, null=True)
 
     award_start_date = models.DateField(blank=True, null=True,
       help_text='Notes about this project and related info free form.'
@@ -81,16 +86,13 @@ class Project(models.Model):
     award_end_date = models.DateField(blank=True, null=True,
       help_text='Notes about this project and related info free form.'
       )
-    responsible_unit = models.CharField(max_length=200,unique=True)
-    department_id = models.CharField(max_length=200,unique=True)
+    responsible_unit = models.CharField(max_length=200,unique=True,
+      blank=True, null=True)
+    department_id = models.CharField(max_length=200,unique=True,
+      blank=True, null=True)
 
-    notes = models.TextField(blank=True, null=True,
+    notes = models.TextField(max_length=255, blank=True, null=True,
         help_text='Notes about this project and related info in free form.')
-
-    class Meta:
-        managed = True
-        db_table = 'project'
-        #unique_together = (('name', 'start_date'),)
 
 class Location(models.Model):
     location_id = models.IntegerField(primary_key=True)
@@ -107,12 +109,8 @@ class Location(models.Model):
         null=True,
         help_text='Possibly other name designation of the location')
 
-    notes = models.TextField(blank=True, null=True,
+    notes = models.TextField(max_length=255, blank=True, null=True,
         help_text='Notes about the location')
-
-    class Meta:
-        managed = True
-        db_table = 'location'
 
 class SensorType(models.Model):
     # NOTE: consider: make all these fields read-only and require manual
@@ -126,16 +124,7 @@ class SensorType(models.Model):
       help_text='For example: vanEssen usually has type Diver, '
          'and Star-Oddi usually has type CT. '
       )
-
-    initial_deployment_date = models.DateField(blank=True, null=True,
-      help_text='Date of initial employment.')
-
-    serial_number = models.CharField(max_length=150, blank=True, null=True,
-       help_text='For example: Vnnnn for a vanEssen diver or Snnnn for a Star-Oddi. '
-       '\nThis must match exactly how the import program parses out the serial '
-       'number from the *diver.Mon or *star.DAT files. See the first nine '
-       'sensors and their serial numbers for examples.'
-      )
+# end class SensorType
 
 class Sensor(models.Model):
     sensor_id = models.AutoField(primary_key=True)
@@ -152,6 +141,10 @@ class Sensor(models.Model):
        'number from the *diver.Mon or *star.DAT files. See the first nine '
        'sensors and their serial numbers for examples.'
       )
+
+    initial_deployment_datetime = models.DateTimeField(blank=True, null=True,
+      help_text='Date of initial employment.')
+
     manufacture_date = models.DateField(blank=True, null=True)
     battery_expiration_date = models.DateField(blank=True, null=True)
     location = models.ForeignKey(Location, models.DO_NOTHING, blank=True,
@@ -192,14 +185,10 @@ class Sensor(models.Model):
     range_high_mS_cm = models.FloatField(blank=True, null=True,
       help_text='Highest acceptable value of mS_cm')
 
-    notes = models.TextField(blank=True, null=True,
+    notes = models.TextField(max_length=255, blank=True, null=True,
         help_text='More notes about the sensor'
         )
-
-    class Meta:
-        managed = True
-        db_table = 'sensor'
-# end class SensorService
+# end class Sensor
 
 
 class SensorDeploy(models.Model):
@@ -210,13 +199,10 @@ class SensorDeploy(models.Model):
         help_text='Location id where the sensor is deployed as of the '
             + 'deploy date-time, where special location 0 means not in service')
     meters_above_seafloor = models.FloatField(blank=True, null=True)
-    notes = models.TextField(blank=True, null=True,
+    notes = models.TextField(max_length=255, blank=True, null=True,
         help_text='Notes about the deployment'
         )
-
-    class Meta:
-        managed = True
-        db_table = 'sensor_deploy'
+# end class SensorDeploy
 
 
 class SensorService(models.Model):
@@ -254,17 +240,13 @@ class SensorService(models.Model):
       help_text='Y or N: Whether heavily fouled.'
       )
     battery_life_remaining_percent = models.IntegerField(blank=True, null=True)
-    notes = models.TextField(blank=True, null=True,
+    notes = models.TextField(max_length=255, blank=True, null=True,
       help_text='Notes about the deployment'
       '\nISSUE: Dropped download_time, next_download,measurements_downloaded, '
       'project, site, lat, lon, manufacurer, type date_deployed, time_started, '
       'and redeployed because this is coverd by water_observations, '
       'service_datetime and sensor_deploy data.'
         )
-
-    class Meta:
-        managed = True
-        db_table = 'sensor_deploy'
 # end class SensorService
 
 
@@ -293,8 +275,6 @@ class WaterObservation(models.Model):
     note = models.CharField(max_length=32, blank=True, null=True,
         help_text="Short note on observation, 32 characters or less."
         )
-
     class Meta:
-        managed = True
-        db_table = 'water_observation'
         unique_together = (('sensor', 'observation_datetime'),)
+#end class waterobservation
