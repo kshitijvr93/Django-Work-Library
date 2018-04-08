@@ -54,8 +54,7 @@ class LcroysterRouter:
         if app_label == self.app_label:
             return db == self.app_db
         return None
-
-#end class
+#end class LCRoysterRouter
 
 # Create your models here.
 
@@ -63,7 +62,10 @@ class Project(models.Model):
     project_id = models.AutoField(primary_key=True)
     #Management ccommand inspect_db did not pick up the unique
     name = models.CharField(max_length=200,unique=True)
-    start_date = models.DateTimeField(blank=True, null=True)
+    start_date = models.DateField(blank=True, null=True)
+    primary_investigator = models.CharField(max_length=200,unique=True)
+    notes = models.TextField(blank=True, null=True,
+        help_text='Notes about this project and related info free form.')
 
     class Meta:
         managed = True
@@ -105,16 +107,17 @@ class Sensor(models.Model):
     manufacturer = models.CharField(max_length=150, blank=True, null=True)
     serial_number = models.CharField(max_length=150, blank=True, null=True)
     model_type = models.CharField(max_length=150, blank=True, null=True)
-    manufacture_date = models.DateTimeField(blank=True, null=True)
+    manufacture_date = models.DateField(blank=True, null=True)
     battery_expiration_date = models.DateField(blank=True, null=True)
     observation_period_unit = models.CharField(max_length=50, blank=True,
         null=True, help_text="Examples: Minute, Hour, or Day, etc.")
     observation_period_unit_count = models.CharField(max_length=50, blank=True,
         null=True,
-        help_text="The count of observation_period units in one period.")
+        help_text="The typical number of observation period units "
+            "between observations or readings.")
     status_observation = models.CharField(max_length=150, blank=True, null=True)
-    status_observation_date = models.DateTimeField(blank=True, null=True)
-    meters_above_seafloor = models.DateTimeField(blank=True, null=True)
+    status_observation_datetime = models.DateTimeField(blank=True, null=True)
+    meters_above_seafloor = models.FloatField(blank=True, null=True)
 
     class Meta:
         managed = True

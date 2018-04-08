@@ -6,7 +6,16 @@ from django.db import models
 from django.forms import TextInput, Textarea
 from django import forms #For ModelForm
 
+import csv
+from django.http import HttpResponse
+
+'''
+requires:
+   import csv
+   from django.http import HttpResponse
+'''
 class ExportCvsMixin:
+
     def export_as_csv(self, request, queryset):
         meta = self.model._meta
         field_names = [field.name for field in meta.fields]
@@ -25,27 +34,14 @@ class ExportCvsMixin:
 
     export_as_csv.short_description = "Export Selected"
 
-
-class LocationModelForm(forms.ModelForm):
-    # Set order of fields on add form so do not have to do a migrate
-    # just to affect the admin add form field order
-    fields = [
-        'location_id',
-        'name',
-        'notes',
-        'alias1',
-        'alias2',
-        'latitude',
-        'longitude',
-        'tile_id',
-        ]
+#end class ExportCvsMixin
 
 
 class LcroysterModelAdmin(admin.ModelAdmin):
     # Using should be a settings.py DATABASES key, a 'connection' name,
     # actually, as called in misc Django messages
     using = 'lcroyster_connection'
-    form = LocationModelForm
+    #form = LocationModelForm
 
     # Note, these overrides are for model fields withough explicit forms
     # Where a form is defined, its form.CharField(..widget params...) widgets
@@ -82,23 +78,11 @@ class LcroysterModelAdmin(admin.ModelAdmin):
         return super().formfield_for_manytomany(db_field, request,
             using=self.using, **kwargs)
 
-    '''
-    From the django admin cookbook: method to delete an action from admin,
-    and in this case it is the 'delete_selected' action.
-    '''
-    def get_actions(self, request):
-        actions = super().get_actions(request)
-        action_to_delete = 'delete_selected'
-        if action_to_delete in actions:
-            del actions[action_to_delete]
-
 #end class LcroysterModelAdmin
 
-class ProjectModelAdmin(LcroysterModelAdmin):
-    pass
-admin.site.register(Project, ProjectModelAdmin)
-
-class LocationModelAdmin(LcroysterModelAdmin):
+class LocationModelForm(forms.ModelForm):
+    # Set order of fields on add form so do not have to do a migrate
+    # just to affect the admin add form field order
     fields = [
         'location_id',
         'name',
@@ -108,11 +92,38 @@ class LocationModelAdmin(LcroysterModelAdmin):
         'latitude',
         'longitude',
         'tile_id',
+        ]
+
+class ProjectModelAdmin(LcroysterModelAdmin):
+    pass
+admin.site.register(Project, ProjectModelAdmin)
+
+class LocationModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
+    #Maybe need this to show action list ?
+    using = 'lcroyster_connection'
+
+    search_fields = [
+        'name', 'alias1', 'alias2', 'tile_id'
     ]
+
     list_display = ['location_id','name','alias1', 'latitude','longitude']
+
     actions = [
       'export_as_csv',
     ]
+
+    '''
+    From the django admin cookbook: method to delete an action from admin,
+    and in this case it is the 'delete_selected' action.
+    '''
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        action_to_delete = 'delete_selected'
+        if action_to_delete in actions:
+            #print("actions='{}'".format(repr(actions)))
+            del actions[action_to_delete]
+        return actions
+# end class LocationModelAdmin
 
 
 admin.site.register(Location, LocationModelAdmin)
