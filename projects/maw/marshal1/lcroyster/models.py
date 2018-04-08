@@ -117,7 +117,17 @@ class Sensor(models.Model):
             "between observations or readings.")
     status_observation = models.CharField(max_length=150, blank=True, null=True)
     status_observation_datetime = models.DateTimeField(blank=True, null=True)
-    meters_above_seafloor = models.FloatField(blank=True, null=True)
+
+    range_unit = models.CharField(max_length=50, blank=True,
+        null=True, help_text="Examples: Minute, Hour, or Day, etc.")
+    range_low = longitude = models.FloatField(blank=True, null=True)
+    range_high = longitude = models.FloatField(blank=True, null=True)
+
+    range_unit = models.CharField(max_length=50, blank=True,
+        null=True, help_text="Examples: Minute, Hour, or Day, etc.")
+
+    notes = models.TextField(blank=True, null=True,
+        help_text='More notes about the sensor'
 
     class Meta:
         managed = True
@@ -131,10 +141,29 @@ class SensorDeploy(models.Model):
     location = models.ForeignKey(Location, on_delete=models.DO_NOTHING,
         help_text='Location id where the sensor is deployed as of the '
             + 'deploy date-time, where special location 0 means not in service')
+    meters_above_seafloor = models.FloatField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True,
         help_text='Notes about the deployment'
         )
-    testint=models.IntegerField()
+
+    class Meta:
+        managed = True
+        db_table = 'sensor_deploy'
+
+
+class SensorService(models.Model):
+    sensor_service_id = models.AutoField(primary_key=True)
+    project = models.ForeignKey(Project, on_delete=models.DO_NOTHING,
+        help_text='Project that owns/maintains the sensor.')
+    sensor = models.ForeignKey(Sensor, on_delete=models.DO_NOTHING)
+    service_datetime = models.DateTimeField()
+    location = models.ForeignKey(Location, on_delete=models.DO_NOTHING,
+        help_text='Location id where the sensor is deployed as of the '
+            + 'deploy date-time, where special location 0 means not in service')
+    meters_above_seafloor = models.FloatField(blank=True, null=True)
+    notes = models.TextField(blank=True, null=True,
+        help_text='Notes about the deployment'
+        )
 
     class Meta:
         managed = True

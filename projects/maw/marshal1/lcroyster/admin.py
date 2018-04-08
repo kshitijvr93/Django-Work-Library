@@ -133,7 +133,7 @@ class SensorModelAdmin(LcroysterModelAdmin):
 admin.site.register(Sensor, SensorModelAdmin)
 
 class SensorDeployModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
-    list_display = ['sensor_id', 'deploy_datetime']
+    list_display = ['sensor_id', 'deploy_datetime','location_id']
 
     actions = [
       'export_as_csv',
