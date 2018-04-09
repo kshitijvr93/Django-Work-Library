@@ -25,7 +25,7 @@ class ExportCvsMixin:
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = (
             'attachment; filename={}.csv'.format(meta))
-        writer = csv.writer(response)
+        writer = csv.writer(response, delimiter='\t')
 
         writer.writerow(field_names)
         for obj in queryset:

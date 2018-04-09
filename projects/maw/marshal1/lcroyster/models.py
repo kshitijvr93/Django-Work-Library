@@ -64,11 +64,16 @@ class Project(models.Model):
       )
     proposal_id = models.CharField(max_length=200,unique=True,blank=True)
     sponsor_names = models.CharField(max_length=200,blank=True, null=True)
-    sponsors_award_id = models.CharField(max_length=200,unique=True,
+    sponsors_award_id = models.CharField(max_length=200,
+      # unique=True,
       blank=True, null=True)
-    uf_award_id = models.CharField(max_length=200,unique=True, blank=True)
+    uf_award_id = models.CharField(max_length=200,
+    #This wrecks mysql loads for null values
+    #unique=True,
+    null=True,blank=True)
     #Management ccommand inspect_db did not pick up the unique
-    contact_investigator = models.CharField(max_length=255,unique=True,
+    contact_investigator = models.CharField(max_length=255,
+      # unique=True,
       blank=True, null=True)
     principal_investigators = models.TextField(max_length=255, blank=True,
       null=True,
@@ -86,9 +91,11 @@ class Project(models.Model):
     award_end_date = models.DateField(blank=True, null=True,
       help_text='Notes about this project and related info free form.'
       )
-    responsible_unit = models.CharField(max_length=200,unique=True,
+    responsible_unit = models.CharField(max_length=200,
+      # unique=True,
       blank=True, null=True)
-    department_id = models.CharField(max_length=200,unique=True,
+    department_id = models.CharField(max_length=200,
+      # unique=True,
       blank=True, null=True)
 
     notes = models.TextField(max_length=255, blank=True, null=True,
@@ -100,7 +107,11 @@ class Project(models.Model):
 
 class Location(models.Model):
     location_id = models.IntegerField(primary_key=True)
-    tile_id = models.IntegerField(blank=True, null=True)
+    # Mysql 5.7 load data local infile fails if csv file has empty
+    # value for tile_id even though NULL is true, so we set
+    # default to 0 so we can export this model and load it to
+    # another mysql db connection
+    tile_id = models.IntegerField(blank=True, null=True, default=None)
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
     name = models.CharField(unique=True, max_length=200, blank=True,
@@ -110,7 +121,9 @@ class Location(models.Model):
         null=True,
         help_text='Alternative name designation of the location')
     alias2 = models.CharField(unique=True, max_length=200, blank=True,
-        null=True,
+        # may need default None here to remind/force mysql loader to allow
+        # nulls when it loads data. # Using null=True alone does not do it.
+        null=True, default=None,
         help_text='Alternative name designation of the location')
 
     notes = models.TextField(max_length=2550, blank=True, null=True,
@@ -164,10 +177,16 @@ class Sensor(models.Model):
         )
 
     initial_deployment_datetime = models.DateTimeField(blank=True, null=True,
-      help_text='Date of initial employment.')
+      help_text='Datetime of initial employment.',
+      default="2017-08-11 12:00:00"
+      )
 
-    manufacture_date = models.DateField(blank=True, null=True)
-    battery_expiration_date = models.DateField(blank=True, null=True)
+    manufacture_date = models.DateField(blank=True, null=True,
+      default="2016-08-11"
+      )
+    battery_expiration_date = models.DateField(blank=True, null=True,
+      default="2019-08-11"
+      )
 
     '''
     Retire these fields: they may vary between readings, and in any case are
@@ -193,10 +212,6 @@ class Sensor(models.Model):
       help_text=''
       )
     '''
-    range_low_mS_cm = models.FloatField(blank=True, null=True,
-      help_text='Lowest acceptable value of mS_cm')
-    range_high_mS_cm = models.FloatField(blank=True, null=True,
-      help_text='Highest acceptable value of mS_cm')
 
     notes = models.TextField(max_length=255, blank=True, null=True,
         help_text='More notes about the sensor'
