@@ -189,6 +189,7 @@ class Sensor(models.Model):
        help_text='This identifies the manufacturer and sensor type.'
        )
     serial_number = models.CharField(max_length=150, blank=True, null=True,
+       unique=True,
        help_text='For example: VNNNN for a vanEssen:diver sensor '
        'or simply NNNN for a Star-Oddi:CT sensor. '
        'For example, one '
@@ -257,8 +258,7 @@ class Sensor(models.Model):
             .formfield_for_foreignkey(db_field, request, **kwargs))
 
     def __str__(self):
-        return '{}:{} {}'.format(self.sensor_type.manufacturer
-          ,self.sensor_type.model_type, self.serial_number)
+        return '{}'.format(self.serial_number)
 
     class Meta:
         unique_together = (('sensor_type', 'serial_number'),)

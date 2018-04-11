@@ -253,7 +253,7 @@ class SensorDeployModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
         return actions
 
     def deployed(self, obj):
-        return obj.sensor
+        return obj.sensor.serial_number
     def location_name(self, obj):
         return obj.location.name
 
