@@ -102,6 +102,7 @@ class ProjectModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
         if action_to_delete in actions:
             #print("actions='{}'".format(repr(actions)))
             del actions[action_to_delete]
+
 # end class ProjectModelAdmin
 
 admin.site.register(Project, ProjectModelAdmin)
@@ -170,14 +171,14 @@ admin.site.register(SensorType, SensorTypeModelAdmin)
 
 class SensorModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
     list_display = [
-        'get_sensor_type','serial_number',
+        'model_name','serial_number',
     ]
 
     # May only implement this list once we get true current location and
     # deployment from SensorDeployment table,
     # or just let user use sensordeployment changelist  to see the same data
     list_display_todo = [
-        'get_sensor_type','serial_number',
+        'model_name','serial_number',
         # NB: Do NOT use location_id else, it will not be orderable
         # on the change list. just 'location' Works fine and more verbose
         'current_location', 'latest_deployment'
@@ -187,7 +188,7 @@ class SensorModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
       'export_as_csv',
     ]
 
-    def get_sensor_type(self, obj):
+    def model_name(self, obj):
         return obj.sensor_type
     def current_location(self, obj):
         return obj.location
@@ -229,7 +230,7 @@ class SensorServiceModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
 admin.site.register(SensorService, SensorServiceModelAdmin)
 
 class SensorDeployModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
-    list_display = ['sensor_id', 'deploy_datetime','location_id']
+    list_display = ['deployed', 'deploy_datetime','location_name']
 
     actions = [
       'export_as_csv',
@@ -246,6 +247,11 @@ class SensorDeployModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
             #print("actions='{}'".format(repr(actions)))
             del actions[action_to_delete]
         return actions
+
+    def deployed(self, obj):
+        return obj.sensor
+    def location_name(self, obj):
+        return obj.location.name
 
 #end class SensorDeployModelAdmin
 

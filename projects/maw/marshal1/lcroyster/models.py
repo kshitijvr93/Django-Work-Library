@@ -58,7 +58,7 @@ class LcroysterRouter:
 # Create your models here.
 
 class Project(models.Model):
-    project_id= models.AutoField(primary_key=True)
+    project_id = models.AutoField(primary_key=True)
 
     project_website_code = models.CharField(max_length=16,unique=True,
       help_text="Short unique code for this project (up to 16 characters)"
@@ -102,7 +102,7 @@ class Project(models.Model):
         help_text='Notes about this project and related info in free form.')
 
     def __str__(self):
-        return 'Project: {}'.format(self.name)
+        return '{}'.format(self.project_website_code)
 #end class Project
 
 class Location(models.Model):
@@ -166,6 +166,8 @@ class Sensor(models.Model):
        'vanEssen:Diver sensor serial number is V5602 and one '
        'Star-Oddi:CT serial number is 8814.'
       )
+    range_low_mS_cm = models.FloatField(blank=True, null=True)
+    range_high_mS_cm = models.FloatField(blank=True, null=True)
     '''
     location = models.ForeignKey(Location, models.DO_NOTHING, blank=True,
         null=True,
@@ -240,14 +242,17 @@ class SensorDeploy(models.Model):
     sensor = models.ForeignKey(Sensor, on_delete=models.DO_NOTHING)
     deploy_datetime = models.DateTimeField()
     location = models.ForeignKey(Location, on_delete=models.DO_NOTHING,
-        help_text='Location id where the sensor is deployed as of the '
-            + 'deploy date-time, where special location 0 means not in service')
+        help_text='Location where the sensor is deployed as of the '
+            + 'deploy date-time.')
     notes = models.TextField(max_length=255, blank=True, null=True,
         help_text='Notes about the deployment'
         )
 
     def __str__(self):
         return '{}:{}'.format(self.sensor.serial_number, self.deploy_datetime)
+
+    class Meta:
+        unique_together = (('sensor', 'deploy_datetime'),)
 # end class SensorDeploy
 
 

@@ -238,9 +238,3 @@ CKEDITOR_CONFIGS = {
 }
 
 ###################################
-
-print("\n\n\n--------------------------\n\nSTART RUNSEERVER:\nbase_dir_path='{}'"
-    .format( BASE_DIR),file=sys.stdout)
-print("MEDIA_ROOT={}".format(MEDIA_ROOT))
-print("--------------------------\n\n")
-sys.stdout.flush()
