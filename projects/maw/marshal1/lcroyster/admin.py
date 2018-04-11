@@ -85,7 +85,7 @@ class LcroysterModelAdmin(admin.ModelAdmin):
 class ProjectModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
     using = 'lcroyster_connection'
     list_display = [
-      'project_id','name','principal_investigators'
+      'project_website_code','name','contact_investigator'
       ]
 
     actions = [
@@ -170,13 +170,29 @@ admin.site.register(SensorType, SensorTypeModelAdmin)
 
 class SensorModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
     list_display = [
-        'sensor_type','serial_number',
-        'location_id',
+        'get_sensor_type','serial_number',
+    ]
+
+    # May only implement this list once we get true current location and
+    # deployment from SensorDeployment table,
+    # or just let user use sensordeployment changelist  to see the same data
+    list_display_todo = [
+        'get_sensor_type','serial_number',
+        # NB: Do NOT use location_id else, it will not be orderable
+        # on the change list. just 'location' Works fine and more verbose
+        'current_location', 'latest_deployment'
       ]
 
     actions = [
       'export_as_csv',
     ]
+
+    def get_sensor_type(self, obj):
+        return obj.sensor_type
+    def current_location(self, obj):
+        return obj.location
+    def latest_deployment(self, obj):
+        return obj.sensor_type
 
     '''
     From the django admin cookbook: method to delete an action from admin,

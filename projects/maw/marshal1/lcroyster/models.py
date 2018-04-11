@@ -58,26 +58,26 @@ class LcroysterRouter:
 # Create your models here.
 
 class Project(models.Model):
-    project_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255,unique=True,
-      help_text="UF name for this project"
+    project_id= models.AutoField(primary_key=True)
+
+    project_website_code = models.CharField(max_length=16,unique=True,
+      help_text="Short unique code for this project (up to 16 characters)"
       )
-    proposal_id = models.CharField(max_length=200,unique=True,blank=True)
+
+    name = models.CharField(max_length=255,unique=True,
+      help_text="Long name for this project"
+      )
+    uf_award_id = models.CharField(max_length=200,
+    unique=True, null=True,blank=True,
+    help_text="This field should normally start AWD and followed by 5 digits.")
     sponsor_names = models.CharField(max_length=200,blank=True, null=True)
     sponsors_award_id = models.CharField(max_length=200,
-      # unique=True,
-      blank=True, null=True)
-    uf_award_id = models.CharField(max_length=200,
-    #This wrecks mysql loads for null values
-    #unique=True,
-    null=True,blank=True)
+      unique=True, blank=True, null=True)
     #Management ccommand inspect_db did not pick up the unique
     contact_investigator = models.CharField(max_length=255,
-      # unique=True,
-      blank=True, null=True)
+       blank=True, null=True)
     principal_investigators = models.TextField(max_length=255, blank=True,
-      null=True,
-      help_text='Usually this is a single investigator, but some sponsors '
+      null=True, help_text='Usually this is a single investigator, but some sponsors '
       'like NSF allow multiple principal investigators'
       )
     co_principal_investigators = models.TextField(max_length=200,
@@ -92,12 +92,12 @@ class Project(models.Model):
       help_text='Notes about this project and related info free form.'
       )
     responsible_unit = models.CharField(max_length=200,
-      # unique=True,
       blank=True, null=True)
     department_id = models.CharField(max_length=200,
-      # unique=True,
       blank=True, null=True)
 
+    proposal_id = models.CharField(max_length=200,unique=True
+        ,null=True,blank=True)
     notes = models.TextField(max_length=255, blank=True, null=True,
         help_text='Notes about this project and related info in free form.')
 
@@ -166,6 +166,7 @@ class Sensor(models.Model):
        'vanEssen:Diver sensor serial number is V5602 and one '
        'Star-Oddi:CT serial number is 8814.'
       )
+    '''
     location = models.ForeignKey(Location, models.DO_NOTHING, blank=True,
         null=True,
         help_text='This field is reserved to report the most recent deployed '
@@ -177,21 +178,17 @@ class Sensor(models.Model):
         )
 
     initial_deployment_datetime = models.DateTimeField(blank=True, null=True,
-      help_text='Datetime of initial employment.',
-      default="2017-08-11 12:00:00"
-      )
+      help_text='Datetime of initial employment.',)
+    '''
 
-    manufacture_date = models.DateField(blank=True, null=True,
-      default="2016-08-11"
-      )
-    battery_expiration_date = models.DateField(blank=True, null=True,
-      default="2019-08-11"
-      )
+    manufacture_date = models.DateField(blank=True, null=True,)
+    battery_expiration_date = models.DateField(blank=True, null=True, )
 
     '''
     Retire these fields: they may vary between readings, and in any case are
     inferable from the sensor reading datetimes themselves in the
-    water_observation table.
+    water_observation table. The most recent period between two measurements
+    may be queried from the database and given in a report.
 
     observation_period_unit = models.CharField(max_length=50, blank=True,
         null=True, help_text="Examples: Minute, Hour, or Day, etc.")
@@ -201,7 +198,7 @@ class Sensor(models.Model):
             "between observations or readings."
       )
       ##########
-    Theswe fields have no purpose now that we have
+    These fields have no purpose now that we have
     new model SensorSerivce with fields 'active' and service_datetime.
 
     status_observation = models.CharField(max_length=150, blank=True, null=True,
@@ -234,6 +231,7 @@ class Sensor(models.Model):
 
     class Meta:
         unique_together = (('sensor_type', 'serial_number'),)
+        ordering = [ 'sensor_type', ]
 # end class Sensor
 
 
