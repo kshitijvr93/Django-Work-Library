@@ -15,16 +15,17 @@ from django.http import HttpResponse
 requires:
    import csv
    from django.http import HttpResponse
+   Write file '.tsv' for TAB-SEPARATED VALUES
 '''
-class ExportCvsMixin:
+class ExportTsvMixin:
 
-    def export_as_csv(self, request, queryset):
+    def export_as_tsv(self, request, queryset):
         meta = self.model._meta
         field_names = [field.name for field in meta.fields]
 
-        response = HttpResponse(content_type='text/csv')
+        response = HttpResponse(content_type='text/txt')
         response['Content-Disposition'] = (
-            'attachment; filename={}.csv'.format(meta))
+            'attachment; filename={}.txt'.format(meta))
         writer = csv.writer(response, delimiter='\t')
 
         writer.writerow(field_names)
@@ -34,9 +35,9 @@ class ExportCvsMixin:
 
         return response
 
-    export_as_csv.short_description = "Export Selected"
+    export_as_tsv.short_description = "Export Tabbed Text"
 
-#end class ExportCvsMixin
+#end class ExportTsvMixin
 
 
 class LcroysterModelAdmin(admin.ModelAdmin):
@@ -82,14 +83,14 @@ class LcroysterModelAdmin(admin.ModelAdmin):
 #end class LcroysterModelAdmin
 
 
-class ProjectModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
+class ProjectModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
     using = 'lcroyster_connection'
     list_display = [
       'project_website_code','name','contact_investigator'
       ]
 
     actions = [
-      'export_as_csv',
+      'export_as_tsv',
     ]
 
     '''
@@ -107,7 +108,7 @@ class ProjectModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
 
 admin.site.register(Project, ProjectModelAdmin)
 
-class LocationModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
+class LocationModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
     #Maybe need this to show action list ?
     using = 'lcroyster_connection'
 
@@ -130,7 +131,7 @@ class LocationModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
     list_display = ['location_id','name','alias1', 'latitude','longitude']
 
     actions = [
-      'export_as_csv',
+      'export_as_tsv',
     ]
 
     '''
@@ -149,10 +150,10 @@ class LocationModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
 
 admin.site.register(Location, LocationModelAdmin)
 
-class SensorTypeModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
+class SensorTypeModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
 
     actions = [
-      'export_as_csv',
+      'export_as_tsv',
     ]
 
     '''
@@ -169,7 +170,7 @@ class SensorTypeModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
 
 admin.site.register(SensorType, SensorTypeModelAdmin)
 
-class SensorModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
+class SensorModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
     list_display = [
         'model_name','serial_number',
     ]
@@ -185,7 +186,7 @@ class SensorModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
       ]
 
     actions = [
-      'export_as_csv',
+      'export_as_tsv',
     ]
 
     def model_name(self, obj):
@@ -209,9 +210,9 @@ class SensorModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
 
 admin.site.register(Sensor, SensorModelAdmin)
 
-class SensorServiceModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
+class SensorServiceModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
     actions = [
-      'export_as_csv',
+      'export_as_tsv',
     ]
 
     '''
@@ -227,13 +228,16 @@ class SensorServiceModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
         return actions
 
 # end class SensorServiceModelAdmin
+
+
 admin.site.register(SensorService, SensorServiceModelAdmin)
 
-class SensorDeployModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
+
+class SensorDeployModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
     list_display = ['deployed', 'deploy_datetime','location_name']
 
     actions = [
-      'export_as_csv',
+      'export_as_tsv',
     ]
 
     '''
@@ -258,9 +262,9 @@ class SensorDeployModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
 
 admin.site.register(SensorDeploy, SensorDeployModelAdmin)
 
-class WaterObservationModelAdmin(LcroysterModelAdmin, ExportCvsMixin):
+class WaterObservationModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
     actions = [
-      'export_as_csv',
+      'export_as_tsv',
     ]
 
     '''

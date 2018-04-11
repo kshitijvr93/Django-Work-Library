@@ -55,6 +55,31 @@ class LcroysterRouter:
         return None
 #end class LCRoysterRouter
 
+#CUSTOM FIELD
+'''
+class SpaceTextField is a TextField that is modified to:
+    (1) change newlines and tabs to spaces
+'''
+class SpaceTextField(models.TextField):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def translate(self,value):
+        v=(value.replace('\r','').replace('\n',' ').replace('\t',' ')
+          )
+        return v
+
+    def from_db_value(self,value,expression,connection):
+        if value is None:
+            return value
+        return(self.translate(value))
+
+    def to_python(self, value):
+        if value is None:
+            return value;
+        return(self.translate(value))
+
+
 # Create your models here.
 
 class Project(models.Model):
@@ -76,13 +101,13 @@ class Project(models.Model):
     #Management ccommand inspect_db did not pick up the unique
     contact_investigator = models.CharField(max_length=255,
        blank=True, null=True)
-    principal_investigators = models.TextField(max_length=255, blank=True,
+    principal_investigators = SpaceTextField(max_length=255, blank=True,
       null=True, help_text='Usually this is a single investigator, but some sponsors '
       'like NSF allow multiple principal investigators'
       )
-    co_principal_investigators = models.TextField(max_length=200,
+    co_principal_investigators = SpaceTextField(max_length=200,
       blank=True, null=True)
-    collaborators = models.TextField(max_length=200,
+    collaborators = SpaceTextField(max_length=200,
       blank=True, null=True)
 
     award_start_date = models.DateField(blank=True, null=True,
@@ -98,7 +123,7 @@ class Project(models.Model):
 
     proposal_id = models.CharField(max_length=200,unique=True
         ,null=True,blank=True)
-    notes = models.TextField(max_length=255, blank=True, null=True,
+    notes = SpaceTextField(max_length=255, blank=True, null=True,
         help_text='Notes about this project and related info in free form.')
 
     def __str__(self):
@@ -126,7 +151,7 @@ class Location(models.Model):
         null=True, default=None,
         help_text='Alternative name designation of the location')
 
-    notes = models.TextField(max_length=2550, blank=True, null=True,
+    notes = SpaceTextField(max_length=2550, blank=True, null=True,
         help_text='Notes about the location')
 
     def __str__(self):
@@ -145,10 +170,14 @@ class SensorType(models.Model):
       help_text='For example: vanEssen usually has type Diver, '
          'and Star-Oddi usually has type CT. '
       )
+    notes = SpaceTextField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return '{}:{}'.format(self.manufacturer, self.model_type)
 # end class SensorType
+
+#end class SpaceTextField
+
 
 class Sensor(models.Model):
     sensor_id = models.AutoField(primary_key=True)
@@ -212,7 +241,7 @@ class Sensor(models.Model):
       )
     '''
 
-    notes = models.TextField(max_length=255, blank=True, null=True,
+    notes = SpaceTextField(max_length=255, blank=True, null=True,
         help_text='More notes about the sensor'
         )
 
@@ -244,7 +273,7 @@ class SensorDeploy(models.Model):
     location = models.ForeignKey(Location, on_delete=models.DO_NOTHING,
         help_text='Location where the sensor is deployed as of the '
             + 'deploy date-time.')
-    notes = models.TextField(max_length=255, blank=True, null=True,
+    notes = SpaceTextField(max_length=255, blank=True, null=True,
         help_text='Notes about the deployment'
         )
 
@@ -294,7 +323,7 @@ class SensorService(models.Model):
     battery_life_remaining_percent = models.IntegerField(blank=True, null=True,
       help_text="Enter an integer from 0 to 100."
       )
-    notes = models.TextField(max_length=255, blank=True, null=True,
+    notes = SpaceTextField(max_length=255, blank=True, null=True,
       help_text='Notes about the deployment'
       '\nISSUE: Dropped download_time, next_download,measurements_downloaded, '
       'project, site, lat, lon, manufacurer, type date_deployed, time_started, '
