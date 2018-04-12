@@ -123,28 +123,28 @@ class SpaceCharField(models.CharField):
         if value is None:
             return value;
         return(self.translate(value))
-        
+
 
 # Create your models here.
 
 class Project(models.Model):
     project_id = models.AutoField(primary_key=True)
 
-    project_website_code = models.CharField(max_length=16,unique=True,
+    project_website_code = SpaceCharField(max_length=16,unique=True,
       help_text="Short unique code for this project (up to 16 characters)"
       )
 
-    name = models.CharField(max_length=255,unique=True,
+    name = SpaceCharField(max_length=255,unique=True,
       help_text="Long name for this project"
       )
-    uf_award_id = models.CharField(max_length=200,
+    uf_award_id = SpaceCharField(max_length=200,
     unique=True, null=True,blank=True,
     help_text="This field should normally start AWD and followed by 5 digits.")
-    sponsor_names = models.CharField(max_length=200,blank=True, null=True)
-    sponsors_award_id = models.CharField(max_length=200,
+    sponsor_names = SpaceCharField(max_length=200,blank=True, null=True)
+    sponsors_award_id = SpaceCharField(max_length=200,
       unique=True, blank=True, null=True)
     #Management ccommand inspect_db did not pick up the unique
-    contact_investigator = models.CharField(max_length=255,
+    contact_investigator = SpaceCharField(max_length=255,
        blank=True, null=True)
     principal_investigators = SpaceTextField(max_length=255, blank=True,
       null=True, help_text='Usually this is a single investigator, but some sponsors '
@@ -161,12 +161,12 @@ class Project(models.Model):
     award_end_date = models.DateField(blank=True, null=True,
       help_text='Notes about this project and related info free form.'
       )
-    responsible_unit = models.CharField(max_length=200,
+    responsible_unit = SpaceCharField(max_length=200,
       blank=True, null=True)
-    department_id = models.CharField(max_length=200,
+    department_id = SpaceCharField(max_length=200,
       blank=True, null=True)
 
-    proposal_id = models.CharField(max_length=200,unique=True
+    proposal_id = SpaceCharField(max_length=200,unique=True
         ,null=True,blank=True)
     notes = SpaceTextField(max_length=255, blank=True, null=True,
         help_text='Notes about this project and related info in free form.')
@@ -184,13 +184,13 @@ class Location(models.Model):
     tile_id = models.IntegerField(blank=True, null=True, default=None)
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
-    name = models.CharField(unique=True, max_length=200, blank=True,
+    name = SpaceCharField(unique=True, max_length=200, blank=True,
         null=True,
         help_text='Location name, eg LCR Buoy One.')
-    alias1 = models.CharField(unique=True, max_length=200, blank=True,
+    alias1 = SpaceCharField(unique=True, max_length=200, blank=True,
         null=True,
         help_text='Alternative name designation of the location')
-    alias2 = models.CharField(unique=True, max_length=200, blank=True,
+    alias2 = SpaceCharField(unique=True, max_length=200, blank=True,
         # may need default None here to remind/force mysql loader to allow
         # nulls when it loads data. # Using null=True alone does not do it.
         null=True, default=None,
@@ -208,10 +208,10 @@ class SensorType(models.Model):
     # MySQL client updates rather than allow website users to update these
     # rows via MAW Admin.
     sensor_type_id = models.AutoField(primary_key=True)
-    manufacturer = models.CharField(max_length=150, blank=True, null=True,
+    manufacturer = SpaceCharField(max_length=150, blank=True, null=True,
        help_text='For example: vanEssen or Star-Oddi.'
        )
-    model_type = models.CharField(max_length=100, unique=True,
+    model_type = SpaceCharField(max_length=100, unique=True,
       help_text='For example: vanEssen usually has type Diver, '
          'and Star-Oddi usually has type CT. '
       )
@@ -233,7 +233,7 @@ class Sensor(models.Model):
        blank=True, null=True,
        help_text='This identifies the manufacturer and sensor type.'
        )
-    serial_number = models.CharField(max_length=150, blank=True, null=True,
+    serial_number = SpaceCharField(max_length=150, blank=True, null=True,
        unique=True,
        help_text='For example: VNNNN for a vanEssen:diver sensor '
        'or simply NNNN for a Star-Oddi:CT sensor. '
@@ -267,9 +267,9 @@ class Sensor(models.Model):
     water_observation table. The most recent period between two measurements
     may be queried from the database and given in a report.
 
-    observation_period_unit = models.CharField(max_length=50, blank=True,
+    observation_period_unit = SpaceCharField(max_length=50, blank=True,
         null=True, help_text="Examples: Minute, Hour, or Day, etc.")
-    observation_period_unit_count = models.CharField(max_length=50, blank=True,
+    observation_period_unit_count = SpaceCharField(max_length=50, blank=True,
        null=True,
        help_text="The typical number of observation period units "
             "between observations or readings."
@@ -278,7 +278,7 @@ class Sensor(models.Model):
     These fields have no purpose now that we have
     new model SensorSerivce with fields 'active' and service_datetime.
 
-    status_observation = models.CharField(max_length=150, blank=True, null=True,
+    status_observation = SpaceCharField(max_length=150, blank=True, null=True,
       help_text=''
       )
 
@@ -352,7 +352,7 @@ class SensorService(models.Model):
       help_text='ISSUE: is this (1) whether copper tape time was present '
       'for the sensor, or (2) is this whether this servicing added copper tape?'
       )
-    color_tape = models.CharField(max_length=150, blank=True, null=True,
+    color_tape = SpaceCharField(max_length=150, blank=True, null=True,
       help_text='ISSUE: Is this (1) the tape color found at start of service, '
       'or (2) the color of tape applied to this sensor during service?'
       )
@@ -403,7 +403,7 @@ class WaterObservation(models.Model):
     conductivity_ms_cm = models.FloatField(db_column='conductivity_mS_cm',
         blank=True, null=True)  # Field name made lowercase.
     sound_velocity_m_sec = models.FloatField(blank=True, null=True)
-    note = models.CharField(max_length=32, blank=True, null=True,
+    note = SpaceCharField(max_length=32, blank=True, null=True,
         help_text="Short note on observation, 32 characters or less."
         )
     class Meta:
