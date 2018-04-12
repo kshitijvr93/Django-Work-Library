@@ -1943,9 +1943,9 @@ that is one place you can say you want something to happen every minute
 of every day you would stick there
 and now see under modules are the folders folder
 and cs files there, one is applbibidRestrictionedmobile.cs
-and one cs file says it sees large jpegs it wants to go to tiffs or jp200s.
+and one cs file says it sees large jpegs it wants to go to tiffs or jp2000s.
 it is called convert largeJP..
-next or w down more is updateNonbibFodlers.cs
+next or w down more is updateNonbibFolders.cs
 it looks when you have bibvid file at top level of folder,
 it creates the bib/vid subfolders
 
@@ -1957,7 +1957,7 @@ now broken down, used to be gigantic bunch of builder code..
 so for each folder it figures out which packages are ready
 or valid or if invalid they go to failure folder
 and this creates list of available items across all folders
-nvs and with wolfsonion the accession number was the folder name,
+mvs and with wolfsonion the accession number was the folder name,
 and it looks in the db and says does this accession number exist,
 and it reserves bibvids, and it also does md stuff,
 as all he gets is mods files..

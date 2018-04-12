@@ -145,10 +145,10 @@ used in realtime by sobekcm web app) and archival copy,
 because tifs are very big, and stored only in archival copy, not service copy,
 and performance pf is an issue..
 
-but the format of jpeg 2000 is like software as a service sas or saas
+but the format of jpeg 2000 is like software as a service, saas
 and the format of  tiff  is archival.
-it is nice to have a master tif for archiving and for service we use the
-jpeg 2000, which  is 1/20 size of tif,
+it is nice to have a master tif for archiving and for service (website use)
+we use the jpeg 2000, which  is 1/20 size of tif,
 
 and if we must store tifs, it is cheaper to store tifs on tape than on disk,
 a major savings... in money
