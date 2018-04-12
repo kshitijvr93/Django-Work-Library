@@ -176,19 +176,18 @@ class Project(models.Model):
 #end class Project
 
 class Location(models.Model):
-    location_id = models.IntegerField(primary_key=True)
     # Mysql 5.7 load data local infile fails if csv file has empty
     # value for tile_id even though NULL is true, so we set
     # default to 0 so we can export this model and load it to
     # another mysql db connection
-    tile_id = models.IntegerField(blank=True, null=True, default=None)
+    name = SpaceCharField(unique=True,  max_length=200,
+        blank=True,
+        help_text='Location name, eg LCR Buoy One.')
+    location_id = models.IntegerField(unique=True,primary_key=True)
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
-    name = SpaceCharField(unique=True, max_length=200, blank=True,
-        null=True,
-        help_text='Location name, eg LCR Buoy One.')
     alias1 = SpaceCharField(unique=True, max_length=200, blank=True,
-        null=True,
+        null=True, default=None,
         help_text='Alternative name designation of the location')
     alias2 = SpaceCharField(unique=True, max_length=200, blank=True,
         # may need default None here to remind/force mysql loader to allow
@@ -198,6 +197,8 @@ class Location(models.Model):
 
     notes = SpaceTextField(max_length=2550, blank=True, null=True,
         help_text='Notes about the location')
+
+    tile_id = models.IntegerField(blank=True, null=True, default=None)
 
     def __str__(self):
         return '{}'.format(self.name)
@@ -235,11 +236,10 @@ class Sensor(models.Model):
        )
     serial_number = SpaceCharField(max_length=150, blank=True, null=True,
        unique=True,
-       help_text='For example: VNNNN for a vanEssen:diver sensor '
-       'or simply NNNN for a Star-Oddi:CT sensor. '
-       'For example, one '
-       'vanEssen:Diver sensor serial number is V5602 and one '
-       'Star-Oddi:CT serial number is 8814.'
+       help_text='Our own abbreviated serials numbers. Use VNNNN '
+       'for a vanEssen:diver sensor (e.g., V6502) '
+       'or SNNNN for a Star-Oddi:CT sensor. '
+       'For a Sea-Bird sensor, use BNNNN. '
       )
     range_low_mS_cm = models.FloatField(blank=True, null=True)
     range_high_mS_cm = models.FloatField(blank=True, null=True)
