@@ -145,18 +145,18 @@ DATABASES = {
         },
     },
 
-    'lcroyster_prod_connection': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'LCRoysterproject',
-        'USER': 'LCRoysterproject',
-        'PASSWORD': 'HLLV6Pske0vTzhIZfSya',
-        'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
-        'PORT': '3354',
-        'OPTIONS' : {
-            # Heed a warning during manage.py migrate runs
-            'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
-        },
-    },
+#    'lcroyster_prod_connection': {
+#        'ENGINE': 'django.db.backends.mysql',
+#        'NAME': 'LCRoysterproject',
+#        'USER': 'LCRoysterproject',
+#        'PASSWORD': 'HLLV6Pske0vTzhIZfSya',
+#        'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
+#        'PORT': '3354',
+#        'OPTIONS' : {
+#            # Heed a warning during manage.py migrate runs
+#            'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
+#        },
+#    },
     # The code uses this name, but keep other lcroyster* stanzas above as
     # templates to copy  back to name lcroyster_connection as needed
     'lcroyster_connection': {
