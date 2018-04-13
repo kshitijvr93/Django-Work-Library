@@ -28,6 +28,8 @@ register_modules()
 import etl
 
 print("Using sys.path={}".format(repr(sys.path)))
+# Import slate of databases that user can use
+# from my_secrets.sa_engine_by_name import get_sa_engine_by_name
 
 import datetime
 from collections import OrderedDict
