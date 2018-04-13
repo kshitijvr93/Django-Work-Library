@@ -175,7 +175,7 @@ elif MAW_ENV == 'local':
             # some other maw apps
             'NAME': 'maw1_db',
             'USER': MAW_MYSQL_LOCAL_USER,
-            'PASSWORD': MAW_MYSL_LOCAL_PASSWORD,
+            'PASSWORD': MAW_MYSQL_LOCAL_PASSWORD,
             'HOST': '127.0.0.1',
             'PORT': '3306',
         },
