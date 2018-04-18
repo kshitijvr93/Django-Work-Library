@@ -115,7 +115,7 @@ if MAW_ENV == 'production':
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'LCRoysterproject',
         'USER': 'LCRoysterproject',
-        'PASSWORD': MAW_MYSQL_PRODUCTION_PASSWORD,
+        'PASSWORD': MAW_OYSTER_MYSQL_PRODUCTION_PASSWORD,
         'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
         'PORT': '3354',
         'OPTIONS' : {
