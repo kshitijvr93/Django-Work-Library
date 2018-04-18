@@ -31,5 +31,6 @@ urlpatterns = [
     path('hathitrust/', include('hathitrust.urls')),
     path('ifas_citations/', include('hathitrust.urls')),
     path('lcroyster/', include('lcroyster.urls')),
+    path('oauth/', include('social_django.urls',namespace='social')),
     path('rvp/', include('hathitrust.urls')),
 ]
