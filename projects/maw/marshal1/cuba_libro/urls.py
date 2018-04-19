@@ -20,4 +20,5 @@ urlpatterns = [
 ]
 LOGIN_URL = 'login'
 LOGOUT_URL = 'logout'
-LOGIN_REDIRECT_URL = 'home'
+from django.urls import reverse_lazy
+LOGIN_REDIRECT_URL = reverse_lazy('cuba_libro:home')

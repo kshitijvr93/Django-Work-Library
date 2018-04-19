@@ -245,6 +245,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+from django.urls import reverse_lazy
+#LOGIN_REDIRECT_URL = reverse_lazy('cuba_libro:home')
+
+
 ## not sure if ckeditor needs this?
 SITE_ID = 1
 #

@@ -32,12 +32,9 @@ urlpatterns = [
     path('hathitrust/', include('hathitrust.urls')),
     path('ifas_citations/', include('hathitrust.urls')),
     path('lcroyster/', include('lcroyster.urls')),
-    path('oauth/', include('social_django.urls',namespace='social')),
+    #path('oauth/', include('social_django.urls',namespace='social')),
     path('rvp/', include('hathitrust.urls')),
     #re_path(r'^$', include('maw_home.urls')),
-    path('login/', auth_views.login, name='login'),
-    path('logout/', auth_views.logout, name='logout'),
+    #path('login/', auth_views.login, name='login'),
+    #path('logout/', auth_views.logout, name='logout'),
 ]
-LOGIN_URL = 'login'
-LOGOUT_URL = 'logout'
-LOGIN_REDIRECT_URL = 'home'
