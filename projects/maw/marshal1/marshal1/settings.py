@@ -86,6 +86,8 @@ ROOT_URLCONF = 'marshal1.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        # Override with project root templates folder, see
+        # https://docs.djangoproject.com/en/2.0/howto/overriding-templates/
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -94,7 +96,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'social_django.context_processors.backeds',
+                'social_django.context_processors.backends',
                 'social_django.context_processors.login_redirect',
             ],
         },
@@ -108,6 +110,9 @@ AUTHENTICATION_BACKENDS = (
 
     'django.contrib.auth.backends.ModelBackend',
 )
+
+SOCIAL_AUTH_GITHUB_KEY = GITHUB_CLIENT_ID
+SOCIAL_AUTH_GITHUB_SECRET = GITHUB_CLIENT_SECRET
 
 WSGI_APPLICATION = 'marshal1.wsgi.application'
 

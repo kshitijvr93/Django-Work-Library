@@ -34,3 +34,6 @@ urlpatterns = [
     path('oauth/', include('social_django.urls',namespace='social')),
     path('rvp/', include('hathitrust.urls')),
 ]
+LOGIN_URL = 'login'
+LOGOUT_URL = 'logout'
+LOGIN_REDIRECT_URL = 'home'
