@@ -49,10 +49,10 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'maw_home.apps.MawHomeConfig',
     'hathitrust.apps.HathitrustConfig',
     'cuba_libro.apps.CubaLibroConfig',
     'lcroyster.apps.LcroysterConfig',
-    'maw_home.apps.MawHomeConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

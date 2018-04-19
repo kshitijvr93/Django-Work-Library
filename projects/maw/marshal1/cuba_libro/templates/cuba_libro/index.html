@@ -1,10 +1,15 @@
-{% if latest_item_list %}
-<p>A total of {{item_count}} Cuba Libro items are now being managed.<p>
-    <ul>
-    {% for item in latest_item_list %}
-        <li><a href="/cuba_libro/{{ item.id }}/">{{ item.name }}</a></li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>No Cuba Libro items are available.</p>
-{% endif %}
+{% load static %}
+
+<link rel="stylesheet" type="text/css"
+href="{% static 'cuba_libro/style.css' %}" />
+
+<html>
+<body>
+<h1>Hola Cuba Libro!</h1>
+
+<h2>San Agustin de Florida y Henero 22 de 1764</h2>
+<a href="http://ufdc.ufl.edu/l/USACH00236/00001" />
+   <img src="{% static 'cuba_libro/images/USACH00236_00001_00001.jpg' %}" >
+</a>
+</body>
+</html>

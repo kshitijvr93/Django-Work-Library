@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.urls import include, path, re_path
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
 
 # Set admin site display title
 admin.site.site_header = "UF Libraries Marshaling Apps Web (MAW) Admin"
@@ -26,13 +27,16 @@ urlpatterns = [
     path('am4ir/', include('hathitrust.urls')),
     path('aspace/', include('hathitrust.urls')),
     path('cattleman/', include('hathitrust.urls')),
-    path('cuba_libro/', include('hathitrust.urls')),
+    path('cuba_libro/', include('cuba_libro.urls')),
     path('elsevier/', include('hathitrust.urls')),
     path('hathitrust/', include('hathitrust.urls')),
     path('ifas_citations/', include('hathitrust.urls')),
     path('lcroyster/', include('lcroyster.urls')),
     path('oauth/', include('social_django.urls',namespace='social')),
     path('rvp/', include('hathitrust.urls')),
+    #re_path(r'^$', include('maw_home.urls')),
+    path('login/', auth_views.login, name='login'),
+    path('logout/', auth_views.logout, name='logout'),
 ]
 LOGIN_URL = 'login'
 LOGOUT_URL = 'logout'

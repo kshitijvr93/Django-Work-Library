@@ -10,17 +10,12 @@ def detail (request, item_id):
 
 def index(request):
 
-    latest_item_list = Item.objects.order_by('-modify_date')[:5]
-
     msg = ("UFDC Cuba Libro Project:")
-    msg += ("\nLatest item modified is '{}'"
-        .format(latest_item_list[0].name))
 
     #admin_href = "localhost:8000/admin/hathitrust"
     #msg += "</br><a href='{}''>Hathitrust Administration</a>".format(admin_href)
     context = {
-        'latest_item_list' : latest_item_list,
-        'item_count' : len(latest_item_list),
+        'msg' : msg,
     }
     #return HttpResponse(template.render(context, request))
     return render(request, "cuba_libro/index.html", context)
