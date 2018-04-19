@@ -2,6 +2,7 @@
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
 from django.template import loader
+from django.contrib.auth.decorators import login_required
 
 from .models import Item
 
@@ -19,3 +20,8 @@ def index(request):
     }
     #return HttpResponse(template.render(context, request))
     return render(request, "cuba_libro/index.html", context)
+
+
+@login_required
+def home(request):
+    return render(request, 'cuba_libro/home.html')
