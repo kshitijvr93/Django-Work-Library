@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'social_django',
     'ckeditor',
     'ckeditor_uploader',
 ]
@@ -246,7 +247,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 from django.urls import reverse_lazy
-#LOGIN_REDIRECT_URL = reverse_lazy('cuba_libro:home')
+
+LOGIN_REDIRECT_URL = "/admin"
 
 
 ## not sure if ckeditor needs this?
