@@ -9,7 +9,7 @@ from . import views
 urlpatterns = [
     # { May move next 2 lines to use maw_home.views.home later
     re_path(route=r'^$', view=views.home, name='home'),
-    path(route=r'home', view=views.home, name='home'),
+    path(route=r'home', view=views.home, name='cuba_libro_home'),
     # }
     path(route=r'index', view=views.index, name='index'),
 
