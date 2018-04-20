@@ -107,6 +107,7 @@ TEMPLATES = [
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.github.GithubOAuth2',
     'social_core.backends.twitter.TwitterOAuth',
+    'social_core.backends.github.GoogleOAuth2',
     'social_core.backends.facebook.FacebookOAuth2',
 
     'django.contrib.auth.backends.ModelBackend',
@@ -116,6 +117,14 @@ SOCIAL_AUTH_GITHUB_KEY = GITHUB_CLIENT_ID
 SOCIAL_AUTH_GITHUB_SECRET = GITHUB_CLIENT_SECRET
 SOCIAL_AUTH_TWITTER_KEY = MAW_SOCIAL_AUTH_TWITTER_KEY
 SOCIAL_AUTH_TWITTER_SECRET = MAW_SOCIAL_AUTH_TWITTER_SECRET
+SOCIAL_AUTH_FACEBOOK_KEY=MAW_SOCIAL_AUTH_FACEBOOK_KEY
+SOCIAL_AUTH_FACEBOOK_SECRET=MAW_SOCIAL_AUTH_FACEBOOK_SECRET
+
+#Facebook balks because django local runserver is on http.. potential
+# solution is from: https://github.com/python-social-auth/social-app-django/issues/132
+# This may ruin twitter and github though...
+# SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
+
 
 WSGI_APPLICATION = 'marshal1.wsgi.application'
 
