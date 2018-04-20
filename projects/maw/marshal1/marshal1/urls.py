@@ -32,6 +32,9 @@ urlpatterns = [
     path('hathitrust/', include('hathitrust.urls')),
     path('ifas_citations/', include('hathitrust.urls')),
     path('lcroyster/', include('lcroyster.urls')),
+
+    path('login/', auth_views.login, name='login'),
+    path('logout/', auth_views.logout, name='logout'),
     path('oauth/', include('social_django.urls',namespace='social')),
     #path('login/', auth_views.login, name='login'),
     #path('logout/', auth_views.logout, name='logout'),
