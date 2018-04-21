@@ -128,6 +128,9 @@ SOCIAL_AUTH_TWITTER_SECRET = maw_settings.SOCIAL_AUTH_TWITTER_SECRET
 SOCIAL_AUTH_FACEBOOK_KEY=maw_settings.SOCIAL_AUTH_FACEBOOK_KEY
 SOCIAL_AUTH_FACEBOOK_SECRET=maw_settings.SOCIAL_AUTH_FACEBOOK_SECRET
 
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY=maw_settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET=maw_settings.SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET
+
 #{ See: https://stackoverflow.com/questions/21968004/how-to-get-user-email-with-python-social-auth-with-facebook-and-save-it
 
 SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
@@ -269,11 +272,13 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 from django.urls import reverse_lazy
+#{See https://fosstack.com/how-to-add-google-authentication-in-django/
+# These should be set here in settings.py rather than any urls.py
 
 LOGIN_REDIRECT_URL = "/admin"
 LOGIN_URL = 'login'
 LOGOUT_URL = 'logout'
-
+#}
 
 ## not sure if ckeditor needs this?
 SITE_ID = 1

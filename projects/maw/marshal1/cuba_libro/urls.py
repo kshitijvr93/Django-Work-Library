@@ -16,9 +16,11 @@ urlpatterns = [
     # { Support for social_django if served from cuba_libro app
     # Note: github would have to register
     #.../cuba_libro/oauth/complete/github for github logins to work
-    #and must omment-out namespace='social' in all other url.py files
-    url(r'^login/$', auth_views.login, name='login'),
-    url(r'^logout/$', auth_views.logout, name='logout'),
-    #url(r'^oauth/', include('social_django.urls', namespace='social')),  # <--
+    # and must uncomment this 'social' and also comment-out
+    # namespace='social' in all other url.py files
+    # else Django may use the wrong 'social' used and get errors
+    # url(r'^oauth/', include('social_django.urls', namespace='social')),  # <--
+    #url(r'^login/$', auth_views.login, name='login'),
+    #url(r'^logout/$', auth_views.logout, name='logout'),
     # }
 ]
