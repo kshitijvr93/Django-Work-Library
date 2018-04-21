@@ -95,7 +95,8 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         # Override with project root templates folder, see
         # https://docs.djangoproject.com/en/2.0/howto/overriding-templates/
-        'DIRS': [],
+        # see:
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
