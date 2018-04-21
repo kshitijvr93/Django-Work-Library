@@ -15,7 +15,13 @@ sys.path.append(os.path.abspath(MY_SECRETS_FOLDER))
 
 # IMPORT SETTINGS FOR MARSHALING APPLICATION WEBSITE (MAW) settings
 from maw_settings import *
-sys.path.append(MAW_MODULES_FOLDER)
+import maw_settings
+
+print("Got maw_settings.MODULES_FOLDER={}"
+  .format(maw_settings.MODULES_FOLDER))
+sys.stdout.flush()
+
+sys.path.append(maw_settings.MODULES_FOLDER)
 
 # Some MAW extract,translate, load utilities, some others too.
 import etl
@@ -105,20 +111,30 @@ TEMPLATES = [
 ]
 
 AUTHENTICATION_BACKENDS = (
+    'social_core.backends.open_id.OpenIdAuth',
+    'social_core.backends.google.GoogleOpenID',
+    'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
     'social_core.backends.twitter.TwitterOAuth',
-    'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.facebook.FacebookOAuth2',
 
     'django.contrib.auth.backends.ModelBackend',
 )
 
-SOCIAL_AUTH_GITHUB_KEY = GITHUB_CLIENT_ID
-SOCIAL_AUTH_GITHUB_SECRET = GITHUB_CLIENT_SECRET
-SOCIAL_AUTH_TWITTER_KEY = MAW_SOCIAL_AUTH_TWITTER_KEY
-SOCIAL_AUTH_TWITTER_SECRET = MAW_SOCIAL_AUTH_TWITTER_SECRET
-SOCIAL_AUTH_FACEBOOK_KEY=MAW_SOCIAL_AUTH_FACEBOOK_KEY
-SOCIAL_AUTH_FACEBOOK_SECRET=MAW_SOCIAL_AUTH_FACEBOOK_SECRET
+SOCIAL_AUTH_GITHUB_KEY = maw_settings.GITHUB_CLIENT_ID
+SOCIAL_AUTH_GITHUB_SECRET = maw_settings.GITHUB_CLIENT_SECRET
+SOCIAL_AUTH_TWITTER_KEY = maw_settings.SOCIAL_AUTH_TWITTER_KEY
+SOCIAL_AUTH_TWITTER_SECRET = maw_settings.SOCIAL_AUTH_TWITTER_SECRET
+SOCIAL_AUTH_FACEBOOK_KEY=maw_settings.SOCIAL_AUTH_FACEBOOK_KEY
+SOCIAL_AUTH_FACEBOOK_SECRET=maw_settings.SOCIAL_AUTH_FACEBOOK_SECRET
+
+#{ See: https://stackoverflow.com/questions/21968004/how-to-get-user-email-with-python-social-auth-with-facebook-and-save-it
+
+SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
+SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {
+    'fields': 'id,name,email',
+}
+#}
 
 #Facebook balks because django local runserver is on http.. potential
 # solution is from: https://github.com/python-social-auth/social-app-django/issues/132
@@ -138,12 +154,12 @@ DB_ENGINE_BACKENDS_STANDARD=['sqlite3','postgresql','mysql','oracle']
 # NOTE: These database NAME values cannot be changed without changing the
 # app.py config in the apps that use them
 
-if MAW_ENV == 'production':
+if maw_settings.ENV == 'production':
     DATABASES['lcroyster_connection'] = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'LCRoysterproject',
         'USER': 'LCRoysterproject',
-        'PASSWORD': MAW_OYSTER_MYSQL_PRODUCTION_PASSWORD,
+        'PASSWORD': maw_settings.OYSTER_MYSQL_PRODUCTION_PASSWORD,
         'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
         'PORT': '3354',
         'OPTIONS' : {
@@ -151,15 +167,15 @@ if MAW_ENV == 'production':
             'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
         },
     }
-elif MAW_ENV == 'local':
+elif maw_settings.ENV == 'local':
     DATABASES = {
         # This db will hold users and groups info
         'default': {
             'ENGINE': 'django.db.backends.mysql',
             # The maw1_default_db database will host misc django default data
             'NAME': 'maw1_default_db',
-            'USER': MAW_MYSQL_LOCAL_USER,
-            'PASSWORD': MAW_MYSQL_LOCAL_PASSWORD,
+            'USER': maw_settings.MYSQL_LOCAL_USER,
+            'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
             'HOST': '127.0.0.1',
             'PORT': '3306',
         },
@@ -168,8 +184,8 @@ elif MAW_ENV == 'local':
             # The maw1_db database will host hathitrust and probably
             # some other maw apps
             'NAME': 'maw1_db',
-            'USER': MAW_MYSQL_LOCAL_USER,
-            'PASSWORD': MAW_MYSQL_LOCAL_PASSWORD,
+            'USER': maw_settings.MYSQL_LOCAL_USER,
+            'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
             'HOST': '127.0.0.1',
             'PORT': '3306',
         },
@@ -178,8 +194,8 @@ elif MAW_ENV == 'local':
             # The maw1_db database will host hathitrust and probably
             # some other maw apps
             'NAME': 'lcroyster1',
-            'USER': MAW_MYSQL_LOCAL_USER,
-            'PASSWORD': MAW_MYSQL_LOCAL_PASSWORD,
+            'USER': maw_settings.MYSQL_LOCAL_USER,
+            'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
             'HOST': '127.0.0.1',
             'PORT': '3306',
         },
@@ -188,8 +204,8 @@ elif MAW_ENV == 'local':
             # The maw1_db database will host hathitrust and probably
             # some other maw apps
             'NAME': 'maw1_db',
-            'USER': MAW_MYSQL_LOCAL_USER,
-            'PASSWORD': MAW_MYSQL_LOCAL_PASSWORD,
+            'USER': maw_settings.MYSQL_LOCAL_USER,
+            'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
             'HOST': '127.0.0.1',
             'PORT': '3306',
         },
@@ -198,15 +214,15 @@ elif MAW_ENV == 'local':
             # The maw1_db database will host hathitrust and probably
             # some other maw apps
             'NAME': 'maw1_db',
-            'USER': MAW_MYSQL_LOCAL_USER,
-            'PASSWORD': MAW_MYSQL_LOCAL_PASSWORD,
+            'USER': maw_settings.MYSQL_LOCAL_USER,
+            'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
             'HOST': '127.0.0.1',
             'PORT': '3306',
         },
     } # END DATABASES
 else:
-    msg = ("Bad MAW_ENV name='{}' given for user. "
-    "Not found in ['local','test','production']".format(MAW_ENV) )
+    msg = ("Bad maw_settings.ENV name='{}' given for user. "
+    "Not found in ['local','test','production']".format(maw_settings.ENV) )
     raise ValueError(msg)
 
 # END ENVIRONMENT DATABSE SETTINGS
