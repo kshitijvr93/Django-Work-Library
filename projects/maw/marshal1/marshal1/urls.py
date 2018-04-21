@@ -16,6 +16,7 @@ Including another URLconf
 from django.urls import include, path, re_path
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
+from django.conf.urls import url
 
 # Set admin site display title
 admin.site.site_header = "UF Libraries Marshaling Apps Web (MAW) Admin"
@@ -46,4 +47,11 @@ urlpatterns = [
     #re_path(r'^$', include('maw_home.urls')),
     #path('login/', auth_views.login, name='login'),
     #path('logout/', auth_views.logout, name='logout'),
+
+    url(r'^login/$', auth_views.login, name='login'),
+    url(r'^logout/$', auth_views.logout, name='logout'),
+    url(r'^oauth/', include('social_django.urls', namespace='social')),  # <--
+    #url(r'^admin/', admin.site.urls),
 ]
+#LOGIN_URL = 'login'
+#LOGOUT_URL = 'logout'

@@ -112,7 +112,7 @@ TEMPLATES = [
 
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.open_id.OpenIdAuth',
-    'social_core.backends.google.GoogleOpenID',
+    #'social_core.backends.google.GoogleOpenID',
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
     'social_core.backends.twitter.TwitterOAuth',
@@ -271,6 +271,8 @@ STATIC_URL = '/static/'
 from django.urls import reverse_lazy
 
 LOGIN_REDIRECT_URL = "/admin"
+LOGIN_URL = 'login'
+LOGOUT_URL = 'logout'
 
 
 ## not sure if ckeditor needs this?
