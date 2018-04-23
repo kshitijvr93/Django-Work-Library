@@ -50,7 +50,7 @@ urlpatterns = [
     #path('logout/', auth_views.logout, name='logout'),
 
     url(r'^login/$', auth_views.login, name='login'),
-    path('successfully_logged_out/', views.successfully_logged_out),
+    # path('successfully_logged_out/', views.successfully_logged_out),
     url(r'^logout/$', auth_views.logout, name='logout',
       #{'next_page':'login/'}
       ),
