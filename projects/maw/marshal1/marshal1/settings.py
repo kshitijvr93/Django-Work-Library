@@ -122,6 +122,21 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
+#{ AuthAlreadyAssociated - trying this workaround
+#see https://stackoverflow.com/questions/13018147/authalreadyassociated-exception-in-django-social-auth
+#and see 20170314 answer
+# Seems to work if only using googleOAuth2, but then twitter and github logins
+# and relogins fail..
+# If comment this out, google-OAuth2 relogins give AuthAlreadyAssociated error,
+#but relogins for both twitter and github go OK with no issues...
+#
+'''
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.user.user_details',
+)
+'''
+#}
+
 SOCIAL_AUTH_GITHUB_KEY = maw_settings.GITHUB_CLIENT_ID
 SOCIAL_AUTH_GITHUB_SECRET = maw_settings.GITHUB_CLIENT_SECRET
 SOCIAL_AUTH_TWITTER_KEY = maw_settings.SOCIAL_AUTH_TWITTER_KEY
@@ -277,6 +292,7 @@ from django.urls import reverse_lazy
 # These should be set here in settings.py rather than any urls.py
 
 LOGIN_REDIRECT_URL = "/admin"
+LOGOUT_REDIRECT_URL = "/login"
 LOGIN_URL = 'login'
 LOGOUT_URL = 'logout'
 #}
