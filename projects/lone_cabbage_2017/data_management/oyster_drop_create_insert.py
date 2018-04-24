@@ -487,8 +487,8 @@ from water_observation;
 
 '''
 
-def table_water_observation_create(metadata=None):
-    table_name = 'water_observation'
+def table_water_observation_create(prefix='lcroyster',metadata=None):
+    table_name = '{}_water_observation'.format(prefix)
     me = '{}_create'.format(table_name)
 
     # NOTE: we break from convention and use observation_id
@@ -540,23 +540,30 @@ def table_water_observation_create(metadata=None):
 </summary>
 
 '''
-def tables_drop_create(engine=None, metadata=None):
+def tables_drop_create(engine=None, metadata=None, prefix='lcroyster'):
     #metadata = MetaData()
     d_name_table = {}
 
     # Drop more dependent tables first
-    drop_if_exists(engine=engine, table_name='sensor_observation')
-    drop_if_exists(engine=engine, table_name='water_observation')
-    drop_if_exists(engine=engine, table_name='sensor_deploy')
-    drop_if_exists(engine=engine, table_name='sensor')
-    drop_if_exists(engine=engine, table_name='location')
-    drop_if_exists(engine=engine, table_name='project')
+    drop_if_exists(engine=engine,
+        table_name='{}_sensor_observation'.format(prefix))
+    drop_if_exists(engine=engine,
+        table_name='{}_water_observation'.format(prefix))
+    drop_if_exists(engine=engine,
+        table_name='{}_sensor_deploy'.format(prefix))
+    drop_if_exists(engine=engine,
+        table_name='{}_sensor'.format(prefix))
+    drop_if_exists(engine=engine,
+        table_name='{}_location'.format(prefix))
+    drop_if_exists(engine=engine,
+        table_name='{}_project'.format(prefix))
 
     # Create most independent tables first
-    d_name_table['project'] = table_project_create(metadata=metadata)
+    tproject = '{}_project'.format(prefix)
+    d_name_table[tproject] = table_project_create(metadata=metadata)
 
-    ptable = d_name_table['project']
-    mtable = metadata.tables['project']
+    ptable = d_name_table[tproject]
+    mtable = metadata.tables[tproject]
     if ptable != mtable:
         raise("table mismatch!")
 
@@ -573,7 +580,7 @@ def tables_drop_create(engine=None, metadata=None):
     return d_name_table
 #end def tables_drop_create
 
-def tables_populate(engine=None, metadata=None,d_name_table=None):
+def tables_populate(engine=None, metadata=None,d_name_table=None,prefix=prefix):
     #print("Got metadata.tables={}".format(repr(metadata.tables)))
     print("Got d_name_table={}".format(repr(d_name_table)))
 
@@ -593,7 +600,7 @@ def tables_populate(engine=None, metadata=None,d_name_table=None):
 #end def tables_populate
 
 # MAIN CODE
-def run(env=None):
+def run(env=None,prefix='lcroyster'):
     me="run (oyster_tables_drop_create)"
     print("STARTING: {}: starting".format(me))
     if env == 'uf':
@@ -613,10 +620,12 @@ def run(env=None):
 
     metadata = MetaData()
 
-    d_name_table = tables_drop_create(engine=engine,metadata=metadata)
+    d_name_table = tables_drop_create(engine=engine,metadata=metadata,
+        prefix=prefix)
 
     # Populate only certain constant hard-coded table data
-    tables_populate(engine=engine,metadata=metadata,d_name_table=d_name_table)
+    tables_populate(engine=engine,metadata=metadata,
+        d_name_table=d_name_table,prefix=prefix)
 
     print("ENDING: {}: ending".format(me))
     return

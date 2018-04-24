@@ -249,7 +249,7 @@ class OysterProject():
         # But maybe not useful?
 
         # Get engine table object for water_observation
-        self.table_water_observation = Table('water_observation',
+        self.table_water_observation = Table('lcroyster_waterobservation',
             self.sa_metadata, autoload=True, autoload_with=engine)
 
         if log_file is None:
@@ -577,7 +577,7 @@ class Star():
             raise ValueError("project not given")
 
         self.project = project
-        self.log_file = project.log_file
+        self.log_file = project.log_file if log_file is None else log_file
 
         print("{}:Using log file {}".format(me,self.log_file))
         print("{}:Using log file {}".format(me,self.log_file),file=self.log_file)
@@ -1012,6 +1012,7 @@ if testme == 1:
         #env = 'uf'
         # 20180407  - another windows planform, my thinkpad
         env = 'thinkpad'
+        env = 'uf'
 
     run(env=env, do_diver=do_diver, do_star=do_star, verbosity=1)
     print("Done",flush=True)

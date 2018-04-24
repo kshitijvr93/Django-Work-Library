@@ -186,6 +186,59 @@ if maw_settings.ENV == 'production':
             'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
         },
     }
+elif maw_settings.ENV == 'test':
+    DATABASES = {
+        # This db will hold users and groups info
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            # The maw1_default_db database will host misc django default data
+            'NAME': 'maw1_default_db',
+            'USER': maw_settings.MYSQL_TEST_USER,
+            'PASSWORD': maw_settings.MYSQL_TEST_PASSWORD,
+            'HOST': '10.241.33.139',
+            'PORT': '3306',
+        },
+        'maw1_db_connection': {
+            'ENGINE': 'django.db.backends.mysql',
+            # The maw1_db database will host hathitrust and probably
+            # some other maw apps
+            'NAME': 'maw1_db_test',
+            'USER': maw_settings.MYSQL_TEST_USER,
+            'PASSWORD': maw_settings.MYSQL_TEST_PASSWORD,
+            'HOST': '10.241.33.139',
+            'PORT': '3306',
+        },
+        'lcroyster_connection': {
+            'ENGINE': 'django.db.backends.mysql',
+            # The maw1_db database will host hathitrust and probably
+            # some other maw apps
+            'NAME': 'lcroyster1_test',
+            'USER': maw_settings.MYSQL_TEST_USER,
+            'PASSWORD': maw_settings.MYSQL_TEST_PASSWORD,
+            'HOST': '10.241.33.139',
+            'PORT': '3306',
+        },
+        'hathitrust_connection': {
+            'ENGINE': 'django.db.backends.mysql',
+            # The maw1_db database will host hathitrust and probably
+            # some other maw apps
+            'NAME': 'maw1_db_test',
+            'USER': maw_settings.MYSQL_TEST_USER,
+            'PASSWORD': maw_settings.MYSQL_TEST_PASSWORD,
+            'HOST': '10.241.33.139',
+            'PORT': '3306',
+        },
+        'cuba_libro_connection': {
+            'ENGINE': 'django.db.backends.mysql',
+            # The maw1_db database will host hathitrust and probably
+            # some other maw apps
+            'NAME': 'maw1_db_test',
+            'USER': maw_settings.MYSQL_TEST_USER,
+            'PASSWORD': maw_settings.MYSQL_TEST_PASSWORD,
+            'HOST': '10.241.33.139',
+            'PORT': '3306',
+        },
+    }
 elif maw_settings.ENV == 'local':
     DATABASES = {
         # This db will hold users and groups info
@@ -238,7 +291,7 @@ elif maw_settings.ENV == 'local':
             'HOST': '127.0.0.1',
             'PORT': '3306',
         },
-    } # END DATABASES
+    } # END ENV LOCAL DATABASES
 else:
     msg = ("Bad maw_settings.ENV name='{}' given for user. "
     "Not found in ['local','test','production']".format(maw_settings.ENV) )
