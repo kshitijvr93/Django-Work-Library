@@ -558,15 +558,16 @@ class Star():
         # Key is 'serial number' from a raw sensor file, a string really.
         # Value is the db inter id value of the sensor
         self.d_serial_sensor = {
-            '8814' : 1,  #Values not used yet
-            '9058' : 2,
-            '9060' : 3,
-            '9061' : 4,
-            '9035' : 5,
-            '9062' : 6,
-            '9036' : 7,
-            '9059' : 8,
-            '9238' : 9,
+            'S8814' : 1,  #Values not used yet
+            'S9058' : 2,
+            'S9060' : 3,
+            'S9061' : 4,
+            'S9035' : 5,
+            'S9062' : 6,
+            'S9036' : 7,
+            'S9059' : 8,
+            'S9238' : 9,
+            'S9237' : 12
         }
 
     def __init__(self,project=None, input_file_folders=None,
@@ -755,6 +756,9 @@ class Star():
                     try:
                         match = re.search(rx_star_serial_number_line16,line)
                         serial_number = match.group("serial_number")
+                        # 20180424 - special need for Oyster Project, stick
+                        # or impfer an S prefix in front of serial numbers now.
+                        serial_number = 'S' + serial_number
                     except:
                         msg = ("{}: input_file has {} no serial number"
                             .format(me,input_file_name))
