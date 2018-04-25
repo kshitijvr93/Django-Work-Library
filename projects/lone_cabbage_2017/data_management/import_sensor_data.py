@@ -964,8 +964,11 @@ def run(input_folder=None, log_file=None,drop_table=False, verbosity=1):
     print("{}: Using input_folder={}".format(me, input_folder))
 
     # engine_spec = get_engine_spec_by_name(name=engine_nick_name)
-    engine_spec = d_lcroyster['database_connections']['lcroyster_production']
-    print("DELETE ME: Got engine_spec={}".format(engine_spec))
+    d_engine_info = d_lcroyster['database_connections']['lcroyster_production']
+    print("Got d_engine_info, len={}".format(len(d_engine_info)))
+    engine_spec = (d_engine_info['format'].format(**d_engine_info))
+    print("DELETE ME: Got engine_spec, len={}".format(len(engine_spec)))
+
     engine = create_engine(engine_spec)
 
     oyster_project = OysterProject(engine=engine, log_file=log_file)
