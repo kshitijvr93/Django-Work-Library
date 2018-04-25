@@ -1,25 +1,29 @@
 '''
 import_sensor_data.py
 
-This code drops and creates the table water_observations from scratch,
-then reads all the sensor data and re-imports it.
+This reads sensor data from a root directory in specific sensor formats
+Now two formats are supported (1) van Essen "Diver" sensor native
+files and (2) Star-ODDI sensor native files.
 
-A more sophisticated version will probably be developed that will
-read the data readings and try to insert each one, and affably fail
-if there is a duplicate sensor-datetime error, meaning the same data
-row is being read twice.
+This code will optionally drop and recreate the output table, named
+lcroyster_buoy_observations before importing the data from the input files.
 
-The import files may grow over time, so upon re-reads the larger portion
-of beginning rows will be tried and fail until the reader gets to the
-very end where it starts trying to read new rows.
-
-Some pre-coordination of the import files may be advisable to speed up
-this process.
-
+By not dropping the current database table, this allows the user to keep
+the current data in the table while importing the input files. However,
+if any sensor readings in the input files are duplicates of readings already
+in the database, the log will present warning messages that the duplicates
+were not inserted, and this will also significantly slow down execution
+time of the total import process.
+It may be easier and faster to drop the database table and always
+import all the data than to jocky potential input files around in your file
+space to ensure only the 'new readings' will be included.
+If there are no duplicate readings, this import process should import
+about 15,000 readings/rows per minute.
 
 Python 3.6+ code
 
 '''
+
 import sys, os, os.path, platform
 
 def register_modules():
@@ -348,6 +352,11 @@ class Diver():
             input_path_globs=self.input_file_globs)
 
         paths = []
+        file_count = len(gpaths)
+        if verbosity > 1:
+            print("{}: parsing count of {} sequence_paths for files"
+              .format(me, file_count), file=log_file)
+
         for path in gpaths:
             if path in paths:
                 # gpaths could have duplicates when mulitple globs
@@ -361,7 +370,7 @@ class Diver():
             file_count += 1
 
             input_file_name = path.resolve()
-            if verbosity > 1:
+            if verbosity > 0:
                 print("{}: parsing input file '{}'"
                     .format(me,input_file_name),flush=True
                     , file=log_file )
@@ -928,44 +937,35 @@ Note: the input files to use were identified in an email from Mel
 Moreno to Robert Phillips 2018-02-12.
 
 '''
+def get_lcroyster_settings(verbosity=1):
+    import os, sys, os.path
+    MY_SECRETS_FOLDER = os.environ['MY_SECRETS_FOLDER']
+    if verbosity > 0:
+        print("Using MY_SECRETS_FOLDER='{}'".format(MY_SECRETS_FOLDER))
 
-def run(env=None,do_diver=1, do_star=1, verbosity=1):
+    sys.path.append(os.path.abspath(MY_SECRETS_FOLDER))
+
+    # IMPORT SETTINGS FOR MARSHALING APPLICATION WEBSITE (MAW) settings
+    import maw_settings
+    sys.path.append(maw_settings.MODULES_FOLDER)
+    return maw_settings.my_project_params['lcroyster']
+
+def run(input_folder=None, log_file=None,drop_table=False, verbosity=1):
     me='run'
 
-    if env == 'uf':
-        input_folder=(
-          # 'U:\\data\\oyster_sensor\\2017\\'
-          'T:\\WEC\\Groups\\Oyster Project\\project_task\\'
-          't7_data_management\\wq\\'
-          )
-        print("Using 'uf' input folder='{}'"
-           .format(input_folder), file=sys.stdout)
-        engine_nick_name = 'uf_local_mysql_lcroyster1'
-    elif env == 'thinkpad':
-        input_folder=(
-          # 'U:\\data\\oyster_sensor\\2017\\'
-          'C:\\rvp\\data\\Oyster Project\\wq'
-          )
-        print("Using 'uf' input folder='{}'"
-           .format(input_folder), file=sys.stdout)
-        engine_nick_name = 'uf_local_mysql_lcroyster1'
-    else:
-        input_folder=(
-          '/home/robert/data/oyster_sensor/2017/' )
-        print("Using 'home' input folder='{}'"
-           .format(input_folder), file=sys_stdout)
+    do_star = 1
+    do_diver = 1
 
-        engine_nick_name = 'hp_psql_lcroyster1'
-        engine_nick_name = 'hp_mysql_lcroyster1'
+    d_lcroyster = get_lcroyster_settings()
 
-    log_file_name="{}{}log_import.txt".format(input_folder,os.sep)
-    print("{}: STARTING: Using log_file_name={}".format(me,log_file_name),
-        file=sys.stdout, flush=True)
+    if input_folder is None:
+        input_folder = d_lcroyster['sensor_observations_input_folder']
 
-    log_file = open(log_file_name, mode="w", encoding='utf-8')
+    print("{}: Using input_folder={}".format(me, input_folder))
 
-
-    engine_spec = get_engine_spec_by_name(name=engine_nick_name)
+    # engine_spec = get_engine_spec_by_name(name=engine_nick_name)
+    engine_spec = d_lcroyster['database_connections']['lcroyster_production']
+    print("DELETE ME: Got engine_spec={}".format(engine_spec))
     engine = create_engine(engine_spec)
 
     oyster_project = OysterProject(engine=engine, log_file=log_file)
@@ -973,10 +973,10 @@ def run(env=None,do_diver=1, do_star=1, verbosity=1):
     # Create various sensor instances
     # for now, each class defines a glob to identify its files
     # and NO other sensor files.
-    # This program ASSUMES/requires doordination/pre-enforecement
+    # This program ASSUMES/requires coordination/pre-enforcement
     # in file naming. All "Diver" raw sensor file names must
-    # end in MON and each Star raw sensor file name must end
-    # in WQn, where N is a digit [0-9]
+    # end in diver.MON and each Star raw sensor file name must end
+    # in star.DAT
     # See the class code for exact 'glob' syntax used.
 
     input_file_folders = [input_folder]
@@ -986,25 +986,22 @@ def run(env=None,do_diver=1, do_star=1, verbosity=1):
             input_file_folders=input_file_folders,
             input_file_globs=['**/*diver.MON'])
         diver.parse_files(verbosity=verbosity)
-    # star = Star(input_folders=input_folder,
-    #    input_file_globs = ['**/Star*WQ[0-9]'])
 
     if do_star == 1:
         star = Star(project=oyster_project,
             input_file_folders=input_file_folders,
-            #input_file_globs=['**/Star*WQ[0-9]']
             input_file_globs=['**/*star.DAT',]
             )
 
         print("{}: calling parse_files".format(me),file=log_file)
-        star.parse_files(verbosity=verbosity)
+        star.parse_files(verbosity=verbosity,file=log_file)
         print("{}: back from calling parse_files".format(me),file=log_file)
     print("ENDING: See log file name='{}'".format(log_file_name))
     return
 
 #end def run()
 
-testme = 1
+testme = 0
 
 do_star = 1
 do_diver = 0
@@ -1018,7 +1015,69 @@ if testme == 1:
         env = 'thinkpad'
         env = 'uf'
 
-    run(env=env, do_diver=do_diver, do_star=do_star, verbosity=1)
+    run( verbosity=1)
     print("Done",flush=True)
+
+# end main code
+
+if __name__ == "__main__":
+
+    d_lcroyster = get_lcroyster_settings()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+
+    # Note: do default to get some settings from user
+    # config file, like passwords
+    # Add help to instruct about MY_SECRETS_FOLDER, etc.
+    # Arguments
+
+    parser.add_argument("-d", "--drop_buoy_observations_first",
+      # type=bool,  ## THere is no bool for add_argument, must use int
+      #type=int,
+      default=False, action='store_true',
+      help='This option drops all lcroyster_buoy_observation rows before '
+           'importing.'
+      )
+
+    parser.add_argument("-v", "--verbosity",
+      type=int, default=1,
+      help="output verbosity integer (0 to 2)")
+
+    parser.add_argument("-i", "--input_folder",
+      #required=True,
+      # default="U:\\data\\elsevier\\output_exoldmets\\test_inbound\\",
+      help='All .DAT and .MON files anywhere under this folder will be read '
+          'for imports. The import program will here create the file or '
+          'overwrite a previous import log file.'
+     )
+
+    args = parser.parse_args()
+
+    input_folder = args.input_folder
+    if input_folder is None:
+        input_folder = d_lcroyster['sensor_observations_input_folder']
+
+    print("Using input_folder={}".format(input_folder))
+
+    log_file_name = "{}/import_sensor_log.txt".format(input_folder)
+    log_file = open(log_file_name, mode="w", encoding='utf-8')
+
+    drop_table = args.drop_buoy_observations_first
+
+    if args.verbosity:
+        print("STARTING: Using verbosity value={}".format(args.verbosity)
+            , file=log_file)
+        print("Using input_folder={}".format(input_folder)
+            , file=log_file)
+        print("Using drop_buoy_observations_first={}" .format(drop_table)
+            , file=log_file)
+
+    log_file.flush()
+
+    run(input_folder=input_folder, drop_table=drop_table,
+        log_file=log_file, verbosity=args.verbosity)
+
+#end if __name__ == "__main__"
 
 #END FILE

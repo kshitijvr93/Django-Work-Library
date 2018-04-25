@@ -14,7 +14,7 @@ sys.path.append(os.path.abspath(MY_SECRETS_FOLDER))
 # print ("Using MY_SECRETS_FOLDER='{}'".format(MY_SECRETS_FOLDER))
 
 # IMPORT SETTINGS FOR MARSHALING APPLICATION WEBSITE (MAW) settings
-from maw_settings import *
+#from maw_settings import *
 import maw_settings
 
 print("Got maw_settings.MODULES_FOLDER={}"

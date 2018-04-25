@@ -1,6 +1,14 @@
 '''
 Python 3.6 code to create the lone cabbage oyster project 'main'
-database tables to hold project, sensors, locations, info that will not
+database table lcroyster_buoy_observations
+to hold fixed sensor observations (from Diver and Star
+sensor types so far) at the reef buoys.
+
+Code is removed from this project that drops and creates other Lcroyster
+tables, to make sure ONLY buouy sensor data is ever dropped
+--
+
+s to hold project, sensors, locations, info that will not
 often change, and is easily initialized via hard coding to
 facilitate set up of other applications.
 as of January 2018 or so...
@@ -620,8 +628,9 @@ def run(env=None,prefix='lcroyster'):
 
     metadata = MetaData()
 
-    d_name_table = tables_drop_create(engine=engine,metadata=metadata,
-        prefix=prefix)
+    # RETIRE THIS... too dangerous
+    #d_name_table = tables_drop_create(engine=engine,metadata=metadata,
+    #    prefix=prefix)
 
     # Populate only certain constant hard-coded table data
     tables_populate(engine=engine,metadata=metadata,
