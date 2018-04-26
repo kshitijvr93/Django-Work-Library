@@ -417,7 +417,7 @@ class WaterObservation(models.Model):
 
 class BuoyObservation(models.Model):
     # Use UUIDField as primary key so can insert with various batches if needed.
-    buoy_observation_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    buoy_observation_id = models.AutoField(primary_key=True)
     sensor = models.ForeignKey(Sensor, models.DO_NOTHING, blank=True, null=True)
     observation_datetime = models.DateTimeField(blank=True, null=True)
     in_service = models.IntegerField(blank=True, null=True)

@@ -5,8 +5,9 @@ This reads sensor data from a root directory in specific sensor formats
 Now two formats are supported (1) van Essen "Diver" sensor native
 files and (2) Star-ODDI sensor native files.
 
-This code will optionally drop and recreate the output table, named
-lcroyster_buoy_observations before importing the data from the input files.
+This code might be modified to optionally drop and recreate the output table,
+named lcroyster_buoyobservation before importing the data from the input files.
+However, mysql workbench can be used to delete rows from the table.
 
 By not dropping the current database table, this allows the user to keep
 the current data in the table while importing the input files. However,
@@ -108,8 +109,8 @@ followed by 3 digits of precision:
 The last line in the file is a sentinel line with the text:
 END OF DATA FILE OF DATALOGGER FOR WINDOWS
 
-Each data line is used to insert a row in an output water_observations
-table. That table has a unique index on the composite (sensor_id, date, time)
+Each data line is used to insert a row in an observations table.
+That table must have a unique index on the composite (sensor_id, date, time)
 if a MON file row duplicates those values, it is skipped and not inserted,
 though a log file line is issued to log any consecutive range of line numbers
 within the input MON file that has the duplcate (already inserted data)
@@ -176,7 +177,9 @@ class OysterProject():
         # each with a location id (deployment location) value.
         d_sensor_deployment = {}
         for d_row in l_rows:
-            print("Using d_row='{}'".format(d_row))
+            if self.verbosity > 0:
+                print("Sensor deployment: Using d_row='{}'".format(d_row)
+                    ,file=self.log_file)
             sensor_id = d_row['sensor_id']
             if d_sensor_deployment.get(sensor_id, None) is None:
                 d_sensor_deployment[sensor_id] = dict()
@@ -201,8 +204,9 @@ class OysterProject():
             d_sensor_deployment[sensor_id] = OrderedDict(
               { key:d_date_loc[key] for key in sorted(d_date_loc.keys()) })
 
-        print("Got final d_sensor_deployments = {}"
-            .format(repr(d_sensor_deployment)))
+        if self.verbosity > 1:
+            print("Got final d_sensor_deployments = {}"
+                .format(repr(d_sensor_deployment)),file=self.log_file)
 
         return d_sensor_deployment
 
@@ -236,31 +240,32 @@ class OysterProject():
 
     #end def get_in_service()
 
-    def __init__(self, engine=None, log_file=None,verbosity=1):
+    def __init__(self, engine=None, observations_table_name=None,
+        log_file=None, verbosity=1, max_exceptions_per_file=10):
         me='OysterProject.__init__'
         # Initialize some central data, later read some from db
+
+
         if verbosity > 0:
-            print("{}: starting".format(me))
+            print("{}: starting".format(me), file=log_file)
+        self.verbosity = verbosity
 
         if engine is None:
             raise ValueError("Missing engine parameter")
         self.engine = engine
+        self.max_exceptions_per_file = max_exceptions_per_file
         self.log_file = log_file
 
         self.sa_metadata = MetaData()
-        # If given set study_end_date_time, to use it to limit water_observations.
-        # But maybe not useful?
 
         # Get engine table object for water_observation
-        self.table_water_observation = Table('lcroyster_waterobservation',
+        self.observations_table = Table(observations_table_name,
             self.sa_metadata, autoload=True, autoload_with=engine)
 
         if log_file is None:
             self.log_file = sys.stdout
         else:
             self.log_file = log_file
-        if verbosity > 0:
-            print("{}: got log_file={}".format(me,repr(self.log_file)))
 
         self.d_sensor_deployments = self.get_d_sensor_deployments()
         print("Test print to log file.", file=log_file)
@@ -313,6 +318,7 @@ class Diver():
             raise ValueError("project not given")
 
         self.project = project
+        self.max_exceptions_per_file = project.max_exceptions_per_file
         self.log_file = log_file if log_file is not None else project.log_file
 
         self.input_file_folders = input_file_folders
@@ -351,10 +357,6 @@ class Diver():
             input_path_globs=self.input_file_globs)
 
         paths = []
-        file_count = len(gpaths)
-        if verbosity > 1:
-            print("{}: parsing count of {} sequence_paths for files"
-              .format(me, file_count), file=log_file)
 
         for path in gpaths:
             if path in paths:
@@ -501,7 +503,7 @@ class Diver():
                     print("pressure_cm='{}'".format(pressure_cm))
                     print("temperature_c='{}'".format(temperature_c))
                     print("conductivity_mS_cm='{}'".format(conductivity_mS_cm))
-                # NOTE: field_names match columns in table_water_observation
+                # NOTE: field_names match columns in observations_table_name
                 for field_name in ['pressure_cm','temperature_c','conductivity_mS_cm']:
                     value = data_match.group(field_name)
                     if verbosity > 2:
@@ -511,24 +513,36 @@ class Diver():
         # end with open.. input file_name
 
         # Insert rows to table water_observation from this input file
+        n_except = 0
+        n_insert = 0
         for row in l_rows:
             line_count += 1
             try:
                 self.project.engine.execute(
-                    self.project.table_water_observation.insert(), row)
+                    self.project.observations_table.insert(), row)
             except Exception as ex:
-                msg=("\n***************\n"
-                    "WARNING: Input file '{}',\ninsert line_count {} has error {}."
-                    "\n***************\n"
-                    .format(input_file_name, line_count,ex))
-                print(msg, file=log_file)
+                n_except += 1
+                if n_except < self.project.max_exceptions_per_file:
+                    msg=("\n***************\n"
+                        "WARNING: Input file '{}',\nline {} has error {}."
+                        "\n***************\n"
+                        .format(input_file_name, line_count,ex))
+                    print(msg, file=log_file)
+                elif n_except >= self.project.max_exceptions_per_file:
+                    msg = ('*** TOO MANY INSERT EXCEPTIONS FOR THIS FILE. '
+                        'SKIPPING TO NEXT FILE.')
+                    print(msg, file=log_file)
+                    return(-n_insert)
+            n_insert += 1
 
-        if verbosity > 0:
+        if verbosity > 1:
             print("{}:Parsed file {},\n and found {} rows:"
                 .format(me,input_file_name, len(l_rows),file=log_file))
-
             for count, d_row in enumerate(l_rows, start=1):
                 print("{}\t{}".format(count,d_row),file=log_file)
+        elif verbosity > 0:
+            print("{}:Parsed file {},\n and found {} rows."
+                .format(me,input_file_name, len(l_rows),file=log_file))
 
         return len(l_rows)
     # end def import_file()
@@ -586,6 +600,7 @@ class Star():
             raise ValueError("project not given")
 
         self.project = project
+        self.max_exceptions_per_file = project.max_exceptions_per_file
         self.log_file = project.log_file if log_file is None else log_file
 
         print("{}:Using log file {}".format(me,self.log_file))
@@ -655,7 +670,7 @@ class Star():
             hr = match.group("hr")
             minute = match.group("min")
             sec = match.group("sec")
-            # NOTE: field_names match columns in table_water_observation
+            # NOTE: field_names match columns in observations_table_name
             for field_name in ['temperature_c','salinity_psu',
                 'conductivity_mS_cm', 'sound_velocity_m_sec']:
 
@@ -848,17 +863,26 @@ class Star():
 
         # Insert rows to table water_observation from this input file
         line_count = 18
+        n_exceptions = 0
+        n_inserts = 0
         for row in l_rows:
             line_count += 1
             try:
                 self.project.engine.execute(
-                    self.project.table_water_observation.insert(), row)
+                    self.project.observations_table.insert(), row)
             except Exception as ex:
-                msg=("\n***************\n"
-                    "WARNING: Input file {},\ninsert line_count {} has error {}."
-                    "\n***************\n"
-                    .format(input_file_name, line_count,ex))
-                print(msg, file=log_file)
+                n_exceptions += 1
+                if n_exceptions < self.project.max_exceptions_per_file:
+                    msg=("\n***************\n"
+                        "WARNING: Input file {},\ninsert line_count {} has error {}."
+                        "\n***************\n"
+                        .format(input_file_name, line_count,ex))
+                    print(msg, file=log_file)
+                elif n_exceptions >= self.project.max_exceptions_per_file:
+                    msg=("\n *** ERROR: TOO MANY INSERT EXCEPTIONS FOR THIS FILE")
+                    print(msg, file=log_file)
+                    return(-n_inserts)
+            n_inserts += 1
 
         if verbosity > 0:
             print("{}:Parsed file {},\n and found {} rows:"
@@ -939,8 +963,6 @@ Moreno to Robert Phillips 2018-02-12.
 def get_lcroyster_settings(verbosity=1):
     import os, sys, os.path
     MY_SECRETS_FOLDER = os.environ['MY_SECRETS_FOLDER']
-    if verbosity > 0:
-        print("Using MY_SECRETS_FOLDER='{}'".format(MY_SECRETS_FOLDER))
 
     sys.path.append(os.path.abspath(MY_SECRETS_FOLDER))
 
@@ -950,9 +972,10 @@ def get_lcroyster_settings(verbosity=1):
     sys.path.append(maw_settings.MODULES_FOLDER)
     return maw_settings.my_project_params['lcroyster'], settings_filename
 
-def run(input_folder=None, log_file_name=None,
+def run(input_folder=None,
     observations_table_name=None,
-    delete_observation_rows_first=True,
+    log_file_name=None,
+    max_exceptions_per_file=5,
     skip_star=0, skip_diver=0, verbosity=1):
     me='run'
 
@@ -962,8 +985,8 @@ def run(input_folder=None, log_file_name=None,
         input_folder = d_lcroyster['sensor_observations_input_folder']
 
     if log_file_name is None:
-        log_file_name = "{}/import_buoy_sensor_data_log.txt"
-            .format(input_folder)
+        log_file_name = ("{}/import_buoy_sensor_data_log.txt"
+            .format(input_folder))
 
     log_file = open(log_file_name, mode="w", encoding='utf-8')
 
@@ -976,10 +999,6 @@ def run(input_folder=None, log_file_name=None,
     print("{}:Using data input_folder={}".format(me, input_folder)
         ,file=log_file)
 
-    print("Using delete_observation_rows_first={}"
-        .format(delete_observation_rows_first)
-        ,file=log_file)
-
     # engine_spec = get_engine_spec_by_name(name=engine_nick_name)
     d_engine_info = d_lcroyster['database_connections']['lcroyster']
     print("Got d_engine_info of length={}".format(len(d_engine_info))
@@ -989,6 +1008,8 @@ def run(input_folder=None, log_file_name=None,
     engine = create_engine(engine_spec)
 
     # If indicated, delete the observations table rows first
+    # Potential feature to add:
+    '''
     if delete_observation_rows_first:
         if verbosity > 0:
             print("Deleting rows of table '{}' before importing input data."
@@ -998,9 +1019,12 @@ def run(input_folder=None, log_file_name=None,
         observations_table_object = Table(observations_table_name,
                 sa_metadata, autoload=True, autoload_with=engine)
         observations_table_object.delete()
+    '''
 
     oyster_project = OysterProject(engine=engine, log_file=log_file,
-        verbosity=verbosity)
+        observations_table_name=observations_table_name,verbosity=verbosity,
+        max_exceptions_per_file=max_exceptions_per_file
+        )
 
     # Create various sensor instances
     # for now, each class defines a glob to identify its files
@@ -1047,20 +1071,24 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
 
-    observations_table_name = 'lcroyster_buoy_observation'
+    #Hold of on making this a command line parameter for now.
+    #It could allow for critical outages
+    observations_table_name = 'lcroyster_buoyobservation'
 
     # Note: do default to get some settings from user
     # config file, like passwords
     # Add help to instruct about MY_SECRETS_FOLDER, etc.
     # Arguments
 
+    '''
     parser.add_argument("-d", "--delete_observation_rows_first",
       # type=bool,  ## THere is no bool for add_argument, must use int
       #type=int,
       default=True, action='store_true',
-      help='Defaults to True. This option deletes all table '{}' rows before '
+      help="Defaults to True. This option deletes all table '{}' rows before "
            'importing data into the table.'.format(observations_table_name)
       )
+    '''
 
     parser.add_argument("-v", "--verbosity",
       type=int, default=1,
@@ -1071,8 +1099,12 @@ if __name__ == "__main__":
       # default="U:\\data\\elsevier\\output_exoldmets\\test_inbound\\",
       help='All .DAT and .MON files anywhere under this folder will be read '
           'for imports. The import program will here create the file or '
-          'overwrite a previous import log file.'
-     )
+          'overwrite a previous import log file.' )
+
+    parser.add_argument("-x", "--max_exceptions_per_file",
+      type=int, default=5,
+      help='Maxiumum number of insert exceptions to report per input file.' )
+
 
     parser.add_argument("-l", "--log_file_name",
       #required=True,
@@ -1086,8 +1118,8 @@ if __name__ == "__main__":
 
     run(input_folder=args.input_folder,
         observations_table_name=observations_table_name,
-        delete_observations_rows_first=args.delete_observation_rows_first,
-        log_file_name=log_file_name,
+        log_file_name=None,
+        max_exceptions_per_file=args.max_exceptions_per_file,
         verbosity=args.verbosity)
 
 #end if __name__ == "__main__"
