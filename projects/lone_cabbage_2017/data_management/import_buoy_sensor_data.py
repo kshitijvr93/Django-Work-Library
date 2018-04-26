@@ -241,7 +241,7 @@ class OysterProject():
     #end def get_in_service()
 
     def __init__(self, engine=None, observations_table_name=None,
-        log_file=None, verbosity=1, max_exceptions_per_file=10):
+        log_file=None, verbosity=1, max_exception_logs_per_file=10):
         me='OysterProject.__init__'
         # Initialize some central data, later read some from db
 
@@ -253,7 +253,7 @@ class OysterProject():
         if engine is None:
             raise ValueError("Missing engine parameter")
         self.engine = engine
-        self.max_exceptions_per_file = max_exceptions_per_file
+        self.max_exception_logs_per_file = max_exception_logs_per_file
         self.log_file = log_file
 
         self.sa_metadata = MetaData()
@@ -318,7 +318,7 @@ class Diver():
             raise ValueError("project not given")
 
         self.project = project
-        self.max_exceptions_per_file = project.max_exceptions_per_file
+        self.max_exception_logs_per_file = project.max_exception_logs_per_file
         self.log_file = log_file if log_file is not None else project.log_file
 
         self.input_file_folders = input_file_folders
@@ -513,36 +513,34 @@ class Diver():
         # end with open.. input file_name
 
         # Insert rows to table water_observation from this input file
-        n_except = 0
-        n_insert = 0
+        n_exceptions = 0
+        n_inserts = 0
         for row in l_rows:
             line_count += 1
             try:
                 self.project.engine.execute(
                     self.project.observations_table.insert(), row)
+                n_inserts += 1
             except Exception as ex:
-                n_except += 1
-                if n_except < self.project.max_exceptions_per_file:
+                n_exceptions += 1
+                if n_exceptions < self.project.max_exception_logs_per_file:
                     msg=("\n***************\n"
                         "WARNING: Input file '{}',\nline {} has error {}."
                         "\n***************\n"
                         .format(input_file_name, line_count,ex))
                     print(msg, file=log_file)
-                elif n_except >= self.project.max_exceptions_per_file:
-                    msg = ('*** TOO MANY INSERT EXCEPTIONS FOR THIS FILE. '
-                        'SKIPPING TO NEXT FILE.')
+                elif n_exceptions == self.project.max_exception_logs_per_file:
+                    msg = ('*** MADE MAXIMUM EXCEPTION REPORTS FOR THIS FILE.')
                     print(msg, file=log_file)
-                    return(-n_insert)
-            n_insert += 1
 
+        if verbosity > 0:
+            print("{}:Parsed file {} of {} rows, did {} inserts, had {} exceptions:"
+                .format(me,input_file_name, line_count-1,n_inserts,n_exceptions)
+                ,file=log_file)
         if verbosity > 1:
-            print("{}:Parsed file {},\n and found {} rows:"
-                .format(me,input_file_name, len(l_rows),file=log_file))
+            print("Rows parsed were:")
             for count, d_row in enumerate(l_rows, start=1):
                 print("{}\t{}".format(count,d_row),file=log_file)
-        elif verbosity > 0:
-            print("{}:Parsed file {},\n and found {} rows."
-                .format(me,input_file_name, len(l_rows),file=log_file))
 
         return len(l_rows)
     # end def import_file()
@@ -600,7 +598,7 @@ class Star():
             raise ValueError("project not given")
 
         self.project = project
-        self.max_exceptions_per_file = project.max_exceptions_per_file
+        self.max_exception_logs_per_file = project.max_exception_logs_per_file
         self.log_file = project.log_file if log_file is None else log_file
 
         print("{}:Using log file {}".format(me,self.log_file))
@@ -642,15 +640,9 @@ class Star():
                 ,verbosity=verbosity)
 
             total_file_rows += n_rows
-            #l_rows = ['one']
-            if verbosity > 0:
-                print(
-                   "{}: Parsed file {}={} with {} 'readings' rows"
-                  .format(me, file_count, input_file_name,n_rows)
-                  ,file=log_file)
         # end for path in paths
         if verbosity > 0:
-            print("{}:Ending with {} files found".format(me,file_count),
+            print("{}:Ending with {} files found and parsed.".format(me,file_count),
                 file=log_file)
         return file_count
    # end def parse_files
@@ -870,28 +862,31 @@ class Star():
             try:
                 self.project.engine.execute(
                     self.project.observations_table.insert(), row)
+                n_inserts += 1
             except Exception as ex:
                 n_exceptions += 1
-                if n_exceptions < self.project.max_exceptions_per_file:
+                if n_exceptions < self.project.max_exception_logs_per_file:
                     msg=("\n***************\n"
                         "WARNING: Input file {},\ninsert line_count {} has error {}."
                         "\n***************\n"
                         .format(input_file_name, line_count,ex))
                     print(msg, file=log_file)
-                elif n_exceptions >= self.project.max_exceptions_per_file:
-                    msg=("\n *** ERROR: TOO MANY INSERT EXCEPTIONS FOR THIS FILE")
+                elif n_exceptions == self.project.max_exception_logs_per_file:
+                    msg=("\n *** MADE MAXIMUM EXCEPTION REPORTS FOR THIS FILE")
                     print(msg, file=log_file)
-                    return(-n_inserts)
-            n_inserts += 1
+
 
         if verbosity > 0:
-            print("{}:Parsed file {},\n and found {} rows:"
-                .format(me,input_file_name, line_count-1),file=log_file)
-
+            print("{}:Parsed file {} and found {} rows, with {} inserts, {} exceptions:"
+                .format(me,input_file_name, line_count-1,n_inserts,n_exceptions)
+                ,file=log_file)
+        if verbosity > 1:
+            print("Parsed rows were:")
             for count,d_row in enumerate(l_rows, start=1):
                 print("{}\t{}".format(count,d_row),file=log_file)
 
         return len(l_rows)
+
 #end class Star
 
 '''
@@ -975,7 +970,7 @@ def get_lcroyster_settings(verbosity=1):
 def run(input_folder=None,
     observations_table_name=None,
     log_file_name=None,
-    max_exceptions_per_file=5,
+    max_exception_logs_per_file=5,
     skip_star=0, skip_diver=0, verbosity=1):
     me='run'
 
@@ -1023,7 +1018,7 @@ def run(input_folder=None,
 
     oyster_project = OysterProject(engine=engine, log_file=log_file,
         observations_table_name=observations_table_name,verbosity=verbosity,
-        max_exceptions_per_file=max_exceptions_per_file
+        max_exception_logs_per_file=max_exception_logs_per_file
         )
 
     # Create various sensor instances
@@ -1101,7 +1096,7 @@ if __name__ == "__main__":
           'for imports. The import program will here create the file or '
           'overwrite a previous import log file.' )
 
-    parser.add_argument("-x", "--max_exceptions_per_file",
+    parser.add_argument("-x", "--max_exception_logs_per_file",
       type=int, default=5,
       help='Maxiumum number of insert exceptions to report per input file.' )
 
@@ -1119,7 +1114,7 @@ if __name__ == "__main__":
     run(input_folder=args.input_folder,
         observations_table_name=observations_table_name,
         log_file_name=None,
-        max_exceptions_per_file=args.max_exceptions_per_file,
+        max_exception_logs_per_file=args.max_exception_logs_per_file,
         verbosity=args.verbosity)
 
 #end if __name__ == "__main__"
