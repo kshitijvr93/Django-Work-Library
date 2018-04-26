@@ -413,3 +413,38 @@ class WaterObservation(models.Model):
         return '{}:{}'.format(self.sensor.serial_number,
           self.observation_datetime)
 #end class waterobservation
+
+
+class BuoyObservation(models.Model):
+    # Use UUIDField as primary key so can insert with various batches if needed.
+    buoy_observation_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    sensor = models.ForeignKey(Sensor, models.DO_NOTHING, blank=True, null=True)
+    observation_datetime = models.DateTimeField(blank=True, null=True)
+    in_service = models.IntegerField(blank=True, null=True)
+    location = models.ForeignKey(Location, models.DO_NOTHING, blank=True,
+        null=True)
+
+    # 20180425 Diver buoy sensor has three readings
+    pressure_cm = models.FloatField(blank=True, null=True)
+    #{ 20180425 These two readings are collected by Diver and Star sensors
+    temperature_c = models.FloatField(blank=True, null=True)
+    # Note next column is known more by its label using mS rather than ms
+    conductivity_ms_cm = models.FloatField(db_column='conductivity_mS_cm',
+        blank=True, null=True)  # Field name made lowercase.
+    # }
+
+    # Star sensor type has four readings (tmperature_c and conductivty_mS_cm
+    # already included above)
+    salinity_psu = models.FloatField(blank=True, null=True)
+    sound_velocity_m_sec = models.FloatField(blank=True, null=True)
+
+    note = SpaceCharField(max_length=32, blank=True, null=True,
+        help_text="Short note on observation, 32 characters or less."
+        )
+    class Meta:
+        unique_together = (('sensor', 'observation_datetime'),)
+
+    def __str__(self):
+        return '{}:{}'.format(self.sensor.serial_number,
+          self.observation_datetime)
+#end class buoyobservation

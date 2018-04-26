@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import (Location, Project,
+from .models import (BuoyObservation, Location, Project,
   SensorType, Sensor, SensorService, SensorDeploy, WaterObservation
   )
 
@@ -84,7 +84,7 @@ class LcroysterModelAdmin(admin.ModelAdmin):
 
 
 class ProjectModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
-    using = 'lcroyster_connection'
+    #using = 'lcroyster_connection'
     list_display = [
       'project_website_code','name','contact_investigator'
       ]
@@ -110,7 +110,7 @@ admin.site.register(Project, ProjectModelAdmin)
 
 class LocationModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
     #Maybe need this to show action list ?
-    using = 'lcroyster_connection'
+    #using = 'lcroyster_connection'
 
     # Field order for admin 'ADD' Form
     fields = [
@@ -281,3 +281,23 @@ class WaterObservationModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
 # end class WaterOvservationModelAdmin
 
 admin.site.register(WaterObservation, WaterObservationModelAdmin)
+
+class BuoyObservationModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
+    actions = [
+      'export_as_tsv',
+    ]
+
+    '''
+    From the django admin cookbook: method to delete an action from admin,
+    and in this case it is the 'delete_selected' action.
+    '''
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        action_to_delete = 'delete_selected'
+        if action_to_delete in actions:
+            #print("actions='{}'".format(repr(actions)))
+            del actions[action_to_delete]
+        return actions
+# end class WaterOvservationModelAdmin
+
+admin.site.register(BuoyObservation, BuoyObservationModelAdmin)

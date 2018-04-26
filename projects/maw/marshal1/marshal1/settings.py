@@ -17,9 +17,9 @@ sys.path.append(os.path.abspath(MY_SECRETS_FOLDER))
 #from maw_settings import *
 import maw_settings
 
-print("Got maw_settings.MODULES_FOLDER={}"
-  .format(maw_settings.MODULES_FOLDER))
-sys.stdout.flush()
+#print("Got maw_settings.MODULES_FOLDER={}"
+#  .format(maw_settings.MODULES_FOLDER))
+#sys.stdout.flush()
 
 sys.path.append(maw_settings.MODULES_FOLDER)
 
@@ -261,6 +261,7 @@ elif maw_settings.ENV == 'local':
             'HOST': '127.0.0.1',
             'PORT': '3306',
         },
+        # This name defines 'using' variable in ...lcroyster/admin.py
         'lcroyster_connection': {
             'ENGINE': 'django.db.backends.mysql',
             # The maw1_db database will host hathitrust and probably

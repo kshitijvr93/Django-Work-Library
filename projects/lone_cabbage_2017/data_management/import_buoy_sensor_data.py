@@ -21,7 +21,6 @@ If there are no duplicate readings, this import process should import
 about 15,000 readings/rows per minute.
 
 Python 3.6+ code
-
 '''
 
 import sys, os, os.path, platform
@@ -947,31 +946,61 @@ def get_lcroyster_settings(verbosity=1):
 
     # IMPORT SETTINGS FOR MARSHALING APPLICATION WEBSITE (MAW) settings
     import maw_settings
+    settings_filename = '{}{}{}'.format(MY_SECRETS_FOLDER, os.sep, 'maw_settings.py')
     sys.path.append(maw_settings.MODULES_FOLDER)
-    return maw_settings.my_project_params['lcroyster']
+    return maw_settings.my_project_params['lcroyster'], settings_filename
 
-def run(input_folder=None, log_file=None,drop_table=False, verbosity=1):
+def run(input_folder=None, log_file_name=None,
+    observations_table_name=None,
+    delete_observation_rows_first=True,
+    skip_star=0, skip_diver=0, verbosity=1):
     me='run'
 
-    do_star = 1
-    do_diver = 1
-
-    d_lcroyster = get_lcroyster_settings()
+    d_lcroyster, settings_filename = get_lcroyster_settings()
 
     if input_folder is None:
         input_folder = d_lcroyster['sensor_observations_input_folder']
 
-    print("{}: Using input_folder={}".format(me, input_folder))
+    if log_file_name is None:
+        log_file_name = "{}/import_buoy_sensor_data_log.txt"
+            .format(input_folder)
+
+    log_file = open(log_file_name, mode="w", encoding='utf-8')
+
+    print("STARTING: Using verbosity value={}".format(verbosity)
+        ,file=log_file)
+
+    print("{}:Using settings_filename={}".format(me, settings_filename)
+        ,file=log_file)
+
+    print("{}:Using data input_folder={}".format(me, input_folder)
+        ,file=log_file)
+
+    print("Using delete_observation_rows_first={}"
+        .format(delete_observation_rows_first)
+        ,file=log_file)
 
     # engine_spec = get_engine_spec_by_name(name=engine_nick_name)
-    d_engine_info = d_lcroyster['database_connections']['lcroyster_production']
-    print("Got d_engine_info, len={}".format(len(d_engine_info)))
-    engine_spec = (d_engine_info['format'].format(**d_engine_info))
-    print("DELETE ME: Got engine_spec, len={}".format(len(engine_spec)))
+    d_engine_info = d_lcroyster['database_connections']['lcroyster']
+    print("Got d_engine_info of length={}".format(len(d_engine_info))
+        ,file=log_file)
 
+    engine_spec = (d_engine_info['format'].format(**d_engine_info))
     engine = create_engine(engine_spec)
 
-    oyster_project = OysterProject(engine=engine, log_file=log_file)
+    # If indicated, delete the observations table rows first
+    if delete_observation_rows_first:
+        if verbosity > 0:
+            print("Deleting rows of table '{}' before importing input data."
+                .format(observations_table_name),
+                file=log_file)
+        sa_metadata = MetaData()
+        observations_table_object = Table(observations_table_name,
+                sa_metadata, autoload=True, autoload_with=engine)
+        observations_table_object.delete()
+
+    oyster_project = OysterProject(engine=engine, log_file=log_file,
+        verbosity=verbosity)
 
     # Create various sensor instances
     # for now, each class defines a glob to identify its files
@@ -984,63 +1013,53 @@ def run(input_folder=None, log_file=None,drop_table=False, verbosity=1):
 
     input_file_folders = [input_folder]
 
-    if do_diver == 1:
+    if not skip_diver:
         diver = Diver(project=oyster_project,
             input_file_folders=input_file_folders,
             input_file_globs=['**/*diver.MON'])
-        diver.parse_files(verbosity=verbosity)
 
-    if do_star == 1:
+        print("{}: calling diver parse_files".format(me),file=log_file)
+        diver.parse_files(verbosity=verbosity)
+        print("{}: back from calling diver parse_files"
+            .format(me),file=log_file)
+
+    if not skip_star:
         star = Star(project=oyster_project,
             input_file_folders=input_file_folders,
             input_file_globs=['**/*star.DAT',]
             )
 
-        print("{}: calling parse_files".format(me),file=log_file)
-        star.parse_files(verbosity=verbosity,file=log_file)
-        print("{}: back from calling parse_files".format(me),file=log_file)
+        print("{}: calling star parse_files".format(me),file=log_file)
+        star.parse_files(verbosity=verbosity)
+        print("{}: back from calling star parse_files".format(me),file=log_file)
+
     print("ENDING: See log file name='{}'".format(log_file_name))
     return
 
 #end def run()
 
-testme = 0
-
-do_star = 1
-do_diver = 0
-
-if testme == 1:
-    if platform_name == 'linux':
-        env = 'home'
-    else:
-        #env = 'uf'
-        # 20180407  - another windows planform, my thinkpad
-        env = 'thinkpad'
-        env = 'uf'
-
-    run( verbosity=1)
-    print("Done",flush=True)
-
 # end main code
+
+# Launch the run() method with parsed command line parameters
 
 if __name__ == "__main__":
 
-    d_lcroyster = get_lcroyster_settings()
     import argparse
-
     parser = argparse.ArgumentParser()
+
+    observations_table_name = 'lcroyster_buoy_observation'
 
     # Note: do default to get some settings from user
     # config file, like passwords
     # Add help to instruct about MY_SECRETS_FOLDER, etc.
     # Arguments
 
-    parser.add_argument("-d", "--drop_buoy_observations_first",
+    parser.add_argument("-d", "--delete_observation_rows_first",
       # type=bool,  ## THere is no bool for add_argument, must use int
       #type=int,
-      default=False, action='store_true',
-      help='This option drops all lcroyster_buoy_observation rows before '
-           'importing.'
+      default=True, action='store_true',
+      help='Defaults to True. This option deletes all table '{}' rows before '
+           'importing data into the table.'.format(observations_table_name)
       )
 
     parser.add_argument("-v", "--verbosity",
@@ -1055,31 +1074,21 @@ if __name__ == "__main__":
           'overwrite a previous import log file.'
      )
 
+    parser.add_argument("-l", "--log_file_name",
+      #required=True,
+      # default="U:\\data\\elsevier\\output_exoldmets\\test_inbound\\",
+      help='This is the name of the output log file to be placed under your '
+      'input folder. If not given, the log_file_name defaults to'
+      'import_buoy_sensor_data_log.txt.'
+     )
+
     args = parser.parse_args()
 
-    input_folder = args.input_folder
-    if input_folder is None:
-        input_folder = d_lcroyster['sensor_observations_input_folder']
-
-    print("Using input_folder={}".format(input_folder))
-
-    log_file_name = "{}/import_sensor_log.txt".format(input_folder)
-    log_file = open(log_file_name, mode="w", encoding='utf-8')
-
-    drop_table = args.drop_buoy_observations_first
-
-    if args.verbosity:
-        print("STARTING: Using verbosity value={}".format(args.verbosity)
-            , file=log_file)
-        print("Using input_folder={}".format(input_folder)
-            , file=log_file)
-        print("Using drop_buoy_observations_first={}" .format(drop_table)
-            , file=log_file)
-
-    log_file.flush()
-
-    run(input_folder=input_folder, drop_table=drop_table,
-        log_file=log_file, verbosity=args.verbosity)
+    run(input_folder=args.input_folder,
+        observations_table_name=observations_table_name,
+        delete_observations_rows_first=args.delete_observation_rows_first,
+        log_file_name=log_file_name,
+        verbosity=args.verbosity)
 
 #end if __name__ == "__main__"
 
