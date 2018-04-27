@@ -56,6 +56,7 @@ from sqlalchemy import (
 from sqlalchemy.schema import CreateTable
 from my_secrets.settings_sqlalchemy import get_engine_spec_by_name
 
+from sqlalchemy.sql import select
 import sqlalchemy.sql.sqltypes
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy_tools.core.utils import drop_if_exists
@@ -146,7 +147,31 @@ class OysterProject():
     Later get l_rows from a db table instead of hardcoding here
     '''
     def get_d_sensor_deployments(self):
+        me = 'get_d_sensor_deployments'
+        metadata = MetaData()
+        engine = self.engine
+        verbosity = self.verbosity
+        log_file = self.log_file
+        table_deploy = Table('lcroyster_sensordeploy', metadata, autoload=True,
+            autoload_with=engine)
+        s = select([table_deploy])
+        conn = engine.connect()
+        result = conn.execute(s)
 
+        l_rows = []
+        if verbosity > 1 or 1 ==1:
+            print("{}: Showing lcroyster_sensordeploy rows:",file=log_file)
+            for count,row in enumerate(result):
+                print ("Got row='{}'".format(row),file=log_file)
+                l_row = {
+                    'sensor_id': row['sensor_id'],
+                    'event_date': row['deploy_datetime'],
+                    'location_id': row['location_id'],
+                    }
+                print("Got l_row = {}".format(l_row),file=log_file)
+                l_rows.append(l_row)
+
+                '''
         l_rows = [
             { 'sensor_id':1, 'location_id':1,
                 'event_date': '2017-08-16 00:00:00' },
@@ -173,6 +198,7 @@ class OysterProject():
             { 'sensor_id':10, 'location_id':2,
                 'event_date':  '2017-12-01 11:00:00' },
         ]
+        '''
         # Key is sensor, value is dict keyed by unique dates,
         # each with a location id (deployment location) value.
         d_sensor_deployment = {}
@@ -185,7 +211,9 @@ class OysterProject():
                 d_sensor_deployment[sensor_id] = dict()
             d_date_loc = d_sensor_deployment[sensor_id];
 
-            dt = datetime.datetime.strptime(d_row['event_date'],"%Y-%m-%d %H:%M:%S")
+            #dt = datetime.datetime.strptime(d_row['event_date'],"%Y-%m-%d %H:%M:%S")
+            dt = d_row['event_date']
+
             if dt in d_date_loc.keys():
                 raise ValueError(
                  "Sensor {} has duplicate sensor datetime {}"
@@ -268,7 +296,7 @@ class OysterProject():
             self.log_file = log_file
 
         self.d_sensor_deployments = self.get_d_sensor_deployments()
-        print("Test print to log file.", file=log_file)
+        #print("Test print to log file.", file=log_file)
 
         return
     # end def __init__
@@ -877,7 +905,7 @@ class Star():
 
 
         if verbosity > 0:
-            print("{}:Parsed file {} and found {} rows, with {} inserts, {} exceptions:"
+            print("{}:Parsed file {} and found {} lines, with {} inserts, {} exceptions:"
                 .format(me,input_file_name, line_count-1,n_inserts,n_exceptions)
                 ,file=log_file)
         if verbosity > 1:
@@ -980,8 +1008,10 @@ def run(input_folder=None,
         input_folder = d_lcroyster['sensor_observations_input_folder']
 
     if log_file_name is None:
-        log_file_name = ("{}/import_buoy_sensor_data_log.txt"
-            .format(input_folder))
+        #datetime_string = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+        day_string = datetime.datetime.utcnow().strftime("%Y%m%d")
+        log_file_name = ("{}/import_buoy_sensor_data_{}.txt"
+            .format(input_folder,day_string))
 
     log_file = open(log_file_name, mode="w", encoding='utf-8')
 
