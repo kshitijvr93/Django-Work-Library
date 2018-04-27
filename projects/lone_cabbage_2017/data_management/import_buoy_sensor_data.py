@@ -38,9 +38,16 @@ def register_modules():
     sys.path.append('{}git/citrus/modules'.format(modules_root))
     return platform_name
 
-platform_name=register_modules()
+#platform_name=register_modules()
 
-from etl import sequence_paths
+import os, sys, os.path
+MY_SECRETS_FOLDER = os.environ['MY_SECRETS_FOLDER']
+
+print("Using MY_SECRETS_FOLDER={}".format(MY_SECRETS_FOLDER))
+
+sys.path.append(os.path.abspath(MY_SECRETS_FOLDER))
+
+#from etl import sequence_paths
 from pathlib import Path
 from collections import OrderedDict
 
@@ -54,12 +61,12 @@ from sqlalchemy import (
   )
 
 from sqlalchemy.schema import CreateTable
-from my_secrets.settings_sqlalchemy import get_engine_spec_by_name
+#from my_secrets.settings_sqlalchemy import get_engine_spec_by_name
 
 from sqlalchemy.sql import select
 import sqlalchemy.sql.sqltypes
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy_tools.core.utils import drop_if_exists
+#from sqlalchemy_tools.core.utils import drop_if_exists
 
 #import regex
 import re
@@ -140,7 +147,30 @@ sample sensor data line to date, time and 3 floats for
 ----------------
 
 '''
+def sequence_paths(input_folders=None, input_path_globs=None, verbosity=0):
+    # NOTE: I changed arg input_path_glob to input_path_globs
+    # apologies to callers that need to adapt
+    me = 'sequence_paths'
+    if (input_folders is None or input_path_globs is None):
+        msg = "Missing param input_folders or input_path_glob"
+        raise ValueError(msg)
 
+    # compose input_path_list over multiple input_folders
+    for input_folder in input_folders:
+        for input_path_glob in input_path_globs:
+            paths = list(Path(input_folder).glob(input_path_glob))
+            if (verbosity > 0):
+                print("{}: Found {} files in input_folder='{}'"
+                   " that match {}\n"
+                  .format(me, len(paths),input_folder, input_path_glob))
+
+            #input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
+            for path in paths:
+                yield path
+            # end for path
+        #end for input_path_glob
+    # end for input folder
+# end def sequence_paths
 
 class OysterProject():
     ''' encode hard-coded sensor deployments into useful dictionary
@@ -420,8 +450,8 @@ class Diver():
         # end for path in paths
 
         if verbosity > 0:
-            print("{}:Processed file_count={} input files."
-               .format(me, file_count), flush=True, file=log_file)
+            print("{}:Diver Files - Ending with {} files found and parsed.".format(me,file_count),
+                file=log_file)
 
         return file_count, total_file_rows, total_inserts, total_exceptions
     # end def parse_files
@@ -511,6 +541,7 @@ class Diver():
                 d_row['observation_datetime'] = date_str
 
                 obs_dt = datetime.datetime.strptime(date_str,"%Y-%m-%d %H:%M:%S")
+                # May check for None obs_dt here and skip?
 
                 in_service, location_id = self.project.get_in_service_location(
                     sensor_id=sensor_id, observation_datetime=obs_dt)
@@ -676,7 +707,7 @@ class Star():
             total_exceptions += n_exceptions
         # end for path in paths
         if verbosity > 0:
-            print("{}:Ending with {} files found and parsed.".format(me,file_count),
+            print("{}:STAR Files - Ending with {} files found and parsed.".format(me,file_count),
                 file=log_file)
         return file_count, total_file_rows, total_inserts, total_exceptions
    # end def parse_files
@@ -991,10 +1022,6 @@ Moreno to Robert Phillips 2018-02-12.
 
 '''
 def get_lcroyster_settings(verbosity=1):
-    import os, sys, os.path
-    MY_SECRETS_FOLDER = os.environ['MY_SECRETS_FOLDER']
-
-    sys.path.append(os.path.abspath(MY_SECRETS_FOLDER))
 
     # IMPORT SETTINGS FOR MARSHALING APPLICATION WEBSITE (MAW) settings
     import maw_settings
@@ -1070,6 +1097,7 @@ def run(input_folder=None,
     input_file_folders = [input_folder]
     total_inserts = 0
     total_exceptions = 0
+
     if not skip_diver:
         diver = Diver(project=oyster_project,
             input_file_folders=input_file_folders,
@@ -1098,10 +1126,12 @@ def run(input_folder=None,
 
         total_inserts += n_inserts
         total_exceptions += n_exceptions
-        print("{}: back from calling star parse_files".format(me),file=log_file)
 
-    print("{}: ENDING: Did {} inserts, had {} exceptions.\n"
-       "See log file name='{}'".format(me,n_inserts,n_exceptions,log_file_name))
+    msg = ("{}: ENDING: Did {} inserts, had {} exceptions.\n"
+       "See log file name='{}'".format(me,total_inserts,total_exceptions,
+       log_file_name))
+    print(msg, file=log_file)
+    print(msg)
     return
 
 #end def run()
