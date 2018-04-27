@@ -385,7 +385,8 @@ class Diver():
             input_path_globs=self.input_file_globs)
 
         paths = []
-
+        total_inserts = 0
+        total_exceptions = 0
         for path in gpaths:
             if path in paths:
                 # gpaths could have duplicates when mulitple globs
@@ -404,10 +405,12 @@ class Diver():
                     .format(me,input_file_name),flush=True
                     , file=log_file )
 
-            n_rows = self.import_file(input_file_name=input_file_name
-                ,verbosity=verbosity)
+            n_rows, n_inserts, n_exceptions = self.import_file(
+                input_file_name=input_file_name ,verbosity=verbosity)
 
             total_file_rows += n_rows
+            total_inserts += n_inserts
+            total_exceptions += n_exceptions
             #l_rows = ['one']
             if verbosity > 0:
                 print(
@@ -420,8 +423,8 @@ class Diver():
             print("{}:Processed file_count={} input files."
                .format(me, file_count), flush=True, file=log_file)
 
-        return file_count
-    # def parse_files
+        return file_count, total_file_rows, total_inserts, total_exceptions
+    # end def parse_files
 
     def import_file(self, input_file_name=None, verbosity=1):
 
@@ -570,7 +573,7 @@ class Diver():
             for count, d_row in enumerate(l_rows, start=1):
                 print("{}\t{}".format(count,d_row),file=log_file)
 
-        return len(l_rows)
+        return len(l_rows), n_inserts, n_exceptions
     # end def import_file()
 #end class Diver()
 
@@ -659,20 +662,23 @@ class Star():
 
         paths = sequence_paths(input_folders=self.input_file_folders,
             input_path_globs=self.input_file_globs)
-
+        total_inserts = 0
+        total_exceptions = 0
         for path in paths:
             file_count += 1
 
             input_file_name = path.resolve()
-            n_rows = self.import_file(input_file_name=input_file_name
+            n_rows, n_inserts, n_exceptions = self.import_file(input_file_name=input_file_name
                 ,verbosity=verbosity)
 
             total_file_rows += n_rows
+            total_inserts += n_inserts
+            total_exceptions += n_exceptions
         # end for path in paths
         if verbosity > 0:
             print("{}:Ending with {} files found and parsed.".format(me,file_count),
                 file=log_file)
-        return file_count
+        return file_count, total_file_rows, total_inserts, total_exceptions
    # end def parse_files
 
     '''
@@ -903,17 +909,18 @@ class Star():
                     msg=("\n *** MADE MAXIMUM EXCEPTION REPORTS FOR THIS FILE")
                     print(msg, file=log_file)
 
-
         if verbosity > 0:
-            print("{}:Parsed file {} and found {} lines, with {} inserts, {} exceptions:"
-                .format(me,input_file_name, line_count-1,n_inserts,n_exceptions)
+            print("{}:Parsed file {}\nSUMMARY: {} lines, {} inserts, "
+                "and {} exceptions found.\n\n\n"
+                .format(me,input_file_name,line_count-1,n_inserts,n_exceptions)
                 ,file=log_file)
         if verbosity > 1:
             print("Parsed rows were:")
             for count,d_row in enumerate(l_rows, start=1):
                 print("{}\t{}".format(count,d_row),file=log_file)
 
-        return len(l_rows)
+        return len(l_rows), n_inserts, n_exceptions
+    #end def import_file
 
 #end class Star
 
@@ -1061,16 +1068,22 @@ def run(input_folder=None,
     # See the class code for exact 'glob' syntax used.
 
     input_file_folders = [input_folder]
-
+    total_inserts = 0
+    total_exceptions = 0
     if not skip_diver:
         diver = Diver(project=oyster_project,
             input_file_folders=input_file_folders,
             input_file_globs=['**/*diver.MON'])
 
         print("{}: calling diver parse_files".format(me),file=log_file)
-        diver.parse_files(verbosity=verbosity)
-        print("{}: back from calling diver parse_files"
-            .format(me),file=log_file)
+        file_count, n_file_rows, n_inserts, n_exceptions = diver.parse_files(
+           verbosity=verbosity)
+
+        print("{}: Parsed {} Diver files with {} inserts, {} exceptions."
+            .format(me,file_count, n_inserts,n_exceptions),file=log_file)
+
+        total_inserts += n_inserts
+        total_exceptions += n_exceptions
 
     if not skip_star:
         star = Star(project=oyster_project,
@@ -1078,11 +1091,17 @@ def run(input_folder=None,
             input_file_globs=['**/*star.DAT',]
             )
 
-        print("{}: calling star parse_files".format(me),file=log_file)
-        star.parse_files(verbosity=verbosity)
+        file_count, n_file_rows, n_inserts, n_exceptions = star.parse_files(
+            verbosity=verbosity)
+        print("{}: Parsed {} Star files with {} inserts, {} exceptions."
+            .format(me,file_count, n_inserts,n_exceptions),file=log_file)
+
+        total_inserts += n_inserts
+        total_exceptions += n_exceptions
         print("{}: back from calling star parse_files".format(me),file=log_file)
 
-    print("ENDING: See log file name='{}'".format(log_file_name))
+    print("{}: ENDING: Did {} inserts, had {} exceptions.\n"
+       "See log file name='{}'".format(me,n_inserts,n_exceptions,log_file_name))
     return
 
 #end def run()
