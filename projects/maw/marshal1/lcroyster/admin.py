@@ -172,8 +172,12 @@ admin.site.register(SensorType, SensorTypeModelAdmin)
 
 class SensorModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
     list_display = [
-        'model_name','serial_number',
+        'sensor_id', 'serial_number', 'model_name',
     ]
+    # Identifies the fields to show links to change form,
+    # AND provides sort options for these fields too
+    list_display_links = ['sensor_id','serial_number',]
+    ordering = ['sensor_id',]
 
     # May only implement this list once we get true current location and
     # deployment from SensorDeployment table,
