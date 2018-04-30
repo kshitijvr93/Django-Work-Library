@@ -49,7 +49,6 @@ SECRET_KEY = '@0-(8hq&*mj^ctt!x%118=s5w1c^l^)#6j*a#710se@)76jmwb'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
 ALLOWED_HOSTS = []
 
 # Application definition
@@ -173,8 +172,13 @@ DB_ENGINE_BACKENDS_STANDARD=['sqlite3','postgresql','mysql','oracle']
 # NOTE: These database NAME values cannot be changed without changing the
 # app.py config in the apps that use them
 
-if maw_settings.ENV == 'production':
-    DATABASES['lcroyster_connection'] = {
+DATABASES = {}
+
+# Keep LCROyster project ENV settings separated for flexibility:
+
+app_env = maw_settings.LCROYSTER_ENV
+if app_env == 'production':
+    DATABASES.update({'lcroyster_connection' : {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'LCRoysterproject',
         'USER': 'LCRoysterproject',
@@ -184,10 +188,50 @@ if maw_settings.ENV == 'production':
         'OPTIONS' : {
             # Heed a warning during manage.py migrate runs
             'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
+            },
         },
-    }
-elif maw_settings.ENV == 'test':
-    DATABASES = {
+    })
+elif app_env == 'test':
+    DATABASES.update({'lcroyster_connection': {
+        'ENGINE': 'django.db.backends.mysql',
+        # The maw1_db database will host hathitrust and probably
+        # some other maw apps
+        'NAME': 'lcroyster1_test',
+        'USER': maw_settings.LCROYSTER_TEST_MYSQL_USER,
+        'PASSWORD': maw_settings.LCROYSTER_TEST_MYSQL_PASSWORD,
+        'HOST': '10.241.33.139',
+        'PORT': '3306',
+        'OPTIONS' : {
+            # Heed a warning during manage.py migrate runs
+            'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
+            },
+        },
+    })
+elif app_env == 'local':
+    DATABASES.update({'lcroyster_connection' : {
+        'ENGINE': 'django.db.backends.mysql',
+        # The maw1_db database will host hathitrust and probably
+        # some other maw apps
+        'NAME': 'lcroyster1',
+        'USER': maw_settings.LCROYSTER_LOCAL_MYSQL_USER,
+        'PASSWORD': maw_settings.LCROYSTER_LOCAL_MYSQL_PASSWORD,
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+        'OPTIONS' : {
+            # Heed a warning during manage.py migrate runs
+            'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
+            },
+        },
+    })
+else:
+    msg="ERROR:Setting ENV_LCROYSTER is not in ['production','local']"
+    raise ValueError(msg)
+
+# END LCROYSTER_ENV sensitive settings
+
+
+if maw_settings.ENV == 'test':
+    DATABASES.update({
         # This db will hold users and groups info
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -203,50 +247,6 @@ elif maw_settings.ENV == 'test':
             # The maw1_db database will host hathitrust and probably
             # some other maw apps
             'NAME': 'maw1_db_test',
-            'USER': maw_settings.MYSQL_TEST_USER,
-            'PASSWORD': maw_settings.MYSQL_TEST_PASSWORD,
-            'HOST': '10.241.33.139',
-            'PORT': '3306',
-        },
-        'lcroyster_production2_connection': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'LCRoysterproject',
-            'USER': 'LCRoysterproject',
-            'PASSWORD': maw_settings.OYSTER_MYSQL_PRODUCTION_PASSWORD,
-            'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
-            'PORT': '3354',
-            'OPTIONS' : {
-                # Heed a warning during manage.py migrate runs
-                'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
-            },
-        },
-        'lcroyster_connection': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'LCRoysterproject',
-            'USER': 'LCRoysterproject',
-            'PASSWORD': maw_settings.OYSTER_MYSQL_PRODUCTION_PASSWORD,
-            'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
-            'PORT': '3354',
-            'OPTIONS' : {
-                # Heed a warning during manage.py migrate runs
-                'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
-            },
-        },
-        'lcroyster_local2_connection': {
-            'ENGINE': 'django.db.backends.mysql',
-            # The maw1_db database will host hathitrust and probably
-            # some other maw apps
-            'NAME': 'lcroyster1_test',
-            'USER': maw_settings.MYSQL_TEST_USER,
-            'PASSWORD': maw_settings.MYSQL_TEST_PASSWORD,
-            'HOST': '10.241.33.139',
-            'PORT': '3306',
-        },
-        'lcroyster_local_connection': {
-            'ENGINE': 'django.db.backends.mysql',
-            # The maw1_db database will host hathitrust and probably
-            # some other maw apps
-            'NAME': 'lcroyster1_test',
             'USER': maw_settings.MYSQL_TEST_USER,
             'PASSWORD': maw_settings.MYSQL_TEST_PASSWORD,
             'HOST': '10.241.33.139',
@@ -272,9 +272,9 @@ elif maw_settings.ENV == 'test':
             'HOST': '10.241.33.139',
             'PORT': '3306',
         },
-    }
+    })
 elif maw_settings.ENV == 'local':
-    DATABASES = {
+    DATABASES.update({
         # This db will hold users and groups info
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -290,34 +290,6 @@ elif maw_settings.ENV == 'local':
             # The maw1_db database will host hathitrust and probably
             # some other maw apps
             'NAME': 'maw1_db',
-            'USER': maw_settings.MYSQL_LOCAL_USER,
-            'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
-            'HOST': '127.0.0.1',
-            'PORT': '3306',
-        },
-        # This 'lcroyster_connection' matches the 'using' variable
-        # in ...lcroyster/admin.py
-        'lcroyster_connection': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'LCRoysterproject',
-            'USER': 'LCRoysterproject',
-            'PASSWORD': maw_settings.OYSTER_MYSQL_PRODUCTION_PASSWORD,
-            'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
-            'PORT': '3354',
-            'OPTIONS' : {
-                # Heed a warning during manage.py migrate runs.
-                # Try to remove it to see if web edits are allowed and mysql
-                # error 1665 can be avoided.
-                # 20180428 - Removed it once, but error 1665
-                # persists when trying to save web edits. It was worth a try
-                'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
-            },
-        },
-        'lcroyster_local_connection': {
-            'ENGINE': 'django.db.backends.mysql',
-            # The maw1_db database will host hathitrust and probably
-            # some other maw apps
-            'NAME': 'lcroyster1',
             'USER': maw_settings.MYSQL_LOCAL_USER,
             'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
             'HOST': '127.0.0.1',
@@ -343,7 +315,7 @@ elif maw_settings.ENV == 'local':
             'HOST': '127.0.0.1',
             'PORT': '3306',
         },
-    } # END ENV LOCAL DATABASES
+    }) # END ENV LOCAL DATABASES
 else:
     msg = ("Bad maw_settings.ENV name='{}' given for user. "
     "Not found in ['local','test','production']".format(maw_settings.ENV) )
