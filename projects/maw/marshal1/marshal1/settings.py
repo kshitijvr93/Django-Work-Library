@@ -24,7 +24,7 @@ import maw_settings
 sys.path.append(maw_settings.MODULES_FOLDER)
 
 # Some MAW extract,translate, load utilities, some others too.
-import etl
+#import etl
 #print("Using sys.path={}".format(repr(sys.path)))
 
 
@@ -237,8 +237,8 @@ if maw_settings.ENV == 'test':
             'ENGINE': 'django.db.backends.mysql',
             # The maw1_default_db database will host misc django default data
             'NAME': 'maw1_default_db',
-            'USER': maw_settings.MYSQL_TEST_USER,
-            'PASSWORD': maw_settings.MYSQL_TEST_PASSWORD,
+            'USER': maw_settings.MYSQL_ARCHCOLL_TEST_USER,
+            'PASSWORD': maw_settings.MYSQL_ARCHCOLL_TEST_PASSWORD,
             'HOST': '10.241.33.139',
             'PORT': '3306',
         },
@@ -247,8 +247,8 @@ if maw_settings.ENV == 'test':
             # The maw1_db database will host hathitrust and probably
             # some other maw apps
             'NAME': 'maw1_db_test',
-            'USER': maw_settings.MYSQL_TEST_USER,
-            'PASSWORD': maw_settings.MYSQL_TEST_PASSWORD,
+            'USER': maw_settings.MYSQL_ARCHCOLL_TEST_USER,
+            'PASSWORD': maw_settings.MYSQL_ARCHCOLL_TEST_PASSWORD,
             'HOST': '10.241.33.139',
             'PORT': '3306',
         },
@@ -257,8 +257,8 @@ if maw_settings.ENV == 'test':
             # The maw1_db database will host hathitrust and probably
             # some other maw apps
             'NAME': 'maw1_db_test',
-            'USER': maw_settings.MYSQL_TEST_USER,
-            'PASSWORD': maw_settings.MYSQL_TEST_PASSWORD,
+            'USER': maw_settings.MYSQL_ARCHCOLL_TEST_USER,
+            'PASSWORD': maw_settings.MYSQL_ARCHCOLL_TEST_PASSWORD,
             'HOST': '10.241.33.139',
             'PORT': '3306',
         },
@@ -267,8 +267,8 @@ if maw_settings.ENV == 'test':
             # The maw1_db database will host hathitrust and probably
             # some other maw apps
             'NAME': 'maw1_db_test',
-            'USER': maw_settings.MYSQL_TEST_USER,
-            'PASSWORD': maw_settings.MYSQL_TEST_PASSWORD,
+            'USER': maw_settings.MYSQL_ARCHCOLL_TEST_USER,
+            'PASSWORD': maw_settings.MYSQL_ARCHCOLL_TEST_PASSWORD,
             'HOST': '10.241.33.139',
             'PORT': '3306',
         },
