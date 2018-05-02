@@ -183,8 +183,10 @@ if app_env == 'production':
         'NAME': 'LCRoysterproject',
         'USER': 'LCRoysterproject',
         'PASSWORD': maw_settings.OYSTER_MYSQL_PRODUCTION_PASSWORD,
-        'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
-        'PORT': '3354',
+        #'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
+        #'PORT': '3354',
+        'HOST': 'ict-prod-hosting05.mysql.osg.ufl.edu',
+        'PORT': '3359',
         'OPTIONS' : {
             # Heed a warning during manage.py migrate runs
             'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
