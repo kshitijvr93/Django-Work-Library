@@ -46,6 +46,7 @@ MY_SECRETS_FOLDER = os.environ['MY_SECRETS_FOLDER']
 print("Using MY_SECRETS_FOLDER={}".format(MY_SECRETS_FOLDER))
 
 sys.path.append(os.path.abspath(MY_SECRETS_FOLDER))
+print("Using system.path={}".format(sys.path))
 
 #from etl import sequence_paths
 from pathlib import Path
@@ -1026,7 +1027,6 @@ def get_lcroyster_settings(verbosity=1):
     # IMPORT SETTINGS FOR MARSHALING APPLICATION WEBSITE (MAW) settings
     import maw_settings
     settings_filename = '{}{}{}'.format(MY_SECRETS_FOLDER, os.sep, 'maw_settings.py')
-    sys.path.append(maw_settings.MODULES_FOLDER)
     return maw_settings.my_project_params['lcroyster'], settings_filename
 
 def run(input_folder=None,

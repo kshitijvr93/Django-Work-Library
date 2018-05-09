@@ -380,15 +380,18 @@ def spreadsheet_to_engine_table(
 
 '''
 <summary name='spreadsheet_to_table'>
+<param name='od_index_column'>
+  Ordered dictionary with key an index value into a workbook spreadsheet,
+  and with value a sqlalchemy Column definition to receive the cell value
+</param>
 
-Given od_index_column, create sqlalchemy core table
+Given od_index_column, create new sqlalchemy core table
 and a persistent database engine table.
 
 Next, pass some args down to call spreadsheet_to_engine_table to
 read given spreadsheet to copy its values to the peristent database table.
 
 Refactoring note: On the input side, the od_index_column
-
 
 
 Given an engine nick name, a table name and od_index_column.values,
@@ -456,8 +459,8 @@ def spreadsheet_to_table(
           verbosity=verbosity,)
     else:
         # We will use an extant table and insert/append rows to it
-        # NOTE: user must have consulted its schema and supplied
-        # the correct column names in od_index_colum as values
+        # NOTE: caller must have supplied the correct column names
+        # in od_index_colum as values
 
         metadata.reflect(my_db_engine)
         print("{}:Autoloading table '{}'.".format(me,table_name))
@@ -655,6 +658,74 @@ def run(env=None,verbosity=1):
           'au': Column('user_1', Text),
           ##############################################
         })
+    elif env == 'uf_cuba_libro_item_20170503':
+        # FUG starts at row 4, HLS starts at 2
+        # Set manually in code for now!
+        print("Using env={}".format(env))
+        engine_nickname = 'uf_local_mysql_maw1_db'
+
+        workbook_path = ('C:\\rvp\\downloads\\'
+          'cuba_libro_item_20180503.xlsx')
+        # NOTE: sheet index values start at 0
+        sheet_index = 1
+        row_count_values_start = 2
+
+        table_name = 'cuba_libro_item'
+        create_table = False
+        is_index_xls = True
+
+        od_index_column = OrderedDict({
+          # skip 'a' - moved to queue...
+          'a': Column('holding',String(20)),
+          'b': Column('reference_type',String(20)),
+          'c': Column('authors_primary', Text),
+          'd': Column('title_primary', Text),
+          'e': Column('periodical_full', Text),
+          'f': Column('periodical_abbrev', Text),
+          'g': Column('pub_year_span',String(50)),
+          'h': Column('pub_date_free_from', Text),
+          'i': Column('volume', String(30)),
+          'j': Column('issue', String(30)),
+          'k': Column('start_page', String(30)),
+          'l': Column('other_pages', String(30)),
+          'm': Column('keywords', Text),
+          'n': Column('abstract', Text),
+          'o': Column('notes', Text),
+          'p': Column('personal_notes', Text),
+          'q': Column('authors_secondary', Text),
+          'r': Column('title_secondary', Text),
+          's': Column('edition', String(80)),
+          't': Column('publisher', String(255)),
+          'u': Column('place_of_publication', String(255)),
+          'v': Column('authors_tertiary', Text),
+          'w': Column('authors_quaternary', Text),
+          'x': Column('authors_quinary', Text),
+          'y': Column('title_tertiary', Text),
+          'z': Column('isbn_issn', String(255)),
+          'aa' : Column('availability', Text),
+          'ab': Column('author_address', Text),
+          'ac': Column('accession_number', Text),
+          'ad': Column('language', Text),
+          'ae': Column('classification', Text),
+          'af': Column('sub_file_database', Text),
+          'ag': Column('original_foreign_title', Text),
+          'ah': Column('links', Text),
+          'ai': Column('url', Text),
+          'aj': Column('doi', Text),
+          'ak': Column('pmid', Text),
+          'al': Column('pmcid', Text),
+          'am': Column('call_number', Text),
+          'an': Column('database', Text),
+          'ao': Column('data_source', Text),
+          'ap': Column('identifying_phrase', Text),
+          'aq': Column('retrieved_date', Text),
+          'ar': Column('shortened_title', Text),
+          'as': Column('user_1', Text),
+
+          #####################################################
+
+          ##############################################
+        })
 
     elif env == 'uf_cuba_libro_item_hls':
         print("Using env={}".format(env))
@@ -813,5 +884,6 @@ env = 'windows4'
 env = 'windows5'
 env = 'uf_cuba_libro_item_hls'
 env = 'uf_cuba_libro_item_fug'
+env = 'uf_cuba_libro_20170503' #spreadsheet sent by jessie uf email
 
 run(env=env)
