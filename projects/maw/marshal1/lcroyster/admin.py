@@ -270,6 +270,8 @@ class WaterObservationModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
     actions = [
       'export_as_tsv',
     ]
+    
+    list_filter = ['location','sensor','in_service',]
 
     '''
     From the django admin cookbook: method to delete an action from admin,
@@ -290,6 +292,7 @@ class BuoyObservationModelAdmin(LcroysterModelAdmin, ExportTsvMixin):
     actions = [
       'export_as_tsv',
     ]
+    list_filter = ['location','sensor','in_service',]
 
     '''
     From the django admin cookbook: method to delete an action from admin,
