@@ -667,7 +667,8 @@ def run(env=None,verbosity=1):
         workbook_path = ('C:\\rvp\\downloads\\'
           'cuba_libro_item_20180503.xlsx')
         # NOTE: sheet index values start at 0
-        sheet_index = 1
+        sheet_index = None
+        l_sheet_index = [1,2,3,5,6,7,]
         row_count_values_start = 2
 
         table_name = 'cuba_libro_item'
@@ -850,24 +851,25 @@ def run(env=None,verbosity=1):
 
     sys.stdout.flush()
 
-    spreadsheet_to_table(
-      # Identify the workbook pathname of the input workbook
-      input_workbook_path=workbook_path,
-      sheet_index=sheet_index,
-      # Map the input workbook first spreadsheet's row's column
-      # indices to the output table's sqlalchemy columns
-      od_index_column=od_index_column,
-      column_index_offset=column_index_offset,
-      row_count_values_start=row_count_values_start,
-      is_index_xls=is_index_xls,
+    if sheet_index is not None;
+        spreadsheet_to_table(
+          # Identify the workbook pathname of the input workbook
+          input_workbook_path=workbook_path,
+          sheet_index=sheet_index,
+          # Map the input workbook first spreadsheet's row's column
+          # indices to the output table's sqlalchemy columns
+          od_index_column=od_index_column,
+          column_index_offset=column_index_offset,
+          row_count_values_start=row_count_values_start,
+          is_index_xls=is_index_xls,
 
-      engine_nickname=engine_nickname,
-      table_name=table_name,
-      create_table=create_table,
+          engine_nickname=engine_nickname,
+          table_name=table_name,
+          create_table=create_table,
 
-      #Set the desired output engine/table_name
-      verbosity=1,
-      )
+          #Set the desired output engine/table_name
+          verbosity=1,
+          )
 
     print("Done!")
     return
