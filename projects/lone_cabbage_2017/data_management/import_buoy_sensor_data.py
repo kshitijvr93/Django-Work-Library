@@ -72,6 +72,7 @@ from sqlalchemy.dialects.postgresql import ARRAY
 #import regex
 import re
 import datetime
+import math
 
 '''
 General notes- context about the Oyster files.

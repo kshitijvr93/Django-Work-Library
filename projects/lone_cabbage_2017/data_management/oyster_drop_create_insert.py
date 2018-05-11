@@ -74,6 +74,12 @@ from sqlalchemy_tools.core.utils import drop_if_exists
 from pathlib import Path
 
 '''
+'''
+def salinity_by_temp_c__conductivity_mS_cm():
+
+    return 0.0
+
+'''
 As of sqlalchemy 1.2.2, scanning google searches, it seems this is the best if
 not only apparent way I could find to check if a table exists and then to drop
 that table generically for engines psql and MySQL and possible others engines.
