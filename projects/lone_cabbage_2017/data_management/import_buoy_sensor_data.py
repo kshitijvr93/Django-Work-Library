@@ -381,9 +381,9 @@ class OysterProject():
                 in_service = 1
         return in_service, location_id
 
-    #end def get_in_service()
+    #end def get_in_service() of class OysterProject
 
-    #class Oyster
+    #class OysterProject
     def __init__(self, engine=None, observations_table_name=None,
         log_file=None, verbosity=1, max_exception_logs_per_file=10):
         me='OysterProject.__init__'
@@ -401,6 +401,8 @@ class OysterProject():
         if engine is None:
             raise ValueError("Missing engine parameter")
         self.engine = engine
+        self.connection = engine.connect()
+        self.trans = self.connection.begin()
         self.max_exception_logs_per_file = max_exception_logs_per_file
         self.log_file = log_file
 
@@ -420,7 +422,7 @@ class OysterProject():
 
         return
     # end def __init__
-#end class Oyster
+#end class OysterProject
 
 '''
 class Diver():
@@ -1316,7 +1318,7 @@ if __name__ == "__main__":
         log_file_name=None,
         max_exception_logs_per_file=args.max_exception_logs_per_file,
         skip_star=0,
-        skip_diver=1,
+        skip_diver=0,
         verbosity=args.verbosity)
 
 #end if __name__ == "__main__"
