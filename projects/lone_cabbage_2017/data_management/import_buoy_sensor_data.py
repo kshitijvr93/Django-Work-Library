@@ -149,6 +149,82 @@ sample sensor data line to date, time and 3 floats for
 ----------------
 
 '''
+'''Class SalinityPsuCalculatorDouglass2010
+
+Calculate salinity with params, with formulae and constant value Defaults
+given by spreadsheet uf-emailed from Joe Aufmuth 20180510.
+
+'''
+class SalinityPsuCalculatorDouglass2010():
+    '''
+
+    '''
+    def __init__(self,standard=42.9, verbosity=0):
+        self.me = 'SalinityPsuCalculatorDouglass2010'
+        self.verbosity = verbosity
+        #  may make a param later - resusing referenced cell names as var
+        # names here too
+        self.temperature_c = None  # can be set from a10 value later
+        self.conductivity_mS_cm= None  # can be set from b10 value later
+
+        self.c10 = standard
+        self.ref_cond_at_35psu_15c = self.c10
+
+
+        if verbosity > 0:
+            print("{}: Initializing salinity_calculator:"
+              .format(self.me))
+        #end if
+    # End def __init__
+
+    def from_temperature_c_conductivity_mS_cm(self,temperature_c=None,
+        conductivity_mS_cm=None
+    ):
+        # Calculate and return salinity in Practical Salinity Unit value
+        # First calculate sub-terms to clarify the formula
+        temperature_c = float(temperature_c)
+        conductivity_mS_cm = float(conductivity_mS_cm)
+        self.a10 = temperature_c
+        self.b10 = conductivity_mS_cm
+
+        #conductivity_ratio is measured conductivity/reference conductivity
+        self.d10 = self.b10/self.c10
+
+        #self.g10 is rt calculation based on a10
+        self.g10 = ( 0.6766097 + 0.0200564*self.a10
+          + 0.0001104259 * self.a10 ** 2
+          + (-6.9698*10**-7) * self.a10**3
+          + (1.0031*10**-9) * self.a10**4
+        )
+
+        # self.e10 is Conductivity ratio/rt
+        self.e10 = self.d10/self.g10
+
+        #self.f10 is dS
+        self.f10 = (
+          ((self.a10 -15)/(1 + 0.0162 * (self.a10-15)))
+          * (0.0005
+            + (-0.0056) * self.e10**0.5
+            + (-0.0066) * self.e10
+            + (-0.0375) * self.e10**1.5
+            + (0.0636)  * self.e10**2
+            + (-0.0144) * self.e10**2.5
+          )
+        )
+
+        #self.h10 is calculated salnity in psu (practical salinity units)
+        self.h10 = ( 0.008
+          + (-0.1692  * self.e10**0.5)
+          + 25.3851   * self.e10
+          + 14.0941   * self.e10**1.5
+          + (-7.0261) * self.e10**2
+          + 2.7081    * self.e10**2.5
+          + self.f10
+        )
+        return self.h10
+    # end def from_temperature_c_conductivity_mS_cm
+# end class salinity_calculator1
+
 def sequence_paths(input_folders=None, input_path_globs=None, verbosity=0):
     # NOTE: I changed arg input_path_glob to input_path_globs
     # apologies to callers that need to adapt
@@ -175,6 +251,9 @@ def sequence_paths(input_folders=None, input_path_globs=None, verbosity=0):
 # end def sequence_paths
 
 class OysterProject():
+    ''' encode hard-coded sensor deployments into useful dictionary
+    Later get l_rows from a db table instead of hardcoding here
+    '''
     ''' encode hard-coded sensor deployments into useful dictionary
     Later get l_rows from a db table instead of hardcoding here
     '''
@@ -269,7 +348,6 @@ class OysterProject():
                 .format(repr(d_sensor_deployment)),file=self.log_file)
 
         return d_sensor_deployment
-
     #end def get_d_sensor_deployments
     '''
     get_in_service_location():
@@ -284,7 +362,12 @@ class OysterProject():
         self,sensor_id=None, observation_datetime=None):
         # Return True if this observation falls in a period of a valid
         # deployment to a project location
-        od_datetime_loc = self.d_sensor_deployments[sensor_id]
+        try:
+            od_datetime_loc = self.d_sensor_deployments[sensor_id]
+        except:
+            msg=("get_in_service_location:Sensor_id '{}' has raw data but no deployments. Fatal Error."
+              .format(repr(sensor_id)))
+            raise ValueError(msg)
         #Find whether this date is covered by a valid deployment
         in_service = 0
         location_id = 0
@@ -300,6 +383,7 @@ class OysterProject():
 
     #end def get_in_service()
 
+    #class Oyster
     def __init__(self, engine=None, observations_table_name=None,
         log_file=None, verbosity=1, max_exception_logs_per_file=10):
         me='OysterProject.__init__'
@@ -309,6 +393,10 @@ class OysterProject():
         if verbosity > 0:
             print("{}: starting".format(me), file=log_file)
         self.verbosity = verbosity
+        self.SalinityPsuCalculator = SalinityPsuCalculatorDouglass2010(verbosity=1)
+        if verbosity > 0:
+            print("{}: Back from constructing SalinityPsuCalculator"
+               .format(me), file=log_file)
 
         if engine is None:
             raise ValueError("Missing engine parameter")
@@ -364,8 +452,10 @@ class Diver():
         # Key is 'serial number' from a raw sensor file, a string really.
         # Value is the db inter id value of the sensor
         self.d_serial_sensor = {
-            '..02-V5602  317.' : 1,  #loc 1 implied by folder name 20180218
-            '..00-V6916  317.' : 3,  #loc 3 was implied by folder name 20180218
+            #'..02-V5602  317.' : 1,  #loc 1 implied by folder name 20180218
+            #'..00-V6916  317.' : 3,  #loc 3 was implied by folder name 20180218
+            'V5602' : 1,  #loc 3 was implied by folder name 20180218
+            'V6916' : 3,  #loc 3 was implied by folder name 20180218
         }
 
         return
@@ -403,9 +493,13 @@ class Diver():
                  r"\s*(?P<conductivity_mS_cm>\d+(\.\d*))"
                  )
         # rx based on Dr. Pine's group, implied by the IDs they manually record.
-        self.rx_serial_number = r"\s*Serial number\s*.*-(?P<serial_number>.*)  .*"
-    #end def __init__
+        #self.rx_serial_number = r"\s*Serial number\s*.*-(?P<serial_number>.*)  .*"
 
+        self.rx_serial_number = (
+          r"\s*Serial number[^-]*-(?P<serial_number>[^\s]*)\s*.*")
+    #end def __init__ for class Diver()
+
+    #class Diver
     def parse_files(self, verbosity=1):
         me = 'parse_files'
         file_count = 0
@@ -449,6 +543,7 @@ class Diver():
                    "{}: Parsed file {}={} with {} 'readings' rows"
                   .format(me, file_count, input_file_name,n_rows)
                   ,file=log_file)
+
         # end for path in paths
 
         if verbosity > 0:
@@ -458,6 +553,7 @@ class Diver():
         return file_count, total_file_rows, total_inserts, total_exceptions
     # end def parse_files
 
+    ''' Diver class: def import_file'''
     def import_file(self, input_file_name=None, verbosity=1):
 
         me='import_file'
@@ -482,8 +578,10 @@ class Diver():
 
                 if line_count == 13:
                     #rx = self.d_name_rx['serial_number']
+                    #r'Serial number           =(?P<serial_number>.*)'
                     rx_serial_number = (
-                      r'Serial number           =(?P<serial_number>.*)')
+                      r'Serial number[^-]*-(?P<serial_number>[^\s]*).*'
+                      )
                     match = re.search(rx_serial_number,line)
                     # Check the serial number of this diver sensor device
                     try:
@@ -506,8 +604,8 @@ class Diver():
                     sensor_id = d_serial_sensor[serial_number]
 
                     if verbosity > 0:
-                        msg=("Input file '{}',\n line13='{},'\n"
-                            " serial={}, sensor={}"
+                        msg=("Diver input file '{}',\n line13='{}',\n"
+                            " serial='{}', sensor='{}'"
                             .format(input_file_name,line
                               ,serial_number, sensor_id))
                         print(msg, file=log_file)
@@ -551,11 +649,6 @@ class Diver():
                 d_row['in_service'] = in_service
                 d_row['location_id'] = location_id
 
-                pressure_cm = temperature_c = conductivity_mS_cm = 'tbd'
-                #pressure_cm = data_match.group('pressure_cm')
-                #temperature_c = data_match.group('temperature_c')
-                #conductivity_mS_cm = data_match.group('conductivity_mS_cm')
-
                 if verbosity > 1:
                   print("{}: input line {}='{}'"
                         .format(me,line_count,line),file=log_file)
@@ -564,15 +657,33 @@ class Diver():
                     d_row['date_str'] = date_str
                     print("date_str='{}'".format(date_str))
                     print("in_service='{}'".format(in_service))
-                    print("pressure_cm='{}'".format(pressure_cm))
-                    print("temperature_c='{}'".format(temperature_c))
-                    print("conductivity_mS_cm='{}'".format(conductivity_mS_cm))
+                    print("location_id='{}'".format(location_id))
+
                 # NOTE: field_names match columns in observations_table_name
-                for field_name in ['pressure_cm','temperature_c','conductivity_mS_cm']:
-                    value = data_match.group(field_name)
-                    if verbosity > 2:
-                        print("Field_name='{}', value='{}'".format(field_name,value))
-                    d_row[field_name] = value
+                d_row['pressure_cm'] = data_match.group('pressure_cm')
+
+                temperature_c = data_match.group('temperature_c')
+                d_row['temperature_c'] = temperature_c
+
+                conductivity_mS_cm = data_match.group('conductivity_mS_cm')
+                d_row['conductivity_mS_cm'] = conductivity_mS_cm
+
+                #calculate salinity
+                d_row['salinity_psu_calculated'] = (
+                  self.project.SalinityPsuCalculator
+                    .from_temperature_c_conductivity_mS_cm(
+                       temperature_c, conductivity_mS_cm
+                     )
+                )
+
+                if verbosity > 2:
+                    for field_name in ['pressure_cm','temperature_c'
+                      ,'conductivity_mS_cm', 'salinity_psu_calculated']:
+                        print("Field_name='{}', value='{}'"
+                          .format(field_name, d_row[field_name]))
+
+                # Calculate salinity with the project's salinity_calculator
+
             # end line in input file
         # end with open.. input file_name
 
@@ -618,7 +729,7 @@ program.
 
 '''
 Using a given list of folders and a list of globs, create a
-generator tha yields:
+generator that yields:
 
 The next path for a file under a given input folder that matches
 a given glob.
@@ -701,12 +812,14 @@ class Star():
             file_count += 1
 
             input_file_name = path.resolve()
-            n_rows, n_inserts, n_exceptions = self.import_file(input_file_name=input_file_name
-                ,verbosity=verbosity)
+            n_rows, n_inserts, n_exceptions = self.import_file(
+                input_file_name=input_file_name,
+                verbosity=verbosity)
 
             total_file_rows += n_rows
             total_inserts += n_inserts
             total_exceptions += n_exceptions
+
         # end for path in paths
         if verbosity > 0:
             print("{}:STAR Files - Ending with {} files found and parsed.".format(me,file_count),
@@ -734,30 +847,37 @@ class Star():
                 'conductivity_mS_cm', 'sound_velocity_m_sec']:
 
                 value = match.group(field_name)
-                value = value.replace(',','.');
-
-                if verbosity > 2:
-                    print("Field_name='{}', value='{}'"
-                      .format(field_name,value),file=log_file)
                 # Capitulation to inconsistent sea star sensor files.
                 # Some use , some use . as decimal point
                 value = value.replace(',','.')
                 d_row[field_name] = value
+
+                if verbosity > 2:
+                    print("Field_name='{}', value='{}'"
+                      .format(field_name,value),file=log_file)
             # end for field_name
 
+            # Calculate salinity
+            d_row['salinity_psu_calculated'] = (
+              self.project.SalinityPsuCalculator
+                .from_temperature_c_conductivity_mS_cm(
+                   d_row['temperature_c'], d_row['conductivity_mS_cm']
+                 )
+            )
+
             date_str = "{}-{}-{} {}:{}:{}".format(y4,mm,dd,hr,minute,sec)
-
             d_row['observation_datetime'] = date_str
-
             obs_dt = datetime.datetime.strptime(date_str,"%Y-%m-%d %H:%M:%S")
+
             in_service, location_id = self.project.get_in_service_location(
                 sensor_id=sensor_id, observation_datetime=obs_dt)
+
             d_row['in_service'] = in_service
             d_row['location_id'] = location_id
 
         except Exception as ex:
             # Signal a parsing exception
-            msg = ("\n------------------\nGot exception = {}"
+            msg = ("\n------------------\n{}:Got exception = {}"
                .format(repr(ex)))
 
             print(msg)
@@ -858,10 +978,10 @@ class Star():
                     sensor_id = self.d_serial_sensor[serial_number]
 
                     if verbosity > 0:
-                        msg=("Input file '{}',\n line13='{},'\n"
-                            " serial={}, sensor={}"
-                            .format(input_file_name,line,serial_number,
-                            sensor_id))
+                        msg=("Star input file '{}',\n line13='{}',\n"
+                            " serial='{}', sensor='{}'"
+                            .format(input_file_name, line,
+                              serial_number, sensor_id))
                         print(msg, file=log_file)
 
                     if serial_number not in self.d_serial_sensor.keys():
@@ -895,8 +1015,8 @@ class Star():
                 try:
                     data_match = re.search(rx_star_line19_reading, line)
                 except Exception as ex:
-                    msg=('line={} rx_star_line19_reading fails'
-                        .format(line_count))
+                    msg=('line={} rx_star_line19_reading fails,ex={}'
+                        .format(line_count, repr(ex)))
                     raise ValueError(msg)
 
                 # Note: since the location depends on observation date of
@@ -906,7 +1026,7 @@ class Star():
                 if d_row is None:
                     msg = (
                             "\n*****************\n"
-                            "PARSE ERROR: {}:File name '{}', line count='{}':"
+                            "Star.{}:PARSE ERROR:File name '{}', line count='{}':"
                             "\nLine='{}'\n"
                             "\n*****************\n"
                             .format(me,input_file_name,line_count,line))
@@ -1195,6 +1315,8 @@ if __name__ == "__main__":
         observations_table_name=observations_table_name,
         log_file_name=None,
         max_exception_logs_per_file=args.max_exception_logs_per_file,
+        skip_star=0,
+        skip_diver=1,
         verbosity=args.verbosity)
 
 #end if __name__ == "__main__"

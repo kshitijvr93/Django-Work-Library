@@ -384,7 +384,9 @@ class SensorService(models.Model):
 class WaterObservation(models.Model):
     water_observation_id = models.AutoField(primary_key=True)
     sensor = models.ForeignKey(Sensor, models.DO_NOTHING, blank=True, null=True)
-    observation_datetime = models.DateTimeField(blank=True, null=True)
+
+    observation_datetime = models.DateTimeField(blank=True, null=False)
+
     in_service = models.IntegerField(blank=True, null=True)
     location = models.ForeignKey(Location, models.DO_NOTHING, blank=True,
         null=True)
@@ -397,6 +399,7 @@ class WaterObservation(models.Model):
     specific_conductance_ms_cm_25c = models.FloatField(blank=True, null=True)
     salinity_g_kg = models.FloatField(blank=True, null=True)
     salinity_psu = models.FloatField(blank=True, null=True)
+    salinity_psu_calculated = models.FloatField(blank=True, null=True)
     temperature_c = models.FloatField(blank=True, null=True)
     pressure_psi = models.FloatField(blank=True, null=True)
     pressure_cm = models.FloatField(blank=True, null=True)
@@ -436,6 +439,7 @@ class BuoyObservation(models.Model):
     # Star sensor type has four readings (tmperature_c and conductivty_mS_cm
     # already included above)
     salinity_psu = models.FloatField(blank=True, null=True)
+    salinity_psu_calculated = models.FloatField(blank=True, null=True)
     sound_velocity_m_sec = models.FloatField(blank=True, null=True)
 
     note = SpaceCharField(max_length=32, blank=True, null=True,

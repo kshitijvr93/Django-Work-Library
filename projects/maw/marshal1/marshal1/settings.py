@@ -226,7 +226,7 @@ elif app_env == 'local':
         },
     })
 else:
-    msg="ERROR:Setting ENV_LCROYSTER is not in ['production','local']"
+    msg="ERROR:Setting LCROYSTER_ENV is not in ['production','local','test']"
     raise ValueError(msg)
 
 # END LCROYSTER_ENV sensitive settings

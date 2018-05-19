@@ -102,5 +102,6 @@ def test_run():
         print("For temp={}, cond={}, salnity_psu={}"
           .format(temperature_c, conductivity_mS_cm,salinity_psu))
 #end def test_run
-
-test_run()
+for x in range(10000):
+    print(x)
+    test_run()
