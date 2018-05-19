@@ -240,7 +240,7 @@ def sequence_paths(input_folders=None, input_path_globs=None, verbosity=0):
             if (verbosity > 0):
                 print("{}: Found {} files in input_folder='{}'"
                    " that match {}\n"
-                  .format(me, len(paths),input_folder, input_path_glob))
+                  .format(me, len(paths), input_folder, input_path_glob))
 
             #input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
             for path in paths:
@@ -251,14 +251,36 @@ def sequence_paths(input_folders=None, input_path_globs=None, verbosity=0):
 # end def sequence_paths
 
 class OysterProject():
-    ''' encode hard-coded sensor deployments into useful dictionary
-    Later get l_rows from a db table instead of hardcoding here
+    ''' Get  sensor serial numbers into useful list
+        Future: create a generator function to take engine and table name
+        and create a generator of rows, and use that.
     '''
-    ''' encode hard-coded sensor deployments into useful dictionary
-    Later get l_rows from a db table instead of hardcoding here
+    def get_d_serial_sensor(self, table_name='lcroyster_sensor'):
+        me = 'get_d_serial_sensor'
+        metadata = MetaData()
+        engine = self.engine
+        verbosity = self.verbosity
+        log_file = self.log_file
+        table_deploy = Table(table_name, metadata, autoload=True,
+            autoload_with=engine)
+        s = select([table_deploy])
+        conn = engine.connect()
+        result = conn.execute(s)
+        self.d_serial_sensor = {}
+
+        for row in result:
+            self.d_serial_sensor[row['serial_number']] = row['sensor_id']
+            if verbosity > 0:
+                msg=("Got sensor serial_number '{}' with sensor_id {}"
+                  .format(row['serial_number'], row['sensor_id']))
+        return
+    # end def get_d_serial_sensor
+
+
+    ''' Get  sensor deployments into useful dictionary
     '''
-    def get_d_sensor_deployments(self):
-        me = 'get_d_sensor_deployments'
+    def get_d_sensor_deployment(self):
+        me = 'get_d_sensor_deployment'
         metadata = MetaData()
         engine = self.engine
         verbosity = self.verbosity
@@ -282,36 +304,8 @@ class OysterProject():
                 print("Got l_row = {}".format(l_row),file=log_file)
                 l_rows.append(l_row)
 
-                '''
-        l_rows = [
-            { 'sensor_id':1, 'location_id':1,
-                'event_date': '2017-08-16 00:00:00' },
-            { 'sensor_id':2, 'location_id':2,
-                'event_date': '2017-08-16 00:00:00'  },
-            { 'sensor_id':2, 'location_id':0,
-                'event_date': '2017-12-01 10:20:01'  },
-
-            { 'sensor_id':3, 'location_id':3,
-                'event_date': '2017-08-16 00:00:00' },
-
-            { 'sensor_id':4, 'location_id':4,
-                'event_date': '2017-10-06 00:00:00' },
-            { 'sensor_id':5, 'location_id':5,
-                'event_date': '2017-08-27 00:00:00' },
-            { 'sensor_id':6, 'location_id':6,
-                'event_date':  '2017-08-27 00:00:00' },
-            { 'sensor_id':7, 'location_id':7,
-                'event_date':  '2017-11-08 00:00:00' },
-            { 'sensor_id':8, 'location_id':8,
-                'event_date':  '2017-11-08 00:00:00' },
-            { 'sensor_id':9, 'location_id':9,
-                'event_date':  '2017-11-08 00:00:00' },
-            { 'sensor_id':10, 'location_id':2,
-                'event_date':  '2017-12-01 11:00:00' },
-        ]
-        '''
-        # Key is sensor, value is dict keyed by unique dates,
-        # each with a location id (deployment location) value.
+        # d_sensor_deployment{} key is sensor, value is dict keyed by unique
+        # dates, each with a location id (deployment location) value.
         d_sensor_deployment = {}
         for d_row in l_rows:
             if self.verbosity > 0:
@@ -332,23 +326,21 @@ class OysterProject():
 
             d_date_loc[dt] = d_row['location_id']
 
-        # insert the l_rows
-        # for row in l_rows:
-        #    engine.execute(table_object.insert(), row)
         # Replace each d_date_loc with an orderedDict to
         # support faster downstream processes
-
         for sensor_id, d_date_loc in d_sensor_deployment.items():
             # Sort each sensor_deployment dict by date keys
             d_sensor_deployment[sensor_id] = OrderedDict(
               { key:d_date_loc[key] for key in sorted(d_date_loc.keys()) })
 
         if self.verbosity > 1:
-            print("Got final d_sensor_deployments = {}"
+            print("Got final d_sensor_deployment = {}"
                 .format(repr(d_sensor_deployment)),file=self.log_file)
 
-        return d_sensor_deployment
-    #end def get_d_sensor_deployments
+        self.d_sensor_deployment = d_sensor_deployment
+        return
+    #end def get_d_sensor_deployment
+
     '''
     get_in_service_location():
     Potential speedup:
@@ -363,11 +355,17 @@ class OysterProject():
         # Return True if this observation falls in a period of a valid
         # deployment to a project location
         try:
-            od_datetime_loc = self.d_sensor_deployments[sensor_id]
+            od_datetime_loc = self.d_sensor_deployment[sensor_id]
         except:
-            msg=("get_in_service_location:Sensor_id '{}' has raw data but no deployments. Fatal Error."
+            msg=("\n*********************\n"
+                 "FATAL ERROR: Sensor_id '{}' has raw data but no deployments."
+                 "\n*********************\n"
               .format(repr(sensor_id)))
-            raise ValueError(msg)
+            print(msg, file=self.log_file)
+
+            # NOTE: log file output shows newlines, but ValueError shows \n
+            raise ValueError("**** FATAL ERROR: See log_file={}"
+              .format(self.log_file.name))
         #Find whether this date is covered by a valid deployment
         in_service = 0
         location_id = 0
@@ -417,7 +415,9 @@ class OysterProject():
         else:
             self.log_file = log_file
 
-        self.d_sensor_deployments = self.get_d_sensor_deployments()
+        #Get some reference database table data
+        self.get_d_serial_sensor()
+        self.get_d_sensor_deployment()
         #print("Test print to log file.", file=log_file)
 
         return
@@ -427,6 +427,8 @@ class OysterProject():
 '''
 class Diver():
 
+This class represents water quality sensors of type "Diver".
+
 Note: on 20180218 the current sub-folders with sample diver files are:
 [ 'LC-WQ1','LC-WQ3' ]
 
@@ -434,34 +436,7 @@ Note: on 20180218 the current sub-folders with sample diver files are:
 
 class Diver():
 
-    '''
-    From the db of self.project.engine, get the sensor metadata, including
-    sensor serial numbers and matching locations for the Diver sensors.
-    The goal is to assign sensor id and sensor location given the sensor
-    serial number in the header file section for each dated reading
-    (set of 1 date-time and 3 measurements per reading), because the
-    sensor location can move around.
-
-    Initially, we hard-code the d_serial_sensor data
-    But we will get this from the database in a future phase.
-    '''
-
-    def get_metadata(self):
-        engine_read = self.project.engine
-        # Initial implementation just return a hard coded table
-        # Later can read this from a database
-
-        # Key is 'serial number' from a raw sensor file, a string really.
-        # Value is the db inter id value of the sensor
-        self.d_serial_sensor = {
-            #'..02-V5602  317.' : 1,  #loc 1 implied by folder name 20180218
-            #'..00-V6916  317.' : 3,  #loc 3 was implied by folder name 20180218
-            'V5602' : 1,  #loc 3 was implied by folder name 20180218
-            'V6916' : 3,  #loc 3 was implied by folder name 20180218
-        }
-
-        return
-
+    # class Diver():
     def __init__(self,project=None,input_file_folders=None,
         input_file_globs=None, engine=None, log_file=None):
 
@@ -480,7 +455,11 @@ class Diver():
         else:
             self.input_file_globs = input_file_globs
 
-        self.get_metadata()
+        # We require that all sensors, regardless of sensor type, maintain
+        # unique sensor serial_number ids, so we can use project
+        # level sensor dictionary here.
+        self.d_serial_sensor = project.d_serial_sensor
+
         if engine is None:
             self.engine = self.project.engine
             engine = self.engine
@@ -530,7 +509,7 @@ class Diver():
             input_file_name = path.resolve()
             if verbosity > 0:
                 print("{}: parsing input file '{}'"
-                    .format(me,input_file_name),flush=True
+                    .format(me, input_file_name),flush=True
                     , file=log_file )
 
             n_rows, n_inserts, n_exceptions = self.import_file(
@@ -543,7 +522,7 @@ class Diver():
             if verbosity > 0:
                 print(
                    "{}: Parsed file {}={} with {} 'readings' rows"
-                  .format(me, file_count, input_file_name,n_rows)
+                  .format(me, file_count, input_file_name, n_rows)
                   ,file=log_file)
 
         # end for path in paths
@@ -599,23 +578,18 @@ class Diver():
                     if serial_number not in d_serial_sensor.keys():
                         msg=("Input_file_name: {}\n"
                              "Found serial number '{}' not in '{}'"
-                            .format(input_file_name,serial_number,
-                            d_serial_sensor.keys()))
+                            .format(input_file_name, serial_number,
+                            repr(d_serial_sensor.keys())))
                         raise ValueError(msg)
 
                     sensor_id = d_serial_sensor[serial_number]
 
                     if verbosity > 0:
                         msg=("Diver input file '{}',\n line13='{}',\n"
-                            " serial='{}', sensor='{}'"
-                            .format(input_file_name,line
-                              ,serial_number, sensor_id))
+                            " serial_number='{}', sensor_id='{}'"
+                            .format(input_file_name, line,
+                              serial_number, sensor_id))
                         print(msg, file=log_file)
-
-                    if serial_number not in self.d_serial_sensor.keys():
-                        msg=("Got serial number '{}', not in '{}'"
-                          .format(serial_number, serial_numbers))
-                        raise ValueError(msg)
 
                 if line_count < 67:
                     #Skip constant sensor header information
@@ -653,7 +627,7 @@ class Diver():
 
                 if verbosity > 1:
                   print("{}: input line {}='{}'"
-                        .format(me,line_count,line),file=log_file)
+                        .format(me, line_count, line),file=log_file)
 
                 if verbosity > 2:
                     d_row['date_str'] = date_str
@@ -712,7 +686,7 @@ class Diver():
 
         if verbosity > 0:
             print("{}:Parsed file {} of {} rows, did {} inserts, had {} exceptions:"
-                .format(me,input_file_name, line_count-1,n_inserts,n_exceptions)
+                .format(me, input_file_name, line_count-1, n_inserts, n_exceptions)
                 ,file=log_file)
         if verbosity > 1:
             print("Rows parsed were:")
@@ -746,27 +720,9 @@ NOT be a generator, just an interable.
 '''
 
 class Star():
+    # This class represents water quality sensors of type "Star-ODDI".
 
-    def get_metadata(self):
-        engine_read = self.project.engine
-        # Initial implementation just return a hard coded table
-        # Later can read this from a database
-
-        # Key is 'serial number' from a raw sensor file, a string really.
-        # Value is the db inter id value of the sensor
-        self.d_serial_sensor = {
-            'S8814' : 1,  #Values not used yet
-            'S9058' : 2,
-            'S9060' : 3,
-            'S9061' : 4,
-            'S9035' : 5,
-            'S9062' : 6,
-            'S9036' : 7,
-            'S9059' : 8,
-            'S9238' : 9,
-            'S9237' : 12
-        }
-
+    # class Star():
     def __init__(self,project=None, input_file_folders=None,
         input_file_globs=None, log_file=None, d_serial_location=None):
         me = "Star.__init__"
@@ -778,11 +734,15 @@ class Star():
         self.max_exception_logs_per_file = project.max_exception_logs_per_file
         self.log_file = project.log_file if log_file is None else log_file
 
-        print("{}:Using log file {}".format(me,self.log_file))
-        print("{}:Using log file {}".format(me,self.log_file),file=self.log_file)
+        print("{}:Using log file {}".format(me, self.log_file))
+        print("{}:Using log file {}".format(me, self.log_file), file=self.log_file)
 
-        self.get_metadata()
-
+        # We require that all sensors, regardless of sensor type, maintain
+        # unique sensor serial_number ids, so we can use project
+        # level d_serial_sensor
+        # Later we may possibly need unique serial_numbers per type,
+        # so maintain this data member here.
+        self.d_serial_sensor = project.d_serial_sensor
 
         self.input_file_folders = input_file_folders
 
@@ -795,6 +755,7 @@ class Star():
 
     #end def __init__
 
+    # class Star():
     def parse_files(self, verbosity=1):
         me = 'parse_files'
         file_count = 0
@@ -803,7 +764,7 @@ class Star():
         log_file = self.log_file
         if verbosity > 0:
             print("{}:Starting with input_folders={},globs={}"
-                .format(me,self.input_file_folders, self.input_file_globs),
+                .format(me, self.input_file_folders, self.input_file_globs),
                 file=log_file)
 
         paths = sequence_paths(input_folders=self.input_file_folders,
@@ -824,11 +785,12 @@ class Star():
 
         # end for path in paths
         if verbosity > 0:
-            print("{}:STAR Files - Ending with {} files found and parsed.".format(me,file_count),
-                file=log_file)
+            print("{}:STAR Files - Ending with {} files found and parsed."
+                .format(me, file_count), file=log_file)
         return file_count, total_file_rows, total_inserts, total_exceptions
    # end def parse_files
 
+    # class Star():
     '''
     Return None if re match failed, otherwise retur d_row of name-value pairs.
     '''
@@ -856,7 +818,7 @@ class Star():
 
                 if verbosity > 2:
                     print("Field_name='{}', value='{}'"
-                      .format(field_name,value),file=log_file)
+                      .format(field_name, value), file=log_file)
             # end for field_name
 
             # Calculate salinity
@@ -880,7 +842,7 @@ class Star():
         except Exception as ex:
             # Signal a parsing exception
             msg = ("\n------------------\n{}:Got exception = {}"
-               .format(repr(ex)))
+               .format(me, repr(ex)))
 
             print(msg)
             sys.stdout.flush()
@@ -917,6 +879,7 @@ class Star():
                  r"\t(?P<sound_velocity_m_sec>(\d+(\.\d*)))"
                  )
     '''
+    # class Star():
     def import_file(self, input_file_name=None, verbosity=1):
 
         me='import_file'
@@ -942,11 +905,11 @@ class Star():
 
         if verbosity > 1:
             print("{}:rx_star_line19_reading='{}'"
-                .format(me,rx_star_line19_reading)
+                .format(me, rx_star_line19_reading)
                 ,file=log_file)
 
         with open(input_file_name, 'r', encoding='latin1') as ifile:
-            for line_count, line in enumerate(ifile, start = 1):
+            for line_count, line in enumerate(ifile, start=1):
                 # Nip pesky ending newline
                 line = line[:len(line)-1]
                 if verbosity > 1:
@@ -965,60 +928,49 @@ class Star():
                         serial_number = 'S' + serial_number
                     except:
                         msg = ("{}: input_file has {} no serial number"
-                            .format(me,input_file_name))
+                            .format(me, input_file_name))
                         print(msg, file=log_file)
                         raise
 
                     d_serial_sensor = self.d_serial_sensor
                     if serial_number not in d_serial_sensor.keys():
-                        msg=("Input_file_name: {}\n"
+                        msg=("ERROR: Input_file_name: {}\n"
                              "Found serial number '{}' not in '{}'"
-                            .format(input_file_name,serial_number,
+                            .format(input_file_name, serial_number,
                             repr(d_serial_sensor.keys())) )
+                        print(msg, file=log_file)
                         raise ValueError(msg)
 
                     sensor_id = self.d_serial_sensor[serial_number]
 
                     if verbosity > 0:
                         msg=("Star input file '{}',\n line13='{}',\n"
-                            " serial='{}', sensor='{}'"
+                            " serial_number='{}', sensor_id='{}'"
                             .format(input_file_name, line,
                               serial_number, sensor_id))
                         print(msg, file=log_file)
 
-                    if serial_number not in self.d_serial_sensor.keys():
-                        msg=("Got serial number '{}', not in '{}'"
-                          .format(serial_number, serial_numbers))
-                        raise ValueError(msg)
-
                 # end if line_count == 16 (We set sensor_id and location_id)
 
-                if line_count < 18:
-                    #Skip constant sensor header information
-                    # later, do read line 18 too
+                if line_count < 19:
+                    # Skip constant sensor header information
                     continue
 
                 d_row = {}
                 l_rows.append(d_row)
 
                 d_row['sensor_id'] = sensor_id
-
-                if line_count == 18:
-                    #rx_star
-                    #later parse this line separately
-                    continue;
-
                 if verbosity > 1:
                     print("{}: reading line {} = '{}'"
-                        .format(me,line_count,line),file=log_file)
+                        .format(me, line_count, line),file=log_file)
 
                 # Here we have Line 19 and greater - regular-formatted data lines
                 # read and parse this data line and create output d_row
                 try:
                     data_match = re.search(rx_star_line19_reading, line)
                 except Exception as ex:
-                    msg=('line={} rx_star_line19_reading fails,ex={}'
-                        .format(line_count, repr(ex)))
+                    msg=("ERROR: line number {}='{}', rx_star_line19_reading "
+                         "fails,ex={}".format(line_count, line, repr(ex)))
                     raise ValueError(msg)
 
                 # Note: since the location depends on observation date of
@@ -1031,13 +983,13 @@ class Star():
                             "Star.{}:PARSE ERROR:File name '{}', line count='{}':"
                             "\nLine='{}'\n"
                             "\n*****************\n"
-                            .format(me,input_file_name,line_count,line))
+                            .format(me, input_file_name, line_count, line))
                     print(msg, file=log_file)
                     raise ValueError(msg)
 
                 if verbosity > 1:
                   print("{}: input line {}='{}'"
-                        .format(me,line_count,line), file=log_file)
+                        .format(me, line_count, line), file=log_file)
 
             # end line in input file
         # end with open.. input file_name
@@ -1067,8 +1019,8 @@ class Star():
         if verbosity > 0:
             print("{}:Parsed file {}\nSUMMARY: {} lines, {} inserts, "
                 "and {} exceptions found.\n\n\n"
-                .format(me,input_file_name,line_count-1,n_inserts,n_exceptions)
-                ,file=log_file)
+                .format(me, input_file_name, line_count-1, n_inserts,
+                n_exceptions) ,file=log_file)
         if verbosity > 1:
             print("Parsed rows were:")
             for count,d_row in enumerate(l_rows, start=1):
@@ -1231,7 +1183,7 @@ def run(input_folder=None,
            verbosity=verbosity)
 
         print("{}: Parsed {} Diver files with {} inserts, {} exceptions."
-            .format(me,file_count, n_inserts,n_exceptions),file=log_file)
+            .format(me, file_count, n_inserts, n_exceptions),file=log_file)
 
         total_inserts += n_inserts
         total_exceptions += n_exceptions
@@ -1245,13 +1197,13 @@ def run(input_folder=None,
         file_count, n_file_rows, n_inserts, n_exceptions = star.parse_files(
             verbosity=verbosity)
         print("{}: Parsed {} Star files with {} inserts, {} exceptions."
-            .format(me,file_count, n_inserts,n_exceptions),file=log_file)
+            .format(me, file_count, n_inserts,n_exceptions),file=log_file)
 
         total_inserts += n_inserts
         total_exceptions += n_exceptions
 
     msg = ("{}: ENDING: Did {} inserts, had {} exceptions.\n"
-       "See log file name='{}'".format(me,total_inserts,total_exceptions,
+       "See log file name='{}'".format(me, total_inserts, total_exceptions,
        log_file_name))
     print(msg, file=log_file)
     print(msg)
