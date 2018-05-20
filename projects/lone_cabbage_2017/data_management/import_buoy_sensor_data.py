@@ -293,7 +293,8 @@ class OysterProject():
 
         l_rows = []
         if verbosity > 1 or 1 ==1:
-            print("{}: Showing lcroyster_sensordeploy rows:",file=log_file)
+            print("{}: Showing lcroyster_sensordeploy rows:".format(me),
+              file=log_file)
             for count,row in enumerate(result):
                 print ("Got row='{}'".format(row),file=log_file)
                 l_row = {
