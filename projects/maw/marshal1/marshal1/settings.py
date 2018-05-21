@@ -187,6 +187,7 @@ if app_env == 'production':
         #'PORT': '3354',
         'HOST': 'ict-prod-hosting05.mysql.osg.ufl.edu',
         'PORT': '3359',
+        'TIME_ZONE': None,
         'OPTIONS' : {
             # Heed a warning during manage.py migrate runs
             'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
@@ -203,6 +204,7 @@ elif app_env == 'test':
         'PASSWORD': maw_settings.LCROYSTER_TEST_MYSQL_PASSWORD,
         'HOST': '10.241.33.139',
         'PORT': '3306',
+        'TIME_ZONE': None,
         'OPTIONS' : {
             # Heed a warning during manage.py migrate runs
             'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
@@ -219,6 +221,7 @@ elif app_env == 'local':
         'PASSWORD': maw_settings.LCROYSTER_LOCAL_MYSQL_PASSWORD,
         'HOST': '127.0.0.1',
         'PORT': '3306',
+        'TIME_ZONE': None,
         'OPTIONS' : {
             # Heed a warning during manage.py migrate runs
             'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
