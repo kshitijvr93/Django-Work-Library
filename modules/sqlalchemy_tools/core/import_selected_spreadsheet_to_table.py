@@ -229,6 +229,7 @@ def spreadsheet_to_engine_table(
   table_core=None, engine_table=None,
   is_index_xls=True, #whether index is a letter like 'a', 'z','aa', etc
   engine=None,
+  log_output=None,
   row_count_header=1, row_count_values_start=2, verbosity=0):
 
     me = 'spreadsheet_to_engine_table'
@@ -239,23 +240,26 @@ def spreadsheet_to_engine_table(
       msg = "Missing some required args in {}".format(repr(required_args))
       raise ValueError(msg)
 
+    if log_output is None:
+        log_output = sys.stdout
+
     #initialize database connections for writing/inserting
 
     if verbosity > 1 and 1 == 2:
         # Might experiment with these later... maybe move this to a test file.
-        print("+++++++++++= Experiment:Calling Metadata(engine)")
+        print("+++++++++++= Experiment:Calling Metadata(engine)",file=log_output)
         metadata = MetaData(engine)
-        print("+++++++++++= Experiment:Calling inspect(engine)")
+        print("+++++++++++= Experiment:Calling inspect(engine)",file=log_output)
         inspector = inspect(engine)
-        print("+++++++++++= Experiment:engine.connect(engine)")
+        print("+++++++++++= Experiment:engine.connect(engine)",file=log_output)
         conn = engine.connect()
         print('Connected with conn={} to database to insert into table {}'
-          .format(repr(conn),table.name))
+          .format(repr(conn),table.name),file=log_output)
         # Warning: this causes hundreds of lines of output in a 5-table database
-        print("+++++++++++= Calling metadata.reflect(engine)")
+        print("+++++++++++= Calling metadata.reflect(engine)",file=log_output)
         metadata.reflect(engine)
-        print("+++++++++++= Returned from metadata.reflect(engine)")
-        sys.stdout.flush()
+        print("+++++++++++= Returned from metadata.reflect(engine)",file=log_output)
+        log_output.flush()
 
     #workbook
     workbook = xlrd.open_workbook(workbook_path)
@@ -269,8 +273,9 @@ def spreadsheet_to_engine_table(
     print("{}: SheetDictReader with sheet_index {}, row_count_header={}\n"
         " has column_names={}"
         .format(me, reader.sheet_index, row_count_header,
-                repr(reader.column_names)))
-    sys.stdout.flush()
+                repr(reader.column_names)),
+        file=log_output)
+    log_output.flush()
 
     #Read each spreadsheet row and insert table row
     #based on od_index_column information
@@ -280,7 +285,7 @@ def spreadsheet_to_engine_table(
         i += 1
         if (verbosity > 1 ):
             msg = ("{}:reading ss row {}={}".format(me,i,repr(row)))
-            print(msg.encode('utf-8'))
+            print(msg.encode('latin1'), file=log_output)
 
         #build a table of destination dict keyed by destination
         #table column name, with the value being the actual data value
@@ -317,7 +322,8 @@ def spreadsheet_to_engine_table(
                   "To output:ss_index={}, dbcol.name={}, dbcol.type={}, "
                   "type({})={}"
                   .format(ss_index, db_column.name,
-                  db_column.type, db_column.type,type(db_column.type)))
+                  db_column.type, db_column.type,type(db_column.type)),
+                  file=log_output)
 
             if ( type(db_column.type) == sqlalchemy.sql.sqltypes.Float
                or type(db_column.type) == sqlalchemy.sql.sqltypes.Integer
@@ -346,11 +352,12 @@ def spreadsheet_to_engine_table(
             msg = ("Row {} setting: ss_index={}, db_column_name={}, value={}"
               .format(i,ss_index,db_column.name, value))
             if verbosity > 1:
-                # Trick to avoid windows msg: UnicodeEncodeError...
-                # on prints to windows console, encode in utf-8
-                print(msg.encode('utf-8'))
+                # Tip to avoid windows msg: UnicodeEncodeError...
+                # on prints to windows console, encode in latin1 with
+                # errors some non strict option
+                print(msg.encode('latin1',errors="xmlcharrefreplace"),file=log_output)
                 #print(msg)
-                sys.stdout.flush()
+                log_output.flush()
 
             # end reading and inserting this row
         # end for ss_index, db_column
@@ -366,15 +373,15 @@ def spreadsheet_to_engine_table(
             result = engine.execute(table_core.insert(), od_table_column__value)
             if i % 100 == 0:
               print("On row {}inserted_primary_key={}"
-                  .format(i,result.inserted_primary_key))
+                  .format(i,result.inserted_primary_key),file=log_output)
         except Exception as ex:
-            msg = ("SKIP insert: Spreadsheet row_count={}, Reason='{}',row='{}'."
+            msg = ("SKIP insert: Spreadsheet row_count={}, Reason='{}',row='{}'.\n"
                 .format(i-1+row_count_values_start,repr(ex),repr(od_table_column__value)))
-            print(msg.encode('utf-8'))
+            print(msg.encode('latin1',errors="xmlcharrefreplace"),file=log_output)
 
         if i % 100 == 0:
             print("Sample row {}, called insert of {} to table..."
-              .format(i,repr(od_table_column__value)))
+              .format(i,repr(od_table_column__value)),file=log_output)
     #end for row in spreadsheet
 #end spreadsheet_to_engine_table(workbook_path=None, table=None, engine=None):
 
@@ -424,6 +431,7 @@ def spreadsheet_to_table(
   is_index_xls=False,
   engine_nickname=None, table_name=None,
   create_table=False,
+  log_output=None,
   verbosity=0,
   ):
 
@@ -445,12 +453,15 @@ def spreadsheet_to_table(
            .format(me,repr(required_args)))
       raise ValueError(msg)
 
+    if log_output is None:
+        log_output = sys.stdout
+
     metadata = MetaData()
     my_db_engine = get_sa_engine_by_name(name=engine_nickname)
 
     if create_table == True:
         #Create the in-memory sqlalchemy table_core object.
-        print("{}:Creating table '{}'.".format(me,table_name))
+        print("{}:Creating table '{}'.".format(me,table_name),file=log_output)
         table_core = sqlalchemy_core_table(
           table_name=table_name, columns=od_index_column.values(),
           verbosity=verbosity,)
@@ -463,7 +474,8 @@ def spreadsheet_to_table(
         # in od_index_colum as values
 
         metadata.reflect(my_db_engine)
-        print("{}:Autoloading table '{}'.".format(me,table_name))
+        print("{}:For sheet_index={}, autoloading table '{}'.\n"
+          .format(me,sheet_index, table_name),file=log_output)
         try:
             engine_table = metadata.tables[table_name]
         except:
@@ -476,7 +488,7 @@ def spreadsheet_to_table(
         table_core = Table(table_name, metadata, autoload=True,
             autoload_with=my_db_engine)
 
-    sys.stdout.flush()
+    log_output.flush()
 
     # From the table_core, create a true persistent database table object
 
@@ -490,6 +502,7 @@ def spreadsheet_to_table(
        is_index_xls=is_index_xls,
        engine=my_db_engine,
        table_core=table_core,
+       log_output=log_output,
        verbosity=1,
        )
 
@@ -658,7 +671,7 @@ def run(env=None,verbosity=1):
           'au': Column('user_1', Text),
           ##############################################
         })
-    elif env == 'uf_cuba_libro_item_20170503':
+    elif env == 'uf_cuba_libro_20180503':
         # FUG starts at row 4, HLS starts at 2
         # Set manually in code for now!
         print("Using env={}".format(env))
@@ -668,7 +681,12 @@ def run(env=None,verbosity=1):
           'cuba_libro_item_20180503.xlsx')
         # NOTE: sheet index values start at 0
         sheet_index = None
+
+        #Worksheets indexes for those we want to use to import table data
         l_sheet_index = [1,2,3,5,6,7,]
+
+        #All 7 sheets here have column name strings in row count 1, so skip,
+        #because od_index_column is used as a map below instead
         row_count_values_start = 2
 
         table_name = 'cuba_libro_item'
@@ -723,9 +741,6 @@ def run(env=None,verbosity=1):
           'ar': Column('shortened_title', Text),
           'as': Column('user_1', Text),
 
-          #####################################################
-
-          ##############################################
         })
 
     elif env == 'uf_cuba_libro_item_hls':
@@ -851,7 +866,7 @@ def run(env=None,verbosity=1):
 
     sys.stdout.flush()
 
-    if sheet_index is not None;
+    if sheet_index is not None:
         spreadsheet_to_table(
           # Identify the workbook pathname of the input workbook
           input_workbook_path=workbook_path,
@@ -886,6 +901,7 @@ env = 'windows4'
 env = 'windows5'
 env = 'uf_cuba_libro_item_hls'
 env = 'uf_cuba_libro_item_fug'
-env = 'uf_cuba_libro_20170503' #spreadsheet sent by jessie uf email
+env = 'uf_cuba_libro_20180503' #spreadsheet sent by jessie uf email
 
-run(env=env)
+if __name__ == '__main__':
+    run(env=env)

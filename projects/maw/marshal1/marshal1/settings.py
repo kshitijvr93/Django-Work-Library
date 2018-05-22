@@ -277,7 +277,7 @@ if maw_settings.ENV == 'test':
             'HOST': '10.241.33.139',
             'PORT': '3306',
         },
-    })
+    }) # maw_settings.ENV = 'test'
 elif maw_settings.ENV == 'local':
     DATABASES.update({
         # This db will hold users and groups info

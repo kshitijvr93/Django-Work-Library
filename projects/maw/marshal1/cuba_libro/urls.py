@@ -12,6 +12,8 @@ urlpatterns = [
     path(route=r'home', view=views.home, name='cuba_libro_home'),
     # }
     path(route=r'index', view=views.index, name='index'),
+    path(route=r'import20180503', view=views.import20180503,
+         name='import20180503'),
 
     # { Support for social_django if served from cuba_libro app
     # Note: github would have to register

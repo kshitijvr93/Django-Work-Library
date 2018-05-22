@@ -105,14 +105,17 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
     list_display = [
          'accession_number',
          'title_primary',
-         'pub_year_span',
+         #'pub_year_span',
          #'reference_type',
-         #'holding',
          'agent',
+         'holding',
          #'agent_modify_date',
          ]
 
-    list_filter = ['agent', 'reference_type'
+    list_filter = [
+        'agent',
+        'holding',
+        # 'reference_type'
         #,'language', 'place_of_publication',
         ]
 
