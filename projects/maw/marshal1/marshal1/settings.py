@@ -56,6 +56,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     #'maw_home.apps.MawHomeConfig',
     'hathitrust.apps.HathitrustConfig',
+    'bibitem.apps.BibitemConfig',
     'cuba_libro.apps.CubaLibroConfig',
     'lcroyster.apps.LcroysterConfig',
     'django.contrib.admin',
@@ -311,6 +312,16 @@ elif maw_settings.ENV == 'local':
             'PORT': '3306',
         },
         'cuba_libro_connection': {
+            'ENGINE': 'django.db.backends.mysql',
+            # The maw1_db database will host hathitrust and probably
+            # some other maw apps
+            'NAME': 'maw1_db',
+            'USER': maw_settings.MYSQL_LOCAL_USER,
+            'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
+            'HOST': '127.0.0.1',
+            'PORT': '3306',
+        },
+        'bibitem_connection': {
             'ENGINE': 'django.db.backends.mysql',
             # The maw1_db database will host hathitrust and probably
             # some other maw apps
