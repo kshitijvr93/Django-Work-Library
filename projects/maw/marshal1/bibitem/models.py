@@ -66,6 +66,8 @@ class MaterialType(models.Model):
         'Conference Procedings',
         'Journal Article',
         'Training Materials',
+        'Pre-published Manuscripts',
+        'Pre-published Articles',
         'Data Sets',
         'Student Organization Files',
         'Administrative Papers (Agendas, minutes, etc.)',
@@ -73,7 +75,7 @@ class MaterialType(models.Model):
 # end class MaterialType
 
 
-class Item(models.Model):
+class SubmittedItem(models.Model):
 
     # Field 'id' is 'special', and if not defined here, Django defines
     # it as I do below anyway.
@@ -84,32 +86,17 @@ class Item(models.Model):
     # Many fields based on Jessica English UF email of 20180319
     # Jessica informed us that accession_number is or should be
     # unique to UF and all other  partners.
-    material_type_id = models.CharField(max_length=255, unique=True,
+    material_type_id = models.ForeignKey('MaterialType',
+        on_delete=models.CASCADE,)
 
-    MATERIAL_CHOICES = (
-
-    )
-
-    resource_type = models.CharField(max_length=255, unique=True,
-        default="Resource type(Video, Audio, Photograph, etc.)", editable=True)
+    resource_type_id = models.ForeignKey('ResourceType',
+        on_delete=models.CASCADE,)
 
     accession_number = models.CharField(max_length=255, unique=True,
         default="Enter accession number here", editable=True)
 
-    # Add to these PARTNER_CHOICES as we learn of more partners.
-    PARTNER_CHOICES = (
-        ( 'UF' ,'University of Florida'),
-        ( 'Available' ,'Available'),
-        ( 'Harvard','Harvard'),
-        ( 'NC State','North Carolina State University'),
-    )
-
-    agent = models.CharField('Partner', null=True, default='Available',
-        blank=True, max_length=50, choices=PARTNER_CHOICES,
-        help_text="Partner to verify or edit this item.")
-
-    agent_modify_date = models.DateTimeField('Modify Date (UTC)',
-        null=True, auto_now=True, editable=False)
+    #rvp 20180522 ADD HERE - something like template_type_id..?
+    #
 
     # Original source data for holding is of the form XXX[-NNN[-MMM]]
     # Later I may modify this model to separate them into: holder,
