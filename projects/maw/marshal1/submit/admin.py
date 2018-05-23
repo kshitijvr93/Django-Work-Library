@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Item
+from .models import Submittal
 from django.forms import TextInput, Textarea
 from django.db import models
 
@@ -31,10 +31,10 @@ class ExportCvsMixin:
 
 # end class ExportCvsMixin
 
-class BibItemModelAdmin(admin.ModelAdmin):
+class SubmittalModelAdmin(admin.ModelAdmin):
     # Using value should be a settings.py DATABASES key,
     # actually called a 'connection' name in misc Django messages
-    using = 'bibitem_connection'
+    using = 'submit_connection'
     # Smaller text form regions
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
@@ -70,7 +70,7 @@ class BibItemModelAdmin(admin.ModelAdmin):
         return super().formfield_for_manytomany(db_field, request,
             using=self.using, **kwargs)
 
-#end class BibItemModelAdmin
+#end class SubmittalModelAdmin
 
 def agent_available_to_uf(modeladmin, request, queryset):
         queryset.filter(agent='Available').update(agent='UF')
@@ -82,15 +82,16 @@ def agent_uf_to_available(modeladmin, request, queryset):
 
 agent_uf_to_available.short_description = "Change UF partner to Available "
 
-class ItemAdmin(BibItemModelAdmin, ExportCvsMixin):
+class SubmittalAdmin(SubmittalModelAdmin, ExportCvsMixin):
 
     #admin change list display fields to show
     # CHANGE LIST VIEW
-    search_fields = ['accession_number'
-        ,'reference_type', 'language'
-        ,'authors_primary', 'title_primary'
-        ,'pub_year_span', 'place_of_publication'
-        ,'isbn_issn', 'call_number','doi', 'pmid','pmcid'
+    search_fields = [
+        'author_primary',
+        'title_primary',
+        'material_type_id',
+        'resource_type_id',
+        'metadata_type_id',
         ]
 
     #date_hierarchy = 'agent_modify_date'
@@ -98,23 +99,24 @@ class ItemAdmin(BibItemModelAdmin, ExportCvsMixin):
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.
                          # Need reference doc?
-        agent_uf_to_available, #External, so set the function value
-        agent_available_to_uf, #External, so set the function value
+        # agent_uf_to_available, #External, so must set the function value.
     ]
 
     list_display = [
-         'accession_number',
+         'author_primary',
          'title_primary',
          #'pub_year_span',
          #'reference_type',
-         'agent',
-         'holding',
+         'material_type_id',
+         'resource_type_id',
+         'metadata_type_id',
          #'agent_modify_date',
          ]
 
     list_filter = [
-        'agent',
-        'holding',
+        'material_type_id',
+        'resource_type_id',
+        'metadata_type_id',
         # 'reference_type'
         #,'language', 'place_of_publication',
         ]
@@ -197,6 +199,6 @@ class ItemAdmin(BibItemModelAdmin, ExportCvsMixin):
 
 
 
-admin.site.register(Item, ItemAdmin)
+admin.site.register(Submittal, SubmittalAdmin)
 
 # Register your models here.

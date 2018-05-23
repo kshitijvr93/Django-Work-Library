@@ -5,6 +5,7 @@ from django.db import models
 #other useful model imports at times (see django docs, tutorials):
 import datetime
 from django.utils import timezone
+import maw_utils
 
 '''
 NOTE: rather than have a separate file router.py to host HathiRouter, I just
@@ -14,17 +15,17 @@ as one of the listed strings in the list setting for DATABASE_ROUTERS.
 '''
 # Maybe move the HathiRouter later, but for now keep here
 #
-class BibitemRouter:
+class SubmitRouter:
     '''
     A router to control all db ops on models in the hathitrust Application.
     '''
 
     # app_label is really an app name. Here it is hathitrust.
-    app_label = 'bibitem'
+    app_label = 'submit'
 
     # app_db is really a main settings.py DATABASES name, which is
     # more properly a 'connection' name
-    app_db = 'bibitem_connection'
+    app_db = 'submit_connection'
 
     '''
     See: https://docs.djangoproject.com/en/2.0/topics/db/multi-db/
@@ -53,11 +54,66 @@ class BibitemRouter:
             return db == self.app_db
         return None
 
-#end class
+#end class SubmitRouter
+
+# { Start class Copyright
+class Copyright(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, unique=True,
+        help_text="Unique name for this copyright license statement.", editable=True)
+    notice = maw_utils.SpaceTextField(null=True, default='',blank=True,
+        editable=True,
+        help_text="The actual copyright license language without the copyright year.""
+        )
+    notes = maw_utils.SpaceTextField(null=True, default='',blank=True,
+        editable=True,
+        )
+    pass
+# } end class Copyright
+
+# Start class MaterialType
 class MaterialType(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True,
         default="Unique name for a material type.", editable=True)
+    '''
+    Example names:
+        'Conference Paper',
+        'Conference Poster',
+        'Conference Presentation',
+        'Conference Procedings',
+        'Journal Article',
+        'Training Materials',
+        'Pre-published Manuscript',
+        'Pre-published Article',
+        'Data Sets',
+        'Student Organization Files',
+        'Administrative Papers (Agendas, minutes, etc.)',
+    '''
+# end class MaterialType
+
+class ResourceType(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, unique=True,
+        default="Unique name for a resource type or format, per Catalogging.",
+        editable=True)
+    '''
+    Example names:
+        'Photographs',
+        'Video',
+        'Audio file',
+        'Text',
+        'Conference Procedings',
+        'Presentation/slides',
+        'Data Sets',
+        'Student Organization Files',
+        'Administrative Papers (Agendas, minutes, etc.)',
+    '''
+# end class MetadataType
+class MetadataType(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, unique=True,
+        default="Unique name for a Metadata or template type.", editable=True)
     '''
     Example names:
         'Conference Paper',
@@ -72,31 +128,34 @@ class MaterialType(models.Model):
         'Student Organization Files',
         'Administrative Papers (Agendas, minutes, etc.)',
     '''
-# end class MaterialType
+# end class MetadataType
 
 
-class SubmittedItem(models.Model):
-
+# { start class Submittal
+class Submittal(models.Model):
     # Field 'id' is 'special', and if not defined here, Django defines
     # it as I do below anyway.
     # However I do include it per python Zen:
     # explicit is better than implicit.
     id = models.AutoField(primary_key=True)
 
-    # Many fields based on Jessica English UF email of 20180319
-    # Jessica informed us that accession_number is or should be
-    # unique to UF and all other  partners.
+    author_primary = models.TextField(null=True, default='',blank=True,
+        editable=True)
+
+    title_primary = models.TextField(null=True,
+      default='', blank=True, editable=True)
+
     material_type_id = models.ForeignKey('MaterialType',
         on_delete=models.CASCADE,)
 
     resource_type_id = models.ForeignKey('ResourceType',
         on_delete=models.CASCADE,)
 
+    metadata_type_id = models.ForeignKey('MetadataType',
+        on_delete=models.CASCADE,)
+
     accession_number = models.CharField(max_length=255, unique=True,
         default="Enter accession number here", editable=True)
-
-    #rvp 20180522 ADD HERE - something like template_type_id..?
-    #
 
     # Original source data for holding is of the form XXX[-NNN[-MMM]]
     # Later I may modify this model to separate them into: holder,
@@ -118,11 +177,6 @@ class SubmittedItem(models.Model):
     reference_type = models.CharField(null=True, default='',
         max_length=20, blank=True, editable=True)
     # import column 2
-    authors_primary = models.TextField(null=True, default='',blank=True,
-        editable=True)
-
-    title_primary = models.TextField(null=True,
-      default='', blank=True, editable=True)
     periodical_full = models.TextField(null=True,
       default='', blank=True, editable=True)
 
@@ -248,14 +302,75 @@ class SubmittedItem(models.Model):
         class Meta:
           db_table = 'item'
     '''
+# } end class Submittal
+
+
+#{ start class SubmittalAuthor}
+class Author(models.Model):
+    # Field 'id' is 'special', and if not defined here, Django defines
+    # it as I do below anyway.
+    # However I do include it per python Zen:
+    # explicit is better than implicit.
+    id = models.AutoField(primary_key=True)
+
+    submittal_id = models.ForeignKey('Submittal',
+        on_delete=models.CASCADE,
+        help_text='Id of Submittal authored by this author',
+        )
+
+    orcid_id = models.TextField(null=True, default='',
+        blank=True,editable=True,
+        help_text="Orcid ID for this author"
+        )
+
+    email_address = models.EmailField()
+
+    surname = models.CharField( "Also known as last name or family name)",
+        blank=True, null=True, max_length=255, editable=True)
+
+    surname = models.CharField( "Also known as last name or family name)",
+        blank=True, null=True, max_length=255, editable=True)
+    given_name = models.CharField( "Also known as first name)",
+        blank=True, null=True, max_length=255, editable=True)
+
+    material_type_id = models.ForeignKey('MaterialType',
+        on_delete=models.CASCADE,)
+# end class Author
+
+# {class copyright_license
+'''
+See https://fairuse.stanford.edu/overview/faqs/copyright-ownership/
+May advise submitter to only submit items the whole of which they are
+authors. That is, if they wrote only a SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMSer of a book, they are advised
+to submit only the chapter, as they only have a right to issue a copyright
+license for that chapter, not the whole book.
+Also, advise them that they must list joint authors of the submittal, as they
+have the rights of copyright and of credit for the work.
+
+Copyright law provides for any author to change the licensing statement over time,
+so we may need to keep track of historical copyright licenses by date issued.
+Also if there are multiple authors, multiple copyright licenses (at least one per
+author per time span are possible.)
+
+We should inform all authors for whom we have email addresses that their work
+is provided in our repository and that they have the right to register their own
+copyright license for the work at any time.
+Each work should list asignees of copyrights, not just the author.
+If the author assigns copyright to any other, we should record it and the contact
+info so the public may ask permission of the asignee if needed.
+
 
 '''
-Model Item_file will be a single file that a user uploads that will be
-associated with a particular Hathitrust item.
-So it will have a foreign key to a Hathitrust item.
-'''
-class BibitemFile(models.Model):
-    #id is a default integer auto field, which is perfect, so let django make itself.
-    id = models.ForeignKey('Item', on_delete=models.CASCADE,)
+# }class copyright_license
+
+class File(models.Model):
+    id = models.AutoField(primary_key=True)
+    solitary_download_name = models.TextField(
+        "Name for a solitary downloaded file", null=True, default='',
+        blank=True,editable=True)
+    submittal_download_name = models.TextField(
+        "Name for a downloaded file within a submittal package",
+        null=True, default='',
+        blank=True,editable=True)
 
 #end class Hathi_item

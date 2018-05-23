@@ -55,10 +55,6 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     #'maw_home.apps.MawHomeConfig',
-    'hathitrust.apps.HathitrustConfig',
-    'bibitem.apps.BibitemConfig',
-    'cuba_libro.apps.CubaLibroConfig',
-    'lcroyster.apps.LcroysterConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -68,6 +64,11 @@ INSTALLED_APPS = [
     'social_django',
     'ckeditor',
     'ckeditor_uploader',
+    # Apps under UF source control
+    'cuba_libro.apps.CubaLibroConfig',
+    'hathitrust.apps.HathitrustConfig',
+    'lcroyster.apps.LcroysterConfig',
+    'submit.apps.SubmitConfig',
 ]
 
 STATIC_URL = '/static/'
@@ -321,7 +322,7 @@ elif maw_settings.ENV == 'local':
             'HOST': '127.0.0.1',
             'PORT': '3306',
         },
-        'bibitem_connection': {
+        'submit_connection': {
             'ENGINE': 'django.db.backends.mysql',
             # The maw1_db database will host hathitrust and probably
             # some other maw apps
@@ -341,9 +342,10 @@ else:
 
 
 DATABASE_ROUTERS = [
-    'hathitrust.models.HathiRouter',
     'cuba_libro.models.Cuba_LibroRouter',
+    'hathitrust.models.HathiRouter',
     'lcroyster.models.LcroysterRouter',
+    'submit.models.SubmitRouter',
 ]
 
 

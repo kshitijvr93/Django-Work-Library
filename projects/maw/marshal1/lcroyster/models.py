@@ -6,6 +6,7 @@ from django.db import models
 #other useful model imports at times (see django docs, tutorials):
 import datetime
 from django.utils import timezone
+from maw_utils import SpaceTextField, SpaceCharField
 
 '''
 NOTE: rather than have a separate file router.py to host Router, I just
@@ -85,7 +86,7 @@ class SpaceTextField is a TextField that is modified to:
     A similar method may be used for SpaceCharField
 
 '''
-class SpaceTextField(models.TextField):
+class xSpaceTextField(models.TextField):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -105,7 +106,7 @@ class SpaceTextField(models.TextField):
         return(self.translate(value))
 
 
-class SpaceCharField(models.CharField):
+class xSpaceCharField(models.CharField):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

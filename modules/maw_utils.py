@@ -1,0 +1,73 @@
+# maw_utils.py - misc MAW utilities of use across applications
+import os
+from django.db import models
+import datetime
+from django.utils import timezone
+
+#CUSTOM FIELD
+'''
+class SpaceTextField is a TextField that is modified to:
+    (1) change newlines and tabs to spaces
+
+    This facilitates saving models in tab-delimited text files that can
+    be imported to Excel with minimum fuss.
+
+    Problems averted:
+
+    (1) Tab is used as the delimiter on output by the ExportTsvMixin class,
+    and each occurrence of a tab will be replaced by a space character,
+    so tabs  will not appear in the text data.
+    Otherwise a tab in the data would make the output of the ExportTsvMixin
+    un-importable to Excel
+
+    (2) Newlines and returns will be replaced by a space character, which
+    otherwise would make the ExportTsvMixin output unimportable to Excel.
+
+    Even if the user or some other application modifies the correlated
+    database field to include a tab, return, or newline, this will also replace
+    it before appearing in the ExportTsvMixin's output file or in the
+    SpaceTextField.
+
+    A help_text may be apt to warn a user populating the field that any tab,
+    newline, or return character will always be replaced by a space.
+
+    A similar method may be used for SpaceCharField
+
+'''
+class SpaceTextField(models.TextField):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def translate(self,value):
+        v=(value.replace('\r','').replace('\n',' ').replace('\t',' ')
+          )
+        return v
+
+    def from_db_value(self,value,expression,connection):
+        if value is None:
+            return value
+        return(self.translate(value))
+
+    def to_python(self, value):
+        if value is None:
+            return value;
+        return(self.translate(value))
+
+
+class SpaceCharField(models.CharField):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def translate(self,value):
+        v=(value.replace('\r','').replace('\n',' ').replace('\t',' ')
+          )
+        return v
+
+    def from_db_value(self,value,expression,connection):
+        if value is None:
+            return value
+        return(self.translate(value))
+
+    def to_python(self, value):
+        if value is None:
+            return value;
