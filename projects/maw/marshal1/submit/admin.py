@@ -1,40 +1,15 @@
 from django.contrib import admin
-from .models import Submittal
+from .models import (
+  MaterialType, MetadataType, ResourceType, Submittal, )
 from django.forms import TextInput, Textarea
 from django.db import models
-
-'''
-Nice ExportCvsMixin class presented and covered, on 20180402 by:
-https://books.agiliq.com/projects/django-admin-cookbook/en/latest/export.html
-'''
-import csv
-from django.http import HttpResponse
-
-class ExportCvsMixin:
-    def export_as_csv(self, request, queryset):
-        meta = self.model._meta
-        field_names = [field.name for field in meta.fields]
-
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = (
-            'attachment; filename={}.csv'.format(meta))
-        writer = csv.writer(response)
-
-        writer.writerow(field_names)
-        for obj in queryset:
-            row = writer.writerow(
-                [getattr(obj, field) for field in field_names])
-
-        return response
-
-    export_as_csv.short_description = "Export Selected"
-
-# end class ExportCvsMixin
+from maw_utils import ExportCvsMixin
 
 class SubmittalModelAdmin(admin.ModelAdmin):
     # Using value should be a settings.py DATABASES key,
     # actually called a 'connection' name in misc Django messages
     using = 'submit_connection'
+    readonly_fields = ('submittal_datetime',)
     # Smaller text form regions
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
@@ -82,41 +57,39 @@ def agent_uf_to_available(modeladmin, request, queryset):
 
 agent_uf_to_available.short_description = "Change UF partner to Available "
 
+
+# { start class SubmittalAdmin
 class SubmittalAdmin(SubmittalModelAdmin, ExportCvsMixin):
 
     #admin change list display fields to show
     # CHANGE LIST VIEW
-    search_fields = [
-        'author_primary',
-        'title_primary',
-        'material_type_id',
-        'resource_type_id',
-        'metadata_type_id',
-        ]
 
     #date_hierarchy = 'agent_modify_date'
 
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.
                          # Need reference doc?
-        # agent_uf_to_available, #External, so must set the function value.
     ]
 
     list_display = [
-         'author_primary',
-         'title_primary',
-         #'pub_year_span',
-         #'reference_type',
-         'material_type_id',
-         'resource_type_id',
-         'metadata_type_id',
-         #'agent_modify_date',
-         ]
+        'title_primary',
+        'submittal_datetime',
+        'material_type',
+        'resource_type',
+        'metadata_type',
+        ]
+
+    search_fields = [
+        'title_primary',
+        'material_type',
+        'resource_type',
+        'metadata_type',
+        ]
 
     list_filter = [
-        'material_type_id',
-        'resource_type_id',
-        'metadata_type_id',
+        'material_type',
+        'resource_type',
+        'metadata_type',
         # 'reference_type'
         #,'language', 'place_of_publication',
         ]
@@ -129,43 +102,22 @@ class SubmittalAdmin(SubmittalModelAdmin, ExportCvsMixin):
     fieldsets = (
         ( None,
             {'fields':(
-                 'accession_number',
-                 'title_primary',
-                 'pub_year_span',
-                 'agent',
-                 'authors_primary',
-                 'notes',
-                 'personal_notes',
-                 'place_of_publication',
-                 'publisher',
+                 'bibid',
                  'language',
-                 'link_url',
-                 'links',
-                 'edition_url',
-                 'sub_file_database',
-                 'reference_type',
-        )}),
-
+                 'title_primary',
+                 'material_type',
+                 'resource_type',
+                 'metadata_type',
+                 'abstract',
+                 )
+            },
+        ),
         # DETAILED VIEW
         ( 'Other Fields', {
              'classes': ('collapse',),
              'fields': (
-                 'reference_type',
-                 'holding',
-                 'periodical_full',
-                 'periodical_abbrev',
-                 'pub_date_free_from',
-                 'volume', 'issue', 'start_page', 'other_pages',
-                 'keywords','abstract',
-                 'title_secondary', 'titles_tertiary',
-                 'authors_secondary', 'authors_tertiary',
-                 'authors_quaternary', 'authors_quinary',
-                 'edition',
-                 'isbn_issn', 'availability', 'author_address',
-                 'classification', 'original_foreign_title',
-                 'doi', 'pmid','pmcid', 'call_number',
-                 'database', 'data_source', 'identifying_phrase',
-                 'retrieved_date',
+                 'publisher',
+                 'publication_date',
                  )
             }
         )
@@ -195,10 +147,37 @@ class SubmittalAdmin(SubmittalModelAdmin, ExportCvsMixin):
         # With this, no 'delete' button should appear per item
         return False
 
-#end class ItemAdmin
+#  end class SubmittalAdmin }
 
+# { Start class TypeAdmin
+class TypeAdmin(admin.ModelAdmin, ExportCvsMixin):
+    actions = [
+        'export_as_csv', # Mixin: so set the method name string value.
+                         # Need reference doc?
+    ]
+
+    search_fields = [
+        'name',
+        'description',
+    ]
+    list_display = [
+        'name',
+        'description',
+    ]
+    fields = [
+        'name',
+        'description',
+    ]
+
+# } end class TypeAdmin
+
+class AuthorAdmin(admin.ModelAdmin, ExportCvsMixin):
+    pass
 
 
 admin.site.register(Submittal, SubmittalAdmin)
+admin.site.register(MaterialType, TypeAdmin)
+admin.site.register(ResourceType, TypeAdmin)
+admin.site.register(MetadataType, TypeAdmin)
 
 # Register your models here.

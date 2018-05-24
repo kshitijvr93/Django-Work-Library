@@ -58,4 +58,14 @@ def testme():
     print("svel={}".format(svel))
     return
 
-testme()
+#testme()
+#20180523 evian tan code from her github... but it does not pass python syntax checks,
+#probably experimental.
+#
+def generate(numRows):
+    res = [[1]]
+    for i in range(1, numRows):
+        res += [map((lambda x,y: x+y), res[-1]+[0], [0]+res[-1])]
+    return res[:numRows]
+
+generate(5)

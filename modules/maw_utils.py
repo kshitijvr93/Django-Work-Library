@@ -4,6 +4,36 @@ from django.db import models
 import datetime
 from django.utils import timezone
 
+
+
+'''
+Nice ExportCvsMixin class presented and covered, on 20180402 by:
+https://books.agiliq.com/projects/django-admin-cookbook/en/latest/export.html
+'''
+import csv
+from django.http import HttpResponse
+
+class ExportCvsMixin:
+    def export_as_csv(self, request, queryset):
+        meta = self.model._meta
+        field_names = [field.name for field in meta.fields]
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = (
+            'attachment; filename={}.csv'.format(meta))
+        writer = csv.writer(response)
+
+        writer.writerow(field_names)
+        for obj in queryset:
+            row = writer.writerow(
+                [getattr(obj, field) for field in field_names])
+
+        return response
+
+    export_as_csv.short_description = "Export Selected"
+
+# end class ExportCvsMixin
+
 #CUSTOM FIELD
 '''
 class SpaceTextField is a TextField that is modified to:
@@ -59,8 +89,11 @@ class SpaceCharField(models.CharField):
         super().__init__(*args, **kwargs)
 
     def translate(self,value):
-        v=(value.replace('\r','').replace('\n',' ').replace('\t',' ')
-          )
+        if value is None:
+            return ''
+        else:
+            v = value.replace('\r','').replace('\n',' ').replace('\t',' ')
+        #return "pumpernickel"
         return v
 
     def from_db_value(self,value,expression,connection):
@@ -70,4 +103,6 @@ class SpaceCharField(models.CharField):
 
     def to_python(self, value):
         if value is None:
-            return value;
+            #return value
+            return value
+        return value

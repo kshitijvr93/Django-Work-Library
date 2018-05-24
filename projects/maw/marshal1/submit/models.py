@@ -5,7 +5,7 @@ from django.db import models
 #other useful model imports at times (see django docs, tutorials):
 import datetime
 from django.utils import timezone
-import maw_utils
+from maw_utils import SpaceTextField, SpaceCharField
 
 '''
 NOTE: rather than have a separate file router.py to host HathiRouter, I just
@@ -54,28 +54,17 @@ class SubmitRouter:
             return db == self.app_db
         return None
 
-#end class SubmitRouter
+# } end class SubmitRouter
 
-# { Start class Copyright
-class Copyright(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255, unique=True,
-        help_text="Unique name for this copyright license statement.", editable=True)
-    notice = maw_utils.SpaceTextField(null=True, default='',blank=True,
-        editable=True,
-        help_text="The actual copyright license language without the copyright year.""
-        )
-    notes = maw_utils.SpaceTextField(null=True, default='',blank=True,
-        editable=True,
-        )
-    pass
-# } end class Copyright
-
-# Start class MaterialType
+# { Start class MaterialType
 class MaterialType(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255, unique=True,
-        default="Unique name for a material type.", editable=True)
+    name = SpaceCharField(max_length=255,
+        unique=False, blank=True, null=True, default='',
+        help_text="Unique name for a material type.", editable=True)
+    description = SpaceTextField(blank=False, null=False,
+        default="Your description here.",
+        help_text="Description for this type of material." )
     '''
     Example names:
         'Conference Paper',
@@ -90,13 +79,17 @@ class MaterialType(models.Model):
         'Student Organization Files',
         'Administrative Papers (Agendas, minutes, etc.)',
     '''
-# end class MaterialType
+# } end class MaterialType
 
 class ResourceType(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255, unique=True,
-        default="Unique name for a resource type or format, per Catalogging.",
+    name = SpaceCharField(max_length=255, unique=True,
+        blank=False, null=False, default='',
+        help_text="Unique name for a resource type or format, per Catalogging.",
         editable=True)
+    description = SpaceTextField(blank=False, null=False,
+        default="Your description here.",
+        help_text="Description for this type of resource." )
     '''
     Example names:
         'Photographs',
@@ -112,10 +105,18 @@ class ResourceType(models.Model):
 # end class MetadataType
 class MetadataType(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255, unique=True,
-        default="Unique name for a Metadata or template type.", editable=True)
+    name = SpaceCharField(max_length=255, unique=True,
+        blank=False, null=False, default='',
+        help_text="Unique name for a Metadata or template type.", editable=True)
+    description = SpaceTextField(blank=False, null=False,
+        default="Your description here.",
+        help_text="Description for this format of metadata." )
     '''
-    Example names:
+    Example metadata names may vary, as there may be more or fewer of
+    those than material types. But some could be the same as some material
+    type names, I suppose.
+
+    Example sample here are just sample material types
         'Conference Paper',
         'Conference Poster',
         'Conference Presentation',
@@ -131,6 +132,20 @@ class MetadataType(models.Model):
 # end class MetadataType
 
 
+# { start class SubmittalNote
+class NoteType(models.Model):
+    id = models.AutoField(primary_key=True)
+    note_type = SpaceCharField(max_length=50,
+      blank=False, null=False, default='',
+      unique=True,
+      help_text="Brief words to (up to 50 characters) to name note type"
+      )
+    note_description = SpaceTextField(blank=False, null=False, default='',
+      help_text="Description for this type of note up to 500 characters"
+      )
+# } end class SubmittalNote}
+
+
 # { start class Submittal
 class Submittal(models.Model):
     # Field 'id' is 'special', and if not defined here, Django defines
@@ -139,165 +154,56 @@ class Submittal(models.Model):
     # explicit is better than implicit.
     id = models.AutoField(primary_key=True)
 
-    author_primary = models.TextField(null=True, default='',blank=True,
-        editable=True)
+    # See relation SubmittalAuthor for authorship, author ordering,
+    # copyright license info for this submittal
 
-    title_primary = models.TextField(null=True,
-      default='', blank=True, editable=True)
+    title_primary = SpaceTextField(max_length=255,null=True,
+      default='', blank=True, editable=True,
+      help_text="Title of the item you are submitting")
+    submittal_datetime = models.DateTimeField(help_text='Submittal DateTime',
+        null=False, auto_now=True, editable=False)
 
-    material_type_id = models.ForeignKey('MaterialType',
+    material_type = models.ForeignKey('MaterialType',
         on_delete=models.CASCADE,)
 
-    resource_type_id = models.ForeignKey('ResourceType',
+    resource_type = models.ForeignKey('ResourceType',
         on_delete=models.CASCADE,)
 
-    metadata_type_id = models.ForeignKey('MetadataType',
+    metadata_type = models.ForeignKey('MetadataType',
         on_delete=models.CASCADE,)
+    # This will be automatically assigned in production
+    bibid = SpaceCharField(max_length=255,  editable=True, blank=True, null=True,
+        help_text = "This will be automatically assigned in production"
+        )
+    publisher = SpaceCharField(max_length=255, editable=True, blank=True,
+        help_text = "This will be automatically assigned in production"
+        )
+    publication_date = models.DateField(blank=True, null=True,
+      help_text='Date of publication.'
+      )
+    abstract = SpaceTextField(max_length=255,
+      blank=False, null=False, default='',
+      help_text='Abstract or summary of the content'
+      )
 
-    accession_number = models.CharField(max_length=255, unique=True,
-        default="Enter accession number here", editable=True)
-
-    # Original source data for holding is of the form XXX[-NNN[-MMM]]
-    # Later I may modify this model to separate them into: holder,
-    # hold_count_low, hold_count_high values if needed.
-    # If only NNN is given in imported input, then an import process will
-    # set both hold_count_low and hold_count_high to NNN
-    # If neither NNN nor MMM is given, set both to 0
-
-    # import colum 0
-    holding = models.CharField(null=True,max_length=20, default='',
-        blank=True, editable=True)
-
-    #reference type on imported files from UF and Harverd as of 20180320
-    # seems to empirically comport with one of the values: [' Book, Whole', 'Journal Article', 'Map',
-    #    'Web Page', 'Generic','Music Score', 'Book,Section']
-    # New received from partners' import data may expand the list..
-
-    # import column 1
-    reference_type = models.CharField(null=True, default='',
-        max_length=20, blank=True, editable=True)
-    # import column 2
-    periodical_full = models.TextField(null=True,
-      default='', blank=True, editable=True)
-
-    # pub_year_span spreadsheet index = 5
-    periodical_abbrev = models.TextField(null=True, default='', blank=True,
-        editable=True)
-
-    pub_year_span = models.CharField(null=True, max_length=50,default='2018',
-        editable=True,)
-    pub_date_free_from = models.TextField(null=True, default='', blank=True,
-        editable=True)
-    volume = models.CharField(null=True, max_length=30, default='', blank=True,
-        editable=True)
-    issue = models.CharField(null=True, max_length=30, default='', blank=True,
-        editable=True)
-
-    # index k =  10
-    start_page = models.CharField(null=True, max_length=30, default='',
-        blank=True, editable=True)
-    other_pages = models.CharField(null=True, max_length=30, default='',
-        blank=True, editable=True)
-    keywords = models.TextField(null=True,  default='', blank=True,editable=True)
-    abstract = models.TextField(null=True,  default='', blank=True,editable=True)
-    personal_notes = models.TextField(null=True,  default='',
-        blank=True,editable=True)
-
-    authors_secondary = models.TextField(null=True,  default='',
-        blank=True,editable=True)
-    title_secondary = models.TextField(null=True,  default='',
-        blank=True,editable=True)
-    edition = models.TextField(null=True, default='',
-        blank=True, editable=True)
-    publisher = models.CharField(null=True, default='', max_length=255,
-        blank=True, editable=True)
-    place_of_publication = models.CharField(null=True, default='', max_length=255,
-        blank=True, editable=True)
-
-    #index 20
-    authors_tertiary = models.TextField(null=True, default='',
-        blank=True, editable=True)
-    authors_quaternary = models.TextField(null=True, default='',
-        blank=True, editable=True)
-    authors_quinary = models.TextField(null=True, default='',
-        blank=True, editable=True)
-    titles_tertiary = models.TextField(null=True, default='',
-        blank=True, editable=True)
-    isbn_issn = models.CharField( "ISSN/ISBN",null=True, max_length=255,
-        blank=True, editable=True)
-
-    availability = models.TextField(null=True, default='',
-        blank=True, editable=True)
-    author_address = models.TextField( "Author/Address", null=True,default='' ,
-        blank=True,editable=True)
-    language = models.TextField(null=True, default='',
-        blank=True,editable=True)
-    classification = models.TextField(null=True, default='',
-        blank=True,editable=True)
-
-    #index=30
-    original_foreign_title = models.TextField(null=True, default='',
-        blank=True,editable=True)
-    links = models.TextField(null=True, default='',
-        blank=True,editable=True)
-    url = models.TextField( 'URL',null=True, default='',
-        blank=True,editable=True)
-    doi = models.TextField( 'DOI',null=True, default='',
-        blank=True,editable=True)
-    pmid = models.TextField( 'PMID',null=True, default='',
-        blank=True,editable=True)
-    pmcid = models.TextField( 'PMCID',null=True, default='',
-        blank=True,editable=True)
-
-    call_number = models.TextField(null=True, default='',
-        blank=True,editable=True)
-    database = models.TextField(null=True, default='',
-        blank=True,editable=True)
-    data_source = models.TextField(null=True, default='',
-        blank=True,editable=True)
-    identifying_phrase = models.TextField(null=True, default='',
-        blank=True,editable=True)
-    retrieved_date = models.CharField(null=True, max_length=255,
-        blank=True, editable=True)
-
-    # index 40
-    user_1 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_2 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_3 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_4 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_5 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_6 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_7 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_8 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_9 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_10 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_11 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_12 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_13 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_14 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_15 = models.TextField(null=True, default='', blank=True, editable=False)
-
-    notes = models.TextField(null=True, default='',
-        blank=True,editable=True)
-    place_of_publication = models.CharField(null=True, max_length=255,
-        blank=True, editable=True,)
-
-    link_url = models.URLField( 'Link_URL', blank=True, null=True)
-    edition_url = models.URLField( 'Edition_URL', blank=True, null=True)
-    sub_file_database = models.CharField( "Sub file/database",
-        blank=True, null=True, max_length=255, editable=True)
+    language = SpaceCharField(max_length=255,null=True, default='',blank=True,
+      editable=True,
+      help_text="The actual language.")
 
     def __str__(self):
-        return str(self.id)
+        return str(self.title_primary)
 
-    ''' note: Do -not- set db_table. Let Django do its thing
+    ''' WARNING FOR POSTERITY:
+        Do -not- set db_table. Let Django do its thing
         and create the db table name via a prefix of the table
-        class of app_name and _.
-        It makes future
-        migrations and many management operations much easier down the line.
+        class of AppConfig.name (see apps.py) and _.
+
+        It makes future migrations and many management operations much easier
+        down the line.
+
         Changing it after doing some migrations will
-        confuse migrations, too, which can be somewhat messy, or require
-        a refresher review of migrations docs.
+        confuse migrations, too, which can be very messy, and probably require
+        substantial time for a refresher course in Django migrations.
 
         class Meta:
           db_table = 'item'
@@ -305,12 +211,8 @@ class Submittal(models.Model):
 # } end class Submittal
 
 
-#{ start class SubmittalAuthor}
-class Author(models.Model):
-    # Field 'id' is 'special', and if not defined here, Django defines
-    # it as I do below anyway.
-    # However I do include it per python Zen:
-    # explicit is better than implicit.
+#{ start class SubmittalNote
+class SubmittalNote(models.Model):
     id = models.AutoField(primary_key=True)
 
     submittal_id = models.ForeignKey('Submittal',
@@ -318,37 +220,80 @@ class Author(models.Model):
         help_text='Id of Submittal authored by this author',
         )
 
-    orcid_id = models.TextField(null=True, default='',
+    note_type = models.ForeignKey('NoteType',
+        on_delete=models.CASCADE,)
+
+    note = SpaceTextField(max_length=255,null=True, default='',blank=True,
+      editable=True,
+      help_text="Your actual note text.")
+
+# } end class SubmittalNote
+
+#{ start class Author}
+class Author(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    orcid_id = SpaceTextField(max_length=255,null=True, default='',
         blank=True,editable=True,
         help_text="Orcid ID for this author"
         )
 
     email_address = models.EmailField()
 
-    surname = models.CharField( "Also known as last name or family name)",
+    surname = SpaceCharField( help_text="Also known as last name or family name)",
+        blank=False, null=False, default='',
+        max_length=255, editable=True)
+
+    given_name = SpaceCharField( help_text="Also known as first name)",
         blank=True, null=True, max_length=255, editable=True)
 
-    surname = models.CharField( "Also known as last name or family name)",
-        blank=True, null=True, max_length=255, editable=True)
-    given_name = models.CharField( "Also known as first name)",
-        blank=True, null=True, max_length=255, editable=True)
+    create_date = models.DateTimeField(help_text='Author Insertion DateTime',
+        null=True, auto_now=True, editable=False)
 
-    material_type_id = models.ForeignKey('MaterialType',
-        on_delete=models.CASCADE,)
-# end class Author
+    ufdc_user_info = SpaceTextField(max_length=255,null=True, default='',
+        blank=True, editable=True,help_text='UFDC user id info')
 
-# {class copyright_license
+# } end class Author
+
+
+# { Start class submittal author}
+class SubmittalAuthor(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    submittal_id = models.ForeignKey('Submittal', on_delete=models.CASCADE,
+        help_text='Submittal authored by this author', )
+
+    author_id = models.ForeignKey('Author', on_delete=models.CASCADE,
+        help_text='Author of the associated submittal', )
+    # May add affiliatin id here too.. to indicate the author's
+    # institutional affiliation(s) to record for this submittal
+
+# } end class SubmittalAuthor
+
+
 '''
 See https://fairuse.stanford.edu/overview/faqs/copyright-ownership/
-May advise submitter to only submit items the whole of which they are
-authors. That is, if they wrote only a SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMSer of a book, they are advised
+May advise submitter to only submit items of which they are an author
+and have not assigned-away their copyright to a publisher or another.
+
+Also advise submitter to only submit items the whole of which they are
+authors. For example, if they wrote only a chapter of a book, they are advised
 to submit only the chapter, as they only have a right to issue a copyright
 license for that chapter, not the whole book.
-Also, advise them that they must list joint authors of the submittal, as they
-have the rights of copyright and of credit for the work.
 
-Copyright law provides for any author to change the licensing statement over time,
-so we may need to keep track of historical copyright licenses by date issued.
+Also, advise them that they should list joint authors of the submittal, or
+copyright assignees if they can, as they also may have active rights of
+copyright and of credit for the work.
+
+Also, ask the author(s) for assignment of the copyright to UF or even a
+special license of their own design or agree to one from a multiple choice
+list we provide, so that UF may copy, redistribute, etc.
+
+Copyright law provides for any author to change the licensing statement(s)
+over time, and even offer different licensing to different individuals or
+segments of the public, etc.
+
+So we may want to keep track of historical copyright licenses by date issued.
 Also if there are multiple authors, multiple copyright licenses (at least one per
 author per time span are possible.)
 
@@ -357,20 +302,49 @@ is provided in our repository and that they have the right to register their own
 copyright license for the work at any time.
 Each work should list asignees of copyrights, not just the author.
 If the author assigns copyright to any other, we should record it and the contact
-info so the public may ask permission of the asignee if needed.
+info so the public may ask permission of the assignee if wanted.
 
 
 '''
-# }class copyright_license
+
+# If an author assigns copyright to another, UF may want to provide that
+# assignee an interface to add new licenses.
+#
+
+# { class SubmittalLicensor
+# A lcensor is assumed to be valie and could be an author or
+# another who was assigned or authorized by author to grant licenses.
+# UF does no validation of thelegal standing of the indicated Licensor,
+# so user must beware of validity of listed licensor to grant licenes.
+#class SubmittalLicensor(models.Model):
+    # id
+    # submittal_id
+    # licensor_id
+    # assignor_id -- source SubmittalLicensor that added this row, and
+    # value is either Null (if original author) or a Licensor of the
+    # same submittal id (2-part composite key on submittal_id and licensor_id
+    # that refers to another row in this table) active at the create_datetime
+    # of this
+    # row
+    # if the assignment also rescinded author rights, the end_datetime is
+    # populated, meaning that licensor not valid after that end_datetime.
+    # None if this assignee is one of the original authors...
+    #
+    # start_datetime - dateime this Licensor was assigned
+    #
+    # author_rank - for referencing, crediting..
+#End class
+
 
 class File(models.Model):
     id = models.AutoField(primary_key=True)
-    solitary_download_name = models.TextField(
-        "Name for a solitary downloaded file", null=True, default='',
-        blank=True,editable=True)
-    submittal_download_name = models.TextField(
-        "Name for a downloaded file within a submittal package",
-        null=True, default='',
-        blank=True,editable=True)
+    solitary_download_name = SpaceTextField(max_length=255,
+        help_text="Name for a solitary downloaded file",
+        blank=True, null=True, default='',
+        editable=True)
+    submittal_download_name = SpaceTextField(max_length=255,
+        help_text="Name for a downloaded file within a submittal package",
+        default='',
+        blank=True, null=True, editable=True)
 
 #end class Hathi_item
