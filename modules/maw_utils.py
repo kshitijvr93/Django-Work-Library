@@ -69,8 +69,7 @@ class SpaceTextField(models.TextField):
         super().__init__(*args, **kwargs)
 
     def translate(self,value):
-        v=(value.replace('\r','').replace('\n',' ').replace('\t',' ')
-          )
+        v=(value.replace('\r','').replace('\n',' ').replace('\t',' ') )
         return v
 
     def from_db_value(self,value,expression,connection):
@@ -106,3 +105,24 @@ class SpaceCharField(models.CharField):
             #return value
             return value
         return value
+#end class SpaceCharField
+
+class PositiveIntegerField(models.PositiveIntegerField):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def translate(self,value):
+        # Disallow 0. Just set it to 1 without error message.
+        if value < 1:
+            value = 1
+        return value
+
+    def from_db_value(self,value,expression,connection):
+        if value is None:
+            return value
+        return(self.translate(value))
+
+    def to_python(self, value):
+        if value is None:
+            return value;
+        return(self.translate(value))

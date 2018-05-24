@@ -5,7 +5,8 @@ from django.db import models
 #other useful model imports at times (see django docs, tutorials):
 import datetime
 from django.utils import timezone
-from maw_utils import SpaceTextField, SpaceCharField
+from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
+#import maw_utils
 
 '''
 NOTE: rather than have a separate file router.py to host HathiRouter, I just
@@ -56,8 +57,20 @@ class SubmitRouter:
 
 # } end class SubmitRouter
 
+class TypeModel(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = SpaceCharField(max_length=255,
+        unique=True, blank=False, null=False, default='',
+        help_text="Unique name for this type.", editable=True)
+    description = SpaceTextField(blank=False, null=False,
+        default="Your description here.",
+        help_text="Description for this type." )
+
+
 # { Start class MaterialType
-class MaterialType(models.Model):
+class MaterialType(TypeModel):
+    pass
+'''
     id = models.AutoField(primary_key=True)
     name = SpaceCharField(max_length=255,
         unique=False, blank=True, null=True, default='',
@@ -65,86 +78,41 @@ class MaterialType(models.Model):
     description = SpaceTextField(blank=False, null=False,
         default="Your description here.",
         help_text="Description for this type of material." )
-    '''
-    Example names:
-        'Conference Paper',
-        'Conference Poster',
-        'Conference Presentation',
-        'Conference Procedings',
-        'Journal Article',
-        'Training Materials',
-        'Pre-published Manuscript',
-        'Pre-published Article',
-        'Data Sets',
-        'Student Organization Files',
-        'Administrative Papers (Agendas, minutes, etc.)',
-    '''
+'''
 # } end class MaterialType
 
-class ResourceType(models.Model):
+class ResourceType(TypeModel):
+    pass
+class MetadataType(TypeModel):
+    pass
+class NoteType(TypeModel):
+    pass
+
+# { start class Author}
+class Author(models.Model):
     id = models.AutoField(primary_key=True)
-    name = SpaceCharField(max_length=255, unique=True,
+
+    orcid = SpaceTextField(max_length=255,null=True, default='',
+        blank=True,editable=True,
+        help_text="Orcid ID for this author"
+        )
+
+    email_address = models.EmailField()
+
+    surname = SpaceCharField( help_text="Also known as last name or family name)",
         blank=False, null=False, default='',
-        help_text="Unique name for a resource type or format, per Catalogging.",
-        editable=True)
-    description = SpaceTextField(blank=False, null=False,
-        default="Your description here.",
-        help_text="Description for this type of resource." )
-    '''
-    Example names:
-        'Photographs',
-        'Video',
-        'Audio file',
-        'Text',
-        'Conference Procedings',
-        'Presentation/slides',
-        'Data Sets',
-        'Student Organization Files',
-        'Administrative Papers (Agendas, minutes, etc.)',
-    '''
-# end class MetadataType
-class MetadataType(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = SpaceCharField(max_length=255, unique=True,
-        blank=False, null=False, default='',
-        help_text="Unique name for a Metadata or template type.", editable=True)
-    description = SpaceTextField(blank=False, null=False,
-        default="Your description here.",
-        help_text="Description for this format of metadata." )
-    '''
-    Example metadata names may vary, as there may be more or fewer of
-    those than material types. But some could be the same as some material
-    type names, I suppose.
+        max_length=255, editable=True)
 
-    Example sample here are just sample material types
-        'Conference Paper',
-        'Conference Poster',
-        'Conference Presentation',
-        'Conference Procedings',
-        'Journal Article',
-        'Training Materials',
-        'Pre-published Manuscripts',
-        'Pre-published Articles',
-        'Data Sets',
-        'Student Organization Files',
-        'Administrative Papers (Agendas, minutes, etc.)',
-    '''
-# end class MetadataType
+    given_name = SpaceCharField( help_text="Also known as first name)",
+        blank=True, null=True, max_length=255, editable=True)
 
+    create_datetime = models.DateTimeField(help_text='Author Insertion DateTime',
+        null=True, auto_now=True, editable=False)
 
-# { start class SubmittalNote
-class NoteType(models.Model):
-    id = models.AutoField(primary_key=True)
-    note_type = SpaceCharField(max_length=50,
-      blank=False, null=False, default='',
-      unique=True,
-      help_text="Brief words to (up to 50 characters) to name note type"
-      )
-    note_description = SpaceTextField(blank=False, null=False, default='',
-      help_text="Description for this type of note up to 500 characters"
-      )
-# } end class SubmittalNote}
+    ufdc_user_info = SpaceTextField(max_length=255,null=True, default='',
+        blank=True, editable=True,help_text='UFDC user id info')
 
+# } end class Author
 
 # { start class Submittal
 class Submittal(models.Model):
@@ -160,6 +128,10 @@ class Submittal(models.Model):
     title_primary = SpaceTextField(max_length=255,null=True,
       default='', blank=True, editable=True,
       help_text="Title of the item you are submitting")
+
+    author = models.ForeignKey('Author', null=False,
+        on_delete=models.CASCADE)
+
     submittal_datetime = models.DateTimeField(help_text='Submittal DateTime',
         null=False, auto_now=True, editable=False)
 
@@ -211,14 +183,12 @@ class Submittal(models.Model):
 # } end class Submittal
 
 
-#{ start class SubmittalNote
-class SubmittalNote(models.Model):
+#{ start class Note
+class Note(models.Model):
     id = models.AutoField(primary_key=True)
 
-    submittal_id = models.ForeignKey('Submittal',
-        on_delete=models.CASCADE,
-        help_text='Id of Submittal authored by this author',
-        )
+    submittal = models.ForeignKey('Submittal', on_delete=models.CASCADE,
+        help_text='Id of Submittal authored by this author', )
 
     note_type = models.ForeignKey('NoteType',
         on_delete=models.CASCADE,)
@@ -227,48 +197,71 @@ class SubmittalNote(models.Model):
       editable=True,
       help_text="Your actual note text.")
 
-# } end class SubmittalNote
-
-#{ start class Author}
-class Author(models.Model):
-    id = models.AutoField(primary_key=True)
-
-    orcid_id = SpaceTextField(max_length=255,null=True, default='',
-        blank=True,editable=True,
-        help_text="Orcid ID for this author"
-        )
-
-    email_address = models.EmailField()
-
-    surname = SpaceCharField( help_text="Also known as last name or family name)",
-        blank=False, null=False, default='',
-        max_length=255, editable=True)
-
-    given_name = SpaceCharField( help_text="Also known as first name)",
-        blank=True, null=True, max_length=255, editable=True)
-
-    create_date = models.DateTimeField(help_text='Author Insertion DateTime',
-        null=True, auto_now=True, editable=False)
-
-    ufdc_user_info = SpaceTextField(max_length=255,null=True, default='',
-        blank=True, editable=True,help_text='UFDC user id info')
-
-# } end class Author
+# } end class Note
 
 
-# { Start class submittal author}
+# { Start class SubmittalAuthor}
 class SubmittalAuthor(models.Model):
     id = models.AutoField(primary_key=True)
 
-    submittal_id = models.ForeignKey('Submittal', on_delete=models.CASCADE,
+    submittal = models.ForeignKey('Submittal', on_delete=models.CASCADE,
         help_text='Submittal authored by this author', )
 
-    author_id = models.ForeignKey('Author', on_delete=models.CASCADE,
+    author = models.ForeignKey('Author', on_delete=models.CASCADE,
         help_text='Author of the associated submittal', )
+
+    rank = models.PositiveIntegerField(blank=False, null=False, default=1)
+
+    #Note we should add a 3-term composite unique index to submittal, author,
+    #rank. We do NOT check for gaps in citation rank
     # May add affiliatin id here too.. to indicate the author's
     # institutional affiliation(s) to record for this submittal
+    class Meta:
+        unique_together = (('submittal', 'author', 'rank'),)
+        pass
+        # ordering = [ 'sensor_type', ]
 
 # } end class SubmittalAuthor
+
+class File(models.Model):
+    id = models.AutoField(primary_key=True)
+    submittal = models.ForeignKey('Submittal', on_delete=models.CASCADE,
+        help_text='Submittal authored by this author', )
+
+    description = SpaceTextField(blank=False, null=False,
+        default="Your description here.",
+        help_text="Description for this format of metadata." )
+    solitary_download_name = SpaceTextField(max_length=255,
+        help_text="Name for a solitary downloaded file",
+        blank=True, null=True, default='',
+        editable=True)
+    submittal_download_name = SpaceTextField(max_length=255,
+        help_text="Name for a downloaded file within a submittal package",
+        default='',
+        blank=True, null=True, editable=True)
+# end class File
+
+# { Start class submittal author}
+class SubmittalFile(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    submittal = models.ForeignKey('Submittal', on_delete=models.CASCADE,
+        help_text='Submittal authored by this author', )
+
+    file = models.ForeignKey('Author', on_delete=models.CASCADE,
+        help_text='Author of the associated submittal', )
+
+    rank = models.PositiveIntegerField(blank=False, null=False, default=1)
+
+    #Note we should add a 3-term composite unique index to submittal, author,
+    #rank. We do NOT check for gaps in citation rank
+    # May add affiliatin id here too.. to indicate the author's
+    # institutional affiliation(s) to record for this submittal
+    class Meta:
+        unique_together = (('submittal', 'file', 'rank'),)
+        pass
+        # ordering = [ 'sensor_type', ]
+#end class SubmittalFile
 
 
 '''
@@ -311,18 +304,18 @@ info so the public may ask permission of the assignee if wanted.
 # assignee an interface to add new licenses.
 #
 
-# { class SubmittalLicensor
+# { class Licensor
 # A lcensor is assumed to be valie and could be an author or
 # another who was assigned or authorized by author to grant licenses.
 # UF does no validation of thelegal standing of the indicated Licensor,
 # so user must beware of validity of listed licensor to grant licenes.
-#class SubmittalLicensor(models.Model):
+#class Licensor(models.Model):
     # id
-    # submittal_id
-    # licensor_id
-    # assignor_id -- source SubmittalLicensor that added this row, and
+    # submittal
+    # licensor
+    # assignor -- source SubmittalLicensor that added this row, and
     # value is either Null (if original author) or a Licensor of the
-    # same submittal id (2-part composite key on submittal_id and licensor_id
+    # same submittal id (2-part composite key on submittal and licensor
     # that refers to another row in this table) active at the create_datetime
     # of this
     # row
@@ -334,17 +327,3 @@ info so the public may ask permission of the assignee if wanted.
     #
     # author_rank - for referencing, crediting..
 #End class
-
-
-class File(models.Model):
-    id = models.AutoField(primary_key=True)
-    solitary_download_name = SpaceTextField(max_length=255,
-        help_text="Name for a solitary downloaded file",
-        blank=True, null=True, default='',
-        editable=True)
-    submittal_download_name = SpaceTextField(max_length=255,
-        help_text="Name for a downloaded file within a submittal package",
-        default='',
-        blank=True, null=True, editable=True)
-
-#end class Hathi_item

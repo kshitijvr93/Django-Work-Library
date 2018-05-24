@@ -1,6 +1,9 @@
 from django.contrib import admin
 from .models import (
-  MaterialType, MetadataType, ResourceType, Submittal, )
+  Author, MaterialType, MetadataType, NoteType, ResourceType, Submittal,
+  SubmittalAuthor, File, SubmittalFile
+  )
+
 from django.forms import TextInput, Textarea
 from django.db import models
 from maw_utils import ExportCvsMixin
@@ -105,6 +108,7 @@ class SubmittalAdmin(SubmittalModelAdmin, ExportCvsMixin):
                  'bibid',
                  'language',
                  'title_primary',
+                 'author',
                  'material_type',
                  'resource_type',
                  'metadata_type',
@@ -172,12 +176,90 @@ class TypeAdmin(admin.ModelAdmin, ExportCvsMixin):
 # } end class TypeAdmin
 
 class AuthorAdmin(admin.ModelAdmin, ExportCvsMixin):
-    pass
+    actions = [
+        'export_as_csv', # Mixin: so set the method name string value.
+                         # Need reference doc?
+    ]
 
+    search_fields = [
+        'surname',
+        'given_name',
+        'orcid',
+        'email_address',
+    ]
+
+    list_display = [
+        'surname',
+        'given_name',
+        'orcid',
+        'email_address',
+    ]
+
+    fields = list_display
+    fields.extend([
+        'ufdc_user_info',
+        ])
+
+    readonly_fields = ['create_datetime',]
+# end class Author
+
+# class
+class SubmittalAuthorAdmin(admin.ModelAdmin, ExportCvsMixin):
+    actions = [
+        'export_as_csv', # Mixin: so set the method name string value.
+                         # Need reference doc?
+    ]
+    search_fields = [
+        'submittal',
+        'author',
+        'rank',
+    ]
+
+    list_display = search_fields
+    fields = list_display
+#end class SubmittalAuthorAdmin
+
+
+# Start class SubmittalFileAdmin
+class FileAdmin(admin.ModelAdmin, ExportCvsMixin):
+    actions = [
+        'export_as_csv', # Mixin: so set the method name string value.
+                         # Need reference doc?
+    ]
+    search_fields = [
+        'submittal',
+        'description',
+        'solitary_download_name',
+        'submittal_download_name',
+    ]
+
+    list_display = search_fields
+    fields = list_display
+#end class FileAdmin
+
+# Start class SubmittalFileAdmin
+class SubmittalFileAdmin(admin.ModelAdmin, ExportCvsMixin):
+    actions = [
+        'export_as_csv', # Mixin: so set the method name string value.
+                         # Need reference doc?
+    ]
+    search_fields = [
+        'submittal',
+        'file',
+        'rank',
+    ]
+
+    list_display = search_fields
+    fields = list_display
+#end class SubmittalFileAdmin
 
 admin.site.register(Submittal, SubmittalAdmin)
 admin.site.register(MaterialType, TypeAdmin)
 admin.site.register(ResourceType, TypeAdmin)
 admin.site.register(MetadataType, TypeAdmin)
+admin.site.register(Author, AuthorAdmin)
+admin.site.register(SubmittalAuthor, SubmittalAuthorAdmin)
+admin.site.register(File, FileAdmin)
+admin.site.register(SubmittalFile, SubmittalFileAdmin)
 
 # Register your models here.
