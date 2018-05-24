@@ -66,6 +66,9 @@ class TypeModel(models.Model):
         default="Your description here.",
         help_text="Description for this type." )
 
+    def __str__(self):
+            return '{}'.format(self.name)
+
 
 # { Start class MaterialType
 class MaterialType(TypeModel):
@@ -111,6 +114,10 @@ class Author(models.Model):
 
     ufdc_user_info = SpaceTextField(max_length=255,null=True, default='',
         blank=True, editable=True,help_text='UFDC user id info')
+
+    def __str__(self):
+        return '{}, {} Orcid:{}'.format(
+             self.surname, self.given_name, repr(self.orcid) )
 
 # } end class Author
 
@@ -197,6 +204,9 @@ class Note(models.Model):
       editable=True,
       help_text="Your actual note text.")
 
+    def __str__(self):
+        return '{}'.format(self.note)
+
 # } end class Note
 
 
@@ -233,12 +243,15 @@ class File(models.Model):
         help_text="Description for this format of metadata." )
     solitary_download_name = SpaceTextField(max_length=255,
         help_text="Name for a solitary downloaded file",
-        blank=True, null=True, default='',
+        blank=False, null=False, default='some_file',
         editable=True)
     submittal_download_name = SpaceTextField(max_length=255,
         help_text="Name for a downloaded file within a submittal package",
         default='',
         blank=True, null=True, editable=True)
+
+    def __str__(self):
+        return '{}'.format(self.solitary_download_name)
 # end class File
 
 # { Start class submittal author}
