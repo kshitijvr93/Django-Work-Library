@@ -222,7 +222,7 @@ class SubmittalAuthor(models.Model):
     affiliation = models.ForeignKey('Affiliation', on_delete=models.CASCADE,
         help_text='Affiliation of the author at time of initial publication', )
 
-    rank = models.PositiveIntegerField(blank=False, null=False, default=1,
+    rank = PositiveIntegerField(blank=False, null=False, default=1,
       help_text='Primary author should have rank 1. '
         'This defines the order of author names in a citation.', )
 
@@ -265,10 +265,12 @@ class SubmittalFile(models.Model):
     submittal = models.ForeignKey('Submittal', on_delete=models.CASCADE,
         help_text='Submittal authored by this author', )
 
-    file = models.ForeignKey('Author', on_delete=models.CASCADE,
-        help_text='Author of the associated submittal', )
+    file = models.ForeignKey('File', on_delete=models.CASCADE,
+        help_text='Component file of the associated submittal', )
 
-    rank = models.PositiveIntegerField(blank=False, null=False, default=1)
+    rank = PositiveIntegerField(blank=False, null=False, default=1,
+        help_text='Rank order of this file within the set of '
+         'component files of this submittal')
 
     #Note we should add a 3-term composite unique index to submittal, author,
     #rank. We do NOT check for gaps in citation rank

@@ -62,6 +62,16 @@ def agent_uf_to_available(modeladmin, request, queryset):
 
 agent_uf_to_available.short_description = "Change UF partner to Available "
 
+'''
+Nice solution to validate min inlines of 1 for author, file inlines, etc.
+See 20180406t0732 answer from Klimenko at:
+https://stackoverflow.com/questions/877723/inline-form-validation-in-django
+'''
+class MinValidatedInlineMixIn:
+    validate_min = True
+    def get_formset(self, *args, **kwargs):
+        return super().get_formset(
+            validate_min=self.validate_min, *args, **kwargs)
 
 class AuthorAdmin(admin.ModelAdmin, ExportCvsMixin):
     actions = [
@@ -107,8 +117,9 @@ class SubmittalAuthorAdmin(admin.ModelAdmin, ExportCvsMixin):
     fields = list_display
 #end class SubmittalAuthorAdmin
 
-class SubmittalAuthorInline(admin.TabularInline):
+class SubmittalAuthorInline(MinValidatedInlineMixIn, admin.TabularInline):
     model = SubmittalAuthor
+    min_num = 1
     extra = 1
 
 
@@ -168,8 +179,9 @@ class SubmittalFileAdmin(admin.ModelAdmin, ExportCvsMixin):
     fields = list_display
 #end class SubmittalFileAdmin
 
-class SubmittalFileInline(admin.TabularInline):
+class SubmittalFileInline(MinValidatedInlineMixIn,admin.TabularInline):
     model = SubmittalFile
+    min_num = 1
     extra = 1
 
 
