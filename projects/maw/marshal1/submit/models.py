@@ -118,7 +118,7 @@ class Author(models.Model):
         blank=True, editable=True,help_text='UFDC user id info')
 
     def __str__(self):
-        return '{}, {} Orcid:{}'.format(
+        return '{}, {} with Orcid:{}'.format(
              self.surname, self.given_name, repr(self.orcid) )
 
 # } end class Author

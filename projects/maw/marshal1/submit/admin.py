@@ -117,10 +117,12 @@ class SubmittalAuthorAdmin(admin.ModelAdmin, ExportCvsMixin):
     fields = list_display
 #end class SubmittalAuthorAdmin
 
-class SubmittalAuthorInline(MinValidatedInlineMixIn, admin.TabularInline):
+class SubmittalAuthorInline( MinValidatedInlineMixIn, admin.TabularInline):
     model = SubmittalAuthor
     min_num = 1
-    extra = 1
+    extra = 0 # Extra 'empty' rows to show to accommodate immediate adding.
+    def get_filters(self, obj):
+        return((''))
 
 
 # { Start class TypeAdmin
@@ -181,7 +183,24 @@ class SubmittalFileAdmin(admin.ModelAdmin, ExportCvsMixin):
 class SubmittalFileInline(MinValidatedInlineMixIn,admin.TabularInline):
     model = SubmittalFile
     min_num = 1
-    extra = 1
+    extra = 0
+
+    # Limit choices of files to ones already explicitly uploaded
+    # to this submittal (rather than allow choice from all files).
+    # This limits plagiarism a bit and makes choices simpler for the user.
+    # Consider: It may be simpler to have no choices, as users should
+    # add a new file each time, actually...
+    # reconsider: maybe just put a submittal field back into the File model
+    # and not allow choices as I do for authors...
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super().formfield_for_foreignkey(db_field, request,**kwargs)
+        if db_field.name =='inside_room':
+            if request._obj_ is not None:
+                field.queryset = (field.queryset.filter(
+                  submittal__exact=request._obj_))
+            else:
+                field.queryset = field.queryset.none()
+        return field
 
 
 # { start class SubmittalAdmin
