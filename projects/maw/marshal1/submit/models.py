@@ -90,12 +90,14 @@ class MetadataType(TypeModel):
     pass
 class NoteType(TypeModel):
     pass
+class Affiliation(TypeModel):
+    pass
 
 # { start class Author}
 class Author(models.Model):
     id = models.AutoField(primary_key=True)
 
-    orcid = SpaceTextField(max_length=255,null=True, default='',
+    orcid = SpaceCharField(max_length=80,null=True, default='',
         blank=True,editable=True,
         help_text="Orcid ID for this author"
         )
@@ -135,9 +137,6 @@ class Submittal(models.Model):
     title_primary = SpaceTextField(max_length=255,null=True,
       default='', blank=True, editable=True,
       help_text="Title of the item you are submitting")
-
-    author = models.ForeignKey('Author', null=False,
-        on_delete=models.CASCADE)
 
     submittal_datetime = models.DateTimeField(help_text='Submittal DateTime',
         null=False, auto_now=True, editable=False)
@@ -220,7 +219,12 @@ class SubmittalAuthor(models.Model):
     author = models.ForeignKey('Author', on_delete=models.CASCADE,
         help_text='Author of the associated submittal', )
 
-    rank = models.PositiveIntegerField(blank=False, null=False, default=1)
+    affiliation = models.ForeignKey('Affiliation', on_delete=models.CASCADE,
+        help_text='Affiliation of the author at time of initial publication', )
+
+    rank = models.PositiveIntegerField(blank=False, null=False, default=1,
+      help_text='Primary author should have rank 1. '
+        'This defines the order of author names in a citation.', )
 
     #Note we should add a 3-term composite unique index to submittal, author,
     #rank. We do NOT check for gaps in citation rank
