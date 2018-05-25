@@ -239,12 +239,10 @@ class SubmittalAuthor(models.Model):
 
 class File(models.Model):
     id = models.AutoField(primary_key=True)
-    submittal = models.ForeignKey('Submittal', on_delete=models.CASCADE,
-        help_text='Submittal authored by this author', )
 
     description = SpaceTextField(blank=False, null=False,
         default="Your description here.",
-        help_text="Description for this format of metadata." )
+        help_text="Description for this file." )
     solitary_download_name = SpaceTextField(max_length=255,
         help_text="Name for a solitary downloaded file",
         blank=False, null=False, default='some_file',

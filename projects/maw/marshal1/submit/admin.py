@@ -153,7 +153,6 @@ class FileAdmin(admin.ModelAdmin, ExportCvsMixin):
                          # Need reference doc?
     ]
     search_fields = [
-        'submittal',
         'description',
         'solitary_download_name',
         'submittal_download_name',
