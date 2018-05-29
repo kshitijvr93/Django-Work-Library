@@ -57,36 +57,27 @@ class SubmitRouter:
 
 # } end class SubmitRouter
 
+
 class TypeModel(models.Model):
     id = models.AutoField(primary_key=True)
     name = SpaceCharField(max_length=255,
         unique=True, blank=False, null=False, default='',
         help_text="Unique name for this type.", editable=True)
-    description = SpaceTextField(blank=False, null=False,
-        default="Your description here.",
-        help_text="Description for this type." )
+    text = SpaceTextField(blank=False, null=False,
+        default="Your text here.",
+        help_text="Text for this type." )
 
     def __str__(self):
             return '{}'.format(self.name)
 
 
-# { Start class MaterialType
 class MaterialType(TypeModel):
     pass
-'''
-    id = models.AutoField(primary_key=True)
-    name = SpaceCharField(max_length=255,
-        unique=False, blank=True, null=True, default='',
-        help_text="Unique name for a material type.", editable=True)
-    description = SpaceTextField(blank=False, null=False,
-        default="Your description here.",
-        help_text="Description for this type of material." )
-'''
-# } end class MaterialType
-
 class ResourceType(TypeModel):
     pass
 class MetadataType(TypeModel):
+    pass
+class LicenseType(TypeModel):
     pass
 class NoteType(TypeModel):
     pass
@@ -104,12 +95,13 @@ class Author(models.Model):
 
     email_address = models.EmailField()
 
-    surname = SpaceCharField( help_text="Also known as last name or family name)",
-        blank=False, null=False, default='',
-        max_length=255, editable=True)
+    surname = SpaceCharField( help_text="Also known as last name or family name",
+      blank=False, null=False, default='',
+      max_length=255, editable=True)
 
-    given_name = SpaceCharField( help_text="Also known as first name)",
-        blank=True, null=True, max_length=255, editable=True)
+    given_name = SpaceCharField(
+      help_text="Also known as first name. Please provide at least an initial.",
+      blank=False, null=False, max_length=255, editable=True)
 
     create_datetime = models.DateTimeField(help_text='Author Insertion DateTime',
         null=True, auto_now=True, editable=False)
@@ -142,16 +134,18 @@ class Submittal(models.Model):
     submittal_datetime = models.DateTimeField(help_text='Submittal DateTime',
         null=False, auto_now=True, editable=False)
 
+    license_type = models.ForeignKey('LicenseType', null=True,
+        default=None,
+        on_delete=models.CASCADE,)
+
     material_type = models.ForeignKey('MaterialType',
         on_delete=models.CASCADE,)
 
     resource_type = models.ForeignKey('ResourceType',
         on_delete=models.CASCADE,)
-
-    metadata_type = models.ForeignKey('MetadataType',
-        on_delete=models.CASCADE,)
     # This will be automatically assigned in production
     bibid = SpaceCharField(max_length=255,  editable=True, blank=True, null=True,
+        default=None,
         help_text = "This will be automatically assigned in production"
         )
     publisher = SpaceCharField(max_length=255, editable=True, blank=True,
@@ -244,42 +238,28 @@ class SubmittalAuthor(models.Model):
 # } end class SubmittalAuthor
 
 '''
-This is more than just an uploaded file, as it also associates this
-to one and only one submittal and it is done at file/row insertion
-time.
+App submit - class File
+This is an uploaded file.
+It can be referenced by a submittal via a submittalfile
+object.
 '''
 
 class File(models.Model):
     id = models.AutoField(primary_key=True)
 
-    submittal = models.ForeignKey('Submittal', on_delete=models.CASCADE,
-        null=True,
-        help_text='Submittal authored by this author', )
+    upload_datetime = models.DateTimeField(
+       help_text='Original file upload dateTime',
+        null=True, auto_now=True, editable=False)
 
-    # Maintain 'rank' now in case it is useful to keep an ordering of the
-    # files at this phase or level.
-    # A mets-like master manifest-file may be implemented in the future.
-    rank = PositiveIntegerField(blank=False,
-        null=False, default=1,
-        help_text='Rank order of this file within the set of '
-         'component files of this submittal')
+    keywords = models.CharField(max_length=255,db_index=True,blank=True
+        ,null=True)
 
     description = SpaceTextField(blank=False, null=False,
         default="Your description here.",
         help_text="Description for this file." )
 
-    solitary_download_name = SpaceTextField(max_length=255,
-        help_text="Name for a solitary downloaded file",
-        blank=False, null=False, default='some_file',
-        editable=True)
-
-    submittal_download_name = SpaceTextField(max_length=255,
-        help_text="Name for a downloaded file within a submittal package",
-        default='',
-        blank=True, null=True, editable=True)
-
     def __str__(self):
-        return '{}'.format(self.solitary_download_name)
+        return '{}'.format(str(self.keywords))
 
 # end class File
 
@@ -295,12 +275,40 @@ class SubmittalFile(models.Model):
     file = models.ForeignKey('File', on_delete=models.CASCADE,
         help_text='Component file of the associated submittal', )
 
+    download_name = SpaceCharField(max_length=255,
+        help_text="Name to use for this file as part of this submittal",
+        default='',
+        unique=True,
+        blank=False, null=False, editable=True)
     rank = PositiveIntegerField(blank=False, null=False, default=1,
         help_text='Rank order of this file within the set of '
          'component files of this submittal')
 
     def __str__(self):
-        return '{}'.format('')
+        return '{}'.format(self.id)
+
+    # Limit choices of files to ones already explicitly uploaded
+    # to this submittal (rather than allow choice from all files).
+    # This limits plagiarism a bit and makes choices simpler for the user.
+    # Consider: It may be simpler to have no choices, as users should
+    # add a new file each time, actually...
+    # reconsider: maybe just put a submittal field back into the File model
+    # and not allow choices as I do for authors...
+
+    #also see: https://stackoverflow.com/questions/21337142/django-admin-inlines-get-object-from-formfield-for-foreignkey#28270041
+    def zzformfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super().formfield_for_foreignkey(db_field, request,**kwargs)
+        # 'change' is at -1, and id is at -2...
+        obj_id = request.META['PATH_INFO'].rstrip('/').split('/')[-2]
+        print("GOT OBJ_ID={}".format(repr(obj_id)))
+        # see also: https://stackoverflow.com/questions/32150088/django-access-the-parent-instance-from-the-inline-model-admin
+        field_name = db_field.name
+        print("ff_f_ff:Got field_name='{}'".format(field_name))
+        if db_field.name =='file':
+            obj = self.get_object(request, obj_id)
+            if obj:
+                kwargs['queryset'] = File.objects.filter(submittal=obj )
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     #Note we should add a 3-term composite unique index to submittal, author,
     #rank. We do NOT check for gaps in citation rank
@@ -342,7 +350,7 @@ author per time span are possible.)
 We should inform all authors for whom we have email addresses that their work
 is provided in our repository and that they have the right to register their own
 copyright license for the work at any time.
-Each work should list asignees of copyrights, not just the author.
+Each work should list assignees of copyrights, not just the author.
 If the author assigns copyright to any other, we should record it and the contact
 info so the public may ask permission of the assignee if wanted.
 

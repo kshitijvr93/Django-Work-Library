@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
   Affiliation, Author, File,
-  MaterialType, MetadataType,
+  LicenseType, MaterialType, MetadataType,
   NoteType, ResourceType,
   Submittal, SubmittalAuthor, SubmittalFile
   )
@@ -135,15 +135,15 @@ class TypeAdmin(admin.ModelAdmin, ExportCvsMixin):
 
     search_fields = [
         'name',
-        'description',
+        'text',
     ]
     list_display = [
         'name',
-        'description',
+        'text',
     ]
     fields = [
         'name',
-        'description',
+        'text',
     ]
 
 # } end class TypeAdmin
@@ -155,13 +155,15 @@ class FileAdmin(admin.ModelAdmin, ExportCvsMixin):
         'export_as_csv', # Mixin: so set the method name string value.
                          # Need reference doc?
     ]
-    search_fields = [
-        'description',
-        'solitary_download_name',
-        'submittal_download_name',
-    ]
 
-    list_display = search_fields
+    readonly_fields = ('upload_datetime',)
+    list_display = [
+        'keywords',
+        'description',
+    ]
+    list_display = list(readonly_fields) + list_display
+    search_fields = list_display
+
     fields = list_display
 #end class FileAdmin
 
@@ -171,6 +173,7 @@ class SubmittalFileAdmin(admin.ModelAdmin, ExportCvsMixin):
         'export_as_csv', # Mixin: so set the method name string value.
                          # Need reference doc?
     ]
+
     search_fields = [
         'submittal',
         'file',
@@ -179,7 +182,7 @@ class SubmittalFileAdmin(admin.ModelAdmin, ExportCvsMixin):
 
     list_display = search_fields
     fields = list_display
-#end class SubmittalFileAdmin
+# end class SubmittalFileAdmin
 
 class FileInline(MinValidatedInlineMixIn,admin.TabularInline):
     model = File
@@ -190,6 +193,18 @@ class FileInline(MinValidatedInlineMixIn,admin.TabularInline):
 '''
 Todo: deprecate
 '''
+class SubmittalFileInlineOrig(MinValidatedInlineMixIn,admin.TabularInline):
+    model = SubmittalFile
+    min_num = 1
+    extra = 0
+
+    def get_filters(self, obj):
+        return((''))
+
+#end class SubmittalFileInline
+
+from django.urls import resolve
+
 class SubmittalFileInline(MinValidatedInlineMixIn,admin.TabularInline):
     model = SubmittalFile
     min_num = 1
@@ -202,6 +217,55 @@ class SubmittalFileInline(MinValidatedInlineMixIn,admin.TabularInline):
     # add a new file each time, actually...
     # reconsider: maybe just put a submittal field back into the File model
     # and not allow choices as I do for authors...
+
+    #also see: https://stackoverflow.com/questions/21337142/django-admin-inlines-get-object-from-formfield-for-foreignkey#28270041
+    def xxformfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super().formfield_for_foreignkey(db_field, request,**kwargs)
+        # 'change' is at -1, and id is at -2...
+        obj_id = request.META['PATH_INFO'].rstrip('/').split('/')[-2]
+        print("GOT OBJ_ID={}".format(repr(obj_id)))
+        # see also: https://stackoverflow.com/questions/32150088/django-access-the-parent-instance-from-the-inline-model-admin
+        field_name = db_field.name
+        print("ff_f_ff:Got field_name='{}'".format(field_name))
+        if db_field.name =='file' and obj_id.isdigit():
+            obj = self.get_object(request, obj_id)
+            if obj:
+                kwargs['queryset'] = File.objects.filter(submittal=obj )
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        # 'change' is at -1, and id is at -2...
+        submittal_id = request.META['PATH_INFO'].rstrip('/').split('/')[-2]
+        qs_submittal = Submittal.objects.filter(id=submittal_id)
+        # see also: https://stackoverflow.com/questions/32150088/django-access-the-parent-instance-from-the-inline-model-admin
+        if db_field.name =='file':
+            try:
+                print("TRY OBJ_ID={}".format(repr(submittal_id)))
+                #kwargs['queryset'] = File.objects.filter(submittalfile__id=obj_id )
+                kwargs['queryset'] = qs_submittal.select_related('file')
+
+            except IndexError:
+                print("INDEX ERRROR")
+                pass
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+# { start class SubmittalAdmin
+class SubmittalAdmin(SubmittalModelAdmin, ExportCvsMixin):
+
+    #admin change list display fields to show
+    # CHANGE LIST VIEW
+
+    #date_hierarchy = 'agent_modify_date'
+
+    inlines = [SubmittalAuthorInline, SubmittalFileInline]
+    # Limit choices of files to ones already explicitly uploaded
+    # to this submittal (rather than allow choice from all files).
+    # This limits plagiarism a bit and makes choices simpler for the user.
+    # Consider: It may be simpler to have no choices, as users should
+    # add a new file each time, actually...
+    # reconsider: maybe just put a submittal field back into the File model
+    # and not allow choices as I do for authors...
+
     def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
         field = super().formfield_for_foreignkey(db_field, request,**kwargs)
         if db_field.name =='inside_room':
@@ -231,22 +295,22 @@ class SubmittalAdmin(SubmittalModelAdmin, ExportCvsMixin):
     list_display = [
         'title_primary',
         'submittal_datetime',
+        'license_type',
         'material_type',
         'resource_type',
-        'metadata_type',
         ]
 
     search_fields = [
         'title_primary',
+        'license_type',
         'material_type',
         'resource_type',
-        'metadata_type',
         ]
 
     list_filter = [
+        'license_type',
         'material_type',
         'resource_type',
-        'metadata_type',
         # 'reference_type'
         #,'language', 'place_of_publication',
         ]
@@ -262,9 +326,9 @@ class SubmittalAdmin(SubmittalModelAdmin, ExportCvsMixin):
                  'bibid',
                  'language',
                  'title_primary',
+                 'license_type',
                  'material_type',
                  'resource_type',
-                 'metadata_type',
                  'abstract',
                  )
             },
@@ -307,14 +371,15 @@ class SubmittalAdmin(SubmittalModelAdmin, ExportCvsMixin):
 #  end class SubmittalAdmin }
 
 
-
 admin.site.register(Submittal, SubmittalAdmin)
+admin.site.register(LicenseType, TypeAdmin)
 admin.site.register(MaterialType, TypeAdmin)
 admin.site.register(ResourceType, TypeAdmin)
-admin.site.register(MetadataType, TypeAdmin)
+#admin.site.register(MetadataType, TypeAdmin)
 admin.site.register(Author, AuthorAdmin)
 admin.site.register(SubmittalAuthor, SubmittalAuthorAdmin)
-#admin.site.register(File, FileAdmin)
+admin.site.register(SubmittalFile, SubmittalFileAdmin)
+admin.site.register(File, FileAdmin)
 #admin.site.register(SubmittalFile, SubmittalFileAdmin)
 admin.site.register(Affiliation, TypeAdmin)
 
