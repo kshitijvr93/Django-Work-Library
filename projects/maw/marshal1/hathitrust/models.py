@@ -169,7 +169,9 @@ class File(models.Model):
   #Create a subdirectory under media_root for the containing item of this file
   #
 
-  # If you to change upload_to, make sure it is a writeable directory
+  # Argument upload_to must be a relative path under MEDIA_ROOT to an
+  # existing directory that is writer by the user who launched the webserver.
+  # This is the 'Django' path, so slashes are required regardless of OS.
 
   location = models.FileField(upload_to="hathitrust/")
 
@@ -217,8 +219,9 @@ Can use the upload() method in views.py to invoke this if wanted.
 class UploadFile(models.Model):
 
   # department owner of the uploaded file
-  department = models.CharField('Dept',max_length=64,default='RVP',db_index=True)
-  public     = models.BooleanField('Public',default=False)
+  department = models.CharField('Dept', max_length=64, default='RVP',
+      db_index=True)
+  public     = models.BooleanField('Public', default=False)
 
   #date_time the file row was added
   date_time = models.DateTimeField('datetime',auto_now=True,db_index=True)

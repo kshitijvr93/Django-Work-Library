@@ -107,12 +107,16 @@ class SpaceCharField(models.CharField):
         return value
 #end class SpaceCharField
 
+'''
+field for "Plus" integers. So starting at 1, not 0.
+'''
 class PositiveIntegerField(models.PositiveIntegerField):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def translate(self,value):
-        # Disallow 0. Just set it to 1 without error message.
+        # Disallow 0.
+        # Just set 0 to 1 without generating an Exception.
         if value < 1:
             value = 1
         return value

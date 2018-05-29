@@ -73,7 +73,7 @@ INSTALLED_APPS = [
 
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media_root','')
+MEDIA_ROOT = maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT
 
 # RVP EXPERIMENT MEDIA_URL
 MEDIA_URL =  '/media/'
@@ -178,8 +178,8 @@ DATABASES = {}
 
 # Keep LCROyster project ENV settings separated for flexibility:
 
-app_env = maw_settings.LCROYSTER_ENV
-if app_env == 'production':
+lcroyster_env = maw_settings.LCROYSTER_ENV
+if lcroyster_env == 'production':
     DATABASES.update({'lcroyster_connection' : {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'LCRoysterproject',
@@ -196,7 +196,7 @@ if app_env == 'production':
             },
         },
     })
-elif app_env == 'test':
+elif lcroyster_env == 'test':
     DATABASES.update({'lcroyster_connection': {
         'ENGINE': 'django.db.backends.mysql',
         # The maw1_db database will host hathitrust and probably
@@ -213,7 +213,7 @@ elif app_env == 'test':
             },
         },
     })
-elif app_env == 'local':
+elif lcroyster_env == 'local':
     DATABASES.update({'lcroyster_connection' : {
         'ENGINE': 'django.db.backends.mysql',
         # The maw1_db database will host hathitrust and probably

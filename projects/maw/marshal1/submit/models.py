@@ -123,6 +123,7 @@ class Author(models.Model):
 
 # } end class Author
 
+
 # { start class Submittal
 class Submittal(models.Model):
     # Field 'id' is 'special', and if not defined here, Django defines
@@ -194,6 +195,7 @@ class Note(models.Model):
     id = models.AutoField(primary_key=True)
 
     submittal = models.ForeignKey('Submittal', on_delete=models.CASCADE,
+        null=True,
         help_text='Id of Submittal authored by this author', )
 
     note_type = models.ForeignKey('NoteType',
@@ -214,6 +216,7 @@ class SubmittalAuthor(models.Model):
     id = models.AutoField(primary_key=True)
 
     submittal = models.ForeignKey('Submittal', on_delete=models.CASCADE,
+        null=True,
         help_text='Submittal authored by this author', )
 
     author = models.ForeignKey('Author', on_delete=models.CASCADE,
@@ -226,6 +229,9 @@ class SubmittalAuthor(models.Model):
       help_text='Primary author should have rank 1. '
         'This defines the order of author names in a citation.', )
 
+    def __str__(self):
+        return '{} {}'.format(self.author.given_name, self.author.surname)
+
     #Note we should add a 3-term composite unique index to submittal, author,
     #rank. We do NOT check for gaps in citation rank
     # May add affiliatin id here too.. to indicate the author's
@@ -237,16 +243,36 @@ class SubmittalAuthor(models.Model):
 
 # } end class SubmittalAuthor
 
+'''
+This is more than just an uploaded file, as it also associates this
+to one and only one submittal and it is done at file/row insertion
+time.
+'''
+
 class File(models.Model):
     id = models.AutoField(primary_key=True)
+
+    submittal = models.ForeignKey('Submittal', on_delete=models.CASCADE,
+        null=True,
+        help_text='Submittal authored by this author', )
+
+    # Maintain 'rank' now in case it is useful to keep an ordering of the
+    # files at this phase or level.
+    # A mets-like master manifest-file may be implemented in the future.
+    rank = PositiveIntegerField(blank=False,
+        null=False, default=1,
+        help_text='Rank order of this file within the set of '
+         'component files of this submittal')
 
     description = SpaceTextField(blank=False, null=False,
         default="Your description here.",
         help_text="Description for this file." )
+
     solitary_download_name = SpaceTextField(max_length=255,
         help_text="Name for a solitary downloaded file",
         blank=False, null=False, default='some_file',
         editable=True)
+
     submittal_download_name = SpaceTextField(max_length=255,
         help_text="Name for a downloaded file within a submittal package",
         default='',
@@ -256,11 +282,13 @@ class File(models.Model):
         return '{}'.format(self.solitary_download_name)
 # end class File
 
+
 # { Start class submittal author}
 class SubmittalFile(models.Model):
     id = models.AutoField(primary_key=True)
 
     submittal = models.ForeignKey('Submittal', on_delete=models.CASCADE,
+        null=True,
         help_text='Submittal authored by this author', )
 
     file = models.ForeignKey('File', on_delete=models.CASCADE,
@@ -313,7 +341,6 @@ copyright license for the work at any time.
 Each work should list asignees of copyrights, not just the author.
 If the author assigns copyright to any other, we should record it and the contact
 info so the public may ask permission of the assignee if wanted.
-
 
 '''
 

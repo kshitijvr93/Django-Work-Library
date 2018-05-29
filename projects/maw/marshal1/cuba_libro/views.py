@@ -15,7 +15,8 @@ def home(request):
 
 
 ########################### IMPORT
-from sqlalchemy_tools.core.import_selected_spreadsheet_to_table import spreadsheet_to_table
+#from sqlalchemy_tools.core.import_selected_spreadsheet_to_table import spreadsheet_to_table
+#from sqlalchemy_tools.core import spreadsheet_to_table
 from collections import OrderedDict
 from sqlalchemy import (
   Boolean, create_engine,

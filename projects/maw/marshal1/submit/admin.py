@@ -180,6 +180,15 @@ class SubmittalFileAdmin(admin.ModelAdmin, ExportCvsMixin):
     fields = list_display
 #end class SubmittalFileAdmin
 
+class FileInline(MinValidatedInlineMixIn,admin.TabularInline):
+    model = File
+    min_num = 1
+    extra = 0
+
+
+'''
+Todo: deprecate
+'''
 class SubmittalFileInline(MinValidatedInlineMixIn,admin.TabularInline):
     model = SubmittalFile
     min_num = 1
@@ -211,7 +220,7 @@ class SubmittalAdmin(SubmittalModelAdmin, ExportCvsMixin):
 
     #date_hierarchy = 'agent_modify_date'
 
-    inlines = [SubmittalAuthorInline, SubmittalFileInline,]
+    inlines = [SubmittalAuthorInline, FileInline,]
 
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.
@@ -297,14 +306,15 @@ class SubmittalAdmin(SubmittalModelAdmin, ExportCvsMixin):
 #  end class SubmittalAdmin }
 
 
+
 admin.site.register(Submittal, SubmittalAdmin)
 admin.site.register(MaterialType, TypeAdmin)
 admin.site.register(ResourceType, TypeAdmin)
 admin.site.register(MetadataType, TypeAdmin)
 admin.site.register(Author, AuthorAdmin)
 admin.site.register(SubmittalAuthor, SubmittalAuthorAdmin)
-admin.site.register(File, FileAdmin)
-admin.site.register(SubmittalFile, SubmittalFileAdmin)
+#admin.site.register(File, FileAdmin)
+#admin.site.register(SubmittalFile, SubmittalFileAdmin)
 admin.site.register(Affiliation, TypeAdmin)
 
 # Register your models here.
