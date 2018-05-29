@@ -63,7 +63,8 @@ def agent_uf_to_available(modeladmin, request, queryset):
 agent_uf_to_available.short_description = "Change UF partner to Available "
 
 '''
-Nice solution to validate min inlines of 1 for author, file inlines, etc.
+Nice solution to validate minimum populated inline (foreign key-selected
+authors) of 1 for at least 1 primary author author, file inlines, etc.
 See 20180406t0732 answer from Klimenko at:
 https://stackoverflow.com/questions/877723/inline-form-validation-in-django
 '''
@@ -148,7 +149,7 @@ class TypeAdmin(admin.ModelAdmin, ExportCvsMixin):
 # } end class TypeAdmin
 
 
-# Start class SubmittalFileAdmin
+# Start class FileAdmin
 class FileAdmin(admin.ModelAdmin, ExportCvsMixin):
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.
@@ -220,7 +221,7 @@ class SubmittalAdmin(SubmittalModelAdmin, ExportCvsMixin):
 
     #date_hierarchy = 'agent_modify_date'
 
-    inlines = [SubmittalAuthorInline, FileInline,]
+    inlines = [SubmittalAuthorInline, SubmittalFileInline,]
 
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.

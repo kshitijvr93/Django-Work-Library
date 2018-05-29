@@ -280,6 +280,7 @@ class File(models.Model):
 
     def __str__(self):
         return '{}'.format(self.solitary_download_name)
+
 # end class File
 
 
@@ -297,6 +298,9 @@ class SubmittalFile(models.Model):
     rank = PositiveIntegerField(blank=False, null=False, default=1,
         help_text='Rank order of this file within the set of '
          'component files of this submittal')
+
+    def __str__(self):
+        return '{}'.format('')
 
     #Note we should add a 3-term composite unique index to submittal, author,
     #rank. We do NOT check for gaps in citation rank
