@@ -263,6 +263,32 @@ class File(models.Model):
 
 # end class File
 
+def content_file_name(instance, filename):
+    return '/'.joint(['submit_files', filename])
+
+
+'''
+Upload instances are uploaded files with (1) a parent submittal,
+and other fields to help manage uploads such as a download name per file,
+a hash to avoid collisions, a content type.
+'''
+class Upload(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    submittal = models.ForeignKey('Submittal', on_delete=models.CASCADE,
+        blank=False, null=False, default='',
+        help_text='Submittal authored by this author', )
+
+    upload_datetime = models.DateTimeField(
+       help_text='Original file upload dateTime',
+        null=True, auto_now=True, editable=False)
+
+    description = SpaceTextField(blank=True, null=True,
+        help_text="Optional Description of this file." )
+
+    location = models.FileField(upload_to='submit/')
+
+    pass
 
 # { Start class submittal author}
 class SubmittalFile(models.Model):

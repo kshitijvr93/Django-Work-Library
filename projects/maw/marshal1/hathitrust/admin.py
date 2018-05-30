@@ -78,12 +78,12 @@ admin.site.register(Item, ItemModelAdmin)
 
 from django import forms
 
-
 class FileModelAdmin(HathiModelAdmin):
   #{{{ custom field widget settings
   def formfield_for_dbfield(self, db_field, **kwargs):
     # Set form to upload form to use for adding...
-    form_field = super(FileModelAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+    #form_field = super(FileModelAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+    form_field = super().formfield_for_dbfield(db_field, **kwargs)
     dw = form_field.widget.attrs
 
     if db_field.name in ('topic', 'up_name', 'down_name', 'link_name', 'url'):

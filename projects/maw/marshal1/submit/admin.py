@@ -3,7 +3,8 @@ from .models import (
   Affiliation, Author, File,
   LicenseType, MaterialType, MetadataType,
   NoteType, ResourceType,
-  Submittal, SubmittalAuthor, SubmittalFile
+  Submittal, SubmittalAuthor, SubmittalFile,
+  Upload,
   )
 
 from django.forms import TextInput, Textarea
@@ -102,6 +103,16 @@ class AuthorAdmin(admin.ModelAdmin, ExportCvsMixin):
 
     readonly_fields = ['create_datetime',]
 # end class Author
+
+
+class UploadAdmin(admin.ModelAdmin, ExportCvsMixin):
+    search_fields = [
+        'submittal',
+        'description'
+    ]
+
+    list_display = search_fields
+    fields = ['location'].append(list_display)
 
 
 class SubmittalAuthorAdmin(admin.ModelAdmin, ExportCvsMixin):
@@ -206,6 +217,18 @@ class SubmittalFileInlineOrig(MinValidatedInlineMixIn,admin.TabularInline):
 
 from django.urls import resolve
 
+class UploadInline(MinValidatedInlineMixIn,admin.TabularInline):
+    model = Upload
+    min_num = 1
+    extra = 0
+
+# NOTE: keeping this class for future pondering... it is the start of
+# an attempt to support submitting users to suspend a submittal in a session
+# and come back to complete it later. Not a required feature, but an
+# interesting one. The idea also includes allowing storing a rank of 0, which
+# means the file will not be included when the FINAL save for the submittal is
+#made, but if a session is interrupted,
+#
 class SubmittalFileInline(MinValidatedInlineMixIn,admin.TabularInline):
     model = SubmittalFile
     min_num = 1
@@ -272,35 +295,7 @@ class SubmittalAdmin(SubmittalModelAdmin, ExportCvsMixin):
 
     #date_hierarchy = 'agent_modify_date'
 
-    inlines = [SubmittalAuthorInline, SubmittalFileInline]
-    # Limit choices of files to ones already explicitly uploaded
-    # to this submittal (rather than allow choice from all files).
-    # This limits plagiarism a bit and makes choices simpler for the user.
-    # Consider: It may be simpler to have no choices, as users should
-    # add a new file each time, actually...
-    # reconsider: maybe just put a submittal field back into the File model
-    # and not allow choices as I do for authors...
-
-    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
-        field = super().formfield_for_foreignkey(db_field, request,**kwargs)
-        if db_field.name =='inside_room':
-            if request._obj_ is not None:
-                field.queryset = (field.queryset.filter(
-                  submittal__exact=request._obj_))
-            else:
-                field.queryset = field.queryset.none()
-        return field
-
-
-# { start class SubmittalAdmin
-class SubmittalAdmin(SubmittalModelAdmin, ExportCvsMixin):
-
-    #admin change list display fields to show
-    # CHANGE LIST VIEW
-
-    #date_hierarchy = 'agent_modify_date'
-
-    inlines = [SubmittalAuthorInline, SubmittalFileInline,]
+    inlines = [SubmittalAuthorInline, UploadInline, SubmittalFileInline,]
 
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.
