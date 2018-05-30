@@ -268,6 +268,24 @@ def content_file_name(instance, filename):
 
 
 '''
+Todo: May also try different directory structure, eg:
+yyyy/mm/dd/sub_id/file_id to store each file...
+Where the yyyymmdd is the creation date of the submittal,
+sub_id is the submital id and file_id is the file_id
+But a plain id number as a file name in a simple single directory
+may be best.. or maybe per a (submitall) year string sub directory
+for 2 levels.
+
+'''
+
+def upload_location(instance, filename):
+    sub_dt = instance.submittal_datetime
+    date_string = instance.submittal_datetime.strftime('%Y/%m/%d/')
+    sid = instance.submittal.id
+    zid = str(instance.id).zfill(10)
+    return ('submit/{}/{}/{}'.format(date_string,sid,z))
+
+'''
 Upload instances are uploaded files with (1) a parent submittal,
 and other fields to help manage uploads such as a download name per file,
 a hash to avoid collisions, a content type.
@@ -283,12 +301,19 @@ class Upload(models.Model):
        help_text='Original file upload dateTime',
         null=True, auto_now=True, editable=False)
 
+
+    download_name = SpaceCharField(max_length=255,blank=True, null=True,
+        help_text="Downlad Name for of this file." )
+
     description = SpaceTextField(blank=True, null=True,
         help_text="Optional Description of this file." )
 
-    location = models.FileField(upload_to='submit/')
+    location = models.FileField(upload_to=upload_location)
 
-    pass
+    # murmur3  - insert field to hold murmur3 hash here.
+
+    def __str__(self):
+        return '{}:{}'.format(str(self.id), str(self.location))
 
 # { Start class submittal author}
 class SubmittalFile(models.Model):
