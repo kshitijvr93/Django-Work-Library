@@ -9,6 +9,7 @@ from .models import (
 from django.forms import TextInput, Textarea
 from django.db import models
 from maw_utils import ExportCvsMixin
+import sys
 
 class SubmittalModelAdmin(admin.ModelAdmin):
     # Using value should be a settings.py DATABASES key,
@@ -233,16 +234,30 @@ class SubmittalFileInline(MinValidatedInlineMixIn,admin.TabularInline):
                 kwargs['queryset'] = File.objects.filter(submittal=obj )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+    '''
+    TODO: create a row save condition to REQUERY -- because if change the
+    admin-field like keywords, the dd list will still have it...
+    better: on admin do always use the id value ..? But a NAME is better to use
+    because it is a ddlist... to make a choice... so probably should modify
+    logic to re-compute the dd list when a new file is added or name is changed
+    per submittal?
+    '''
     def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
         # 'change' is at -1, and id is at -2...
-        submittal_id = request.META['PATH_INFO'].rstrip('/').split('/')[-2]
-        qs_submittal = Submittal.objects.filter(id=submittal_id)
+        path_parts = request.META['PATH_INFO'].rstrip('/').split('/')
+        operation = path_parts[-1]
+        submittal_id = path_parts[-2]
+        # if 'change' is the type, this is a good id
+        # if 'change' is the type, this is a good id
+        #sys.stdout.flush()
+        #sf = SubmittalFile.objects.get(id=sf_id)
         # see also: https://stackoverflow.com/questions/32150088/django-access-the-parent-instance-from-the-inline-model-admin
-        if db_field.name =='file':
+        if operation == 'change' and db_field.name =='file' :
             try:
                 print("TRY OBJ_ID={}".format(repr(submittal_id)))
                 #kwargs['queryset'] = File.objects.filter(submittalfile__id=obj_id )
-                kwargs['queryset'] = qs_submittal.select_related('file')
+                qs_file = SubmittalFile.objects.filter(submittal_id=submittal_id)
+                kwargs['queryset'] = File.objects.filter(id__in=qs_file)
 
             except IndexError:
                 print("INDEX ERRROR")

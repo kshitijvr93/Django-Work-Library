@@ -127,8 +127,8 @@ class Submittal(models.Model):
     # See relation SubmittalAuthor for authorship, author ordering,
     # copyright license info for this submittal
 
-    title_primary = SpaceTextField(max_length=255,null=True,
-      default='', blank=True, editable=True,
+    title_primary = SpaceTextField(max_length=255,
+      default='', blank=False, null=False, editable=True,
       help_text="Title of the item you are submitting")
 
     submittal_datetime = models.DateTimeField(help_text='Submittal DateTime',
@@ -269,10 +269,11 @@ class SubmittalFile(models.Model):
     id = models.AutoField(primary_key=True)
 
     submittal = models.ForeignKey('Submittal', on_delete=models.CASCADE,
-        null=True,
+        null=False, default='',
         help_text='Submittal authored by this author', )
 
     file = models.ForeignKey('File', on_delete=models.CASCADE,
+        null=False, default='',
         help_text='Component file of the associated submittal', )
 
     download_name = SpaceCharField(max_length=255,
