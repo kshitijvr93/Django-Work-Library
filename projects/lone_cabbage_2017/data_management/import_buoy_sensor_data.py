@@ -334,9 +334,11 @@ class OysterProject():
             d_sensor_deployment[sensor_id] = OrderedDict(
               { key:d_date_loc[key] for key in sorted(d_date_loc.keys()) })
 
-        if self.verbosity > 1:
+        if self.verbosity > 1 or 1 == 1:
             print("Got final d_sensor_deployment = {}"
                 .format(repr(d_sensor_deployment)),file=self.log_file)
+            for sensor_id, d_date_loc in d_sensor_deployment.items():
+              print("{}={}".format(sensor_id,d_date_loc))
 
         self.d_sensor_deployment = d_sensor_deployment
         return
@@ -369,7 +371,7 @@ class OysterProject():
               .format(self.log_file.name))
         #Find whether this date is covered by a valid deployment
         in_service = 0
-        location_id = 0
+        found_location_id = 0
         for deployed, location_id in od_datetime_loc.items():
             if deployed > observation_datetime:
                 #This deployment is in the future beyond this observation,
@@ -377,8 +379,9 @@ class OysterProject():
                 break;
             if observation_datetime >= deployed and location_id != 0:
                 # 0 is the 'unknown' or invalid location
+                found_location_id = location_id
                 in_service = 1
-        return in_service, location_id
+        return in_service, found_location_id
 
     #end def get_in_service() of class OysterProject
 
@@ -1119,7 +1122,7 @@ def run(input_folder=None,
 
     if log_file_name is None:
         #datetime_string = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
-        day_string = datetime.datetime.utcnow().strftime("%Y%m%d")
+        day_string = datetime.datetime.utcnow().strftime("%Y%m%dT%H%MZ")
         log_file_name = ("{}/import_buoy_sensor_data_{}.txt"
             .format(input_folder,day_string))
 
