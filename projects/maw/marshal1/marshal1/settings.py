@@ -177,6 +177,27 @@ DB_ENGINE_BACKENDS_STANDARD=['sqlite3','postgresql','mysql','oracle']
 DATABASES = {}
 
 # Keep LCROyster project ENV settings separated for flexibility:
+submit_env = maw_settings.SUBMIT_ENV
+if submit_env == 'test':
+    DATABASES.update({'submit_connection' : {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'submit_test',
+        'USER': maw_settings.SUBMIT_USER,
+        'PASSWORD': maw_settings.SUBMIT_TEST_PASSWORD,
+        #'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
+        #'PORT': '3354',
+        'HOST': '10.241.33.139',
+        'PORT': '5432',
+        'TIME_ZONE': None,
+        #'OPTIONS' : {
+        #    # Heed a warning during manage.py migrate runs
+        #    'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
+        #    },
+        },
+    })
+else:
+    msg="ERROR:Setting SUBMIT_ENV '{}' not implemented.".format(submit_env)
+    raise ValueError(msg)
 
 lcroyster_env = maw_settings.LCROYSTER_ENV
 if lcroyster_env == 'production':
@@ -313,16 +334,6 @@ elif maw_settings.ENV == 'local':
             'PORT': '3306',
         },
         'cuba_libro_connection': {
-            'ENGINE': 'django.db.backends.mysql',
-            # The maw1_db database will host hathitrust and probably
-            # some other maw apps
-            'NAME': 'maw1_db',
-            'USER': maw_settings.MYSQL_LOCAL_USER,
-            'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
-            'HOST': '127.0.0.1',
-            'PORT': '3306',
-        },
-        'submit_connection': {
             'ENGINE': 'django.db.backends.mysql',
             # The maw1_db database will host hathitrust and probably
             # some other maw apps
