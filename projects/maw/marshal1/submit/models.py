@@ -75,14 +75,32 @@ class MaterialType(TypeModel):
     pass
 class ResourceType(TypeModel):
     pass
-class MetadataType(TypeModel):
-    pass
 class LicenseType(TypeModel):
     pass
 class NoteType(TypeModel):
     pass
 class Affiliation(TypeModel):
     pass
+
+class MetadataType(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = SpaceCharField(max_length=255,
+        unique=True, blank=False, null=False, default='',
+        help_text="Unique name for this type.", editable=True)
+    text = SpaceTextField(blank=False, null=False,
+        default="Your text here.",
+        help_text="Text for this type." )
+    xml2rdb = models.JsonField(encoder=DjangoJSONEncoder,
+      help_text="xml2rdb structure",
+      default=OrderedDict(),
+      )
+    rdb2xml = models.JsonField(encoder=DjangoJSONEncoder,
+      help_text="rdb2xml structure",
+      default=OrderedDict(),
+      )
+
+    def __str__(self):
+            return '{}'.format(self.name)
 
 # { start class Author}
 class Author(models.Model):
