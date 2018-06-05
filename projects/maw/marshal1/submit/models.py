@@ -7,6 +7,8 @@ import datetime
 from django.utils import timezone
 from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
 import django.contrib.postgres.fields as pgfields
+from collections import OrderedDict
+from django.core.serializers.json import DjangoJSONEncoder
 #import maw_utils
 
 '''
@@ -116,6 +118,20 @@ class xrconfig(models.Model):
         null=True, auto_now=True, editable=False)
     pass
 
+class xrc_reldag(models.Model):
+    # Directed Acyclic Map that represents the parentage of the
+    # relations in an xrconfig
+
+    pass
+
+class xrc_index(models.Model):
+    id = models.AutoField(primary_key=True)
+    # use a char field to hold comma-separated indexes for now
+    # ? check if Django has an arrayfield? or postgres.
+    #
+
+    pass
+
 class xrc_orel(models.Model):
     # relations for an xrconfig output relation
     id = models.AutoField(primary_key=True)
@@ -130,6 +146,13 @@ class xrc_orel(models.Model):
 
     pass
 
+
+class xrc_reldag(models.Model):
+    # Directed Acyclic Map that represents the parentage of the
+    # relations in an xrconfig
+
+    pass
+
 class xrc_ofield(models.Model):
     # nodes for an xr config output field
     id = models.AutoField(primary_key=True)
@@ -139,6 +162,14 @@ class xrc_ofield(models.Model):
     name = SpaceCharField(max_length=255,
         unique=True, blank=False, null=False, default='',
         help_text="Unique name for this field for this output relation."
+        , editable=True)
+
+    # Now the only type is string.. may want to adopt the types of fields
+    # that django supports. In the meantime, just put notes in here, as the
+    # value is not used yet...
+    type = SpaceCharField(max_length=255,
+        unique=True, blank=False, null=False, default='',
+        help_text="Notes on the type to cast from values in this string field."
         , editable=True)
 
     pass
