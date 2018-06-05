@@ -84,12 +84,8 @@ class NoteType(TypeModel):
     pass
 class Affiliation(TypeModel):
     pass
-
 class MetadataType(TypeModel):
     pass
-
-    def __str__(self):
-            return '{}'.format(self.name)
 
 class xrconfig(models.Model):
     # Each row is the parent of the complete configuration for
@@ -99,16 +95,12 @@ class xrconfig(models.Model):
         unique=True, blank=False, null=False, default='',
         help_text="Unique name for this xrconfig including version label ."
         , editable=True)
-
     create_datetime = models.DateTimeField(help_text='Author Insertion DateTime',
         null=True, auto_now=True, editable=False)
-    pass
 
-class xrc_reldag(models.Model):
-    # Directed Acyclic Map that represents the parentage of the
-    # relations in an xrconfig
+    def __str__(self):
+            return '{}'.format(self.name)
 
-    pass
 
 class xrc_index(models.Model):
     id = models.AutoField(primary_key=True)
@@ -118,11 +110,15 @@ class xrc_index(models.Model):
 
     pass
 
-class xrc_orel(models.Model):
-    # relations for an xrconfig output relation
+class xrc_rel(models.Model):
+    # hirarchical relation for an xrconfig output relation
     id = models.AutoField(primary_key=True)
-    xrconfig = models.ForeignKey('xrconfig', null=False,
-        blank=False,
+    xrconfig = models.ForeignKey('xrconfig', null=False, blank=False,
+        on_delete=models.CASCADE,)
+
+    # NOTE: a validation should be added to allow only ONE row per xrconfig
+    # value to have a Null parent if manual edits are ever allowed.
+    parent = models.ForeignKey('self', null=True, blank=True,
         on_delete=models.CASCADE,)
 
     name = SpaceCharField(max_length=255,
@@ -130,13 +126,18 @@ class xrc_orel(models.Model):
         help_text="Unique name for this output relation for this xrconfig."
         , editable=True)
 
-    pass
+    def __str__(self):
+            return '{}:{}'.format(self.xrconfig, self.name)
+
+    class Meta:
+        unique_together = ('xrconfig', 'name')
+        ordering = ['xrconfig', 'name', ]
 
 
-class xrc_ofield(models.Model):
+class xrc_field(models.Model):
     # nodes for an xr config output field
     id = models.AutoField(primary_key=True)
-    xrc_orel = models.ForeignKey('xrc_orel', null=False,
+    xrc_rel = models.ForeignKey('xrc_rel', null=False,
         blank=False,
         on_delete=models.CASCADE,)
     name = SpaceCharField(max_length=255,
@@ -152,7 +153,16 @@ class xrc_ofield(models.Model):
         help_text="Notes on the type to cast from values in this string field."
         , editable=True)
 
-    pass
+    def __str__(self):
+            return '{}:{}.{}'.format(self.xrc_rel.xrconfig,
+                self.xrc_rel, self.name)
+
+    class Meta:
+        unique_together = (('xrc_rel', 'name'))
+        ordering = ['xrc_rel', 'name', ]
+
+# xrc_ionode used to generate a map for an xml2rdb conversion
+# of an xml input file to an xrconfig set of relations
 
 class xrc_ionode(models.Model):
     # nodes for an xr config input/output map
