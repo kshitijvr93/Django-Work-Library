@@ -85,22 +85,8 @@ class NoteType(TypeModel):
 class Affiliation(TypeModel):
     pass
 
-class MetadataType(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = SpaceCharField(max_length=255,
-        unique=True, blank=False, null=False, default='',
-        help_text="Unique name for this type.", editable=True)
-    text = SpaceTextField(blank=False, null=False,
-        default="Your text here.",
-        help_text="Text for this type." )
-    xml2rdb = pgfields.JSONField(encoder=DjangoJSONEncoder,
-      help_text="xml2rdb structure",
-      default=OrderedDict(),
-      )
-    rdb2xml = pgfields.JSONField(encoder=DjangoJSONEncoder,
-      help_text="rdb2xml structure",
-      default=OrderedDict(),
-      )
+class MetadataType(TypeModel):
+    pass
 
     def __str__(self):
             return '{}'.format(self.name)
@@ -146,12 +132,6 @@ class xrc_orel(models.Model):
 
     pass
 
-
-class xrc_reldag(models.Model):
-    # Directed Acyclic Map that represents the parentage of the
-    # relations in an xrconfig
-
-    pass
 
 class xrc_ofield(models.Model):
     # nodes for an xr config output field
