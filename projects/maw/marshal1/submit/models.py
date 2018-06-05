@@ -6,6 +6,7 @@ from django.db import models
 import datetime
 from django.utils import timezone
 from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
+import django.contrib.postgres.fields as pgfields
 #import maw_utils
 
 '''
@@ -90,17 +91,70 @@ class MetadataType(models.Model):
     text = SpaceTextField(blank=False, null=False,
         default="Your text here.",
         help_text="Text for this type." )
-    xml2rdb = models.JsonField(encoder=DjangoJSONEncoder,
+    xml2rdb = pgfields.JSONField(encoder=DjangoJSONEncoder,
       help_text="xml2rdb structure",
       default=OrderedDict(),
       )
-    rdb2xml = models.JsonField(encoder=DjangoJSONEncoder,
+    rdb2xml = pgfields.JSONField(encoder=DjangoJSONEncoder,
       help_text="rdb2xml structure",
       default=OrderedDict(),
       )
 
     def __str__(self):
             return '{}'.format(self.name)
+
+class xrconfig(models.Model):
+    # Each row is the parent of the complete configuration for
+    # an xml to rdb conversion
+    id = models.AutoField(primary_key=True)
+    name = SpaceCharField(max_length=255,
+        unique=True, blank=False, null=False, default='',
+        help_text="Unique name for this xrconfig including version label ."
+        , editable=True)
+
+    create_datetime = models.DateTimeField(help_text='Author Insertion DateTime',
+        null=True, auto_now=True, editable=False)
+    pass
+
+class xrc_orel(models.Model):
+    # relations for an xrconfig output relation
+    id = models.AutoField(primary_key=True)
+    xrconfig = models.ForeignKey('xrconfig', null=False,
+        blank=False,
+        on_delete=models.CASCADE,)
+
+    name = SpaceCharField(max_length=255,
+        unique=True, blank=False, null=False, default='',
+        help_text="Unique name for this output relation for this xrconfig."
+        , editable=True)
+
+    pass
+
+class xrc_ofield(models.Model):
+    # nodes for an xr config output field
+    id = models.AutoField(primary_key=True)
+    xrc_orel = models.ForeignKey('xrc_orel', null=False,
+        blank=False,
+        on_delete=models.CASCADE,)
+    name = SpaceCharField(max_length=255,
+        unique=True, blank=False, null=False, default='',
+        help_text="Unique name for this field for this output relation."
+        , editable=True)
+
+    pass
+
+class xrc_ionode(models.Model):
+    # nodes for an xr config input/output map
+    id = models.AutoField(primary_key=True)
+    xrconfig = models.ForeignKey('xrconfig', null=False,
+        blank=False,
+        on_delete=models.CASCADE,)
+
+    name = SpaceCharField(max_length=255,
+        unique=True, blank=False, null=False, default='',
+        help_text="Unique name for this xrconfig including version label ."
+        , editable=True)
+    pass
 
 # { start class Author}
 class Author(models.Model):
