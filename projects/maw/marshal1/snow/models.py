@@ -1,0 +1,233 @@
+from django.db import models
+import uuid
+#from django_enumfield import enum
+
+#other useful model imports at times (see django docs, tutorials):
+import datetime
+from django.utils import timezone
+from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
+import django.contrib.postgres.fields as pgfields
+from collections import OrderedDict
+from django.core.serializers.json import DjangoJSONEncoder
+#import maw_utils
+
+'''
+NOTE: rather than have a separate file router.py to host HathiRouter, I just
+put it here. Also see settings.py should include this python import dot-path
+as one of the listed strings in the list setting for DATABASE_ROUTERS.
+
+'''
+# Maybe move the HathiRouter later, but for now keep here
+#
+class SnowRouter:
+    '''
+    A router to control all db ops on models in the hathitrust Application.
+    '''
+
+    # app_label is really an app name. Here it is hathitrust.
+    app_label = 'snow'
+
+    # app_db is really a main settings.py DATABASES name, which is
+    # more properly a 'connection' name
+    app_db = 'snow_connection'
+
+    '''
+    See: https://docs.djangoproject.com/en/2.0/topics/db/multi-db/
+    For given 'auth' model (caller insures that the model is always an auth
+    model ?),  return the db alias name (see main DATABASES setting in
+    settings.py) to use.
+    '''
+    def db_for_read(self, model, **hints):
+        if model._meta.app_label == self.app_label:
+            return self.app_db
+        return None
+
+    def db_for_write(self, model, **hints):
+        if model._meta.app_label == self.app_label:
+            return self.app_db
+        return None
+
+    def allow_relation(self, obj1, obj2, **hints):
+        if (   obj1._meta.app_label == self.app_label
+           or  obj2._meta.app_label == self.app_label):
+           return True
+        return None
+
+    def allow_migrate(self, db, app_label, model_name=None, **hints):
+        if app_label == self.app_label:
+            return db == self.app_db
+        return None
+
+# } end class SnowRouter
+
+class Snowflake(models.Model):
+    # Each row represents a snowflake,
+    # where a snowflake in concept is similar to a complete xml schema
+    # definition (XSD).
+    # More formally the connections among the relations/nodes
+    # in a snowflake model represents a directed acyclic graph (DAG),
+    # but "dag" does not sound as nice or familiar as "snowflake" or "snow".
+    #
+    id = models.AutoField(primary_key=True)
+
+    name = SpaceCharField(max_length=255,
+        unique=True, blank=False, null=False, default='',
+        help_text="Unique name for this snowflake including version label .",
+        editable=True)
+
+    create_datetime = models.DateTimeField(help_text='Creation DateTime',
+        null=True, auto_now=True, editable=False)
+
+    notes = SpaceTextField(max_length=2550,
+        unique=False, blank=False, null=False, default='',
+        help_text="Notes on this snowflake.",
+        editable=True)
+
+    def __str__(self):
+            return '{}'.format(self.name)
+
+class Relation(models.Model):
+    # This relation is one node in the map of its snowflake's relations,
+    # where a relation is a node or branching-off point and a parent is
+    # a line that connects two nodes.
+    # A relation corresponds roughly to an xml tag in an xml schema
+    id = models.AutoField(primary_key=True)
+
+    # The containing snowflake of this relation
+    snowflake = models.ForeignKey('Snowflake', null=False, blank=False,
+        on_delete=models.CASCADE,)
+
+    name = SpaceCharField(max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text="Unique name for this relation for this snowflake."
+        , editable=True)
+
+    # NOTE: a validation should be added to allow only ONE node per snowflake
+    # value to have a Null parent if manual edits are ever allowed.
+    # There must be one node with a null parent, the root.
+    # Also a validation should ensure that there must be
+    # no cycles linking relations in a snowflake
+    parent = models.ForeignKey('self', null=True, blank=True,
+        on_delete=models.CASCADE,)
+
+    min_occurs = models.IntegerField(null=False, default=True
+      ,help_text="Minimum rows required with this parent.")
+
+    max_occurs = models.IntegerField(null=False, default=True
+      ,help_text="Maximum rows required with this parent.")
+
+    notes = SpaceTextField(max_length=2550,
+        unique=False, blank=False, null=False, default='',
+        help_text="Notes on this instance.",
+        editable=True)
+
+    '''
+    Note do NOT include fields 'order' or 'xml_tag' in this relation.
+    Such information belongs in a template object that renders snowflake
+    data to xml, say, or json, etc.
+    See relation or application template that manages output format templates
+    where templates reference snowflakes and describe output formatting for
+    a snowflake in an output style (xml, etc).
+
+    xml_tag = SpaceCharField(max_length=255,
+        unique=True, blank=False, null=False, default='',
+        help_text="XML Tag name for one of the items in this relation."
+        , editable=True)
+
+    order = models.IntegerField(default=1,
+     help_text="Relative order to output this xml tag within the parent tag.")
+    '''
+
+    def __str__(self):
+            return '{}:{}'.format(self.snowflake, self.name)
+
+    class Meta:
+        unique_together = ('snowflake', 'name')
+        ordering = ['snowflake', 'name', ]
+
+class Field(models.Model):
+    # fields for a snowflake relation.
+    # This is roughly parallel to an element in xml.
+    id = models.AutoField(primary_key=True)
+
+    # relation is roughly equivalent to the immediate parent element of this
+    # field/element
+    relation = models.ForeignKey('relation', null=False,
+        blank=False,
+        on_delete=models.CASCADE,)
+
+    name = SpaceCharField(max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text="Unique name for this field for this output relation."
+        , editable=True)
+
+    type = SpaceCharField(max_length=255,
+        unique=True, blank=False, null=False, default='string',
+        help_text="Not fully implemented now. type string is assumed."
+        , editable=True)
+
+    default = SpaceCharField(max_length=255,
+        unique=True, blank=False, null=False, default='',
+        help_text="Default value for this field."
+        , editable=True)
+
+    ''' Again, do NOT include these fields in 'field'.
+    Such fields belong
+    in a template definition to structure output style and options.
+
+    # This field will be considered as an XML tag, else as an attribute.
+    is_xml_tag = models.BooleanField(null=False, default=True
+      ,help_text="True means the xml_name is an xml_tag. "
+      "False for an attribute name.")
+
+    xml_name = SpaceCharField(max_length=255,
+        unique=True, blank=False, null=False, default='',
+        help_text="XML tag or attribute name for this field."
+        , editable=True)
+    '''
+    def __str__(self):
+            return '{}:{}.{}'.format(self.relation.snowflake,
+                self.relation, self.name)
+
+    class Meta:
+        unique_together = (('relation', 'name'))
+        ordering = ['relation', 'name', ]
+
+
+class Restrictions(models.Model):
+    # restrictions on field values for a snowflake relation.
+    # This is roughly parallel to an element in xml.
+    # This is a placeholder relation, to consider for further work.
+
+    id = models.AutoField(primary_key=True)
+
+    name = SpaceCharField(max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text="Unique name for this field for this output relation."
+        , editable=True)
+
+    field = models.ForeignKey('Field', null=False,
+        blank=False, on_delete=models.CASCADE,)
+
+    notes = SpaceTextField(max_length=2550,
+        unique=False, blank=False, null=False, default='',
+        help_text="Notes on this instance.",
+        editable=True)
+
+
+    #add fields here to restrict valid values
+
+    # to be implemented - if given, restrict input values to the
+    # set of values for the value set name in some new table
+    # named value perhaps, with fields set_name and value
+    values_set_name = SpaceCharField(max_length=255,
+        unique=True, blank=True, null=True, default='',
+        default=None,
+        help_text="Name of a values_set with the related field's allowed values.""
+
+    # todo: Might also add fields also like regular_expression, pattern,
+    # and other xsd 'facets' also  that XSD
+    # schemas use: https://www.w3schools.com/xml/schema_facets.asp
+
+    def __str__(self):
+        return '{} {}'.format(self.name)
