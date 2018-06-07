@@ -178,8 +178,11 @@ DB_ENGINE_BACKENDS_STANDARD=['sqlite3','postgresql','mysql','oracle']
 
 DATABASES = {}
 
-# Keep LCROyster project ENV settings separated for flexibility:
+# Keep submit  project ENV settings separated for flexibility:
+
 submit_env = maw_settings.SUBMIT_ENV
+# NB: We  also make submit_env value control snow_connection info
+
 if submit_env == 'test':
     DATABASES.update({'submit_connection' : {
         'ENGINE': 'django.db.backends.postgresql',
@@ -197,6 +200,7 @@ if submit_env == 'test':
         #    },
         },
     })
+    DATABASES['snow_connection'] = DATABASES['submit_connection']
 else:
     msg="ERROR:Setting SUBMIT_ENV '{}' not implemented.".format(submit_env)
     raise ValueError(msg)
