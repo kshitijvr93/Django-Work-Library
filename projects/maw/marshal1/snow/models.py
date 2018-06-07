@@ -106,13 +106,13 @@ class Relation(models.Model):
     # NOTE: it must be unique within the Genra
     name = SpaceCharField(max_length=255,
         unique=False, blank=False, null=False, default='',
-        help_text="Unique name for this relation for this genre."
+        help_text="Unique name for this relation under this genre."
         , editable=True)
 
-    child_name = SpaceCharField(max_length=255,
+    local_name = SpaceCharField(max_length=255,
         unique=True, blank=False, null=False, default='',
-        help_text="Name this relation or element relative to others or "
-          "its parent. "
+        help_text="Unique name for this relation among those with the same "
+          "parent. Eg, an xml element name for some uses."
         ,editable=True)
 
     # NOTE: a validation should be added to allow only ONE node per snowflake
@@ -121,15 +121,15 @@ class Relation(models.Model):
     # Also a validation should ensure that there must be
     # no cycles linking relations in a snowflake
 
-    min_occurs = models.IntegerField(null=False, default=True
-      ,help_text="Minimum rows required with this parent.")
+    min_occurs = PositiveIntegerField(null=False, default=True
+      ,help_text="Minimum occurrences required under this parent.")
 
-    max_occurs = models.IntegerField(null=False, default=True
-      ,help_text="Maximum rows required with this parent.")
+    max_occurs = PositiveIntegerField(null=False, default=True
+      ,help_text="Maximum occurrences required under this parent.")
 
     notes = SpaceTextField(max_length=2550,
         unique=False, blank=False, null=False, default='',
-        help_text="Notes on this instance.",
+        help_text="Notes on this relation.",
         editable=True)
 
     '''
@@ -141,7 +141,7 @@ class Relation(models.Model):
     a snowflake in an output style (xml, etc).
 
     xml_tag = SpaceCharField(max_length=255,
-        unique=True, blank=False, null=False, default='',
+        unique=True, blank=False, null=False, defagenre='',
         help_text="XML Tag name for one of the items in this relation."
         , editable=True)
 
@@ -153,8 +153,10 @@ class Relation(models.Model):
             return '{}:{}'.format(self.genre, self.name)
 
     class Meta:
+        unique_together = ('genre', 'parent', 'local_name')
         unique_together = ('genre', 'name')
         ordering = ['genre', 'name', ]
+
 
 class Field(models.Model):
     # fields for a snowflake relation.
@@ -169,12 +171,13 @@ class Field(models.Model):
 
     name = SpaceCharField(max_length=255,
         unique=False, blank=False, null=False, default='',
-        help_text="Unique name for this field for this output relation."
+        help_text="Unique name for this field under this relation."
         , editable=True)
 
-    type = SpaceCharField(max_length=255,
-        unique=True, blank=False, null=False, default='string',
-        help_text="Not fully implemented now. type string is assumed."
+    max_length =  PositiveIntegerField(
+        null=False, blank=False,
+        default=255,
+        help_text="Maximum number of characters in this field."
         , editable=True)
 
     default = SpaceCharField(max_length=255,

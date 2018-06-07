@@ -100,6 +100,7 @@ class RelationAdmin(SnowNestedModelAdmin, ExportCvsMixin):
     readonly_fields = ('create_datetime',)
     list_display = [
         'name',
+        'max_length',
         'notes',
     ]
     list_display = list(readonly_fields) + list_display
