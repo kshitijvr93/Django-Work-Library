@@ -27,9 +27,9 @@ class SnowNestedStackedInline(NestedStackedInline):
 
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
-          attrs={'size':'16'})},
+          attrs={'size':'20'})},
         models.TextField: { 'widget': Textarea(
-          attrs={'rows':1, 'cols':'32'})},
+          attrs={'rows':1, 'cols':'40'})},
     }
 
 
@@ -39,7 +39,7 @@ class FieldInline(
         models.CharField: { 'widget': TextInput(
           attrs={'size':'20'})},
         models.TextField: { 'widget': Textarea(
-          attrs={'rows':1, 'cols':'32'})},
+          attrs={'rows':1, 'cols':'40'})},
     }
     model = Field
     min_num = 1
@@ -63,9 +63,9 @@ class SnowNestedModelAdmin(NestedModelAdmin):
 
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
-          attrs={'size':'16'})},
+          attrs={'size':'20'})},
         models.TextField: { 'widget': Textarea(
-          attrs={'rows':1, 'cols':'32'})},
+          attrs={'rows':1, 'cols':'40'})},
     }
 
 
@@ -80,7 +80,7 @@ class GenreAdmin(SnowNestedModelAdmin, ExportCvsMixin):
         'name',
         'notes',
     ]
-    list_display = list(readonly_fields) + list_display
+    list_display = list_display + list(readonly_fields)
     search_fields = list_display
 
     fields = list_display
@@ -89,6 +89,7 @@ class GenreAdmin(SnowNestedModelAdmin, ExportCvsMixin):
     inlines = [RelationInline, ]
 
 # end class
+
 admin.site.register(Genre, GenreAdmin)
 
 class RelationAdmin(SnowNestedModelAdmin, ExportCvsMixin):

@@ -70,7 +70,7 @@ class Genre(models.Model):
     #
     id = models.AutoField(primary_key=True)
 
-    name = SpaceCharField(max_length=255,
+    name = SpaceCharField(verbose_name='Genre name', max_length=255,
         unique=True, blank=False, null=False, default='',
         help_text="Unique name for this snowflake genre."
           " Please include a version label suffix like 'V1.0'.",
@@ -80,8 +80,9 @@ class Genre(models.Model):
         null=True, auto_now=True, editable=False)
 
     notes = SpaceTextField(max_length=2550,
-        unique=False, blank=False, null=False, default='',
-        help_text="Notes on this snowflake genre. What is it used for?",
+        unique=False, blank=True, null=True, default='',
+        help_text="(1) Used for? (2) based on? "
+          "Newlines are discarded, so use (1), (2), etc, labels for notes.",
         editable=True)
 
     def __str__(self):
@@ -104,13 +105,13 @@ class Relation(models.Model):
 
     # Note, internally a unique suffix for the relation name
     # NOTE: it must be unique within the Genra
-    name = SpaceCharField(max_length=255,
+    name = SpaceCharField(verbose_name='Relation name', max_length=255,
         unique=False, blank=False, null=False, default='',
         help_text="Unique name for this relation under this genre."
         , editable=True)
 
     local_name = SpaceCharField(max_length=255,
-        unique=True, blank=False, null=False, default='',
+        unique=False, blank=False, null=False, default='',
         help_text="Unique name for this relation among those with the same "
           "parent. Eg, an xml element name for some uses."
         ,editable=True)
@@ -121,14 +122,15 @@ class Relation(models.Model):
     # Also a validation should ensure that there must be
     # no cycles linking relations in a snowflake
 
-    min_occurs = PositiveIntegerField(null=False, default=True
+    min_occurs = PositiveIntegerField(null=False, default=1
       ,help_text="Minimum occurrences required under this parent.")
 
-    max_occurs = PositiveIntegerField(null=False, default=True
-      ,help_text="Maximum occurrences required under this parent.")
+    max_occurs = models.IntegerField(null=False, default=0,
+      help_text="Maximum occurrences required under this parent. "
+          "0 or null means no limit.")
 
     notes = SpaceTextField(max_length=2550,
-        unique=False, blank=False, null=False, default='',
+        unique=False, blank=True, null=True, default='',
         help_text="Notes on this relation.",
         editable=True)
 
@@ -153,9 +155,9 @@ class Relation(models.Model):
             return '{}:{}'.format(self.genre, self.name)
 
     class Meta:
-        unique_together = ('genre', 'parent', 'local_name')
+        unique_together = ( 'parent', 'local_name')
         unique_together = ('genre', 'name')
-        ordering = ['genre', 'name', ]
+        ordering = ['genre', 'id', ]
 
 
 class Field(models.Model):
@@ -169,19 +171,19 @@ class Field(models.Model):
         blank=False,
         on_delete=models.CASCADE,)
 
-    name = SpaceCharField(max_length=255,
+    name = SpaceCharField(verbose_name='Field name',max_length=255,
         unique=False, blank=False, null=False, default='',
         help_text="Unique name for this field under this relation."
         , editable=True)
 
     max_length =  PositiveIntegerField(
-        null=False, blank=False,
+        null=True, blank=True,
         default=255,
         help_text="Maximum number of characters in this field."
         , editable=True)
 
     default = SpaceCharField(max_length=255,
-        unique=True, blank=False, null=False, default='',
+        unique=True, blank=True, null=True, default='',
         help_text="Default value for this field."
         , editable=True)
 
@@ -226,7 +228,7 @@ class Restriction(models.Model):
         blank=False, on_delete=models.CASCADE,)
 
     notes = SpaceTextField(max_length=2550,
-        unique=False, blank=False, null=False, default='',
+        unique=False, blank=True, null=True, default='',
         help_text="Notes on this instance.",
         editable=True)
 
