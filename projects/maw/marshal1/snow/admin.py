@@ -31,11 +31,13 @@ class SnowNestedStackedInline(NestedStackedInline):
         models.TextField: { 'widget': Textarea(
           attrs={'rows':1, 'cols':'40'})},
     }
+    classes = ['collapse']
 
 
 class FieldInline(
-    MinValidatedInlineMixIn, NestedStackedInline):
-    formfield_overrides = {
+    MinValidatedInlineMixIn, SnowNestedStackedInline):
+    classes = ['collapse']
+    xformfield_overrides = {
         models.CharField: { 'widget': TextInput(
           attrs={'size':'20'})},
         models.TextField: { 'widget': Textarea(
@@ -50,6 +52,7 @@ class FieldInline(
 class RelationInline(
     MinValidatedInlineMixIn, SnowNestedStackedInline):
     model = Relation
+    classes = ['collapse']
     min_num = 1
     extra = 0 # Extra 'empty' rows to show to accommodate immediate adding.
     inlines = [FieldInline]
@@ -85,6 +88,8 @@ class GenreAdmin(SnowNestedModelAdmin, ExportCvsMixin):
 
     fields = list_display
 
+    # Next line may not be apt.
+    classes = ['collapse']
     #INLINES
     inlines = [RelationInline, ]
 
