@@ -12,7 +12,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 #import maw_utils
 
 '''
-NOTE: rather than have a separate file router.py to host HathiRouter, I just
+NOTE: rather than have a separate file router.py to host SnowRouter, I just
 put it here. Also see settings.py should include this python import dot-path
 as one of the listed strings in the list setting for DATABASE_ROUTERS.
 
@@ -21,7 +21,7 @@ as one of the listed strings in the list setting for DATABASE_ROUTERS.
 #
 class SnowRouter:
     '''
-    A router to control all db ops on models in the hathitrust Application.
+    A router to control all db ops on models in the snow Application.
     '''
 
     # app_label is really an app name. Here it is hathitrust.
@@ -60,19 +60,20 @@ class SnowRouter:
 
 # } end class SnowRouter
 
-class Snowflake(models.Model):
-    # Each row represents a snowflake,
-    # where a snowflake in concept is similar to a complete xml schema
-    # definition (XSD).
+class Genre(models.Model):
+    # Each row represents a snowflake relational hierarchy.
+    # where a snowflake relational concept is similar to a complete xml
+    # schema definition (XSD).
     # More formally the connections among the relations/nodes
-    # in a snowflake model represents a directed acyclic graph (DAG),
-    # but "dag" does not sound as nice or familiar as "snowflake" or "snow".
+    # in a snowflake genre embodies a directed acyclic graph (DAG),
+    # but "dag" does not sound as generic or familiar as "genre".
     #
     id = models.AutoField(primary_key=True)
 
     name = SpaceCharField(max_length=255,
         unique=True, blank=False, null=False, default='',
-        help_text="Unique name for this snowflake including version label .",
+        help_text="Unique name for this snowflake genre."
+          " Please include a version label suffix like 'V1.0'.",
         editable=True)
 
     create_datetime = models.DateTimeField(help_text='Creation DateTime',
@@ -80,35 +81,45 @@ class Snowflake(models.Model):
 
     notes = SpaceTextField(max_length=2550,
         unique=False, blank=False, null=False, default='',
-        help_text="Notes on this snowflake.",
+        help_text="Notes on this snowflake genre. What is it used for?",
         editable=True)
 
     def __str__(self):
             return '{}'.format(self.name)
 
 class Relation(models.Model):
-    # This relation is one node in the map of its snowflake's relations,
+    # This relation is one node in the DAG of its snowflake's relations,
     # where a relation is a node or branching-off point and a parent is
     # a line that connects two nodes.
-    # A relation corresponds roughly to an xml tag in an xml schema
+    # A relation corresponds roughly to an xml element in an xml schema.
     id = models.AutoField(primary_key=True)
 
-    # The containing snowflake of this relation
-    snowflake = models.ForeignKey('Snowflake', null=False, blank=False,
+    # The containing snowflake genre of this relation
+    genre = models.ForeignKey('genre', null=False, blank=False,
         on_delete=models.CASCADE,)
 
+    # Only one relation in a genra may have a null parent
+    parent = models.ForeignKey('self', null=True, blank=True,
+        on_delete=models.CASCADE,)
+
+    # Note, internally a unique suffix for the relation name
+    # NOTE: it must be unique within the Genra
     name = SpaceCharField(max_length=255,
         unique=False, blank=False, null=False, default='',
-        help_text="Unique name for this relation for this snowflake."
+        help_text="Unique name for this relation for this genre."
         , editable=True)
+
+    child_name = SpaceCharField(max_length=255,
+        unique=True, blank=False, null=False, default='',
+        help_text="Name this relation or element relative to others or "
+          "its parent. "
+        ,editable=True)
 
     # NOTE: a validation should be added to allow only ONE node per snowflake
     # value to have a Null parent if manual edits are ever allowed.
     # There must be one node with a null parent, the root.
     # Also a validation should ensure that there must be
     # no cycles linking relations in a snowflake
-    parent = models.ForeignKey('self', null=True, blank=True,
-        on_delete=models.CASCADE,)
 
     min_occurs = models.IntegerField(null=False, default=True
       ,help_text="Minimum rows required with this parent.")
@@ -122,7 +133,7 @@ class Relation(models.Model):
         editable=True)
 
     '''
-    Note do NOT include fields 'order' or 'xml_tag' in this relation.
+    Note: do NOT include fields 'order' or 'xml_tag' in this relation.
     Such information belongs in a template object that renders snowflake
     data to xml, say, or json, etc.
     See relation or application template that manages output format templates
@@ -142,8 +153,8 @@ class Relation(models.Model):
             return '{}:{}'.format(self.snowflake, self.name)
 
     class Meta:
-        unique_together = ('snowflake', 'name')
-        ordering = ['snowflake', 'name', ]
+        unique_together = ('genre', 'name')
+        ordering = ['genre', 'name', ]
 
 class Field(models.Model):
     # fields for a snowflake relation.
@@ -171,9 +182,11 @@ class Field(models.Model):
         help_text="Default value for this field."
         , editable=True)
 
-    ''' Again, do NOT include these fields in 'field'.
-    Such fields belong
-    in a template definition to structure output style and options.
+    ''' Do NOT include the following fields in relation 'field'.
+    Such fields belong in a template definition to structure output style
+    and options.
+
+    order = IntegerField .... field order to output to csv file, etc.
 
     # This field will be considered as an XML tag, else as an attribute.
     is_xml_tag = models.BooleanField(null=False, default=True
@@ -185,6 +198,7 @@ class Field(models.Model):
         help_text="XML tag or attribute name for this field."
         , editable=True)
     '''
+
     def __str__(self):
             return '{}:{}.{}'.format(self.relation.snowflake,
                 self.relation, self.name)
@@ -193,8 +207,7 @@ class Field(models.Model):
         unique_together = (('relation', 'name'))
         ordering = ['relation', 'name', ]
 
-
-class Restrictions(models.Model):
+class Restriction(models.Model):
     # restrictions on field values for a snowflake relation.
     # This is roughly parallel to an element in xml.
     # This is a placeholder relation, to consider for further work.
@@ -206,7 +219,7 @@ class Restrictions(models.Model):
         help_text="Unique name for this field for this output relation."
         , editable=True)
 
-    field = models.ForeignKey('Field', null=False,
+    field = models.ForeignKey('field', null=False,
         blank=False, on_delete=models.CASCADE,)
 
     notes = SpaceTextField(max_length=2550,
@@ -214,16 +227,18 @@ class Restrictions(models.Model):
         help_text="Notes on this instance.",
         editable=True)
 
-
     #add fields here to restrict valid values
 
-    # to be implemented - if given, restrict input values to the
-    # set of values for the value set name in some new table
+    # To be implemented or experimented- if given, restrict input
+    # values to the set of values for the value set name in some new table
     # named value perhaps, with fields set_name and value
+    # Also may be used to compose drop down lists for
+    # manual editing processes
     values_set_name = SpaceCharField(max_length=255,
-        unique=True, blank=True, null=True, default='',
+        unique=True, blank=True, null=True,
         default=None,
-        help_text="Name of a values_set with the related field's allowed values.""
+        help_text="Name of a values_set with the related field's allowed "
+          "values.")
 
     # todo: Might also add fields also like regular_expression, pattern,
     # and other xsd 'facets' also  that XSD

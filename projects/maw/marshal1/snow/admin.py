@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib import admin
 from .models import (
-  Field, Relation, Restriction, Snowflake,
+  Field, Genre,
+  Relation, Restriction,
   )
 
 from django.forms import TextInput, Textarea

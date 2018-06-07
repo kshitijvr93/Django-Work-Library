@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     'cuba_libro.apps.CubaLibroConfig',
     'hathitrust.apps.HathitrustConfig',
     'lcroyster.apps.LcroysterConfig',
+    'snow.apps.SnowConfig',
     'submit.apps.SubmitConfig',
 ]
 
@@ -357,6 +358,7 @@ DATABASE_ROUTERS = [
     'cuba_libro.models.Cuba_LibroRouter',
     'hathitrust.models.HathiRouter',
     'lcroyster.models.LcroysterRouter',
+    'snow.models.SnowRouter',
     'submit.models.SubmitRouter',
 ]
 
