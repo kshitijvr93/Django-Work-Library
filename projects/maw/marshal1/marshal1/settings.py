@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_json_widget',
+    'nested_inline',
     'social_django',
     'ckeditor',
     'ckeditor_uploader',

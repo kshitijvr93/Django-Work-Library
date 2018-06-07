@@ -150,7 +150,7 @@ class Relation(models.Model):
     '''
 
     def __str__(self):
-            return '{}:{}'.format(self.snowflake, self.name)
+            return '{}:{}'.format(self.genre, self.name)
 
     class Meta:
         unique_together = ('genre', 'name')
@@ -200,7 +200,7 @@ class Field(models.Model):
     '''
 
     def __str__(self):
-            return '{}:{}.{}'.format(self.relation.snowflake,
+            return '{}:{}.{}'.format(self.relation.genre,
                 self.relation, self.name)
 
     class Meta:
