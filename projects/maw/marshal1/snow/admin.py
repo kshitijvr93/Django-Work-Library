@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.contrib import admin
 from .models import (
-  Field, Genre,
-  Relation, Restriction,
+  Field, Genre, Lookup,
+  Regex, Relation, Vocabulary, Word,
   )
 
 from django.forms import TextInput, Textarea
@@ -97,6 +97,14 @@ class GenreAdmin(SnowNestedModelAdmin, ExportCvsMixin):
 
 admin.site.register(Genre, GenreAdmin)
 
+class WordAdmin(admin.ModelAdmin):
+    list_display = ['word','vocabulary']
+    list_filter = ['vocabulary']
+    search_fields = ['word','vocabulary']
+    ordering = ['word']
+
+admin.site.register(Word, WordAdmin)
+
 class RelationAdmin(SnowNestedModelAdmin, ExportCvsMixin):
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.
@@ -118,3 +126,8 @@ class RelationAdmin(SnowNestedModelAdmin, ExportCvsMixin):
     inlines = [RelationInline, ]
 
 # end class
+
+
+admin.site.register(Lookup, admin.ModelAdmin )
+admin.site.register(Regex, admin.ModelAdmin)
+admin.site.register(Vocabulary, admin.ModelAdmin)

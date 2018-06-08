@@ -175,21 +175,7 @@ class Field(models.Model):
         unique=False, blank=False, null=False, default='',
         help_text="Unique name for this field under this relation.",
         editable=True)
-    # Todo - implement 'type' : int, fkey (lookup), label (max length 255), med text,
-    # long text options , that imply other settings are needed. Eg if fkey,
-    # then another fkey table with a pointer back to this field will be/must be
-    # present in the sno genre-level tables (those associated with sno genres
-    # as opposed to sno-imports or sno-exports/templates.)
-    # So, we can use lookup for authority fields..
-    # May need many-many table to link genre fields with authority source field
-    # lists, so if a 'lookup' value is this type, then a m-m lookup row may have
-    # to be provided...
 
-    type =  SpaceTextField(
-        null=True, blank=True,
-        default=2550,
-        help_text="Maximum number of characters in this field.",
-        editable=True)
     max_length =  PositiveIntegerField(
         null=True, blank=True,
         default=255,
@@ -198,12 +184,30 @@ class Field(models.Model):
 
     is_required = models.BooleanField( editable=True, default=False,
         help_text="Whether this field is required for a genre instance.")
+    # do not add any more fields to 'Field'. If they involve validation
+    # or data type, add to new tables like 'restriction' or lookup, etc
+    # that have a fkey back to a field and other info it needs
+    # might be diff restrictions tables like restriction_int, restriction_rx,
+    # restriction_lookup, etc
+    # Both fields max_length and is_required also are true restrictions,
+    # but they are so common that we cheat and add them here
+    # Note: later also may implement table-level restrictions like
+    # trestrict_composite_unique_key,trestrict_exist, etc
 
-    ''' Note: do not put default value here, but DID put simple is_required flag.
-    Otherwise, validations and default values can be put on a new 'restriction'
-    or 'validation' table where each row can have an fkey to this field.
+    # We can also add lookups for fkey restrictions, etc.
+    # So, we can use lookup for authority fields..
+    # May need many-many table to link genre fields with authority source field
+    # lists, so if a 'lookup' value is this type, then a m-m lookup row may have
+    # to be provided...
+
+    ''' Note: Not too elegant to put default value field here,
+    but DID put simple fields max_length is_required flag.
+    Otherwise, restrictions, validations and default values can be put
+    on a future 'restriction' or 'validation' table where each row can
+    have an fkey to this field.
     Note: also a new relation_restriction table could be added to register
     inter-table constraints.
+
     Do NOT include the following fields in relation 'field'.
     Such fields belong in a template definition to structure output style
     and options.
@@ -229,8 +233,8 @@ class Field(models.Model):
         unique_together = (('relation', 'name'))
         ordering = ['relation', 'name', ]
 
-class Restriction(models.Model):
-    # restrictions on field values for a snowflake relation.
+class Regex(models.Model):
+    # Regular expresion restrictions on field values for a snowflake relation.
     # This is roughly parallel to an element in xml.
     # This is a placeholder relation, to consider for further work.
 
@@ -244,27 +248,85 @@ class Restriction(models.Model):
     field = models.ForeignKey('field', null=False,
         blank=False, on_delete=models.CASCADE,)
 
+    regex = SpaceCharField(max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text="Unique name for this field for this output relation."
+        , editable=True)
+
+    notice = SpaceTextField(max_length=2550,
+        unique=False, blank=True, null=True, default='',
+        help_text="Notice to explain a violation for this regex.",
+        editable=True)
+
     notes = SpaceTextField(max_length=2550,
         unique=False, blank=True, null=True, default='',
         help_text="Notes on this instance.",
         editable=True)
 
     #add fields here to restrict valid values
-
-    # To be implemented or experimented- if given, restrict input
-    # values to the set of values for the value set name in some new table
-    # named value perhaps, with fields set_name and value
-    # Also may be used to compose drop down lists for
-    # manual editing processes
-    values_set_name = SpaceCharField(max_length=255,
-        unique=True, blank=True, null=True,
-        default=None,
-        help_text="Name of a values_set with the related field's allowed "
-          "values.")
-
     # todo: Might also add fields also like regular_expression, pattern,
     # and other xsd 'facets' also  that XSD
     # schemas use: https://www.w3schools.com/xml/schema_facets.asp
 
     def __str__(self):
-        return '{} {}'.format(self.name)
+        return '{}'.format(self.name)
+
+    class Meta:
+        verbose_name_plural = 'Regexes'
+
+
+    pass
+
+class Vocabulary(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    name = SpaceCharField(max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text="Unique name for this vocabulary with version suffix.")
+
+    def __str__(self):
+            return '{}'.format(self.name)
+
+    class Meta:
+        verbose_name_plural = 'Vocabularies'
+
+
+class Word(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    vocabulary = models.ForeignKey('vocabulary', null=False,
+        blank=False, on_delete=models.CASCADE,)
+
+    word = SpaceCharField(max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text="A word in this vocabulary.")
+
+    def __str__(self):
+        return '{}'.format(self.word)
+
+    class Meta:
+        unique_together = (('vocabulary', 'word'),)
+        ordering = [ 'word', ]
+
+
+class Lookup(models.Model):
+    # restrictions on field values for a snowflake relation.
+    # This is roughly parallel to an element in xml.
+    # This is a placeholder relation, to consider for further work.
+    # This has a unique restriction of field, so one can have at
+    # most one lookup. If needed, we can relax that later and
+    # allow a field to have more than one lookup, which would mean
+    # a different implementation in the editing setup.
+
+    id = models.AutoField(primary_key=True)
+
+    name = SpaceCharField(max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text="Unique name for this lookup."
+        , editable=True)
+
+    field = models.ForeignKey('field', null=False,
+        blank=False, on_delete=models.CASCADE,)
+
+    vocabulary = models.ForeignKey('vocabulary', null=False,
+        blank=False, on_delete=models.CASCADE,)
