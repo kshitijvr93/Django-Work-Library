@@ -175,6 +175,15 @@ class Field(models.Model):
         unique=False, blank=False, null=False, default='',
         help_text="Unique name for this field under this relation.",
         editable=True)
+    # Todo - implement 'type' : int, fkey (lookup), label (max length 255), med text,
+    # long text options , that imply other settings are needed. Eg if fkey,
+    # then another fkey table with a pointer back to this field will be/must be
+    # present in the sno genre-level tables (those associated with sno genres
+    # as opposed to sno-imports or sno-exports/templates.)
+    # So, we can use lookup for authority fields..
+    # May need many-many table to link genre fields with authority source field
+    # lists, so if a 'lookup' value is this type, then a m-m lookup row may have
+    # to be provided...
 
     max_length =  PositiveIntegerField(
         null=True, blank=True,
