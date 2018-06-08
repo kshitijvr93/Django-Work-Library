@@ -1,13 +1,16 @@
 
-  <h2> base/marshal1 login.html --- Please Login</h2>
+<h1>UF Marshaling Application Webiste</h1>
+<h2>Please Login With Your Choice of Account:</h2>
+<ul>
+  <a href="{% url 'social:begin' 'google-oauth2' %}"><h3>Google</h3></a><br>
+  <a href="{% url 'social:begin' 'facebook' %}"><h3>Facebook</h3></a><br>
+  <a href="{% url 'social:begin' 'twitter' %}"><h3>Twitter</h3></a><br>
+  <a href="{% url 'social:begin' 'github' %}"><h3>GitHub</h3></a><br>
+</ul>
+
+<h3>Optional Local UF Network Login</h3>
   <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Login</button>
   </form>
-  <br>
-  <p><strong>-- OR --</strong></p>
-  <a href="{% url 'social:begin' 'github' %}">Login with GitHub</a><br>
-  <a href="{% url 'social:begin' 'twitter' %}">Login with Twitter</a><br>
-  <a href="{% url 'social:begin' 'facebook' %}">Login with Facebook</a><br>
-  <a href="{% url 'social:begin' 'google-oauth2' %}">Login with Google OAuth2</a><br>

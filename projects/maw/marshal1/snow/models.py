@@ -185,6 +185,11 @@ class Field(models.Model):
     # lists, so if a 'lookup' value is this type, then a m-m lookup row may have
     # to be provided...
 
+    type =  SpaceTextField(
+        null=True, blank=True,
+        default=2550,
+        help_text="Maximum number of characters in this field.",
+        editable=True)
     max_length =  PositiveIntegerField(
         null=True, blank=True,
         default=255,
