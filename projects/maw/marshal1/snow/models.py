@@ -173,21 +173,24 @@ class Field(models.Model):
 
     name = SpaceCharField(verbose_name='Field name',max_length=255,
         unique=False, blank=False, null=False, default='',
-        help_text="Unique name for this field under this relation."
-        , editable=True)
+        help_text="Unique name for this field under this relation.",
+        editable=True)
 
     max_length =  PositiveIntegerField(
         null=True, blank=True,
         default=255,
-        help_text="Maximum number of characters in this field."
-        , editable=True)
+        help_text="Maximum number of characters in this field.",
+        editable=True)
 
-    default = SpaceCharField(max_length=255,
-        unique=True, blank=True, null=True, default='',
-        help_text="Default value for this field."
-        , editable=True)
+    is_required = models.NullBooleanField(
+        blank=True, null=True, default=False,
+        help_text="Whether this field is required in a genre instance.",
+        editable=True)
 
-    ''' Do NOT include the following fields in relation 'field'.
+    ''' Note: do not put default value here, but DO put simple is_required flag.
+    Otherwise validations and default values can be put on a new 'restriction'
+    or 'validation' table where each row can have an fkey to this field.
+    Do NOT include the following fields in relation 'field'.
     Such fields belong in a template definition to structure output style
     and options.
 
