@@ -1,5 +1,5 @@
 
-<h1>UF Marshaling Application Webiste</h1>
+<h1>UF Smathers Libraries - Marshaling Application Webiste</h1>
 <h2>Please Login With Your Choice of Account:</h2>
 <ul>
   <a href="{% url 'social:begin' 'google-oauth2' %}"><h3>Google</h3></a><br>
@@ -8,7 +8,7 @@
   <a href="{% url 'social:begin' 'github' %}"><h3>GitHub</h3></a><br>
 </ul>
 
-<h3>Optional Local UF Network Login</h3>
+<h3>Optional UF Local Network Login (testing only)</h3>
   <form method="post">
     {% csrf_token %}
     {{ form.as_p }}

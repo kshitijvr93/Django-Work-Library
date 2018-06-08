@@ -65,10 +65,14 @@ class SpaceTextField is a TextField that is modified to:
 
 '''
 class SpaceTextField(models.TextField):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def translate(self,value):
+        # Next line protects against issues in Django 2.0
+        # migrations code when changing integer field to string/text
+        value = str(value)
         v=(value.replace('\r','').replace('\n',' ').replace('\t',' ') )
         return v
 
