@@ -182,14 +182,14 @@ class Field(models.Model):
         help_text="Maximum number of characters in this field.",
         editable=True)
 
-    is_required = models.NullBooleanField(
-        blank=True, null=True, default=False,
-        help_text="Whether this field is required in a genre instance.",
-        editable=True)
+    is_required = models.BooleanField( editable=True, default=False,
+        help_text="Whether this field is required for a genre instance.")
 
-    ''' Note: do not put default value here, but DO put simple is_required flag.
-    Otherwise validations and default values can be put on a new 'restriction'
+    ''' Note: do not put default value here, but DID put simple is_required flag.
+    Otherwise, validations and default values can be put on a new 'restriction'
     or 'validation' table where each row can have an fkey to this field.
+    Note: also a new relation_restriction table could be added to register
+    inter-table constraints.
     Do NOT include the following fields in relation 'field'.
     Such fields belong in a template definition to structure output style
     and options.
