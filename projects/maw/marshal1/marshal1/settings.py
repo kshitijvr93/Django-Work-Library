@@ -187,7 +187,6 @@ submit_env = maw_settings.SUBMIT_ENV
 print("USING: maw_settings.SUBMIT_ENV={}"
     .format(maw_settings.SUBMIT_ENV))
 sys.stdout.flush()
-# NB: We  also make submit_env value control snow_connection info
 
 if submit_env == 'test':
     DATABASES.update({'submit_connection' : {
@@ -206,30 +205,26 @@ if submit_env == 'test':
         #    },
         },
     })
-    DATABASES['snow_connection'] = DATABASES['submit_connection']
 elif submit_env == 'local_mysql':
     # Use this for local tests on mysql database
     DATABASES.update({'submit_connection' : {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'submit_test',
+        'NAME': 'submit',
         'USER': maw_settings.SUBMIT_USER,
         'PASSWORD': maw_settings.SUBMIT_TEST_PASSWORD,
-        #'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
-        #'PORT': '3354',
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'TIME_ZONE': None,
-        #'OPTIONS' : {
-        #    # Heed a warning during manage.py migrate runs
-        #    'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
-        #    },
         },
     })
-    DATABASES['snow_connection'] = DATABASES['submit_connection']
-
 else:
     msg="ERROR:Setting SUBMIT_ENV '{}' not implemented.".format(submit_env)
     raise ValueError(msg)
+
+# For app "snow"  - stick with submit database too. Will need some joins
+# among submit and snow tables
+DATABASES['snow_connection'] = DATABASES['submit_connection']
+
 
 lcroyster_env = maw_settings.LCROYSTER_ENV
 if lcroyster_env == 'production':
@@ -324,8 +319,6 @@ if maw_settings.ENV == 'test':
         },
         'cuba_libro_connection': {
             'ENGINE': 'django.db.backends.mysql',
-            # The maw1_db database will host hathitrust and probably
-            # some other maw apps
             'NAME': 'maw1_db_test',
             'USER': maw_settings.MYSQL_ARCHCOLL_TEST_USER,
             'PASSWORD': maw_settings.MYSQL_ARCHCOLL_TEST_PASSWORD,
@@ -335,10 +328,10 @@ if maw_settings.ENV == 'test':
     }) # maw_settings.ENV = 'test'
 elif maw_settings.ENV == 'local':
     DATABASES.update({
-        # This db will hold users and groups info
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            # The maw1_default_db database will host misc django default data
+            # The maw1_default_db database will host misc django default
+            # data
             'NAME': 'maw1_default_db',
             'USER': maw_settings.MYSQL_LOCAL_USER,
             'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
@@ -381,8 +374,7 @@ else:
     "Not found in ['local','test','production']".format(maw_settings.ENV) )
     raise ValueError(msg)
 
-# END ENVIRONMENT DATABSE SETTINGS
-
+# END ENVIRONMENT DATABASE SETTINGS
 
 DATABASE_ROUTERS = [
     'cuba_libro.models.Cuba_LibroRouter',
@@ -391,7 +383,6 @@ DATABASE_ROUTERS = [
     'snow.models.SnowRouter',
     'submit.models.SubmitRouter',
 ]
-
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
