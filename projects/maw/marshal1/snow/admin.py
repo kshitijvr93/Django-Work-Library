@@ -31,7 +31,7 @@ class SnowNestedStackedInline(NestedStackedInline):
         models.TextField: { 'widget': Textarea(
           attrs={'rows':1, 'cols':'40'})},
     }
-    classes = ['collapse']
+    classes = ['collapse','collapsed']
 
 
 class FieldInline(

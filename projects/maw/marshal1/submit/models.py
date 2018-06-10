@@ -280,11 +280,11 @@ for 2 levels.
 '''
 
 def upload_location(instance, filename):
-    sub_dt = instance.submittal_datetime
-    date_string = instance.submittal_datetime.strftime('%Y/%m/%d/')
+    sub_dt = instance.submittal.submittal_datetime
+    date_string = instance.upload_datetime.strftime('%Y/%m/%d/')
     sid = instance.submittal.id
     zid = str(instance.id).zfill(10)
-    return ('submit/{}/{}/{}'.format(date_string,sid,z))
+    return ('submit/{}/{}/{}'.format(date_string,sid,zid))
 
 '''
 Upload instances are uploaded files with (1) a parent submittal,
