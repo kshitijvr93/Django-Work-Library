@@ -11,7 +11,7 @@ using Django 1.11.5.
 import os, sys, os.path
 MY_SECRETS_FOLDER = os.environ['MY_SECRETS_FOLDER']
 sys.path.append(os.path.abspath(MY_SECRETS_FOLDER))
-# print ("Using MY_SECRETS_FOLDER='{}'".format(MY_SECRETS_FOLDER))
+print ("Using MY_SECRETS_FOLDER='{}'".format(MY_SECRETS_FOLDER))
 
 # IMPORT SETTINGS FOR MARSHALING APPLICATION WEBSITE (MAW) settings
 #from maw_settings import *
@@ -77,6 +77,8 @@ INSTALLED_APPS = [
 STATIC_URL = '/static/'
 
 MEDIA_ROOT = maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT
+print("USING: maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT={}"
+    .format(maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT))
 
 # RVP EXPERIMENT MEDIA_URL
 MEDIA_URL =  '/media/'
@@ -182,6 +184,9 @@ DATABASES = {}
 # Keep submit  project ENV settings separated for flexibility:
 
 submit_env = maw_settings.SUBMIT_ENV
+print("USING: maw_settings.SUBMIT_ENV={}"
+    .format(maw_settings.SUBMIT_ENV))
+sys.stdout.flush()
 # NB: We  also make submit_env value control snow_connection info
 
 if submit_env == 'test':
@@ -202,6 +207,26 @@ if submit_env == 'test':
         },
     })
     DATABASES['snow_connection'] = DATABASES['submit_connection']
+elif submit_env == 'local_mysql':
+    # Use this for local tests on mysql database
+    DATABASES.update({'submit_connection' : {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'submit_test',
+        'USER': maw_settings.SUBMIT_USER,
+        'PASSWORD': maw_settings.SUBMIT_TEST_PASSWORD,
+        #'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
+        #'PORT': '3354',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+        'TIME_ZONE': None,
+        #'OPTIONS' : {
+        #    # Heed a warning during manage.py migrate runs
+        #    'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
+        #    },
+        },
+    })
+    DATABASES['snow_connection'] = DATABASES['submit_connection']
+
 else:
     msg="ERROR:Setting SUBMIT_ENV '{}' not implemented.".format(submit_env)
     raise ValueError(msg)

@@ -36,7 +36,7 @@ class SnowNestedStackedInline(NestedStackedInline):
 
 class FieldInline(
     MinValidatedInlineMixIn, SnowNestedStackedInline):
-    classes = ['collapse']
+    classes = ['collapse','collapsed']
     xformfield_overrides = {
         models.CharField: { 'widget': TextInput(
           attrs={'size':'20'})},
@@ -52,7 +52,7 @@ class FieldInline(
 class RelationInline(
     MinValidatedInlineMixIn, SnowNestedStackedInline):
     model = Relation
-    classes = ['collapse']
+    classes = ['collapse','collapsed']
     min_num = 1
     extra = 0 # Extra 'empty' rows to show to accommodate immediate adding.
     inlines = [FieldInline]
