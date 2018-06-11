@@ -84,7 +84,7 @@ class SnowModelAdmin(admin.ModelAdmin):
 
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
-          attrs={'size':'20'})},
+          attrs={'size':'40'})},
         models.TextField: { 'widget': Textarea(
           attrs={'rows':1, 'cols':'40'})},
     }
