@@ -102,7 +102,8 @@ class Relation(models.Model):
 
     # Only one relation in a schema a null parent
     parent = models.ForeignKey('self', null=True, blank=True,
-        on_delete=models.CASCADE,)
+      verbose_name = "Parent relation",
+      on_delete=models.CASCADE,)
 
     # Note, internally a unique suffix for the relation name
     # NOTE: it must be unique within the Genra
@@ -111,11 +112,17 @@ class Relation(models.Model):
         help_text="Unique name for this relation under this schema."
         , editable=True)
 
+    '''
+    Deprecate local_name 20180611 - because this is not a schema
+    feature, but this is a template feature,
+    to produce an output name from this field
+
     local_name = SpaceCharField(max_length=255,
         unique=False, blank=False, null=False, default='',
         help_text="Unique name for this relation among those with the same "
           "parent. Eg, an xml element name for some uses."
         ,editable=True)
+    '''
 
     # NOTE: a validation should be added to allow only ONE node per snowflake
     # value to have a Null parent if manual edits are ever allowed.
@@ -123,7 +130,7 @@ class Relation(models.Model):
     # Also a validation should ensure that there must be
     # no cycles linking relations in a snowflake
 
-    min_occurs = PositiveIntegerField(null=False, default=1
+    min_occurs = PositiveIntegerField(null=False, default=0
       ,help_text="Minimum occurrences required under this parent.")
 
     max_occurs = models.IntegerField(null=False, default=0,

@@ -49,17 +49,37 @@ class FieldInline(
         return((''))
 
 class RelationInline(
-    MinValidatedInlineMixIn, SnowNestedStackedInline):
+    #MinValidatedInlineMixIn, SnowNestedStackedInline):
+    MinValidatedInlineMixIn, admin.TabularInline):
+
     model = Relation
     classes = ['collapse']
     min_num = 0
     extra = 0 # Extra 'empty' rows to show to accommodate immediate adding.
-    #inlines = [FieldInline]
+
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'20'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'40'})},
+    }
 
     def get_filters(self, obj):
         return((''))
+    # disble green plus on this admin form
+    def has_add_permission(self, obj):
+        return False
 
 class SnowNestedModelAdmin(NestedModelAdmin):
+    using = 'snow_connection'
+
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'20'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'40'})},
+    }
+class SnowModelAdmin(admin.ModelAdmin):
     using = 'snow_connection'
 
     formfield_overrides = {
@@ -86,7 +106,10 @@ class SchemaAdmin(SnowNestedModelAdmin, ExportCvsMixin):
     fields = list_display
 
     #INLINES
-    inlines = [RelationInline, ]
+    # Just do NOT do RelationInline -- no easy way to disable the
+    # green 'plus' near the parent field, and allowing it
+    # there is too confusing for the user
+    #inlines = [RelationInline, ]
 
 # end class
 
@@ -100,7 +123,11 @@ class WordAdmin(admin.ModelAdmin):
 
 admin.site.register(Word, WordAdmin)
 
-class RelationAdmin(SnowNestedModelAdmin, ExportCvsMixin):
+class RelationAdmin(
+    #SnowNestedModelAdmin,
+    SnowModelAdmin,
+    ExportCvsMixin):
+
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.
                          # Need reference doc?
@@ -109,15 +136,12 @@ class RelationAdmin(SnowNestedModelAdmin, ExportCvsMixin):
 
     list_display = [
         'schema',
-        'name',
         'parent',
-        'local_name',
-        'min_occurs',
-        'max_occurs',
+        'name',
         'notes',
     ]
     search_fields = list_display
-    fields = list_display
+    fields = list_display + ['min_occurs','max_occurs']
 
     #INLINES
     inlines = [FieldInline, ]
