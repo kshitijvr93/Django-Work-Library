@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib import admin
 from .models import (
-  Field, Genre, Lookup,
+  Field, Genre, Lookup, Match,
   Regex, Relation, Vocabulary, Word,
   )
 
@@ -123,5 +123,6 @@ class RelationAdmin(SnowNestedModelAdmin, ExportCvsMixin):
 
 
 admin.site.register(Lookup, admin.ModelAdmin )
+admin.site.register(Match, admin.ModelAdmin )
 admin.site.register(Regex, admin.ModelAdmin)
 admin.site.register(Vocabulary, admin.ModelAdmin)

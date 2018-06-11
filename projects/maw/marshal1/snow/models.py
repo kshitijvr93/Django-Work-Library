@@ -308,6 +308,27 @@ class Word(models.Model):
         unique_together = (('vocabulary', 'word'),)
         ordering = [ 'word', ]
 
+class Match(models.Model):
+    # Match restriction for a field to match a regular expression
+
+    id = models.AutoField(primary_key=True)
+
+    name = SpaceCharField(max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text="Unique name for this match."
+        , editable=True)
+
+    field = models.ForeignKey('field', null=False,
+        blank=False, on_delete=models.CASCADE,)
+
+    regex = models.ForeignKey('regex', null=False,
+        blank=False, on_delete=models.CASCADE,)
+
+    def __str__(self):
+            return '{}'.format(self.name)
+
+    class Meta:
+        verbose_name_plural = 'Matches'
 
 class Lookup(models.Model):
     # restrictions on field values for a snowflake relation.
