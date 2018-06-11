@@ -9,11 +9,12 @@ from django.forms import TextInput, Textarea
 from django.db import models
 from maw_utils import ExportCvsMixin
 import sys
-from nested_inline.admin import NestedStackedInline, NestedModelAdmin
+from nested_inline.admin import NestedTabularInline, NestedModelAdmin
 
 '''
-Nice solution to validate minimum populated inline (foreign key-selected
-authors) of 1 for at least 1 primary author author, file inlines, etc.
+Nice solution to validate minimum populated inline (foreign
+key-selected authors) of 1 for at least 1 primary author author,
+file inlines, etc.
 See 20180406t0732 answer from Klimenko at:
 https://stackoverflow.com/questions/877723/inline-form-validation-in-django
 '''
@@ -23,7 +24,7 @@ class MinValidatedInlineMixIn:
         return super().get_formset(
             validate_min=self.validate_min, *args, **kwargs)
 
-class SnowNestedStackedInline(NestedStackedInline):
+class SnowNestedTabularInline(NestedTabularInline):
 
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
@@ -35,22 +36,17 @@ class SnowNestedStackedInline(NestedStackedInline):
 
 
 class FieldInline(
-    MinValidatedInlineMixIn, SnowNestedStackedInline):
-    classes = ['collapse','collapsed']
-    xformfield_overrides = {
-        models.CharField: { 'widget': TextInput(
-          attrs={'size':'20'})},
-        models.TextField: { 'widget': Textarea(
-          attrs={'rows':1, 'cols':'40'})},
-    }
+    MinValidatedInlineMixIn, SnowNestedTabularInline):
     model = Field
     min_num = 1
+    classes = ['collapse','collapsed']
     extra = 0 # Extra 'empty' rows to show to accommodate immediate adding.
+
     def get_filters(self, obj):
         return((''))
 
 class RelationInline(
-    MinValidatedInlineMixIn, SnowNestedStackedInline):
+    MinValidatedInlineMixIn, SnowNestedTabularInline):
     model = Relation
     classes = ['collapse','collapsed']
     min_num = 1
@@ -59,7 +55,6 @@ class RelationInline(
 
     def get_filters(self, obj):
         return((''))
-
 
 class SnowNestedModelAdmin(NestedModelAdmin):
     using = 'snow_connection'
@@ -70,7 +65,6 @@ class SnowNestedModelAdmin(NestedModelAdmin):
         models.TextField: { 'widget': Textarea(
           attrs={'rows':1, 'cols':'40'})},
     }
-
 
 class GenreAdmin(SnowNestedModelAdmin, ExportCvsMixin):
     actions = [
@@ -89,7 +83,7 @@ class GenreAdmin(SnowNestedModelAdmin, ExportCvsMixin):
     fields = list_display
 
     # Next line may not be apt.
-    classes = ['collapse']
+    classes = ['collapse', 'collapsed']
     #INLINES
     inlines = [RelationInline, ]
 
