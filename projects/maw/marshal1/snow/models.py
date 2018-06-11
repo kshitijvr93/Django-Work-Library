@@ -60,19 +60,19 @@ class SnowRouter:
 
 # } end class SnowRouter
 
-class Genre(models.Model):
+class Schema(models.Model):
     # Each row represents a snowflake relational hierarchy.
     # where a snowflake relational concept is similar to a complete xml
     # schema definition (XSD).
     # More formally the connections among the relations/nodes
-    # in a snowflake genre embodies a directed acyclic graph (DAG),
-    # but "dag" does not sound as generic or familiar as "genre".
+    # in a snowflake schema embodies a directed acyclic graph (DAG),
+    # but "dag" does not sound as generic or familiar as "schema".
     #
     id = models.AutoField(primary_key=True)
 
-    name = SpaceCharField(verbose_name='Genre name', max_length=255,
+    name = SpaceCharField(verbose_name='Schema name', max_length=255,
         unique=True, blank=False, null=False, default='',
-        help_text="Unique name for this snowflake genre."
+        help_text="Unique name for this snowflake schema."
           " Please include a version label suffix like 'V1.0'.",
         editable=True)
 
@@ -95,11 +95,12 @@ class Relation(models.Model):
     # A relation corresponds roughly to an xml element in an xml schema.
     id = models.AutoField(primary_key=True)
 
-    # The containing snowflake genre of this relation
-    genre = models.ForeignKey('genre', null=False, blank=False,
-        on_delete=models.CASCADE,)
+    # The containing snowflake schema of this relation
+    schema = models.ForeignKey('schema', null=False, blank=False,
+        # Note use default=0 to quell makemigrations holdups
+        on_delete=models.CASCADE, default=0)
 
-    # Only one relation in a genra may have a null parent
+    # Only one relation in a schema a null parent
     parent = models.ForeignKey('self', null=True, blank=True,
         on_delete=models.CASCADE,)
 
@@ -107,7 +108,7 @@ class Relation(models.Model):
     # NOTE: it must be unique within the Genra
     name = SpaceCharField(verbose_name='Relation name', max_length=255,
         unique=False, blank=False, null=False, default='',
-        help_text="Unique name for this relation under this genre."
+        help_text="Unique name for this relation under this schema."
         , editable=True)
 
     local_name = SpaceCharField(max_length=255,
@@ -127,7 +128,7 @@ class Relation(models.Model):
 
     max_occurs = models.IntegerField(null=False, default=0,
       help_text="Maximum occurrences required under this parent. "
-          "0 or null means no limit.")
+          "0 or null here means unbounded.")
 
     notes = SpaceTextField(max_length=2550,
         unique=False, blank=True, null=True, default='',
@@ -143,7 +144,7 @@ class Relation(models.Model):
     a snowflake in an output style (xml, etc).
 
     xml_tag = SpaceCharField(max_length=255,
-        unique=True, blank=False, null=False, defagenre='',
+        unique=True, blank=False, null=False, defaschema='',
         help_text="XML Tag name for one of the items in this relation."
         , editable=True)
 
@@ -152,12 +153,12 @@ class Relation(models.Model):
     '''
 
     def __str__(self):
-            return '{}:{}'.format(self.genre, self.name)
+            return '{}:{}'.format(self.schema, self.name)
 
     class Meta:
         unique_together = ( 'parent', 'local_name')
-        unique_together = ('genre', 'name')
-        ordering = ['genre', 'id', ]
+        unique_together = ('schema', 'name')
+        ordering = ['schema', 'id', ]
 
 
 class Field(models.Model):
@@ -183,7 +184,7 @@ class Field(models.Model):
         editable=True)
 
     is_required = models.BooleanField( editable=True, default=False,
-        help_text="Whether this field is required for a genre instance.")
+        help_text="Whether this field is required for a schema instance.")
     # do not add any more fields to 'Field'. If they involve validation
     # or data type, add to new tables like 'restriction' or lookup, etc
     # that have a fkey back to a field and other info it needs
@@ -196,7 +197,7 @@ class Field(models.Model):
 
     # We can also add lookups for fkey restrictions, etc.
     # So, we can use lookup for authority fields..
-    # May need many-many table to link genre fields with authority source field
+    # May need many-many table to link schema fields with authority source field
     # lists, so if a 'lookup' value is this type, then a m-m lookup row may have
     # to be provided...
 
@@ -226,7 +227,7 @@ class Field(models.Model):
     '''
 
     def __str__(self):
-            return '{}:{}.{}'.format(self.relation.genre,
+            return '{}:{}.{}'.format(self.relation.schema,
                 self.relation, self.name)
 
     class Meta:

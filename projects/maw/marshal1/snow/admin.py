@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib import admin
 from .models import (
-  Field, Genre, Lookup, Match,
+  Field, Schema, Lookup, Match,
   Regex, Relation, Vocabulary, Word,
   )
 
@@ -9,7 +9,7 @@ from django.forms import TextInput, Textarea
 from django.db import models
 from maw_utils import ExportCvsMixin
 import sys
-from nested_inline.admin import NestedTabularInline, NestedModelAdmin
+from nested_inline.admin import NestedStackedInline, NestedModelAdmin
 
 '''
 Nice solution to validate minimum populated inline (foreign
@@ -24,7 +24,7 @@ class MinValidatedInlineMixIn:
         return super().get_formset(
             validate_min=self.validate_min, *args, **kwargs)
 
-class SnowNestedTabularInline(NestedTabularInline):
+class SnowNestedStackedInline(NestedStackedInline):
 
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
@@ -36,22 +36,25 @@ class SnowNestedTabularInline(NestedTabularInline):
 
 
 class FieldInline(
-    MinValidatedInlineMixIn, SnowNestedTabularInline):
+    #MinValidatedInlineMixIn, SnowNestedStackedInline):
+    MinValidatedInlineMixIn, admin.TabularInline):
     model = Field
-    min_num = 1
-    classes = ['collapse','collapsed']
+    # It is possible to have 0 fields if the relation only contains
+    # sub-relations
+    min_num = 0
+    #classes = ['collapse','collapsed']
     extra = 0 # Extra 'empty' rows to show to accommodate immediate adding.
 
     def get_filters(self, obj):
         return((''))
 
 class RelationInline(
-    MinValidatedInlineMixIn, SnowNestedTabularInline):
+    MinValidatedInlineMixIn, SnowNestedStackedInline):
     model = Relation
-    classes = ['collapse','collapsed']
-    min_num = 1
+    classes = ['collapse']
+    min_num = 0
     extra = 0 # Extra 'empty' rows to show to accommodate immediate adding.
-    inlines = [FieldInline]
+    #inlines = [FieldInline]
 
     def get_filters(self, obj):
         return((''))
@@ -66,7 +69,7 @@ class SnowNestedModelAdmin(NestedModelAdmin):
           attrs={'rows':1, 'cols':'40'})},
     }
 
-class GenreAdmin(SnowNestedModelAdmin, ExportCvsMixin):
+class SchemaAdmin(SnowNestedModelAdmin, ExportCvsMixin):
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.
                          # Need reference doc?
@@ -82,14 +85,12 @@ class GenreAdmin(SnowNestedModelAdmin, ExportCvsMixin):
 
     fields = list_display
 
-    # Next line may not be apt.
-    classes = ['collapse', 'collapsed']
     #INLINES
     inlines = [RelationInline, ]
 
 # end class
 
-admin.site.register(Genre, GenreAdmin)
+admin.site.register(Schema, SchemaAdmin)
 
 class WordAdmin(admin.ModelAdmin):
     list_display = ['word','vocabulary']
@@ -104,24 +105,26 @@ class RelationAdmin(SnowNestedModelAdmin, ExportCvsMixin):
         'export_as_csv', # Mixin: so set the method name string value.
                          # Need reference doc?
     ]
+    list_filter = ['schema']
 
-    readonly_fields = ('create_datetime',)
     list_display = [
+        'schema',
         'name',
-        'max_length',
+        'parent',
+        'local_name',
+        'min_occurs',
+        'max_occurs',
         'notes',
     ]
-    list_display = list(readonly_fields) + list_display
     search_fields = list_display
-
     fields = list_display
 
     #INLINES
-    inlines = [RelationInline, ]
-
+    inlines = [FieldInline, ]
 # end class
 
-
+admin.site.register(Relation, RelationAdmin)
+admin.site.register(Field, admin.ModelAdmin )
 admin.site.register(Lookup, admin.ModelAdmin )
 admin.site.register(Match, admin.ModelAdmin )
 admin.site.register(Regex, admin.ModelAdmin)

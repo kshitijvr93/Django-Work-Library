@@ -84,9 +84,10 @@ agent_uf_to_available.short_description = "Change UF partner to Available "
 
 class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 
+    readonly_fields = ['id']
     #admin change list display fields to show
     # CHANGE LIST VIEW
-    search_fields = ['accession_number'
+    search_fields = ['id','accession_number'
         ,'reference_type', 'language'
         ,'authors_primary', 'title_primary'
         ,'pub_year_span', 'place_of_publication'
@@ -103,6 +104,7 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
     ]
 
     list_display = [
+         'id',
          'accession_number',
          'title_primary',
          #'pub_year_span',

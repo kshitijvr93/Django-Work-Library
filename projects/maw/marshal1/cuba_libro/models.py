@@ -5,6 +5,7 @@ from django.db import models
 #other useful model imports at times (see django docs, tutorials):
 import datetime
 from django.utils import timezone
+from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
 
 '''
 NOTE: rather than have a separate file router.py to host HathiRouter, I just
@@ -144,7 +145,7 @@ class Item(models.Model):
         blank=True, editable=True)
     keywords = models.TextField(null=True,  default='', blank=True,editable=True)
     abstract = models.TextField(null=True,  default='', blank=True,editable=True)
-    personal_notes = models.TextField(null=True,  default='',
+    personal_notes = SpaceTextField(null=True,  default='',
         blank=True,editable=True)
 
     authors_secondary = models.TextField(null=True,  default='',
@@ -221,7 +222,7 @@ class Item(models.Model):
     user_14 = models.TextField(null=True, default='', blank=True, editable=False)
     user_15 = models.TextField(null=True, default='', blank=True, editable=False)
 
-    notes = models.TextField(null=True, default='',
+    notes = SpaceTextField(null=True, default='',
         blank=True,editable=True)
     place_of_publication = models.CharField(null=True, max_length=255,
         blank=True, editable=True,)
