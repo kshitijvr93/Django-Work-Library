@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_json_widget',
+    'django_mptt_admin',
     'nested_inline',
     'social_django',
     'ckeditor',
@@ -224,7 +225,10 @@ else:
 # For app "snow"  - stick with submit database too. Will need some joins
 # among submit and snow tables
 DATABASES['snow_connection'] = DATABASES['submit_connection']
-
+d = DATABASES['snow_connection']
+print("CONNECTION snow_connection: engine={}, dbname={}"
+  .format(d['ENGINE'], d['NAME']))
+sys.stdout.flush()
 
 lcroyster_env = maw_settings.LCROYSTER_ENV
 if lcroyster_env == 'production':
@@ -383,6 +387,13 @@ DATABASE_ROUTERS = [
     'snow.models.SnowRouter',
     'submit.models.SubmitRouter',
 ]
+
+for cname, cdict in DATABASES.items():
+    print ("\nCONNECTION NAME='{}'".format(cname))
+    for key, val in cdict.items():
+        if (key == 'PASSWORD'):
+            continue
+        print("\t{}={}".format(key,val))
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators

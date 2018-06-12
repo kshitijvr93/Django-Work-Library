@@ -1,8 +1,10 @@
 from django.contrib import admin
 from django.contrib import admin
 from .models import (
-  Field, Schema, Lookup, Match,
-  Regex, Relation, Vocabulary, Word,
+  Field, Lookup, Match,
+  Node,
+  Regex, Relation,
+  Schema, Vocabulary, Word,
   )
 
 from django.forms import TextInput, Textarea
@@ -10,6 +12,7 @@ from django.db import models
 from maw_utils import ExportCvsMixin
 import sys
 from nested_inline.admin import NestedStackedInline, NestedModelAdmin
+from django_mptt_admin.admin import DjangoMpttAdmin
 
 '''
 Nice solution to validate minimum populated inline (foreign
@@ -86,10 +89,13 @@ class SnowModelAdmin(admin.ModelAdmin):
         models.CharField: { 'widget': TextInput(
           attrs={'size':'40'})},
         models.TextField: { 'widget': Textarea(
-          attrs={'rows':1, 'cols':'40'})},
+          attrs={'rows':1, 'cols':'60'})},
     }
 
-class SchemaAdmin(SnowNestedModelAdmin, ExportCvsMixin):
+class SchemaAdmin(
+    #SnowNestedModelAdmin,
+    SnowModelAdmin,
+    ExportCvsMixin):
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.
                          # Need reference doc?
@@ -114,6 +120,10 @@ class SchemaAdmin(SnowNestedModelAdmin, ExportCvsMixin):
 # end class
 
 admin.site.register(Schema, SchemaAdmin)
+
+class NodeAdmin(DjangoMpttAdmin):
+    pass
+admin.site.register(Node, NodeAdmin)
 
 class WordAdmin(admin.ModelAdmin):
     list_display = ['word','vocabulary']

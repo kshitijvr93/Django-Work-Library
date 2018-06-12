@@ -9,6 +9,7 @@ from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
 import django.contrib.postgres.fields as pgfields
 from collections import OrderedDict
 from django.core.serializers.json import DjangoJSONEncoder
+from mptt.models import MPTTModel, TreeForeignKey
 #import maw_utils
 
 '''
@@ -85,8 +86,47 @@ class Schema(models.Model):
           "Newlines are discarded, so use (1), (2), etc, labels for notes.",
         editable=True)
 
+    '''
+        to test 20180612 after morning demo...
+    SCHEMA_CHOICES = (
+        ( 'PENDING' ,'Test Schema Relations Pending'),
+        ( 'TESTING', 'Test Schema Relations Available'),
+        ( 'RELEASED' ,'Schema Relations Available, Schema Archived'),
+    )
+
+    schema_status = models.CharField('Partner', null=True, default='Available',
+        blank=True, max_length=50, choices=SCHEMA_CHOICES,
+        help_text="Partner to verify or edit this item.")
+    '''
+
     def __str__(self):
             return '{}'.format(self.name)
+
+class Node(MPTTModel):
+    # This relation is one node in the DAG of its snowflake's relations,
+    # where a relation is a node or branching-off point and a parent is
+    # a line that connects two nodes.
+    #
+    # A relation corresponds roughly to an xml element in an xml schema.
+    id = models.AutoField(primary_key=True)
+
+    # The containing snowflake schema of this relation
+    schema = models.ForeignKey('schema', null=False, blank=False,
+        # Note use default=0 to quell makemigrations holdups
+        on_delete=models.CASCADE, default=0)
+
+    # Only one relation in a schema a null parent
+    parent = models.ForeignKey('self', null=True, blank=True,
+      related_name='children', db_index=True,
+      verbose_name = "Parent relation",
+      on_delete=models.CASCADE,)
+
+    # Note, internally a unique suffix for the relation name
+    # NOTE: it must be unique within the Genra
+    name = SpaceCharField(verbose_name='Relation name', max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text="Unique name for this relation under this schema."
+        , editable=True)
 
 class Relation(models.Model):
     # This relation is one node in the DAG of its snowflake's relations,
