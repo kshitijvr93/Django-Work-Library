@@ -128,6 +128,21 @@ class Node(MPTTModel):
         help_text="Unique name for this relation under this schema."
         , editable=True)
 
+    min_occurs = PositiveIntegerField(null=False, default=0
+      ,help_text="Minimum occurrences required under this parent.")
+
+    max_occurs = models.IntegerField(null=False, default=0,
+      help_text="Maximum occurrences required under this parent. "
+          "0 or null here means unbounded.")
+
+    notes = SpaceTextField(max_length=2550,
+        unique=False, blank=True, null=True, default='',
+        help_text="Notes on this relation.",
+        editable=True)
+
+    def __str__(self):
+            return '{}'.format(self.name)
+
     class MPTTMeta:
         order_insertion_by = ['name']
 
@@ -186,6 +201,13 @@ class Relation(models.Model):
         help_text="Notes on this relation.",
         editable=True)
 
+    def __str__(self):
+            return '{}:{}'.format(self.schema, self.name)
+
+    class Meta:
+        unique_together = ( 'parent', 'local_name')
+        unique_together = ('schema', 'name')
+        ordering = ['schema', 'id', ]
     '''
     Note: do NOT include fields 'order' or 'xml_tag' in this relation.
     Such information belongs in a template object that renders snowflake
@@ -203,13 +225,6 @@ class Relation(models.Model):
      help_text="Relative order to output this xml tag within the parent tag.")
     '''
 
-    def __str__(self):
-            return '{}:{}'.format(self.schema, self.name)
-
-    class Meta:
-        unique_together = ( 'parent', 'local_name')
-        unique_together = ('schema', 'name')
-        ordering = ['schema', 'id', ]
 
 
 class Field(models.Model):
