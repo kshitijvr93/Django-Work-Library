@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'cuba_libro.apps.CubaLibroConfig',
     'hathitrust.apps.HathitrustConfig',
     'lcroyster.apps.LcroysterConfig',
+    'mptt',
     'snow.apps.SnowConfig',
     'submit.apps.SubmitConfig',
 ]

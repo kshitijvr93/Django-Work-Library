@@ -102,6 +102,7 @@ class Schema(models.Model):
     def __str__(self):
             return '{}'.format(self.name)
 
+
 class Node(MPTTModel):
     # This relation is one node in the DAG of its snowflake's relations,
     # where a relation is a node or branching-off point and a parent is
@@ -116,7 +117,7 @@ class Node(MPTTModel):
         on_delete=models.CASCADE, default=0)
 
     # Only one relation in a schema a null parent
-    parent = models.ForeignKey('self', null=True, blank=True,
+    parent = TreeForeignKey('self', null=True, blank=True,
       related_name='children', db_index=True,
       verbose_name = "Parent relation",
       on_delete=models.CASCADE,)
@@ -127,6 +128,9 @@ class Node(MPTTModel):
         unique=False, blank=False, null=False, default='',
         help_text="Unique name for this relation under this schema."
         , editable=True)
+
+    class MPTTMeta:
+        order_insertion_by = ['name']
 
 class Relation(models.Model):
     # This relation is one node in the DAG of its snowflake's relations,
@@ -144,6 +148,7 @@ class Relation(models.Model):
     # Only one relation in a schema a null parent
     parent = models.ForeignKey('self', null=True, blank=True,
       verbose_name = "Parent relation",
+      related_name = "children",
       on_delete=models.CASCADE,)
 
     # Note, internally a unique suffix for the relation name
