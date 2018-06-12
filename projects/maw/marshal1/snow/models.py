@@ -92,6 +92,7 @@ class Relation(models.Model):
     # This relation is one node in the DAG of its snowflake's relations,
     # where a relation is a node or branching-off point and a parent is
     # a line that connects two nodes.
+    #
     # A relation corresponds roughly to an xml element in an xml schema.
     id = models.AutoField(primary_key=True)
 
