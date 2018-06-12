@@ -113,8 +113,7 @@ class Node(MPTTModel):
 
     # The containing snowflake schema of this relation
     schema = models.ForeignKey('schema', null=False, blank=False,
-        # Note use default=0 to quell makemigrations holdups
-        on_delete=models.CASCADE, default=0)
+        on_delete=models.CASCADE)
 
     # Only one relation in a schema a null parent
     parent = TreeForeignKey('self', null=True, blank=True,
@@ -142,8 +141,7 @@ class Relation(models.Model):
 
     # The containing snowflake schema of this relation
     schema = models.ForeignKey('schema', null=False, blank=False,
-        # Note use default=0 to quell makemigrations holdups
-        on_delete=models.CASCADE, default=0)
+        on_delete=models.CASCADE)
 
     # Only one relation in a schema a null parent
     parent = models.ForeignKey('self', null=True, blank=True,
