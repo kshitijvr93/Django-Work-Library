@@ -97,6 +97,16 @@ class Item(models.Model):
     agent_modify_date = models.DateTimeField('Modify Date (UTC)',
         null=True, auto_now=True, editable=False)
 
+    STATUS_CHOICES = (
+        ( '' ,''),
+        ( 'IP', 'In Process'),
+        ( 'DZ', 'Digitized'),
+    )
+
+    status = models.CharField('Status', null=True, default='',
+        blank=True, max_length=50, choices=STATUS_CHOICES,
+        help_text="Status of processing for this item.")
+
     # Original source data for holding is of the form XXX[-NNN[-MMM]]
     # Later I may modify this model to separate them into: holder,
     # hold_count_low, hold_count_high values if needed.

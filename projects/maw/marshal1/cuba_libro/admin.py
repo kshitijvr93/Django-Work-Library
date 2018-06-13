@@ -133,6 +133,7 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
                  'title_primary',
                  'pub_year_span',
                  'agent',
+                 'status',
                  'authors_primary',
                  'notes',
                  'personal_notes',
