@@ -63,7 +63,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_json_widget',
     'django_mptt_admin',
-    'nested_inline',
+    # 'nested_admin', # Not: use this xor nested_inline
+    'nested_inline', # Note: use this xor nested_admin
     'social_django',
     'ckeditor',
     'ckeditor_uploader',

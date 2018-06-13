@@ -11,7 +11,11 @@ from django.forms import TextInput, Textarea
 from django.db import models
 from maw_utils import ExportCvsMixin
 import sys
+
+#Note: use nested_admin OR nested_inline
+
 from nested_inline.admin import NestedStackedInline, NestedModelAdmin
+
 from django_mptt_admin.admin import DjangoMpttAdmin
 
 '''
