@@ -140,6 +140,8 @@ class SchemaAdmin(
 admin.site.register(Schema, SchemaAdmin)
 
 class NodeAdmin(DjangoMpttAdmin):
+    inlines = [AttributeInline, ]
+
     pass
 admin.site.register(Node, NodeAdmin)
 
