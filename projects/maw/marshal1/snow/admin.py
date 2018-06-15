@@ -42,6 +42,20 @@ class SnowNestedStackedInline(NestedStackedInline):
     classes = ['collapse','collapsed']
 
 
+class AttributeInline(
+    #MinValidatedInlineMixIn, SnowNestedStackedInline):
+    MinValidatedInlineMixIn, admin.TabularInline):
+    model = Node
+    # A node may only contain only child nodes, so it is possible to have
+    # no attributes, so we set min_num = 0
+    min_num = 0
+    #classes = ['collapse','collapsed']
+    extra = 0 # Extra 'empty' rows to show to accommodate immediate adding.
+
+    def get_filters(self, obj):
+        return((''))
+
+
 class FieldInline(
     #MinValidatedInlineMixIn, SnowNestedStackedInline):
     MinValidatedInlineMixIn, admin.TabularInline):
@@ -159,7 +173,9 @@ class RelationAdmin(
 
     #INLINES
     inlines = [FieldInline, ]
-# end class
+
+# end class RelationAdmin
+
 
 admin.site.register(Relation, RelationAdmin)
 admin.site.register(Field, admin.ModelAdmin )

@@ -104,26 +104,33 @@ class Schema(models.Model):
 
 
 class Node(MPTTModel):
-    # This relation is one node in the DAG of its snowflake's relations,
+    # This Node is one node in the DAG of its snowflake's relations,
     # where a relation is a node or branching-off point and a parent is
     # a line that connects two nodes.
     #
     # A relation corresponds roughly to an xml element in an xml schema.
+    # TODO: enforce that one and only one root node has a null parent.
+    # Note that each direct root child represents the
+    # root node of a unique snowflake schema
+
+    #NOTES: each node may have some child nodes and also some referring fields
+    # A node with a child is considered to be a model relation while a
+    # node with no childre is considered to represent a model field
     id = models.AutoField(primary_key=True)
 
     # The containing snowflake schema of this relation
     schema = models.ForeignKey('schema', null=False, blank=False,
         on_delete=models.CASCADE)
 
-    # Only one relation in a schema a null parent
+    # Only one relation in a schema has a null parent
     parent = TreeForeignKey('self', null=True, blank=True,
       related_name='children', db_index=True,
       verbose_name = "Parent relation",
       on_delete=models.CASCADE,)
 
     # Note, internally a unique suffix for the relation name
-    # NOTE: it must be unique within the Genra
-    name = SpaceCharField(verbose_name='Relation name', max_length=255,
+    # NOTE: it must be unique within the snow flake tree
+    name = SpaceCharField(verbose_name='Element name', max_length=255,
         unique=False, blank=False, null=False, default='',
         help_text="Unique name for this relation under this schema."
         , editable=True)
@@ -137,11 +144,14 @@ class Node(MPTTModel):
 
     notes = SpaceTextField(max_length=2550,
         unique=False, blank=True, null=True, default='',
-        help_text="Notes on this relation.",
+        help_text="Notes on this node.",
         editable=True)
 
     def __str__(self):
             return '{}'.format(self.name)
+
+    class Meta:
+        verbose_name = "Element"
 
     class MPTTMeta:
         order_insertion_by = ['name']
@@ -225,8 +235,6 @@ class Relation(models.Model):
      help_text="Relative order to output this xml tag within the parent tag.")
     '''
 
-
-
 class Field(models.Model):
     # fields for a snowflake relation.
     # This is roughly parallel to an element in xml.
@@ -299,6 +307,81 @@ class Field(models.Model):
     class Meta:
         unique_together = (('relation', 'name'))
         ordering = ['relation', 'name', ]
+
+class Attributes(models.Model):
+    # Attributes for a snowflake node relation.
+    # This is roughly parallel to an attribute in xml.
+    id = models.AutoField(primary_key=True)
+
+    # relation is roughly equivalent to the immediate parent element of this
+    # field/element
+    node = models.ForeignKey('node', null=False,
+        blank=False,
+        on_delete=models.CASCADE,)
+
+    name = SpaceCharField(verbose_name='Attribute name',max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text="Unique name for this attribute under this element.",
+        editable=True)
+
+    max_length =  PositiveIntegerField(
+        null=True, blank=True,
+        default=255,
+        help_text="Maximum number of characters in this field.",
+        editable=True)
+
+    is_required = models.BooleanField( editable=True, default=False,
+        help_text="Whether this field is required for a schema instance.")
+    # do not add any more fields to 'Field'. If they involve validation
+    # or data type, add to new tables like 'restriction' or lookup, etc
+    # that have a fkey back to a field and other info it needs
+    # might be diff restrictions tables like restriction_int, restriction_rx,
+    # restriction_lookup, etc
+    # Both fields max_length and is_required also are true restrictions,
+    # but they are so common that we cheat and add them here
+    # Note: later also may implement table-level restrictions like
+    # trestrict_composite_unique_key,trestrict_exist, etc
+
+    # We can also add lookups for fkey restrictions, etc.
+    # So, we can use lookup for authority fields..
+    # May need many-many table to link schema fields with authority source field
+    # lists, so if a 'lookup' value is this type, then a m-m lookup row may have
+    # to be provided...
+
+    ''' Note: Not too elegant to put default value field here,
+    but DID put simple fields max_length is_required flag.
+    Otherwise, restrictions, validations and default values can be put
+    on a future 'restriction' or 'validation' table where each row can
+    have an fkey to this field.
+    Note: also a new relation_restriction table could be added to register
+    inter-table constraints.
+
+    Do NOT include the following fields in relation 'field'.
+    Such fields belong in a template definition to structure output style
+    and options.
+
+    order = IntegerField .... field order to output to csv file, etc.
+
+    # This field will be considered as an XML tag, else as an attribute.
+    is_xml_tag = models.BooleanField(null=False, default=True
+      ,help_text="True means the xml_name is an xml_tag. "
+      "False for an attribute name.")
+
+    xml_name = SpaceCharField(max_length=255,
+        unique=True, blank=False, null=False, default='',
+        help_text="XML tag or attribute name for this field."
+        , editable=True)
+    '''
+
+    def __str__(self):
+            return '{}:{}.{}'.format(self.relation.schema,
+                self.relation, self.name)
+
+    class Meta:
+        unique_together = (('node', 'name'))
+        ordering = ['node', 'name', ]
+
+# end class Relation
 
 class Regex(models.Model):
     # Regular expresion restrictions on field values for a snowflake relation.
@@ -418,3 +501,93 @@ class Lookup(models.Model):
 
     vocabulary = models.ForeignKey('vocabulary', null=False,
         blank=False, on_delete=models.CASCADE,)
+
+class Role(MPTTModel):
+    # Use mptt here to create Role chart with 'role' hierarchy.
+    #
+
+    id = models.AutoField(primary_key=True)
+    name = SpaceCharField(max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text="Unique name for this Role."
+        , editable=True)
+
+    # Only one relation in a schema has a null parent
+    parent = TreeForeignKey('self', null=True, blank=True,
+      related_name='child_roles', db_index=True,
+      verbose_name = "Parent role",
+      on_delete=models.CASCADE,)
+
+    # This field may be changed to creator_user later. It helps
+    # identify who exactly added this role object
+    creator_role = TreeForeignKey('self', null=True, blank=True,
+      related_name='created_roles', db_index=True,
+      verbose_name = "Creator role",
+      on_delete=models.CASCADE,)
+
+    create_datetime = models.DateTimeField(help_text='Creation DateTime',
+        null=True, auto_now=True, editable=False)
+
+
+class BatchSet(models.Model):
+    # Each of this model's rows is created when a snow flake node is manifested
+    # by the creation a set of snowflake-compliant models in this application.
+    # The snow_node value points to the top node of the snowflake definition.
+    # TODO: add enforcement that none of these rows can be deleted via admin
+    # The snow_node can be traversed, if needed, to verify the table names that should
+    # have been created after the manifestation, etc.
+    # TODO: The top snowflake dataset must have an add/insert validation that
+    # the batch of an item matches the top snow_node_name of the dataset
+    #
+    #
+
+    id = models.AutoField(primary_key=True)
+
+    name = SpaceCharField(max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text="Unique name for this batchSet, include owning org for now."
+        , editable=True)
+
+    create_datetime = models.DateTimeField(help_text='Creation DateTime',
+        null=True, auto_now=True, editable=False)
+
+    # snow_node is the top node of a snowflake model with created data set tables
+    # With this, one can traverse the whole snow schema.
+    # TODO: implement an enforcement that this node must a direct descendant
+    # node of be the one and only one node with null parent
+
+    snow_node = models.ForeignKey('node', null=False,
+        blank=False, on_delete=models.CASCADE,)
+
+    # The name of the snow node: It is copied from the top snow node's name
+    # snow_node_name
+
+    field = models.ForeignKey('field', null=False,
+        blank=False, on_delete=models.CASCADE,)
+
+    vocabulary = models.ForeignKey('vocabulary', null=False,
+        blank=False, on_delete=models.CASCADE,)
+
+
+class Batch(models.Model):
+    # Each row represents a batch of records set aside for a user
+    # to edit
+
+    id = models.AutoField(primary_key=True)
+
+    batch_set = models.ForeignKey('batchset', null=False,
+        blank=False, on_delete=models.CASCADE,)
+
+    name = SpaceCharField(max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text="Unique name for this batchSet, include owning org for now."
+        , editable=True)
+
+    create_datetime = models.DateTimeField(help_text='Creation DateTime',
+        null=True, auto_now=True, editable=False)
+
+    creator_role = SpaceCharField(verbose_name='Schema name', max_length=255,
+        unique=True, blank=False, null=False, default='',
+        help_text="Unique name for this snowflake schema."
+          " Please include a version label suffix like 'V1.0'.",
+        editable=True)
