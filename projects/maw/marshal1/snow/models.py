@@ -116,11 +116,10 @@ class Node(MPTTModel):
     #NOTES: each node may have some child nodes and also some referring fields
     # A node with a child is considered to be a model relation while a
     # node with no childre is considered to represent a model field
-    id = models.AutoField(primary_key=True)
+    # IMPORTANT: Each immediate child of the root snowflake element
+    # represents the root element of a separate snowflake schema
 
-    # The containing snowflake schema of this relation
-    schema = models.ForeignKey('schema', null=False, blank=False,
-        on_delete=models.CASCADE)
+    id = models.AutoField(primary_key=True)
 
     # Only one relation in a schema has a null parent
     parent = TreeForeignKey('self', null=True, blank=True,

@@ -52,6 +52,14 @@ class AttributeInline(
     #classes = ['collapse','collapsed']
     extra = 0 # Extra 'empty' rows to show to accommodate immediate adding.
 
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'20'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'60'})},
+    }
+
+
     def get_filters(self, obj):
         return((''))
 
@@ -140,9 +148,14 @@ class SchemaAdmin(
 admin.site.register(Schema, SchemaAdmin)
 
 class NodeAdmin(DjangoMpttAdmin):
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'20'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'60'})},
+    }
     inlines = [AttributeInline, ]
-
-    pass
+#end class NodeAdmin
 admin.site.register(Node, NodeAdmin)
 
 class WordAdmin(admin.ModelAdmin):
