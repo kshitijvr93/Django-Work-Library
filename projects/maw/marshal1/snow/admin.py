@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib import admin
 from .models import (
-  Field, Lookup, Match,
+  Attribute, Field, Lookup, Match,
   Node,
   Regex, Relation,
   Schema, Vocabulary, Word,
@@ -45,7 +45,7 @@ class SnowNestedStackedInline(NestedStackedInline):
 class AttributeInline(
     #MinValidatedInlineMixIn, SnowNestedStackedInline):
     MinValidatedInlineMixIn, admin.TabularInline):
-    model = Node
+    model = Attribute
     # A node may only contain only child nodes, so it is possible to have
     # no attributes, so we set min_num = 0
     min_num = 0

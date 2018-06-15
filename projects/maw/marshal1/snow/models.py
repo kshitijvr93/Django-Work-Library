@@ -308,7 +308,7 @@ class Field(models.Model):
         unique_together = (('relation', 'name'))
         ordering = ['relation', 'name', ]
 
-class Attributes(models.Model):
+class Attribute(models.Model):
     # Attributes for a snowflake node relation.
     # This is roughly parallel to an attribute in xml.
     id = models.AutoField(primary_key=True)
