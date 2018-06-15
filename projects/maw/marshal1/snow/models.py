@@ -237,7 +237,7 @@ class Relation(models.Model):
 
 class Field(models.Model):
     # fields for a snowflake relation.
-    # This is roughly parallel to an element in xml.
+    # This is roughly parallel to an attribute in xml.
     id = models.AutoField(primary_key=True)
 
     # relation is roughly equivalent to the immediate parent element of this
@@ -374,14 +374,14 @@ class Attribute(models.Model):
     '''
 
     def __str__(self):
-            return '{}:{}.{}'.format(self.relation.schema,
-                self.relation, self.name)
+            return '{}:{}'.format(self.node.name,
+                 self.name)
 
     class Meta:
         unique_together = (('node', 'name'))
         ordering = ['node', 'name', ]
 
-# end class Relation
+# end class Attribute
 
 class Regex(models.Model):
     # Regular expresion restrictions on field values for a snowflake relation.
