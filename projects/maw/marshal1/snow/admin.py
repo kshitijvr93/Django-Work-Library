@@ -195,14 +195,23 @@ class RoleAdmin(DjangoMpttAdmin):
 
 #end class RoleAdmin
 
+class BatchAdmin(admin.ModelAdmin):
+    list_filter = ['name','received_imported_items', 'creator_role',
+      'batch_set']
+    list_display = list_filter
+    search_fields = ['name', 'creator_role', 'batch_set']
+    #ordering = ['batch_set','creator_role', 'received_imported_items',
+    #  'name']
+# end class BatchAdmin
+
 
 class WordAdmin(admin.ModelAdmin):
     list_display = ['word','vocabulary']
     list_filter = ['vocabulary']
     search_fields = ['word','vocabulary']
     ordering = ['word']
+# end class WordAdmin
 
-admin.site.register(Word, WordAdmin)
 
 class RelationAdmin( SnowModelAdmin, ExportCvsMixin):
     actions = [
@@ -226,7 +235,7 @@ class RelationAdmin( SnowModelAdmin, ExportCvsMixin):
 # admin.site.register(Field, admin.ModelAdmin )
 # }
 
-admin.site.register(Batch, admin.ModelAdmin)
+admin.site.register(Batch, BatchAdmin)
 admin.site.register(BatchSet, BatchSetAdmin)
 admin.site.register(Lookup, admin.ModelAdmin )
 admin.site.register(Match, admin.ModelAdmin )
@@ -238,3 +247,4 @@ admin.site.register(Regex, admin.ModelAdmin)
 admin.site.register(Role, RoleAdmin)
 
 admin.site.register(Vocabulary, admin.ModelAdmin)
+admin.site.register(Word, WordAdmin)

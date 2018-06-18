@@ -592,6 +592,15 @@ class Batch(models.Model):
     creator_role = models.ForeignKey('Role', null=True,
         blank=False, on_delete=models.CASCADE,)
 
+    # Note imports can only be done when imported_items
+    # is False
+    received_imported_items = models.BooleanField( editable=False,
+      default=False,
+      help_text="Whether this batch has received imported items.")
+
+    item_count = models.PositiveIntegerField(null=False,
+      default=0, editable=False)
+
     def __str__(self):
             return '{}'.format(self.name)
 
