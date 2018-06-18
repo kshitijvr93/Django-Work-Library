@@ -1,9 +1,13 @@
 from django.contrib import admin
 from django.contrib import admin
 from .models import (
-  Attribute, Field, Lookup, Match,
-  Node,
+  Attribute,
+  BatchSet,
+  Batch,
+  Field, Lookup, Match,
+  Node, # display name is Element
   Regex, Relation,
+  Role,
   Schema, Vocabulary, Word,
   )
 
@@ -77,6 +81,31 @@ class FieldInline(
     def get_filters(self, obj):
         return((''))
 
+class BatchInline(
+    #MinValidatedInlineMixIn, SnowNestedStackedInline):
+    MinValidatedInlineMixIn, admin.TabularInline):
+    model = Batch
+    # It is possible to have 0 fields if the relation only contains
+    # sub-relations
+    min_num = 0
+    #classes = ['collapse','collapsed']
+    extra = 0 # Extra 'empty' rows to show to accommodate immediate adding.
+
+    def get_filters(self, obj):
+        return((''))
+# end class BatchInline
+
+
+class BatchSetAdmin(admin.ModelAdmin):
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'20'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'60'})},
+    }
+    inlines = [BatchInline, ]
+#end class BatchSetAdmin
+
 class RelationInline(
     #MinValidatedInlineMixIn, SnowNestedStackedInline):
     MinValidatedInlineMixIn, admin.TabularInline):
@@ -145,7 +174,6 @@ class SchemaAdmin(
 
 # end class
 
-admin.site.register(Schema, SchemaAdmin)
 
 class NodeAdmin(DjangoMpttAdmin):
     formfield_overrides = {
@@ -156,7 +184,17 @@ class NodeAdmin(DjangoMpttAdmin):
     }
     inlines = [AttributeInline, ]
 #end class NodeAdmin
-admin.site.register(Node, NodeAdmin)
+
+class RoleAdmin(DjangoMpttAdmin):
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'20'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'60'})},
+    }
+
+#end class RoleAdmin
+
 
 class WordAdmin(admin.ModelAdmin):
     list_display = ['word','vocabulary']
@@ -166,35 +204,37 @@ class WordAdmin(admin.ModelAdmin):
 
 admin.site.register(Word, WordAdmin)
 
-class RelationAdmin(
-    #SnowNestedModelAdmin,
-    SnowModelAdmin,
-    ExportCvsMixin):
-
+class RelationAdmin( SnowModelAdmin, ExportCvsMixin):
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.
                          # Need reference doc?
     ]
     list_filter = ['schema']
-
     list_display = [
-        'schema',
-        'parent',
-        'name',
-        'notes',
+        'schema', 'parent', 'name', 'notes',
     ]
     search_fields = list_display
     fields = list_display + ['min_occurs','max_occurs']
-
     #INLINES
     inlines = [FieldInline, ]
-
 # end class RelationAdmin
 
 
-admin.site.register(Relation, RelationAdmin)
-admin.site.register(Field, admin.ModelAdmin )
+# { may drop these... in favor of element and attribute
+# admin.site.register(Schema, SchemaAdmin)
+# admin.site.register(Relation, RelationAdmin)
+# admin.site.register(Field, admin.ModelAdmin )
+# }
+
+admin.site.register(Batch, admin.ModelAdmin)
+admin.site.register(BatchSet, BatchSetAdmin)
 admin.site.register(Lookup, admin.ModelAdmin )
 admin.site.register(Match, admin.ModelAdmin )
+
+# Verbose name for Node in Admin is Element
+admin.site.register(Node, NodeAdmin)
+
 admin.site.register(Regex, admin.ModelAdmin)
+admin.site.register(Role, RoleAdmin)
+
 admin.site.register(Vocabulary, admin.ModelAdmin)

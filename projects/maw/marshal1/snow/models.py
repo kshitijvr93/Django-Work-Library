@@ -101,7 +101,7 @@ class Schema(models.Model):
 
     def __str__(self):
             return '{}'.format(self.name)
-
+# end class Schema
 
 class Node(MPTTModel):
     # This Node is one node in the DAG of its snowflake's relations,
@@ -151,6 +151,9 @@ class Node(MPTTModel):
 
     class Meta:
         verbose_name = "Element"
+        # Need unique_together for parent, name, else
+        # if add duplicate, tree view will not display in admin
+        unique_together = ( 'parent', 'name')
 
     class MPTTMeta:
         order_insertion_by = ['name']
@@ -527,6 +530,11 @@ class Role(MPTTModel):
     create_datetime = models.DateTimeField(help_text='Creation DateTime',
         null=True, auto_now=True, editable=False)
 
+    def __str__(self):
+            return '{}'.format(self.name)
+
+# end class Role
+
 
 class BatchSet(models.Model):
     # Each of this model's rows is created when a snow flake node is manifested
@@ -558,14 +566,10 @@ class BatchSet(models.Model):
     snow_node = models.ForeignKey('node', null=False,
         blank=False, on_delete=models.CASCADE,)
 
-    # The name of the snow node: It is copied from the top snow node's name
-    # snow_node_name
+    def __str__(self):
+            return '{}'.format(self.name)
 
-    field = models.ForeignKey('field', null=False,
-        blank=False, on_delete=models.CASCADE,)
-
-    vocabulary = models.ForeignKey('vocabulary', null=False,
-        blank=False, on_delete=models.CASCADE,)
+# end class BatchSet
 
 
 class Batch(models.Model):
@@ -574,7 +578,7 @@ class Batch(models.Model):
 
     id = models.AutoField(primary_key=True)
 
-    batch_set = models.ForeignKey('batchset', null=False,
+    batch_set = models.ForeignKey('batchset', null=True,
         blank=False, on_delete=models.CASCADE,)
 
     name = SpaceCharField(max_length=255,
@@ -585,8 +589,11 @@ class Batch(models.Model):
     create_datetime = models.DateTimeField(help_text='Creation DateTime',
         null=True, auto_now=True, editable=False)
 
-    creator_role = SpaceCharField(verbose_name='Schema name', max_length=255,
-        unique=True, blank=False, null=False, default='',
-        help_text="Unique name for this snowflake schema."
-          " Please include a version label suffix like 'V1.0'.",
-        editable=True)
+    creator_role = models.ForeignKey('Role', null=True,
+        blank=False, on_delete=models.CASCADE,)
+
+    def __str__(self):
+            return '{}'.format(self.name)
+
+    class Meta:
+        verbose_name_plural = 'Batches'
