@@ -6,6 +6,7 @@ from django.db import models
 #other useful model imports at times (see django docs, tutorials):
 import datetime
 from django.utils import timezone
+from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
 
 '''
 NOTE: rather than have a separate file router.py to host HathiRouter, I just
@@ -69,6 +70,109 @@ class HathiRouter:
 #       FILES_NEED_CHANGES = 3
 #       YAML_CREATED = 4
 
+class Yaml(models.Model):
+    # Relation to edit the 'meta.yaml' settings required by the
+    # HathiTrust Cloud Packaging Service
+    # Name "Meta" used by Django, so to re-use that name here is too
+    # troublesome for quick code text searches.
+
+    id = models.AutoField(primary_key=True)
+    item = models.ForeignKey('Item', on_delete=models.CASCADE,
+      db_index=True, blank=True, null=True)
+
+    #Fields required for all materials
+    bitonal_resolution_dpi = PositiveIntegerField(null=False, default=0
+      ,help_text="Required if images lack resolution information.")
+    contone_resolution_dpi = PositiveIntegerField(null=False, default=0
+      ,help_text="Required if images lack resolution information.")
+
+    # Maybe make  fieldset?
+    image_compression_date = models.DateTimeField(
+      db_index=True, blank=False,
+      help_text="Required if images were compressed before "
+      "Submittal Item Package was generated."
+      )
+    image_compression_agent = SpaceCharField(max_length=255,
+      blank=True,
+      help_text="Required if images were compressed before "
+      "Submittal Item Package was generated. Eg, ImageMatick 6.7.8",
+      )
+
+    #
+    READING_CHOICES = (
+        ( 'l2r' ,'left-to-right'),
+        ( 'r2l' ,'right-to-left'),
+    )
+    scanning_order = SpaceCharField(max_length=255,
+      choices=READING_CHOICES,
+      help_text="Either left-to-right or right-to-left",
+      help_text="Example: use left-to-right if tif 1 is front cover.
+      default='l2r'
+      )
+
+    reading_order = SpaceCharField(max_length=255,
+      choices=READING_CHOICES,
+      help_text="Example: use right-to-left if tif 1 is BACK cover.
+      default='l2r'
+      )
+
+
+class PrintScanYaml(models.Model):
+    id = models.AutoField(primary_key=True)
+    yaml = models.ForeignKey('Yaml', on_delete=models.CASCADE,
+      db_index=True, blank=True, null=True)
+
+    capture_datetime = models.DateTimeField(
+      db_index=True, blank=False,
+      help_text="Date and time of original print scan, estimate OK."
+      )
+
+    scanner_make = SpaceCharField(max_length=255,
+        blank = True,
+        default='CopiBook')
+
+    scanner_model = SpaceCharField(max_length=255,
+        default='tbd')
+
+    scanner_user = SpaceCharField(max_length=255,
+        blank = True,
+        default='University of Florida Digtal Processing Services')
+
+
+class DigitalBornYaml(models.Model):
+
+    id = models.AutoField(primary_key=True)
+    yaml = models.ForeignKey('Yaml', on_delete=models.CASCADE,
+      db_index=True, blank=True, null=True)
+
+    creation_datetime = models.DateTimeField(db_index=True,
+      blank=False,
+      help_text="Creation time of original file/item. Eg, PDF file's date"
+      )
+
+    creation_agent = SpaceCharField(max_length=255,
+        blank=False,
+        help_text ='HathiTrust organization code who created digital file.')
+
+    digital_content_provider = SpaceCharField(max_length=255,
+        blank=True,
+        help_text="Optional File-specific content provider's "
+          "HathiTrust organization code.")
+    tiff_artist = SpaceCharField(max_length=255,
+        blank=True,
+        help_text="Required if images lack TIFF Artist or XMP "
+          "tiff:Artist header."
+        )
+
+
+
+
+
+  # Key words or topical info about the file contents, context
+
+
+    pass
+# end class Meta
 class Item(models.Model):
 
     # Field 'id' is 'special', and if not defined, Django defines
