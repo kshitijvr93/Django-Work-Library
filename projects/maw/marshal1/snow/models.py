@@ -334,6 +334,12 @@ class Attribute(models.Model):
 
     is_required = models.BooleanField( editable=True, default=False,
         help_text="Whether this field is required for a schema instance.")
+
+    notes = SpaceTextField(max_length=5555,
+        unique=False, blank=True, null=True, default='',
+        help_text="Notes",
+        editable=True)
+
     # do not add any more fields to 'Field'. If they involve validation
     # or data type, add to new tables like 'restriction' or lookup, etc
     # that have a fkey back to a field and other info it needs
@@ -541,8 +547,8 @@ class BatchSet(models.Model):
     # by the creation a set of snowflake-compliant models in this application.
     # The snow_node value points to the top node of the snowflake definition.
     # TODO: add enforcement that none of these rows can be deleted via admin
-    # The snow_node can be traversed, if needed, to verify the table names that should
-    # have been created after the manifestation, etc.
+    # The snow_node can be traversed, if needed, to verify the table names that
+    # should have been created after the manifestation, etc.
     # TODO: The top snowflake dataset must have an add/insert validation that
     # the batch of an item matches the top snow_node_name of the dataset
     #
@@ -558,16 +564,30 @@ class BatchSet(models.Model):
     create_datetime = models.DateTimeField(help_text='Creation DateTime',
         null=True, auto_now=True, editable=False)
 
-    # snow_node is the top node of a snowflake model with created data set tables
-    # With this, one can traverse the whole snow schema.
-    # TODO: implement an enforcement that this node must a direct descendant
+    # snow_node must be/is the top node of a snowflake model with created data
+    # set tables.
+    # From this, one can traverse the underlying snow schema.
+    # Consider: implement an enforcement that this node must a direct descendant
     # node of be the one and only one node with null parent
+    #
+    # TODO: give only webadmin permission to add a row with a set snow_node, but
+    # let nobody every change the snow_node value after a row is added
+    # FUTURE 1: allow user to add a row with a snow_node, but never change
+    # it. Let a new use of a node be automatically detected and create a new
+    # set of container tables for batch data rows.
+    # FUTURE: allow any snow_node, not just top node to be selected only
+    # for a first-time added row/insert operation.
 
     snow_node = models.ForeignKey('node', null=False,
-        blank=False, on_delete=models.CASCADE,)
+        blank=False, on_delete=models.CASCADE,
+        verbose_name='Batch Root Node')
 
     def __str__(self):
             return '{}'.format(self.name)
+
+    class Meta:
+        verbose_name = "Structured Batch"
+        verbose_name_plural = "Structured Batches"
 
 # end class BatchSet
 

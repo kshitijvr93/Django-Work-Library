@@ -63,7 +63,6 @@ class AttributeInline(
           attrs={'rows':1, 'cols':'60'})},
     }
 
-
     def get_filters(self, obj):
         return((''))
 
@@ -197,9 +196,10 @@ class RoleAdmin(DjangoMpttAdmin):
 
 class BatchAdmin(admin.ModelAdmin):
     list_filter = ['name','received_imported_items', 'creator_role',
-      'batch_set']
+      'batch_set', 'create_datetime']
     list_display = list_filter
     search_fields = ['name', 'creator_role', 'batch_set']
+    readonly_fields = ['item_count','create_datetime','received_imported_items']
     #ordering = ['batch_set','creator_role', 'received_imported_items',
     #  'name']
 # end class BatchAdmin
@@ -235,7 +235,7 @@ class RelationAdmin( SnowModelAdmin, ExportCvsMixin):
 # admin.site.register(Field, admin.ModelAdmin )
 # }
 
-admin.site.register(Batch, BatchAdmin)
+#admin.site.register(Batch, BatchAdmin)
 admin.site.register(BatchSet, BatchSetAdmin)
 admin.site.register(Lookup, admin.ModelAdmin )
 admin.site.register(Match, admin.ModelAdmin )
