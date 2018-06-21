@@ -83,9 +83,16 @@ def file_replace_pattern(input_file_name=None, pattern=None,
         print(msg)
         print(msg, file=log_file)
     if 1 == 1:
+        n_lines = 0
         with open(input_file_name) as input_file:
-            for n_lines, line in enumerate(input_file):
-                temp_file.write(line.replace(pattern, substitution))
+            #for n_lines, line in enumerate(input_file):
+            for line in input_file:
+                line = line.replace(pattern, substitution)
+                temp_file.write(line)
+                if verbosity > 0:
+                    msg=("{}: Wrote line='{}'".format(me,line))
+                    print(msg)
+                    print(msg, file=log_file)
         remove(input_file_name)
         move(temp_file_name, input_file_name)
     # end with NamedTemporaryfile
