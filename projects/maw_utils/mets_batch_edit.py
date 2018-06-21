@@ -27,22 +27,30 @@ from collections import OrderedDict
 #import regex
 import re
 
-def sequence_paths(input_folders=None, input_path_globs=None, verbosity=0):
+def sequence_paths(log_file=None, input_folders=None, input_path_globs=None, verbosity=0):
     # NOTE: I changed arg input_path_glob to input_path_globs
     # apologies to callers that need to adapt
     me = 'sequence_paths'
     if (input_folders is None or input_path_globs is None):
         msg = "Missing param input_folders or input_path_glob"
         raise ValueError(msg)
+    if verbosity  > 0:
+        msg = ("{}: Using input_folders={}, input_path_globs={}"
+          .format(me,input_folders, input_path_globs))
+        print(msg, file=log_file)
 
     # compose input_path_list over multiple input_folders
     for input_folder in input_folders:
         for input_path_glob in input_path_globs:
+
             paths = list(Path(input_folder).glob(input_path_glob))
+
             if (verbosity > 0):
-                print("{}: Found {} files in input_folder='{}'"
-                   " that match {}\n"
+                msg = ("{}: Found {} files in input_folder='{}'"
+                   " that match glob ={}\n"
                   .format(me, len(paths), input_folder, input_path_glob))
+                print(msg)
+                print(msg,file=log_file)
 
             #input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
             for path in paths:
@@ -52,19 +60,33 @@ def sequence_paths(input_folders=None, input_path_globs=None, verbosity=0):
     # end for input folder
 # end def sequence_paths
 
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, mkstemp, TemporaryFile
 from shutil import move
 from os import remove
 
 def file_replace_pattern(input_file_name=None, pattern=None,
+    log_file=None,
     substitution=None, verbosity=0):
-    with NamedTemporaryFile(mode='w', delete=False) as temp_file:
+    me = "file_replace_pattern"
+
+    file_like_obj = NamedTemporaryFile(mode='w')
+
+    temp_file = file_like_obj
+    temp_file_name = file_like_obj.name
+    if verbosity > 0:
+      msg=("Got temp file name='{}'".format(temp_file_name))
+      print(msg,log_file)
+
+    if verbosity > 0:
+        msg="{}: processing input file name {}".format(me,input_file_name)
+        print(msg)
+        print(msg, file=log_file)
+    if 1 == 1:
         with open(input_file_name) as input_file:
             for n_lines, line in enumerate(input_file):
                 temp_file.write(line.replace(pattern, substitution))
-
         remove(input_file_name)
-        move(temp_file, input_file_name)
+        move(temp_file_name, input_file_name)
     # end with NamedTemporaryfile
     return n_lines
 # end def file_edit
@@ -83,13 +105,15 @@ def process_files(input_folders=None, file_globs=None, pattern=None,
             print(msg)
             print(msg,file=log_file)
 
-        gpaths = sequence_paths(input_folders=input_folders,
-            input_path_globs=file_globs)
+        gpaths = sequence_paths(log_file=log_file, input_folders=input_folders,
+            input_path_globs=file_globs, verbosity=verbosity)
 
         paths = []
         n_lines=0
 
         for path in gpaths:
+            if verbosity > 1:
+                print("{}:Got path.resolve()='{}'".format(me,path.resolve()))
             if path in paths:
                 # gpaths could have duplicates when mulitple globs
                 # were used to generate the gpaths, so skip dups
@@ -109,11 +133,10 @@ def process_files(input_folders=None, file_globs=None, pattern=None,
 
             #n_rows, n_inserts, n_exceptions = self.import_file(
             n_lines = file_replace_pattern(
+                log_file=log_file,
                 input_file_name=input_file_name, pattern=pattern,
                 substitution=substitution, verbosity=verbosity)
-            remove(file_path)
-            #Move new file
-            move(abs_path, file_path)
+
 
             total_file_lines += n_lines
 
@@ -121,7 +144,7 @@ def process_files(input_folders=None, file_globs=None, pattern=None,
             if verbosity > 0:
                 print(
                    "{}: Processed file {}={} with {} physical lines."
-                  .format(me, file_count, input_file_name, n_rows)
+                  .format(me, file_count, input_file_name, n_lines)
                   ,file=log_file)
 
         # end for path in paths
@@ -136,17 +159,25 @@ def process_files(input_folders=None, file_globs=None, pattern=None,
 import datetime
 def run(input_folder=None, file_globs=None,
     log_file_name=None, pattern=None,
-    substitution=None, verbosity=1):
+    substitution=None, strftime_format="%Y%m%dT%H%MZ",
+    verbosity=1,):
 
     me='run'
 
     if log_file_name is None:
         #datetime_string = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
-        day_string = datetime.datetime.utcnow().strftime("%Y%m%dT%H%MZ")
+        day_string = datetime.datetime.utcnow().strftime(strftime_format)
         log_file_name = ("{}/mets_batch_edits_{}.txt"
             .format(input_folder,day_string))
+    else:
+        log_file_name = ("{}/{}"
+            .format(input_folder,log_file_name))
 
     log_file = open(log_file_name, mode="w", encoding='utf-8')
+
+    if verbosity > 0:
+        msg="{}: Using log_file_name='{}'".format(me,log_file_name)
+        print(msg, file=log_file)
 
     print("{}: STARTING: Using verbosity value={}".format(me, verbosity)
         ,file=log_file)
@@ -154,10 +185,10 @@ def run(input_folder=None, file_globs=None,
     print("{}:Using data input_folder={}".format(me, input_folder)
         ,file=log_file)
 
-    print("{}:Using target pattern='{}''".format(me, pattern)
+    print("{}:Using target pattern='{}'".format(me, pattern)
         ,file=log_file)
 
-    print("{}:Using substitution='{}''".format(me, substitution)
+    print("{}:Using substitution='{}'".format(me, substitution)
         ,file=log_file)
 
     input_file_folders = [input_folder]
@@ -169,7 +200,7 @@ def run(input_folder=None, file_globs=None,
       log_file=log_file, verbosity=verbosity)
 
     msg = ("{}: ENDING: Processed {} files, with {} lines.\n"
-       .format(me, n_files, n_lines), log_file_name)
+       .format(me, n_files, n_lines))
     print(msg, file=log_file)
     print(msg)
     return
@@ -225,7 +256,8 @@ if __name__ == "__main__":
     #  '\\00\\02'
     #  )
     # TESTING
-    input_folder = ('c:\\rvp\\tmpdir' )
+    input_folder = ('c:\\rvp\\tmpdir\\' )
+    #input_folder = ('/c/rvp/tmpdir' )
 
     pattern = '<mods:mods>'
     substitution = '''<mods:mods>
@@ -253,8 +285,8 @@ Diputados, quienes nunca se reunieron por estallar la Guerra.
 </abstract>'''
 
     run(input_folder=input_folder,
-        log_file_name=None,
-        file_globs = ['*.*'],
+        log_file_name='testlog.txt',
+        file_globs = ['*.xml'],
         pattern=pattern,
         substitution=substitution,
         verbosity=1)

@@ -99,20 +99,19 @@ class Yaml(models.Model):
       )
 
     #
-    READING_CHOICES = (
+    ORDER_CHOICES = (
         ( 'l2r' ,'left-to-right'),
         ( 'r2l' ,'right-to-left'),
     )
     scanning_order = SpaceCharField(max_length=255,
-      choices=READING_CHOICES,
+      choices=ORDER_CHOICES,
       help_text="Either left-to-right or right-to-left",
-      help_text="Example: use left-to-right if tif 1 is front cover.
       default='l2r'
       )
 
     reading_order = SpaceCharField(max_length=255,
-      choices=READING_CHOICES,
-      help_text="Example: use right-to-left if tif 1 is BACK cover.
+      choices=ORDER_CHOICES,
+      help_text="Example: use right-to-left ...",
       default='l2r'
       )
 

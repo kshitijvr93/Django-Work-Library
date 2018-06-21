@@ -1,0 +1,29 @@
+run: STARTING: Using verbosity value=1
+run:Using data input_folder=c:\rvp\tmpdir
+run:Using target pattern='<mods:mods>''
+run:Using substitution='<mods:mods>
+<abstract>
+El periódico La Democracia, fundado y dirigido por Luis Muñoz Rivera en
+1890 y publicado en principios desde Ponce, Puerto Rico.
+
+Abogó por los principios del Partido Autonomista, de corte liberal que
+buscaba mayores derechos con la Corona Española. Incluía temas políticos
+como situaciones internas de delegados y protestas del pueblo, mantenía
+diálogo con otros periódicos, publicaba las propuestas de los diputados a
+Cortes, los tratados de España con otros países y la insurrección de Cuba.
+En cuanto a lo económico, protestó la imposición de tarifas sobre azúcar y
+otros productos y la prohibición del café hacia Cuba, publicó protestas de
+comerciantes de San Juan y embargos de fincas. Apoyó la creación de
+Asociación de Agricultores, el Banco Agrícola y la Exposición Santurce, en
+busca de soluciones económicas, sin éxito.
+
+En 1895, al declararse la guerra de Cuba, y luego de la reorganización del
+Partido Autonomista, Muñoz Rivera viajó a Madrid en busca de la autonomía,
+desde donde escribía regularmente en el periódico. Entre 1896-98, el periódico
+concentró sus esfuerzos en el tema político hasta la elección de los
+Diputados, quienes nunca se reunieron por estallar la Guerra.
+
+</abstract>''
+process_files:processing files for input_folders=['c:\\rvp\\tmpdir'], globs=['*.mets.xml']
+process_files: Ending with 0 files with 0 lines found and processed.
+('run: ENDING: Processed 0 files, with 0 lines.\n', 'testlog.txt')
