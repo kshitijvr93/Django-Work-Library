@@ -73,20 +73,18 @@ from os import remove
 
 def file_add_or_replace_xml(input_file_name=None,
     parent_xpath=None,
-    child_node_candidate=None,
+    child_check_path=None, child_new=None,
     log_file=None,
     input_encoding='latin-1', errors='ignore',
     verbosity=0,):
 
     me = 'file_add_or_replace_xml'
     if verbosity > 0:
-        msg = ('{}: using input_file={}, parent_xpath={}'
-          .format(me, input_file_name, parent_xpath))
+        msg = ('{}: using input_file={}, parent_xpath={},child_check_path={}'
+          .format(me, input_file_name, parent_xpath,child_check_path))
         print(msg, file=log_file)
     # { see https://stackoverflow.com/questions/13590749/reading-unicode-file-data-with-bom-chars-in-python
     # Jonathan Eunice message of 20180429
-    BOM = '\ufeff'
-    input_string=''
 
     with open(input_file_name, mode='rb') as f:
         #input_string = StringIO(bytes.decode('utf-8-sig'))
@@ -117,13 +115,40 @@ def file_add_or_replace_xml(input_file_name=None,
     # Find the parent node(s) if any
     parent_nodes = node_root_input.findall(
         parent_xpath, namespaces=d_namespace)
-    plen = 0 if parent_nodes is None else len(parent_nodes)
+
+    if parent_nodes is None:
+        if verbosity > 0:
+            msg = ('{}: in {}, found NO parent node occurences'
+              .format(me, input_file_name))
+            print(msg, file=log_file)
+        return -2
+
+    plen =len(parent_nodes)
     if verbosity > 0:
         msg = ('{}: in {}, found {} parent nodes'
           .format(me, input_file_name,plen))
         print(msg, file=log_file)
 
-    return 1
+    if child_check_path is None:
+        msg = "child_check_path is None"
+        raise ValueError(msg)
+    for parent_node in parent_nodes:
+        child_nodes = parent_node.findall(
+            child_check_path, namespaces=d_namespace)
+
+    if child_nodes is not None:
+        clen = len(child_nodes)
+        msg = ('{}: in {}, found {} child node occurences'
+          .format(me, input_file_name,clen))
+        print(msg, file=log_file)
+        return -2
+    else:
+        # child_nodes is None - so parent must receive a new child
+        msg = ('{}: in {}, found PARENT to receive a new child node'
+          .format(me, input_file_name))
+        print(msg, file=log_file)
+        return 1
+
 # end def file_add_or_replace_xml
 
 def file_replace_pattern(input_file_name=None, pattern=None,
@@ -173,11 +198,16 @@ def file_replace_pattern(input_file_name=None, pattern=None,
     return n_lines
 # end def file_edit
 
-def process_files(input_folders=None, file_globs=None,
+def process_files(
+    input_folders=None, file_globs=None,
+    log_file=None,
     parent_xpath=None,
-    child_node_candidate=None,
+    child_check_path=None,
+    child_new=None,
     pattern=None,
-    substitution=None, verbosity=1, log_file=None):
+    substitution=None,
+    verbosity=1,
+    ):
 
         me = 'process_files'
         n_files = 0
@@ -185,8 +215,9 @@ def process_files(input_folders=None, file_globs=None,
         total_file_lines = 0
         log_file = log_file
         if verbosity > 0:
-            msg = ("{}:processing files for input_folders={}, globs={}"
-              .format(me,input_folders,file_globs))
+            msg = ("{}:processing files for input_folders={},\n"
+              " globs={},\nlog='{}'"
+              .format(me,input_folders,file_globs,log_file.name))
             print(msg)
             print(msg,file=log_file)
 
@@ -222,8 +253,7 @@ def process_files(input_folders=None, file_globs=None,
                 log_file=log_file,
                 input_file_name=input_file_name,
                 parent_xpath=parent_xpath,
-                # insert child_node_candidate if child element not extant
-                child_node_candidate=child_node_candidate,
+                child_check_path=child_check_path, child_new=child_new,
                 verbosity=verbosity)
 
             if rv < 0:
@@ -250,7 +280,7 @@ import datetime
 def run(input_folder=None, file_globs=None,
     log_file_name=None,
     parent_xpath=None,
-    child_node_candidate=None,
+    child_check_path=None, child_new=None,
     pattern=None, substitution=None,
     strftime_format="%Y%m%dT%H%MZ",
     verbosity=1,):
@@ -293,7 +323,7 @@ def run(input_folder=None, file_globs=None,
     n_files, n_found, n_except = process_files(
       input_folders=input_file_folders,
       parent_xpath=parent_xpath,
-      child_node_candidate=child_node_candidate,
+      child_check_path=child_check_path, child_new=child_new,
       file_globs=file_globs, pattern=pattern,
       substitution=substitution,
       log_file=log_file, verbosity=verbosity)
@@ -356,6 +386,7 @@ if __name__ == "__main__":
     #  )
     # TESTING
     input_folder = ('c:\\rvp\\tmpdir\\' )
+    input_folder = ('c:\\rvp\\data\\backups\\20180621_AA00052874\\test_vids\\' )
     pattern = '<mods:mods>'
     abstract = '''El periódico La Democracia, fundado y dirigido por Luis Muñoz Rivera en
 1890 y publicado en principios desde Ponce, Puerto Rico.
@@ -382,13 +413,16 @@ Diputados, quienes nunca se reunieron por estallar la Guerra.
 
     ## Set up args for xml node replacements
     parent_xpath = ".//mods:mods"
-    child_node_candidate = None
+    child_check_path='.//mods:abstract'
+    # child_new is the node to insert under parent if it lacks a node for
+    # the child_check_path or there is no child check path defined
+    child_new=None
 
     run(input_folder=input_folder,
         log_file_name='testlog.txt',
         file_globs = ['**/*.mets.xml'],
         parent_xpath=parent_xpath,
-        child_node_candidate=child_node_candidate,
+        child_check_path=child_check_path, child_new=child_new,
         pattern=pattern,
         substitution=substitution,
         verbosity=1)
