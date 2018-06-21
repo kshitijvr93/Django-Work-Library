@@ -6,6 +6,8 @@ Python 3.6+ code
 '''
 
 import sys, os, os.path, platform
+from io import StringIO, BytesIO
+import codecs
 
 def register_modules():
     platform_name = platform.system().lower()
@@ -73,39 +75,55 @@ def file_add_or_replace_xml(input_file_name=None,
     parent_xpath=None,
     child_node_candidate=None,
     log_file=None,
-    verbosity=0):
+    input_encoding='latin-1', errors='ignore',
+    verbosity=0,):
 
     me = 'file_add_or_replace_xml'
     if verbosity > 0:
         msg = ('{}: using input_file={}, parent_xpath={}'
           .format(me, input_file_name, parent_xpath))
         print(msg, file=log_file)
+    # { see https://stackoverflow.com/questions/13590749/reading-unicode-file-data-with-bom-chars-in-python
+    # Jonathan Eunice message of 20180429
+    BOM = '\ufeff'
+    input_string=''
 
-    with open(input_file_name, 'r') as input_file:
-        input_string = input_file.read()
+    with open(input_file_name, mode='rb') as f:
+        #input_string = StringIO(bytes.decode('utf-8-sig'))
+        input_string = f.read().decode(
+           encoding='utf-8-sig', errors='replace')
 
-    if verbosity > 0:
-        msg = ("{}: Got input_string='{}'"
-          .format(me, input_string))
-        print(msg, file=log_file)
-
-
+        if verbosity > 1:
+            msg = ("{}: Got input_string='{}'"
+              .format(me, input_string))
+            print(msg, file=log_file)
+            log_file.flush()
     try:
-        node_root_input = etree.fromstring(input_string)
+        node_root_input = etree.fromstring(str.encode(input_string))
+
     except Exception as e:
         log_msg = (
-            "{}:Skipping exception='{}' in etree.fromstring failure for input_file_name={}"
-            .format(me,repr(e),input_file_name))
+            "{}:Skipping exception='{}' input_string='{}'"
+            .format(me, repr(e), input_string))
         print(log_msg, file=log_file)
-        return 0
+        return -1
+
+    # Create d_ns - dictionary of namespace key or abbreviation name to
+    # namespace 'long name' values.
+    d_namespace = { key:value
+      for key,value in dict(node_root_input.nsmap).items()
+      if key is not None}
 
     # Find the parent node(s) if any
-    parent_nodes = node_root_input.findall(parent_xpath)
+    parent_nodes = node_root_input.findall(
+        parent_xpath, namespaces=d_namespace)
     plen = 0 if parent_nodes is None else len(parent_nodes)
     if verbosity > 0:
-        msg = ('{}: found {} parent nodes' .format(me, plen))
+        msg = ('{}: in {}, found {} parent nodes'
+          .format(me, input_file_name,plen))
         print(msg, file=log_file)
-    pass
+
+    return 1
 # end def file_add_or_replace_xml
 
 def file_replace_pattern(input_file_name=None, pattern=None,
@@ -137,7 +155,7 @@ def file_replace_pattern(input_file_name=None, pattern=None,
     if 1 == 1:
         n_lines = 0
         output = ''
-        with open(input_file_name) as input_file:
+        with open(input_file_name,mode='r',encoding='utf-8') as input_file:
             #for n_lines, line in enumerate(input_file):
             for line in input_file:
                 n_lines += 1
@@ -162,7 +180,7 @@ def process_files(input_folders=None, file_globs=None,
     substitution=None, verbosity=1, log_file=None):
 
         me = 'process_files'
-        file_count = 0
+        n_files = 0
 
         total_file_lines = 0
         log_file = log_file
@@ -176,7 +194,9 @@ def process_files(input_folders=None, file_globs=None,
             input_path_globs=file_globs, verbosity=verbosity)
 
         paths = []
-        n_lines=0
+        n_files = 0
+        n_except = 0
+        n_found = 0
 
         for path in gpaths:
             if verbosity > 1:
@@ -191,14 +211,14 @@ def process_files(input_folders=None, file_globs=None,
             paths.append(path)
 
             # Start processing a file
-            file_count += 1
+            n_files += 1
 
             input_file_name = path.resolve()
             if verbosity > 1:
                 print("{}:processing file = '{}'"
                   .format(me,input_file_name),file=log_file)
 
-            n_replaced = file_add_or_replace_xml(
+            rv = file_add_or_replace_xml(
                 log_file=log_file,
                 input_file_name=input_file_name,
                 parent_xpath=parent_xpath,
@@ -206,29 +226,24 @@ def process_files(input_folders=None, file_globs=None,
                 child_node_candidate=child_node_candidate,
                 verbosity=verbosity)
 
-            '''
-            n_lines = file_replace_pattern(
-                log_file=log_file,
-                input_file_name=input_file_name, pattern=pattern,
-                substitution=substitution, verbosity=verbosity)
-            '''
+            if rv < 0:
+                n_except += 1
+            else:
+                n_found +=1
 
-            total_file_lines += n_lines
-
-            #l_rows = ['one']
             if verbosity > 0:
                 print(
-                   "{}: Processed file {}={} with {} physical lines."
-                  .format(me, file_count, input_file_name, n_lines)
+                   "{}: Processed file {}={} with rv={}."
+                  .format(me, n_files, input_file_name, rv)
                   ,file=log_file)
 
         # end for path in paths
 
         if verbosity > 0:
             print("{}: Ending with {} files processed."
-                .format(me,file_count,), file=log_file)
+                .format(me,n_files,), file=log_file)
 
-        return file_count, n_lines
+        return n_files, n_found, n_except
 # end def process_files
 
 import datetime
@@ -241,6 +256,7 @@ def run(input_folder=None, file_globs=None,
     verbosity=1,):
 
     me='run'
+    n_files = 0
 
     if log_file_name is None:
         #datetime_string = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
@@ -251,11 +267,13 @@ def run(input_folder=None, file_globs=None,
         log_file_name = ("{}/{}"
             .format(input_folder,log_file_name))
 
-    log_file = open(log_file_name, mode="w", encoding='utf-8')
+    # utf-8-sig strips BOM as we desire
+    log_file = open(log_file_name, mode="w", encoding='utf-8-sig')
+    utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     if verbosity > 0:
-        msg = ("{}: Using log_file_name='{}',parent_xpath={}"
-            .format(me,log_file_name,parent_xpath))
+        msg = ("{}: Start at {}, using log_file_name='{}',parent_xpath={}"
+            .format(me,utc_secs_z,log_file_name,parent_xpath))
         print(msg, file=log_file)
 
     print("{}: STARTING: Using verbosity value={}".format(me, verbosity)
@@ -272,14 +290,16 @@ def run(input_folder=None, file_globs=None,
 
     input_file_folders = [input_folder]
 
-    n_files, n_lines = process_files(input_folders=input_file_folders,
+    n_files, n_found, n_except = process_files(
+      input_folders=input_file_folders,
       parent_xpath=parent_xpath,
       child_node_candidate=child_node_candidate,
-      file_globs=file_globs,pattern=pattern, substitution=substitution,
+      file_globs=file_globs, pattern=pattern,
+      substitution=substitution,
       log_file=log_file, verbosity=verbosity)
 
-    msg = ("{}: ENDING: Processed {} files, with {} lines.\n"
-       .format(me, n_files, n_lines))
+    msg = ("{}: ENDING: Processed {} files, {} with parent node.\n"
+       .format(me, n_files, n_found))
     print(msg, file=log_file)
     print(msg)
     return
@@ -361,7 +381,7 @@ Diputados, quienes nunca se reunieron por estallar la Guerra.
         .format(abstract))
 
     ## Set up args for xml node replacements
-    parent_xpath = ".//<mods:mods>"
+    parent_xpath = ".//mods:mods"
     child_node_candidate = None
 
     run(input_folder=input_folder,
