@@ -23,9 +23,14 @@ def register_modules():
 
 from pathlib import Path
 from collections import OrderedDict
+from lxml import etree
 
-#import regex
+#import regular expressions
 import re
+import datetime
+
+utc_now = datetime.datetime.utcnow()
+utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 def sequence_paths(log_file=None, input_folders=None, input_path_globs=None, verbosity=0):
     # NOTE: I changed arg input_path_glob to input_path_globs
@@ -64,6 +69,45 @@ from tempfile import NamedTemporaryFile, mkstemp, TemporaryFile
 from shutil import move
 from os import remove
 
+def file_add_or_replace_xml(input_file_name=None,
+    parent_xpath=None,
+    child_node_candidate=None,
+    log_file=None,
+    verbosity=0):
+
+    me = 'file_add_or_replace_xml'
+    if verbosity > 0:
+        msg = ('{}: using input_file={}, parent_xpath={}'
+          .format(me, input_file_name, parent_xpath))
+        print(msg, file=log_file)
+
+    with open(input_file_name, 'r') as input_file:
+        input_string = input_file.read()
+
+    if verbosity > 0:
+        msg = ("{}: Got input_string='{}'"
+          .format(me, input_string))
+        print(msg, file=log_file)
+
+
+    try:
+        node_root_input = etree.fromstring(input_string)
+    except Exception as e:
+        log_msg = (
+            "{}:Skipping exception='{}' in etree.fromstring failure for input_file_name={}"
+            .format(me,repr(e),input_file_name))
+        print(log_msg, file=log_file)
+        return 0
+
+    # Find the parent node(s) if any
+    parent_nodes = node_root_input.findall(parent_xpath)
+    plen = 0 if parent_nodes is None else len(parent_nodes)
+    if verbosity > 0:
+        msg = ('{}: found {} parent nodes' .format(me, plen))
+        print(msg, file=log_file)
+    pass
+# end def file_add_or_replace_xml
+
 def file_replace_pattern(input_file_name=None, pattern=None,
     log_file=None,
     substitution=None, verbosity=0):
@@ -72,34 +116,49 @@ def file_replace_pattern(input_file_name=None, pattern=None,
     file_like_obj = NamedTemporaryFile(mode='w')
 
     temp_file = file_like_obj
-    temp_file_name = file_like_obj.file.name
+    # {On windows 10, python 3.6, this is a number like 3 or 4
+    # not a file name
+    temp_file_name = temp_file.file.name
+    # }
+    # This is a FileSystem absolute path name string
+    temp_file_name = temp_file.name
     if verbosity > 0:
-      msg=("Got temp file name='{}'".format(temp_file_name))
-      print(msg,log_file)
+      msg=("Using file names for input={},temp file='{}'"
+        .format(input_file_name,temp_file_name))
+      print(msg,file=log_file)
       log_file.flush()
+
     if verbosity > 0:
         msg=("{}: processing input file name '{}', pattern='{}'"
           .format(me,input_file_name,pattern))
         print(msg)
         print(msg, file=log_file)
+
     if 1 == 1:
         n_lines = 0
+        output = ''
         with open(input_file_name) as input_file:
             #for n_lines, line in enumerate(input_file):
             for line in input_file:
-                line = line.replace(pattern, substitution)
-                temp_file.write(line)
+                n_lines += 1
+                output += line.replace(pattern, substitution)
+
                 if verbosity > 0:
                     msg=("{}: Wrote line='{}'".format(me,line))
                     print(msg)
                     print(msg, file=log_file)
-        remove(input_file_name)
-        move(temp_file_name, input_file_name)
+        # end open(input_file_name)
+        # Write the output back to the input_file_name
+        with open(input_file_name, mode='w') as file:
+            file.write(output)
     # end with NamedTemporaryfile
     return n_lines
 # end def file_edit
 
-def process_files(input_folders=None, file_globs=None, pattern=None,
+def process_files(input_folders=None, file_globs=None,
+    parent_xpath=None,
+    child_node_candidate=None,
+    pattern=None,
     substitution=None, verbosity=1, log_file=None):
 
         me = 'process_files'
@@ -139,12 +198,20 @@ def process_files(input_folders=None, file_globs=None, pattern=None,
                 print("{}:processing file = '{}'"
                   .format(me,input_file_name),file=log_file)
 
-            #n_rows, n_inserts, n_exceptions = self.import_file(
+            n_replaced = file_add_or_replace_xml(
+                log_file=log_file,
+                input_file_name=input_file_name,
+                parent_xpath=parent_xpath,
+                # insert child_node_candidate if child element not extant
+                child_node_candidate=child_node_candidate,
+                verbosity=verbosity)
+
+            '''
             n_lines = file_replace_pattern(
                 log_file=log_file,
                 input_file_name=input_file_name, pattern=pattern,
                 substitution=substitution, verbosity=verbosity)
-
+            '''
 
             total_file_lines += n_lines
 
@@ -158,16 +225,19 @@ def process_files(input_folders=None, file_globs=None, pattern=None,
         # end for path in paths
 
         if verbosity > 0:
-            print("{}: Ending with {} files with {} lines found and processed."
-                .format(me,file_count,n_lines), file=log_file)
+            print("{}: Ending with {} files processed."
+                .format(me,file_count,), file=log_file)
 
         return file_count, n_lines
 # end def process_files
 
 import datetime
 def run(input_folder=None, file_globs=None,
-    log_file_name=None, pattern=None,
-    substitution=None, strftime_format="%Y%m%dT%H%MZ",
+    log_file_name=None,
+    parent_xpath=None,
+    child_node_candidate=None,
+    pattern=None, substitution=None,
+    strftime_format="%Y%m%dT%H%MZ",
     verbosity=1,):
 
     me='run'
@@ -184,7 +254,8 @@ def run(input_folder=None, file_globs=None,
     log_file = open(log_file_name, mode="w", encoding='utf-8')
 
     if verbosity > 0:
-        msg="{}: Using log_file_name='{}'".format(me,log_file_name)
+        msg = ("{}: Using log_file_name='{}',parent_xpath={}"
+            .format(me,log_file_name,parent_xpath))
         print(msg, file=log_file)
 
     print("{}: STARTING: Using verbosity value={}".format(me, verbosity)
@@ -201,9 +272,9 @@ def run(input_folder=None, file_globs=None,
 
     input_file_folders = [input_folder]
 
-#def process_files(input_folders=None, file_globs=None, pattern=None,
-#    substitution=None, verbosity=1):
     n_files, n_lines = process_files(input_folders=input_file_folders,
+      parent_xpath=parent_xpath,
+      child_node_candidate=child_node_candidate,
       file_globs=file_globs,pattern=pattern, substitution=substitution,
       log_file=log_file, verbosity=verbosity)
 
@@ -260,17 +331,13 @@ if __name__ == "__main__":
     '''
     # Settings for 20180620 la democracia bib
     # PRODUCTION
-    # input_folder = ('F:\\flvc.fs.osg.ufl.edu\\ufdc\\resources\\AA'
-    #  '\\00\\02'
+    #input_folder = ('F:\\flvc.fs.osg.ufl.edu\\ufdc\\resources\\AA'
+    #  '\\00\\05\\28\\74\\00100'
     #  )
     # TESTING
     input_folder = ('c:\\rvp\\tmpdir\\' )
-    #input_folder = ('/c/rvp/tmpdir' )
-
     pattern = '<mods:mods>'
-    substitution = '''<mods:mods>
-<abstract>
-El periódico La Democracia, fundado y dirigido por Luis Muñoz Rivera en
+    abstract = '''El periódico La Democracia, fundado y dirigido por Luis Muñoz Rivera en
 1890 y publicado en principios desde Ponce, Puerto Rico.
 
 Abogó por los principios del Partido Autonomista, de corte liberal que
@@ -289,12 +356,19 @@ Partido Autonomista, Muñoz Rivera viajó a Madrid en busca de la autonomía,
 desde donde escribía regularmente en el periódico. Entre 1896-98, el periódico
 concentró sus esfuerzos en el tema político hasta la elección de los
 Diputados, quienes nunca se reunieron por estallar la Guerra.
+'''
+    substitution = ("<mods:mods><mods:abstract>{}</mods:abstract>"
+        .format(abstract))
 
-</abstract>'''
+    ## Set up args for xml node replacements
+    parent_xpath = ".//<mods:mods>"
+    child_node_candidate = None
 
     run(input_folder=input_folder,
         log_file_name='testlog.txt',
-        file_globs = ['*.xml'],
+        file_globs = ['**/*.mets.xml'],
+        parent_xpath=parent_xpath,
+        child_node_candidate=child_node_candidate,
         pattern=pattern,
         substitution=substitution,
         verbosity=1)

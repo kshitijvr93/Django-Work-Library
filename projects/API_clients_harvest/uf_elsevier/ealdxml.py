@@ -115,8 +115,9 @@ def get_elsevier_api_uf_query_url_by_dates(d_run_params, verbosity):
     Caller provides a bef-aft day range to search Elsevier for UF-affiliated articles.
     The result data is returned.
     '''
-    # Empricial testing shows that to get orig-load-date of say 20160315, one must set
-    # cymd_bef to 20160314 and cymd_aft to 20160316. That is, both params bef and aft are
+    # Empricial testing shows that to get orig-load-date of say 20160315, one
+    # must set cymd_bef to 20160314 and cymd_aft to 20160316. That is, both
+    # params bef and aft are
     # not inclusive.
     cymd_bef = d_run_params.get('cymd-bef')
     cymd_aft = d_run_params.get('cymd-aft','')
