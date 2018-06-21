@@ -78,7 +78,8 @@ def file_replace_pattern(input_file_name=None, pattern=None,
       print(msg,log_file)
 
     if verbosity > 0:
-        msg="{}: processing input file name {}".format(me,input_file_name)
+        msg=("{}: processing input file name '{}', pattern='{}'"
+          .format(me,input_file_name,pattern))
         print(msg)
         print(msg, file=log_file)
     if 1 == 1:
