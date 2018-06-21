@@ -72,11 +72,11 @@ def file_replace_pattern(input_file_name=None, pattern=None,
     file_like_obj = NamedTemporaryFile(mode='w')
 
     temp_file = file_like_obj
-    temp_file_name = file_like_obj.name
+    temp_file_name = file_like_obj.file.name
     if verbosity > 0:
       msg=("Got temp file name='{}'".format(temp_file_name))
       print(msg,log_file)
-
+      log_file.flush()
     if verbosity > 0:
         msg=("{}: processing input file name '{}', pattern='{}'"
           .format(me,input_file_name,pattern))
