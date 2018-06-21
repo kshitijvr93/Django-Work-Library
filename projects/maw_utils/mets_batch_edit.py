@@ -8,6 +8,7 @@ Python 3.6+ code
 import sys, os, os.path, platform
 from io import StringIO, BytesIO
 import codecs
+from copy import deepcopy
 
 def register_modules():
     platform_name = platform.system().lower()
@@ -132,11 +133,12 @@ def file_add_or_replace_xml(input_file_name=None,
     if child_check_path is None:
         msg = "child_check_path is None"
         raise ValueError(msg)
+
     for parent_node in parent_nodes:
         child_nodes = parent_node.findall(
             child_check_path, namespaces=d_namespace)
 
-    if child_nodes is not None:
+    if child_nodes is not None and len(child_nodes) > 0:
         clen = len(child_nodes)
         msg = ('{}: in {}, found {} child node occurences'
           .format(me, input_file_name,clen))
@@ -144,9 +146,29 @@ def file_add_or_replace_xml(input_file_name=None,
         return -2
     else:
         # child_nodes is None - so parent must receive a new child
+        # that is a deepcopy of child_new
         msg = ('{}: in {}, found PARENT to receive a new child node'
           .format(me, input_file_name))
         print(msg, file=log_file)
+
+        # later, get ename, with curlies, from caller
+        ename = '{mods}abstract'
+        child_element = etree.Element('{mods}abstract')
+
+        child_element.text = child_new.text
+
+        parent_nodes[0].append(child_element)
+
+        #Overwrite out the file
+        output_file_name = input_file_name
+        # TODO: CHANGE AFTER TESTING
+        output_file_name = "{}.txt".format(input_file_name)
+        with open(output_file_name, 'wb') as output_file:
+            msg="Writing to output file={}".format(output_file_name)
+            print(msg, file=log_file)
+            output_file.write(
+               etree.tostring(node_root_input, pretty_print=True))
+
         return 1
 
 # end def file_add_or_replace_xml
@@ -416,7 +438,10 @@ Diputados, quienes nunca se reunieron por estallar la Guerra.
     child_check_path='.//mods:abstract'
     # child_new is the node to insert under parent if it lacks a node for
     # the child_check_path or there is no child check path defined
-    child_new=None
+    node_abstract = etree.Element("{mods}abstract")
+    node_abstract.text = abstract
+
+    child_new = node_abstract
 
     run(input_folder=input_folder,
         log_file_name='testlog.txt',
