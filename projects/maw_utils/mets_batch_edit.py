@@ -113,6 +113,13 @@ def file_add_or_replace_xml(input_file_name=None,
       for key,value in dict(node_root_input.nsmap).items()
       if key is not None}
 
+    if verbosity > 0:
+        msg='--- {} NAMESPACE KEY VALUES ARE:'.format(me)
+        print(msg, file=log_file)
+        for key,value in d_namespace.items():
+            msg = ("{} : {}".format(key,value))
+            print(msg, file=log_file)
+
     # Find the parent node(s) if any
     parent_nodes = node_root_input.findall(
         parent_xpath, namespaces=d_namespace)
@@ -151,23 +158,48 @@ def file_add_or_replace_xml(input_file_name=None,
           .format(me, input_file_name))
         print(msg, file=log_file)
 
-        # later, get ename, with curlies, from caller
-        ename = '{mods}abstract'
-        child_element = etree.Element('{mods}abstract')
+        # NOTE: the colon is changed to xml_tag_replace_char internally, which
+        # must be a valid xml tag 'NameChar"  from:
+        # https://stackoverflow.com/questions/7065693/is-the-at-sign-a-valid-html-xml-tag-character
+        # It will be changed back to a colon before output.
 
+        #later get ename and xml_tag_replace_char as args from caller
+        etname = 'mods:abstract'
+
+        # if element tag name has a :, th namespace must exist in original xml
+        # todo: provide parameter to specify new namespace(s) too.
+        tparts = etname.split(':')
+        if len(tparts) == 2:
+            # put tag name in lxml-prescribed format.
+            # see: http://lxml.de/tutorial.html#namespaces
+            ns = d_namespace.get(
+                tparts[0], "http://{}_UNKNOWN".format(tparts[0]))
+            etname = "{{{}}}{}".format(ns, tparts[1])
+        print("Using etname='{}'".format(etname),file=log_file)
+
+        child_element = etree.Element(etname)
         child_element.text = child_new.text
-
         parent_nodes[0].append(child_element)
+        msg = ("appended to parent {} the child {}"
+            .format(parent_nodes[0].tag, child_element.tag))
+        print(msg, file=log_file)
 
-        #Overwrite out the file
+        #For output, overwrite the input file
         output_file_name = input_file_name
         # TODO: CHANGE AFTER TESTING
         output_file_name = "{}.txt".format(input_file_name)
-        with open(output_file_name, 'wb') as output_file:
-            msg="Writing to output file={}".format(output_file_name)
-            print(msg, file=log_file)
-            output_file.write(
-               etree.tostring(node_root_input, pretty_print=True))
+        with open(output_file_name, 'w') as output_file:
+            # NOTE: alt to next would be
+            # etree.tostring(node_root_input, encoding='unicode', method='text')
+            output_string = (etree.tostring(
+                node_root_input, pretty_print=True).decode('utf-8'))
+
+            if verbosity > 0:
+                msg="Writing to output file={}".format(output_file_name)
+                print(msg, file=log_file)
+            #output_string = output_string.replace(xml_tag_replace_char, ':')
+            #REM: opened with mode='w' to output this type, a string
+            output_file.write(output_string)
 
         return 1
 
