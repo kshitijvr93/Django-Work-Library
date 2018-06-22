@@ -289,15 +289,25 @@ def process_files(
 
         total_file_lines = 0
         log_file = log_file
+
         if verbosity > 0:
-            msg = ("{}:processing files for input_folders={},\n"
-              " globs={},\nlog='{}'"
-              .format(me,input_folders,file_globs,log_file.name))
+            utc_now = datetime.datetime.utcnow()
+            utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+            msg = ("{}:for input_folders={},\n"
+              " globs={},\nlog='{}', getting sequence paths at {}..."
+              .format(me,input_folders,file_globs,log_file.name, utc_secs_z))
             print(msg)
             print(msg,file=log_file)
+            sys.stdout.flush()
+            log_file.flush()
 
         gpaths = sequence_paths(log_file=log_file, input_folders=input_folders,
             input_path_globs=file_globs, verbosity=verbosity)
+
+        utc_now = datetime.datetime.utcnow()
+        utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        print ("{}:Got input paths sequence at utc time = {}"
+          .format(me, utc_secs_z))
 
         paths = []
         n_files = 0
@@ -305,7 +315,7 @@ def process_files(
         n_changed = 0
 
         for path in gpaths:
-            if verbosity > 2:
+            if verbosity > 0:
                 msg=("{}:Got path.resolve()='{}'".format(me,path.resolve()))
                 print(msg, file=log_file)
 
@@ -318,21 +328,25 @@ def process_files(
             #Store this path to reject future duplicates in the sequence
             paths.append(path)
 
-            # Start processing a file
             n_files += 1
 
-            #Test
-            if n_files > 92:
+            #Test limits
+            min_file_index = 201
+            max_file_index = 5000
+            if n_files < min_file_index:
+                continue
+            if n_files > max_file_index:
                 return n_files, n_changed, n_unchanged
 
             input_file_name = path.resolve()
-
-            if verbosity > 1:
-                msg = ("{}:processing file {}='{}'"
-                    .format(me, n_files, input_file_name))
-                print(msg,file=log_file)
-                if verbosity > 2 :
-                    print(msg,file=log_file)
+            # Start processing a file
+            if verbosity > 0:
+                msg=("{}:Processing input_file_name='{}'"
+                  .format(me, input_file_name))
+                print(msg, file=log_file)
+                print(msg)
+                log_file.flush()
+                sys.stdout.flush()
 
             rv = file_add_or_replace_xml(
                 log_file=log_file,
@@ -342,14 +356,16 @@ def process_files(
                 child_model_element=child_model_element,
                 verbosity=verbosity)
 
-            period = 10
+            period = 100
             if n_files % period == 0:
                 utc_now = datetime.datetime.utcnow()
                 utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-                msg = ("{}: Processed {} files as of {}"
-                    .format(me, n_files, utc_secs_z))
+                msg = ("{}: Processed thru file index {}, name {} as of {}"
+                    .format(me, n_files, input_file_name, utc_secs_z))
                 print(msg)
                 print(msg, file=log_file)
+                sys.stdout.flush()
+                log_file.flush()
 
             if rv <= 0:
                 n_unchanged += 1
@@ -481,8 +497,8 @@ if __name__ == "__main__":
       '\\00\\05\\28\\74\\'
       )
     # TESTING
-    #input_folder = ('c:\\rvp\\tmpdir\\' )
-    input_folder = ('c:\\rvp\\data\\test_vids\\' )
+    # input_folder = ('c:\\rvp\\tmpdir\\' )
+    # input_folder = ('c:\\rvp\\data\\test_vids\\' )
 
     ######## Set up args for xml node replacements
     #
@@ -525,9 +541,10 @@ Diputados, quienes nunca se reunieron por estallar la Guerra.
     # or there is no child check path defined
     child_model_element = etree.Element(child_tag_localname)
     child_model_element.text = child_model_text
+    sys.stdout.flush()
 
     run(input_folder=input_folder,
-        log_file_name='testlog.txt',
+        log_file_name='batchlog.txt',
         file_globs = ['**/*.mets.xml'],
         parent_tag_name=parent_tag_name,
         child_tag_namespace=child_tag_namespace,
