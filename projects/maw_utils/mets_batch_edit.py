@@ -72,21 +72,10 @@ from tempfile import NamedTemporaryFile, mkstemp, TemporaryFile
 from shutil import move
 from os import remove
 
-def file_add_or_replace_xml(input_file_name=None,
-    parent_xpath=None,
-    child_check_path=None, child_new=None,
-    log_file=None,
-    input_encoding='latin-1', errors='ignore',
-    verbosity=0,):
+def get_root_from_file_bytes(input_file_name=None, log_file=None, verbosity=None):
+    me = 'get_xml_file_root'
 
-    me = 'file_add_or_replace_xml'
-    if verbosity > 0:
-        msg = ('{}: using input_file={}, parent_xpath={},child_check_path={}'
-          .format(me, input_file_name, parent_xpath,child_check_path))
-        print(msg, file=log_file)
-    # { see https://stackoverflow.com/questions/13590749/reading-unicode-file-data-with-bom-chars-in-python
-    # Jonathan Eunice message of 20180429
-
+    # get_root_element
     with open(input_file_name, mode='rb') as f:
         #input_string = StringIO(bytes.decode('utf-8-sig'))
         input_string = f.read().decode(
@@ -98,13 +87,65 @@ def file_add_or_replace_xml(input_file_name=None,
             print(msg, file=log_file)
             log_file.flush()
     try:
-        node_root_input = etree.fromstring(str.encode(input_string))
+        # { next ignores comments - but I want to keep them
+         node_root_input = etree.fromstring(str.encode(input_string))
+        # }
+        #parser = etree.XMLParser(remove_comments=False)
+        #tree = etree.parse
 
     except Exception as e:
         log_msg = (
             "{}:Skipping exception='{}' input_string='{}'"
             .format(me, repr(e), input_string))
         print(log_msg, file=log_file)
+        return None
+
+    return node_root_input
+#end def get_root_from_file_bytes()
+
+def get_tree_and_root_from_file(input_file_name=None, log_file=None, verbosity=None):
+    me = 'get_root_from_parsed_file_bytes'
+
+    parser = etree.XMLParser(remove_comments=False)
+
+    with open(input_file_name, mode='rb') as input_bytes_file:
+
+        try:
+            tree = etree.parse(input_bytes_file, parser=parser)
+
+        except Exception as e:
+            log_msg = (
+                "{}:Skipping exception='{}' in input_file_name='{}'"
+                .format(me, repr(e), input_file_name))
+            print(log_msg, file=log_file)
+            return None
+    # end with open
+
+    return tree, tree.getroot()
+#end def get_root_from_parsed_file_bytes()
+
+
+def file_add_or_replace_xml(input_file_name=None,
+    parent_tag_name=None,
+    child_tag_namespace=None,
+    child_model_element=None,
+    log_file=None,
+    input_encoding='latin-1', errors='ignore',
+    verbosity=0,):
+
+    me = 'file_add_or_replace_xml'
+    parent_xpath = ".//{}".format(parent_tag_name)
+    if verbosity > 0:
+        msg = ('{}: using input_file={}, parent_xpath={},child_tag_namespace={}'
+          .format(me, input_file_name, parent_xpath,child_tag_namespace))
+        print(msg, file=log_file)
+    # { see https://stackoverflow.com/questions/13590749/reading-unicode-file-data-with-bom-chars-in-python
+    # Jonathan Eunice message of 20180429
+    #
+    doctree, node_root_input = get_tree_and_root_from_file(
+        input_file_name=input_file_name, log_file=log_file, verbosity=verbosity)
+
+    if node_root_input is None:
         return -1
 
     # Create d_ns - dictionary of namespace key or abbreviation name to
@@ -113,7 +154,7 @@ def file_add_or_replace_xml(input_file_name=None,
       for key,value in dict(node_root_input.nsmap).items()
       if key is not None}
 
-    if verbosity > 0:
+    if verbosity > 1:
         msg='--- {} NAMESPACE KEY VALUES ARE:'.format(me)
         print(msg, file=log_file)
         for key,value in d_namespace.items():
@@ -137,129 +178,80 @@ def file_add_or_replace_xml(input_file_name=None,
           .format(me, input_file_name,plen))
         print(msg, file=log_file)
 
-    if child_check_path is None:
-        msg = "child_check_path is None"
-        raise ValueError(msg)
+    # Check for extant child - default behavior is to NOT insert child if
+    # same type of node already exists
 
+    # if element tag name has a :, th namespace must exist in original xml
+    # todo: provide parameter to specify new namespace(s) too.
+    if child_tag_namespace is not None:
+        # put tag name in lxml-prescribed format.
+        # see: http://lxml.de/tutorial.html#namespaces
+        ns = d_namespace.get(
+            child_tag_namespace,
+            "http://{}_UNKNOWN".format(child_tag_namespace))
+        cet_name = "{{{}}}{}".format(ns, child_model_element.tag)
+    else:
+        cet_name = child_model_element.tag
+
+    child_check_path = cet_name
     for parent_node in parent_nodes:
         child_nodes = parent_node.findall(
             child_check_path, namespaces=d_namespace)
 
     if child_nodes is not None and len(child_nodes) > 0:
         clen = len(child_nodes)
-        msg = ('{}: in {}, found {} child node occurences'
-          .format(me, input_file_name,clen))
-        print(msg, file=log_file)
+        if verbosity > 0:
+            msg = ("{}: in {}, found {} extant child node occurences. "
+              "NOT adding child.".format(me, input_file_name,clen))
+            print(msg, file=log_file)
         return -2
     else:
         # child_nodes is None - so parent must receive a new child
-        # that is a deepcopy of child_new
-        msg = ('{}: in {}, found PARENT to receive a new child node'
-          .format(me, input_file_name))
-        print(msg, file=log_file)
+        # that is a deepcopy of child_model_element
+        if verbosity > 1:
+            msg = ('{}: in {}, found PARENT to receive a new child node'
+              .format(me, input_file_name))
+            print(msg, file=log_file)
 
-        # NOTE: the colon is changed to xml_tag_replace_char internally, which
-        # must be a valid xml tag 'NameChar"  from:
-        # https://stackoverflow.com/questions/7065693/is-the-at-sign-a-valid-html-xml-tag-character
-        # It will be changed back to a colon before output.
+        # Create child node to append for this parent
+        child_element = etree.Element(cet_name)
+        child_element.text = child_model_element.text
 
-        #later get ename and xml_tag_replace_char as args from caller
-        etname = 'mods:abstract'
-
-        # if element tag name has a :, th namespace must exist in original xml
-        # todo: provide parameter to specify new namespace(s) too.
-        tparts = etname.split(':')
-        if len(tparts) == 2:
-            # put tag name in lxml-prescribed format.
-            # see: http://lxml.de/tutorial.html#namespaces
-            ns = d_namespace.get(
-                tparts[0], "http://{}_UNKNOWN".format(tparts[0]))
-            etname = "{{{}}}{}".format(ns, tparts[1])
-        print("Using etname='{}'".format(etname),file=log_file)
-
-        child_element = etree.Element(etname)
-        child_element.text = child_new.text
         parent_nodes[0].append(child_element)
-        msg = ("appended to parent {} the child {}"
-            .format(parent_nodes[0].tag, child_element.tag))
-        print(msg, file=log_file)
+        if verbosity > 1:
+            print("Using etname='{}'".format(cet_name),file=log_file)
+            msg = ("appended to parent {} the child {}"
+               .format(parent_nodes[0].tag, child_element.tag))
+            print(msg, file=log_file)
 
         #For output, overwrite the input file
         output_file_name = input_file_name
         # TODO: CHANGE AFTER TESTING
         output_file_name = "{}.txt".format(input_file_name)
-        with open(output_file_name, 'w') as output_file:
+        with open(output_file_name, 'wb') as output_file:
             # NOTE: alt to next would be
-            # etree.tostring(node_root_input, encoding='unicode', method='text')
-            output_string = (etree.tostring(
-                node_root_input, pretty_print=True).decode('utf-8'))
+            # output_string = etree.tostring(node_root_input,
+             #   xml_declaration=True).decode('utf-8')
+            #output_string = (etree.tostring(
+            #    node_root_input, pretty_print=True).decode('utf-8'))
 
             if verbosity > 0:
                 msg="Writing to output file={}".format(output_file_name)
                 print(msg, file=log_file)
             #output_string = output_string.replace(xml_tag_replace_char, ':')
             #REM: opened with mode='w' to output this type, a string
-            output_file.write(output_string)
-
+            # output_file.write(output_string)
+            doctree.write(output_file, xml_declaration=True)
         return 1
-
 # end def file_add_or_replace_xml
-
-def file_replace_pattern(input_file_name=None, pattern=None,
-    log_file=None,
-    substitution=None, verbosity=0):
-    me = "file_replace_pattern"
-
-    file_like_obj = NamedTemporaryFile(mode='w')
-
-    temp_file = file_like_obj
-    # {On windows 10, python 3.6, this is a number like 3 or 4
-    # not a file name
-    temp_file_name = temp_file.file.name
-    # }
-    # This is a FileSystem absolute path name string
-    temp_file_name = temp_file.name
-    if verbosity > 0:
-      msg=("Using file names for input={},temp file='{}'"
-        .format(input_file_name,temp_file_name))
-      print(msg,file=log_file)
-      log_file.flush()
-
-    if verbosity > 0:
-        msg=("{}: processing input file name '{}', pattern='{}'"
-          .format(me,input_file_name,pattern))
-        print(msg)
-        print(msg, file=log_file)
-
-    if 1 == 1:
-        n_lines = 0
-        output = ''
-        with open(input_file_name,mode='r',encoding='utf-8') as input_file:
-            #for n_lines, line in enumerate(input_file):
-            for line in input_file:
-                n_lines += 1
-                output += line.replace(pattern, substitution)
-
-                if verbosity > 0:
-                    msg=("{}: Wrote line='{}'".format(me,line))
-                    print(msg)
-                    print(msg, file=log_file)
-        # end open(input_file_name)
-        # Write the output back to the input_file_name
-        with open(input_file_name, mode='w') as file:
-            file.write(output)
-    # end with NamedTemporaryfile
-    return n_lines
-# end def file_edit
 
 def process_files(
     input_folders=None, file_globs=None,
     log_file=None,
-    parent_xpath=None,
-    child_check_path=None,
-    child_new=None,
-    pattern=None,
-    substitution=None,
+    parent_tag_name=None,
+    # child_tag_namespace allows for use of file-extant namespace prefixes
+    child_tag_namespace=None,
+    child_model_element=None,
     verbosity=1,
     ):
 
@@ -306,8 +298,9 @@ def process_files(
             rv = file_add_or_replace_xml(
                 log_file=log_file,
                 input_file_name=input_file_name,
-                parent_xpath=parent_xpath,
-                child_check_path=child_check_path, child_new=child_new,
+                parent_tag_name=parent_tag_name,
+                child_tag_namespace=child_tag_namespace,
+                child_model_element=child_model_element,
                 verbosity=verbosity)
 
             if rv < 0:
@@ -333,9 +326,9 @@ def process_files(
 import datetime
 def run(input_folder=None, file_globs=None,
     log_file_name=None,
-    parent_xpath=None,
-    child_check_path=None, child_new=None,
-    pattern=None, substitution=None,
+    parent_tag_name=None,
+    child_tag_namespace=None,
+    child_model_element=None,
     strftime_format="%Y%m%dT%H%MZ",
     verbosity=1,):
 
@@ -356,8 +349,8 @@ def run(input_folder=None, file_globs=None,
     utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     if verbosity > 0:
-        msg = ("{}: Start at {}, using log_file_name='{}',parent_xpath={}"
-            .format(me,utc_secs_z,log_file_name,parent_xpath))
+        msg = ("{}: Start at {}, using log_file_name='{}',parent_tag_name={}"
+            .format(me,utc_secs_z,log_file_name,parent_tag_name))
         print(msg, file=log_file)
 
     print("{}: STARTING: Using verbosity value={}".format(me, verbosity)
@@ -366,20 +359,22 @@ def run(input_folder=None, file_globs=None,
     print("{}:Using data input_folder={}".format(me, input_folder)
         ,file=log_file)
 
-    print("{}:Using target pattern='{}'".format(me, pattern)
+    print("{}:Using parent tag ='{}'".format(me, parent_tag_name)
         ,file=log_file)
 
-    print("{}:Using substitution='{}'".format(me, substitution)
+    print("{}:Using child namespace='{}'".format(me, child_tag_namespace)
+        ,file=log_file)
+    print("{}:Using child local tag='{}'".format(me, child_model_element.tag)
         ,file=log_file)
 
     input_file_folders = [input_folder]
 
     n_files, n_found, n_except = process_files(
       input_folders=input_file_folders,
-      parent_xpath=parent_xpath,
-      child_check_path=child_check_path, child_new=child_new,
-      file_globs=file_globs, pattern=pattern,
-      substitution=substitution,
+      parent_tag_name=parent_tag_name,
+      child_tag_namespace=child_tag_namespace,
+      child_model_element=child_model_element,
+      file_globs=file_globs,
       log_file=log_file, verbosity=verbosity)
 
     msg = ("{}: ENDING: Processed {} files, {} with parent node.\n"
@@ -441,9 +436,12 @@ if __name__ == "__main__":
     # TESTING
     input_folder = ('c:\\rvp\\tmpdir\\' )
     input_folder = ('c:\\rvp\\data\\backups\\20180621_AA00052874\\test_vids\\' )
-    pattern = '<mods:mods>'
-    abstract = '''El periódico La Democracia, fundado y dirigido por Luis Muñoz Rivera en
-1890 y publicado en principios desde Ponce, Puerto Rico.
+
+    ######## Set up args for xml node replacements
+    #
+
+    child_model_text = '''El periódico La Democracia, fundado y dirigido por
+Luis Muñoz Rivera en 1890 y publicado en principios desde Ponce, Puerto Rico.
 
 Abogó por los principios del Partido Autonomista, de corte liberal que
 buscaba mayores derechos con la Corona Española. Incluía temas políticos
@@ -462,27 +460,32 @@ desde donde escribía regularmente en el periódico. Entre 1896-98, el periódic
 concentró sus esfuerzos en el tema político hasta la elección de los
 Diputados, quienes nunca se reunieron por estallar la Guerra.
 '''
-    substitution = ("<mods:mods><mods:abstract>{}</mods:abstract>"
-        .format(abstract))
 
-    ## Set up args for xml node replacements
-    parent_xpath = ".//mods:mods"
-    child_check_path='.//mods:abstract'
-    # child_new is the node to insert under parent if it lacks a node for
-    # the child_check_path or there is no child check path defined
-    node_abstract = etree.Element("{mods}abstract")
-    node_abstract.text = abstract
+    # These element names will be user params
+    parent_tag_name="mods:mods"
+    child_tag_name = 'mods:abstract'
 
-    child_new = node_abstract
+    eparts = child_tag_name.split(':')
+    if len(eparts) == 2:
+        child_tag_namespace = eparts[0]
+        child_tag_localname = eparts[1]
+    else:
+        child_tag_namespace = ''
+        child_tag_localname = child_tag_name
+
+    # child_model_element is the node to insert under parent if it lacks a
+    # child node like child_model_element
+    # or there is no child check path defined
+    child_model_element = etree.Element(child_tag_localname)
+    child_model_element.text = child_model_text
 
     run(input_folder=input_folder,
         log_file_name='testlog.txt',
         file_globs = ['**/*.mets.xml'],
-        parent_xpath=parent_xpath,
-        child_check_path=child_check_path, child_new=child_new,
-        pattern=pattern,
-        substitution=substitution,
-        verbosity=1)
+        parent_tag_name=parent_tag_name,
+        child_tag_namespace=child_tag_namespace,
+        child_model_element=child_model_element,
+        verbosity=2)
 
 #end if __name__ == "__main__"
 
