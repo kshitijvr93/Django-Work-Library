@@ -118,7 +118,7 @@ def get_tree_and_root_from_file(input_file_name=None, log_file=None, verbosity=N
                 "{}:Skipping exception='{}' in input_file_name='{}'"
                 .format(me, repr(e), input_file_name))
             print(log_msg, file=log_file)
-            return None
+            return None, None
     # end with open
 
     return tree, tree.getroot()
@@ -144,7 +144,9 @@ def file_add_or_replace_xml(input_file_name=None,
     # Jonathan Eunice message of 20180429
     #
     doctree, node_root_input = get_tree_and_root_from_file(
-        input_file_name=input_file_name, log_file=log_file, verbosity=verbosity)
+        input_file_name=input_file_name,
+        log_file=log_file,
+        verbosity=verbosity)
 
     if node_root_input is None:
         return -1
@@ -220,9 +222,9 @@ def file_add_or_replace_xml(input_file_name=None,
         else:
             # Leave old children in place and skip this file
             if verbosity > 0:
-                msg = ("{}: in {}, found {} extant  node occurences. "
+                msg = ("{}: in {}, found {} extant '{}' child node occurences. "
                   "NOT adding . Skipping file."
-                  .format(me, input_file_name,clen))
+                  .format(me, input_file_name,clen,child_check_path))
                 print(msg, file=log_file)
             return -2
     else:
@@ -266,7 +268,9 @@ def file_add_or_replace_xml(input_file_name=None,
             #output_string = output_string.replace(xml_tag_replace_char, ':')
             #REM: opened with mode='w' to output this type, a string
             # output_file.write(output_string)
-            doctree.write(output_file, xml_declaration=True)
+            #doctree.write(output_file, xml_declaration=True)
+            #doctree.write(output_file, xml_declaration=True, encoding="utf-8")
+            doctree.write(output_file, xml_declaration=True, encoding="utf-8")
         return 1
 # end def file_add_or_replace_xml
 
@@ -301,8 +305,10 @@ def process_files(
         n_changed = 0
 
         for path in gpaths:
-            if verbosity > 1:
-                print("{}:Got path.resolve()='{}'".format(me,path.resolve()))
+            if verbosity > 2:
+                msg=("{}:Got path.resolve()='{}'".format(me,path.resolve()))
+                print(msg, file=log_file)
+
             if path in paths:
                 # gpaths could have duplicates when mulitple globs
                 # were used to generate the gpaths, so skip dups
@@ -315,10 +321,18 @@ def process_files(
             # Start processing a file
             n_files += 1
 
+            #Test
+            if n_files > 92:
+                return n_files, n_changed, n_unchanged
+
             input_file_name = path.resolve()
+
             if verbosity > 1:
-                print("{}:processing file = '{}'"
-                  .format(me,input_file_name),file=log_file)
+                msg = ("{}:processing file {}='{}'"
+                    .format(me, n_files, input_file_name))
+                print(msg,file=log_file)
+                if verbosity > 2 :
+                    print(msg,file=log_file)
 
             rv = file_add_or_replace_xml(
                 log_file=log_file,
@@ -327,6 +341,15 @@ def process_files(
                 child_tag_namespace=child_tag_namespace,
                 child_model_element=child_model_element,
                 verbosity=verbosity)
+
+            period = 10
+            if n_files % period == 0:
+                utc_now = datetime.datetime.utcnow()
+                utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+                msg = ("{}: Processed {} files as of {}"
+                    .format(me, n_files, utc_secs_z))
+                print(msg)
+                print(msg, file=log_file)
 
             if rv <= 0:
                 n_unchanged += 1
@@ -367,7 +390,7 @@ def run(input_folder=None, file_globs=None,
             .format(input_folder,day_string))
     else:
         log_file_name = ("{}/{}"
-            .format(input_folder,log_file_name))
+            .format(input_folder, log_file_name))
 
     # utf-8-sig strips BOM as we desire
     log_file = open(log_file_name, mode="w", encoding='utf-8-sig')
@@ -411,7 +434,6 @@ def run(input_folder=None, file_globs=None,
 #end def run()
 # end main code
 
-# Launch the run() method with parsed command line parameters
 
 if __name__ == "__main__":
 
@@ -456,11 +478,11 @@ if __name__ == "__main__":
     # Settings for 20180620 la democracia bib
     # PRODUCTION
     input_folder = ('F:\\ufdc\\resources\\AA'
-      '\\00\\05\\28\\74\\00001'
+      '\\00\\05\\28\\74\\'
       )
     # TESTING
     #input_folder = ('c:\\rvp\\tmpdir\\' )
-    #input_folder = ('c:\\rvp\\data\\backups\\20180621_AA00052874\\test_vids\\' )
+    input_folder = ('c:\\rvp\\data\\test_vids\\' )
 
     ######## Set up args for xml node replacements
     #
