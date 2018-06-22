@@ -130,6 +130,7 @@ def file_add_or_replace_xml(input_file_name=None,
     child_tag_namespace=None,
     child_model_element=None,
     log_file=None,
+    replace_children=False,
     input_encoding='latin-1', errors='ignore',
     verbosity=0,):
 
@@ -167,7 +168,7 @@ def file_add_or_replace_xml(input_file_name=None,
 
     if parent_nodes is None:
         if verbosity > 0:
-            msg = ('{}: in {}, found NO parent node occurences'
+            msg = ('{}: in {}, found NO parent node occurences. Skipping file.'
               .format(me, input_file_name))
             print(msg, file=log_file)
         return -2
@@ -186,30 +187,49 @@ def file_add_or_replace_xml(input_file_name=None,
     if child_tag_namespace is not None:
         # put tag name in lxml-prescribed format.
         # see: http://lxml.de/tutorial.html#namespaces
-        ns = d_namespace.get(
-            child_tag_namespace,
-            "http://{}_UNKNOWN".format(child_tag_namespace))
-        cet_name = "{{{}}}{}".format(ns, child_model_element.tag)
+        try:
+            namespace_ref = d_namespace[child_tag_namespace]
+        except Exception as e:
+            msg = ("Child namespace '{}' not allowed in this file. Skipping"
+                .format(child_tag_namespace))
+            print(msg, file=log_file)
+            return -2
+
+        cet_name = "{{{}}}{}".format(namespace_ref, child_model_element.tag)
+        child_tag = '{}:{}'.format(
+          child_tag_namespace, child_model_element.tag)
     else:
         cet_name = child_model_element.tag
+        child_tag = cet_name
 
-    child_check_path = cet_name
-    for parent_node in parent_nodes:
-        child_nodes = parent_node.findall(
-            child_check_path, namespaces=d_namespace)
+    child_check_path = './/{}'.format(child_tag)
+    child_check_path = '{}'.format(child_tag)
+
+    if verbosity > 0:
+        print("Using child_check_path={}"
+          .format(child_check_path),file=log_file)
+
+    child_nodes = parent_nodes[0].findall(
+        child_check_path, namespaces=d_namespace)
 
     if child_nodes is not None and len(child_nodes) > 0:
         clen = len(child_nodes)
-        if verbosity > 0:
-            msg = ("{}: in {}, found {} extant child node occurences. "
-              "NOT adding child.".format(me, input_file_name,clen))
-            print(msg, file=log_file)
-        return -2
+        if replace_children == True:
+            # TODO: implement and add code here to delete these nodes...
+            pass
+        else:
+            # Leave old children in place and skip this file
+            if verbosity > 0:
+                msg = ("{}: in {}, found {} extant  node occurences. "
+                  "NOT adding . Skipping file."
+                  .format(me, input_file_name,clen))
+                print(msg, file=log_file)
+            return -2
     else:
-        # child_nodes is None - so parent must receive a new child
-        # that is a deepcopy of child_model_element
+        # It is OK to add a new child here.
+
         if verbosity > 1:
-            msg = ('{}: in {}, found PARENT to receive a new child node'
+            msg = ('{}: in {}, found PARENT to receive a new  node'
               .format(me, input_file_name))
             print(msg, file=log_file)
 
@@ -224,10 +244,15 @@ def file_add_or_replace_xml(input_file_name=None,
                .format(parent_nodes[0].tag, child_element.tag))
             print(msg, file=log_file)
 
+
+        # Done modifying the in-memory documet.
+        # Now output it in its file.
         #For output, overwrite the input file
         output_file_name = input_file_name
         # TODO: CHANGE AFTER TESTING
-        output_file_name = "{}.txt".format(input_file_name)
+        # output_file_name = "{}.txt".format(input_file_name)
+        # Production
+        output_file_name = input_file_name
         with open(output_file_name, 'wb') as output_file:
             # NOTE: alt to next would be
             # output_string = etree.tostring(node_root_input,
@@ -272,8 +297,8 @@ def process_files(
 
         paths = []
         n_files = 0
-        n_except = 0
-        n_found = 0
+        n_unchanged = 0
+        n_changed = 0
 
         for path in gpaths:
             if verbosity > 1:
@@ -303,10 +328,10 @@ def process_files(
                 child_model_element=child_model_element,
                 verbosity=verbosity)
 
-            if rv < 0:
-                n_except += 1
+            if rv <= 0:
+                n_unchanged += 1
             else:
-                n_found +=1
+                n_changed +=1
 
             if verbosity > 0:
                 print(
@@ -320,7 +345,7 @@ def process_files(
             print("{}: Ending with {} files processed."
                 .format(me,n_files,), file=log_file)
 
-        return n_files, n_found, n_except
+        return n_files, n_changed, n_unchanged
 # end def process_files
 
 import datetime
@@ -369,7 +394,7 @@ def run(input_folder=None, file_globs=None,
 
     input_file_folders = [input_folder]
 
-    n_files, n_found, n_except = process_files(
+    n_files, n_changed, n_unchanged = process_files(
       input_folders=input_file_folders,
       parent_tag_name=parent_tag_name,
       child_tag_namespace=child_tag_namespace,
@@ -377,8 +402,8 @@ def run(input_folder=None, file_globs=None,
       file_globs=file_globs,
       log_file=log_file, verbosity=verbosity)
 
-    msg = ("{}: ENDING: Processed {} files, {} with parent node.\n"
-       .format(me, n_files, n_found))
+    msg = ("{}: ENDING: Processed {} files, and added a child node to {}.\n"
+       .format(me, n_files, n_changed))
     print(msg, file=log_file)
     print(msg)
     return
@@ -430,12 +455,12 @@ if __name__ == "__main__":
     '''
     # Settings for 20180620 la democracia bib
     # PRODUCTION
-    #input_folder = ('F:\\flvc.fs.osg.ufl.edu\\ufdc\\resources\\AA'
-    #  '\\00\\05\\28\\74\\00100'
-    #  )
+    input_folder = ('F:\\ufdc\\resources\\AA'
+      '\\00\\05\\28\\74\\00001'
+      )
     # TESTING
-    input_folder = ('c:\\rvp\\tmpdir\\' )
-    input_folder = ('c:\\rvp\\data\\backups\\20180621_AA00052874\\test_vids\\' )
+    #input_folder = ('c:\\rvp\\tmpdir\\' )
+    #input_folder = ('c:\\rvp\\data\\backups\\20180621_AA00052874\\test_vids\\' )
 
     ######## Set up args for xml node replacements
     #

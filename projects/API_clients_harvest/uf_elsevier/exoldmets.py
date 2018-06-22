@@ -497,7 +497,7 @@ integration test, or a local test database) for the METS files that
 ealdxml.py produces.
 
 In the item_elseiver_ufdc table, one of the column values is bibid, with string
-values like 'LS00012345_0001'.
+values like 'LS12345678_12345'.
 If the pii of an input pii file is already in that item_elsevier_ufdc table,
 we preserve/reserve and honor the established bibid value for it, and we only
 prescribe 'new' bibids to load into UFDC for 'new' pii-identified articles.
