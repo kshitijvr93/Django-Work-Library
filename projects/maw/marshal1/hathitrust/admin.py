@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Item, File
+from .models import Item, File, Yaml, PrintScanYaml, DigitalBornYaml
 from .views import FormUploadFile
 from django.db import models
 from django.forms import TextInput, Textarea
@@ -142,6 +142,9 @@ class FileModelAdmin(HathiModelAdmin):
 # end class FileModelAdmin
 
 admin.site.register(File, FileModelAdmin)
+admin.site.register(Yaml, admin.ModelAdmin)
+admin.site.register(PrintScanYaml, admin.ModelAdmin)
+admin.site.register(DigitalBornYaml, admin.ModelAdmin)
 
 
 #admin.site.register(Upload, HathiModelAdmin)

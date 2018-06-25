@@ -163,14 +163,9 @@ class DigitalBornYaml(models.Model):
           "tiff:Artist header."
         )
 
+# end class DigitalBornYaml
 
 
-
-
-  # Key words or topical info about the file contents, context
-
-
-    pass
 # end class Meta
 class Item(models.Model):
 
