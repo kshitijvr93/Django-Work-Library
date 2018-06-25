@@ -11,7 +11,7 @@ import codecs
 from copy import deepcopy
 
 from tempfile import NamedTemporaryFile, mkstemp, TemporaryFile
-from shutil import move, copyfile, copy
+from shutil import move, copyfile, copy2
 from os import remove
 
 
@@ -334,7 +334,7 @@ def paths_and_backup_files(backup_folder=None, input_folders=None,
         paths.append(path)
 
         #Copy the file to backup location
-        copy(path.resolve(), backup_folder)
+        copy2(path.resolve(), backup_folder)
 
     if verbosity > 0:
         utc_now = datetime.datetime.utcnow()
