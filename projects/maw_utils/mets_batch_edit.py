@@ -484,6 +484,14 @@ def process_files(
         # end for path in paths
 
         if verbosity > 0:
+            utc_now = datetime.datetime.utcnow()
+            utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+            msg = ("{}: Processed thru file index {}, name {} as of {}"
+                .format(me, n_files, input_file_name, utc_secs_z))
+            print(msg)
+            print(msg, file=log_file)
+            sys.stdout.flush()
+            log_file.flush()
             print("{}: Ending with {} files processed."
                 .format(me,n_files,), file=log_file)
 
