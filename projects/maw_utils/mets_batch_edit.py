@@ -436,10 +436,11 @@ def process_files(
 
             #Test limits
             min_file_index = 0
-            max_file_index = 1
+            # NOTE: set max_file_index 0 to mean unlimited
+            max_file_index = 0
             if n_files < min_file_index:
                 continue
-            if n_files > max_file_index:
+            if max_file_index > 0 and n_files > max_file_index:
                 return n_files, n_changed, n_unchanged
 
             # Start processing a file
