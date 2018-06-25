@@ -11,7 +11,7 @@ import codecs
 from copy import deepcopy
 
 from tempfile import NamedTemporaryFile, mkstemp, TemporaryFile
-from shutil import move, copyfile, copy2
+from shutil import move, copyfile, copy, copy2
 from os import remove
 
 
@@ -139,7 +139,13 @@ def file_add_or_replace_xml(input_file_name=None,
     verbosity=0,):
 
     me = 'file_add_or_replace_xml'
+
+    utc_now = datetime.datetime.utcnow()
+    utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    utc_yyyy_mm_dd = utc_now.strftime("%Y_%m_%d")
+
     parent_xpath = ".//{}".format(parent_tag_name)
+
     if verbosity > 0:
         msg = ('{}: using input_file={}, parent_xpath={},child_tag_namespace={}'
           .format(me, input_file_name, parent_xpath,child_tag_namespace))
@@ -253,11 +259,42 @@ def file_add_or_replace_xml(input_file_name=None,
 
         # Done modifying the in-memory documet.
         # Now output it in its file.
-        #For output, overwrite the input file
-        output_file_name = input_file_name
         # TODO: CHANGE AFTER TESTING
         # output_file_name = "{}.txt".format(input_file_name)
         # Production
+
+        # Backup original mets file to a file under sub-directory sobek_files
+        #
+        # First, construct the backup file name
+        vid_folder, relative_mets_file_name = os.path.split(input_file_name)
+        fparts = relative_mets_file_name.split('.')
+        # This extracts the bib_vid part of the mets.xml file name, assumed
+        # to comply with the ufdc *.mets.xml file naming convention
+        bib_vid = fparts[0]
+        backup_folder_name = "{}\\sobek_files\\".format(vid_folder)
+
+        # Just in case, make sure the backup dir is made
+        os.makedirs(backup_folder_name, exist_ok=True)
+
+        # Save the input file per UFDC conventions, in subfolder sobek_files
+        backup_file_basename = "{}_{}.mets.bak".format(bib_vid,utc_yyyy_mm_dd)
+        backup_file_name = ("{}{}"
+          .format(backup_folder_name, backup_file_basename))
+
+        # Make the file backup copy
+        if verbosity > 0:
+            msg="{} creating backup copy file='{}'".format(me,backup_file_name)
+            print(msg)
+            print(msg, file=log_file)
+            sys.stdout.flush()
+
+        # Use copy2 to preserve original creation date
+        # So the span of relevance for this record goes from the file md
+        # creation date to the file name's encoded date
+        copy2(input_file_name, backup_file_name)
+
+        #Now overwrite the original input file
+
         output_file_name = input_file_name
         with open(output_file_name, 'wb') as output_file:
             # NOTE: alt to next would be
@@ -279,7 +316,12 @@ def file_add_or_replace_xml(input_file_name=None,
 # end def file_add_or_replace_xml
 
 '''
-visit a sequence of files, back them up, and return the path list
+mets_paths_backup_optional()
+
+visit a sequence of files, save only unique paths in paths[] and return it.
+Optionally, if backup_folder is not None,
+
+Back up each mets file in the backup folder too
 ASSUMPTION - these are mets files couched in UFDC resources key-pair
 directory hierarchy, and each mets.xml file is supposed to be unique.
 So destinations filenames are copied directly into one flat backup folder.
@@ -289,10 +331,10 @@ backup folder subdirectory, eg "AA12345678_12345", to ensure that no
 duplicate mets file names will be 'lost' due to overwriting in this routine.
 '''
 
-def paths_and_backup_files(backup_folder=None, input_folders=None,
+def mets_paths_backup_optional(backup_folder=None, input_folders=None,
     file_globs=None, log_file=None, verbosity=None):
 
-    me = 'paths_and_backup_files'
+    me = 'mets_paths_backup_optional'
 
     if verbosity > 0:
         utc_now = datetime.datetime.utcnow()
@@ -311,7 +353,7 @@ def paths_and_backup_files(backup_folder=None, input_folders=None,
     if verbosity > 0:
         utc_now = datetime.datetime.utcnow()
         utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-        msg = ("{}:Got the input paths sequence at utc time = {}"
+        msg = ("{}:Checking the input paths sequence for dups at utc time = {}"
           .format(me, utc_secs_z))
         print(msg)
         print(msg,file=log_file)
@@ -334,13 +376,16 @@ def paths_and_backup_files(backup_folder=None, input_folders=None,
         paths.append(path)
 
         #Copy the file to backup location
-        copy2(path.resolve(), backup_folder)
+        if backup_folder is not None:
+            copy(path.resolve(), backup_folder)
 
     if verbosity > 0:
         utc_now = datetime.datetime.utcnow()
         utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-        msg = ("{}: Copied {} backup mets files at utc time = {}"
+        msg = ("{}: Found paths for {} mets files at utc time = {}"
           .format(me, n_path, utc_secs_z))
+        if backup_folder is not None:
+            msg += ', and backed them up under {}'.format(backup_folder)
         print(msg)
         print(msg,file=log_file)
         sys.stdout.flush()
@@ -348,7 +393,7 @@ def paths_and_backup_files(backup_folder=None, input_folders=None,
 
     return paths
 
-#end def paths_and_backup_files
+#end def mets_paths_backup_optional
 
 def process_files(
     backup_folder=None,
@@ -368,11 +413,11 @@ def process_files(
         total_file_lines = 0
         log_file = log_file
 
-        # First call paths_and_backup_files() to
+        # First call mets_paths_backup_optional() to
         # collect the mets file paths and copy the mets files to backup
         # location.
 
-        paths =  paths_and_backup_files(backup_folder=backup_folder,
+        paths =  mets_paths_backup_optional(backup_folder=backup_folder,
             input_folders=input_folders, file_globs=file_globs,
             log_file=log_file, verbosity=verbosity
             )
@@ -390,13 +435,12 @@ def process_files(
             n_files += 1
 
             #Test limits
-            min_file_index = 1
-            max_file_index = 0
+            min_file_index = 0
+            max_file_index = 1
             if n_files < min_file_index:
                 continue
             if n_files > max_file_index:
                 return n_files, n_changed, n_unchanged
-
 
             # Start processing a file
             if verbosity > 0:
@@ -556,7 +600,10 @@ if __name__ == "__main__":
     '''
     # Settings for 20180620 la democracia bib
     # PRODUCTION -
-    backup_folder = ('C:\\rvp\\data\\backups\\mets_batch_editor')
+    # backup_folder = ('C:\\rvp\\data\\backups\\mets_batch_editor')
+    backup_folder = None
+    #20180625b - use None as backup folder - now we assume we have sub folder
+    # sobek_files per item and write backup there
     # bib 1 of iinterest
 
     bib_type = 2
@@ -677,5 +724,4 @@ gobierno civil, atento al progreso económico e intelectual de Puerto Rico.
         verbosity=2)
 
 #end if __name__ == "__main__"
-
 #END FILE
