@@ -10,6 +10,11 @@ from io import StringIO, BytesIO
 import codecs
 from copy import deepcopy
 
+from tempfile import NamedTemporaryFile, mkstemp, TemporaryFile
+from shutil import move, copyfile, copy
+from os import remove
+
+
 def register_modules():
     platform_name = platform.system().lower()
     if platform_name == 'linux':
@@ -35,7 +40,8 @@ import datetime
 utc_now = datetime.datetime.utcnow()
 utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-def sequence_paths(log_file=None, input_folders=None, input_path_globs=None, verbosity=0):
+def sequence_paths(log_file=None, input_folders=None, input_path_globs=None,
+    verbosity=0):
     # NOTE: I changed arg input_path_glob to input_path_globs
     # apologies to callers that need to adapt
     me = 'sequence_paths'
@@ -68,11 +74,8 @@ def sequence_paths(log_file=None, input_folders=None, input_path_globs=None, ver
     # end for input folder
 # end def sequence_paths
 
-from tempfile import NamedTemporaryFile, mkstemp, TemporaryFile
-from shutil import move
-from os import remove
-
-def get_root_from_file_bytes(input_file_name=None, log_file=None, verbosity=None):
+def get_root_from_file_bytes(input_file_name=None, log_file=None,
+    verbosity=None):
     me = 'get_xml_file_root'
 
     # get_root_element
@@ -103,7 +106,8 @@ def get_root_from_file_bytes(input_file_name=None, log_file=None, verbosity=None
     return node_root_input
 #end def get_root_from_file_bytes()
 
-def get_tree_and_root_from_file(input_file_name=None, log_file=None, verbosity=None):
+def get_tree_and_root_from_file(input_file_name=None, log_file=None,
+    verbosity=None):
     me = 'get_root_from_parsed_file_bytes'
 
     parser = etree.XMLParser(remove_comments=False)
@@ -274,13 +278,87 @@ def file_add_or_replace_xml(input_file_name=None,
         return 1
 # end def file_add_or_replace_xml
 
+'''
+visit a sequence of files, back them up, and return the path list
+ASSUMPTION - these are mets files couched in UFDC resources key-pair
+directory hierarchy, and each mets.xml file is supposed to be unique.
+So destinations filenames are copied directly into one flat backup folder.
+
+Consider to an option later to 'flatten' the parent directory name into a
+backup folder subdirectory, eg "AA12345678_12345", to ensure that no
+duplicate mets file names will be 'lost' due to overwriting in this routine.
+'''
+
+def paths_and_backup_files(backup_folder=None, input_folders=None,
+    file_globs=None, log_file=None, verbosity=None):
+
+    me = 'paths_and_backup_files'
+
+    if verbosity > 0:
+        utc_now = datetime.datetime.utcnow()
+        utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        msg = ("{}:for input_folders={},\n"
+          " globs={},\nlog='{}', getting sequence paths at {}..."
+          .format(me,input_folders,file_globs,log_file.name, utc_secs_z))
+        print(msg)
+        print(msg,file=log_file)
+        sys.stdout.flush()
+        log_file.flush()
+
+    gpaths = sequence_paths(log_file=log_file, input_folders=input_folders,
+            input_path_globs=file_globs, verbosity=verbosity)
+
+    if verbosity > 0:
+        utc_now = datetime.datetime.utcnow()
+        utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        msg = ("{}:Got the input paths sequence at utc time = {}"
+          .format(me, utc_secs_z))
+        print(msg)
+        print(msg,file=log_file)
+        sys.stdout.flush()
+        log_file.flush()
+
+    paths = []
+    n_path = 0
+
+    for path in gpaths:
+        if path in paths:
+            # gpaths could have duplicates when mulitple globs
+            # were used to generate the gpaths, so skip dups
+            # If carefully chosen to guarantee the globs have no dups,
+            # one can bypass this checking
+            continue
+        # Store this path to return and will also use it to check for future
+        # duplicates in the sequence
+        n_path += 1
+        paths.append(path)
+
+        #Copy the file to backup location
+        copy(path.resolve(), backup_folder)
+
+    if verbosity > 0:
+        utc_now = datetime.datetime.utcnow()
+        utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        msg = ("{}: Copied {} backup mets files at utc time = {}"
+          .format(me, n_path, utc_secs_z))
+        print(msg)
+        print(msg,file=log_file)
+        sys.stdout.flush()
+        log_file.flush()
+
+    return paths
+
+#end def paths_and_backup_files
+
 def process_files(
+    backup_folder=None,
     input_folders=None, file_globs=None,
     log_file=None,
     parent_tag_name=None,
     # child_tag_namespace allows for use of file-extant namespace prefixes
     child_tag_namespace=None,
     child_model_element=None,
+    progress_count=100,
     verbosity=1,
     ):
 
@@ -290,55 +368,36 @@ def process_files(
         total_file_lines = 0
         log_file = log_file
 
-        if verbosity > 0:
-            utc_now = datetime.datetime.utcnow()
-            utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-            msg = ("{}:for input_folders={},\n"
-              " globs={},\nlog='{}', getting sequence paths at {}..."
-              .format(me,input_folders,file_globs,log_file.name, utc_secs_z))
-            print(msg)
-            print(msg,file=log_file)
-            sys.stdout.flush()
-            log_file.flush()
+        # First call paths_and_backup_files() to
+        # collect the mets file paths and copy the mets files to backup
+        # location.
 
-        gpaths = sequence_paths(log_file=log_file, input_folders=input_folders,
-            input_path_globs=file_globs, verbosity=verbosity)
+        paths =  paths_and_backup_files(backup_folder=backup_folder,
+            input_folders=input_folders, file_globs=file_globs,
+            log_file=log_file, verbosity=verbosity
+            )
 
-        utc_now = datetime.datetime.utcnow()
-        utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-        print ("{}:Got input paths sequence at utc time = {}"
-          .format(me, utc_secs_z))
-
-        paths = []
+        # We now loop through the paths[] and apply the edits.
         n_files = 0
         n_unchanged = 0
         n_changed = 0
 
-        for path in gpaths:
+        for path in paths:
+            input_file_name = path.resolve()
             if verbosity > 0:
-                msg=("{}:Got path.resolve()='{}'".format(me,path.resolve()))
+                msg=("{}:Got path.resolve()='{}'".format(me, input_file_name))
                 print(msg, file=log_file)
-
-            if path in paths:
-                # gpaths could have duplicates when mulitple globs
-                # were used to generate the gpaths, so skip dups
-                # If carefully chosen to guarantee the globs have no dups,
-                # one can bypass this checking
-                continue
-            #Store this path to reject future duplicates in the sequence
-            paths.append(path)
-
             n_files += 1
 
             #Test limits
-            min_file_index = 201
-            max_file_index = 5000
+            min_file_index = 1
+            max_file_index = 0
             if n_files < min_file_index:
                 continue
             if n_files > max_file_index:
                 return n_files, n_changed, n_unchanged
 
-            input_file_name = path.resolve()
+
             # Start processing a file
             if verbosity > 0:
                 msg=("{}:Processing input_file_name='{}'"
@@ -356,7 +415,7 @@ def process_files(
                 child_model_element=child_model_element,
                 verbosity=verbosity)
 
-            period = 100
+            period = progress_count
             if n_files % period == 0:
                 utc_now = datetime.datetime.utcnow()
                 utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -377,7 +436,6 @@ def process_files(
                    "{}: Processed file {}={} with rv={}."
                   .format(me, n_files, input_file_name, rv)
                   ,file=log_file)
-
         # end for path in paths
 
         if verbosity > 0:
@@ -388,7 +446,8 @@ def process_files(
 # end def process_files
 
 import datetime
-def run(input_folder=None, file_globs=None,
+def run(backup_folder=None,
+    input_folder=None, file_globs=None,
     log_file_name=None,
     parent_tag_name=None,
     child_tag_namespace=None,
@@ -413,9 +472,12 @@ def run(input_folder=None, file_globs=None,
     utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     if verbosity > 0:
-        msg = ("{}: Start at {}, using log_file_name='{}',parent_tag_name={}"
-            .format(me,utc_secs_z,log_file_name,parent_tag_name))
+        msg = ("{}: Start at {}, backup_folder={}, log_file_name='{}',\n\t"
+            "parent_tag_name={}"
+            .format(me,utc_secs_z,backup_folder,log_file_name,parent_tag_name))
         print(msg, file=log_file)
+        print(msg)
+        sys.stdout.flush()
 
     print("{}: STARTING: Using verbosity value={}".format(me, verbosity)
         ,file=log_file)
@@ -434,6 +496,7 @@ def run(input_folder=None, file_globs=None,
     input_file_folders = [input_folder]
 
     n_files, n_changed, n_unchanged = process_files(
+      backup_folder=backup_folder,
       input_folders=input_file_folders,
       parent_tag_name=parent_tag_name,
       child_tag_namespace=child_tag_namespace,
@@ -492,10 +555,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
     '''
     # Settings for 20180620 la democracia bib
-    # PRODUCTION
-    input_folder = ('F:\\ufdc\\resources\\AA'
-      '\\00\\05\\28\\74\\'
-      )
+    # PRODUCTION -
+    backup_folder = ('C:\\rvp\\data\\backups\\mets_batch_editor')
+    # bib 1 of iinterest
+
+    bib_type = 2
+
+    if bib_type == 1:
+        input_folder = ('F:\\ufdc\\resources\\AA'
+          '\\00\\05\\28\\74\\'
+          )
     # TESTING
     # input_folder = ('c:\\rvp\\tmpdir\\' )
     # input_folder = ('c:\\rvp\\data\\test_vids\\' )
@@ -505,7 +574,7 @@ if __name__ == "__main__":
 
     # { These variables will be runtime parameters
 
-    child_model_text = '''El periódico La Democracia, fundado y dirigido por
+        child_model_text = '''El periódico La Democracia, fundado y dirigido por
 Luis Muñoz Rivera en 1890 y publicado en principios desde Ponce, Puerto Rico.
 
 Abogó por los principios del Partido Autonomista, de corte liberal que
@@ -525,6 +594,59 @@ desde donde escribía regularmente en el periódico. Entre 1896-98, el periódic
 concentró sus esfuerzos en el tema político hasta la elección de los
 Diputados, quienes nunca se reunieron por estallar la Guerra.
 '''
+    elif bib_type == 2:
+        input_folder = ('F:\\ufdc\\resources\\AA'
+          '\\00\\03\\16\\01\\'
+          )
+        # TESTING
+        # { These variables will be runtime parameters
+
+        child_model_text = '''Como un eco de La Correspondencia de España, el
+diario La Correspondencia de Puerto Rico fue fundado por Ramón B. López en
+San Juan, el 18 de diciembre de 1890. Llegó a ser el periódico de mayor
+circulación y exposición popular, con precio de un centavo, y una tirada de
+5,000 ejemplares diarios. Por eso se le adjudicó el sobrenombre sarcástico
+de “El periódico de las cocineras”. Se inició en él el formato del
+periódico reporteril para llegar a las masas.
+En su tesis doctoral de Historia del 2007, Análisis histórico de la noción
+del “periodismo profesional” en Puerto Rico (del siglo XIX al XX),
+Luis Fernando Coss destacó los elementos de modernidad que la publicación
+de La Correspondencia de Puerto Rico supuso en los 1890. Una ruptura clara
+con el partidismo tradicional de la prensa, un interés en abordar asuntos de
+pertinencia general, más allá de los reclamos localistas de la prensa de la
+Capital, Ponce y Mayagüez, y un alarde de objetividad marcaron al nuevo periódico.
+La Correspondencia, en su cobertura de la discusión de los aranceles en
+1895, en su sobria discusión de los monopolios y las protestas urbanas
+contra ellos, y en su enfoque sobre la nueva guerra de independencia cubana
+alcanzó la atención de lectores de toda la isla. Para el investigador son
+importantes los textos de este periódico de los años 1897, 1898 y 1899.
+La instalación del gabinete autonómico, las elecciones de marzo de 1898,
+la Guerra Hispanoamericana, las dificultades del gobierno autonómico para
+conseguir financiamiento de las obras públicas,  la invasión de Puerto Rico,
+los primeros reportajes sobre la zona de ocupación estadounidense entre
+agosto y octubre de 1898, las transiciones de poder del gabinete autonómico
+al gobierno militar en 1899, así como las medidas de los gobernadores
+Guy V. Henry y George Davies en el difícil año de 1899, en torno a la
+jornada laboral de 8 horas, la suspensión de ejecuciones sobre hipotecas
+de propietarios agrícolas  y el canje de la moneda provincial por la
+norteamericana, especialmente después del huracán del día de San Ciriaco
+(8 de agosto) dan múltiples matices y detalles que no se encuentran
+fácilmente en otras publicaciones periódicas de la época.
+En sus inicios, la gerencia del periódico quiso proscribir la literatura;
+sin embargo, entrado el siglo XX y, sobre todo cuando Manuel Zeno Gandía
+compra el diario el 30 de abril de 1902, el médico y literato le dio otro
+giro, divulgando en sus columnas poemas de escritores valiosos y
+reconocidos posteriormente. Sirvió de ese modo como vehículo para la
+divulgación del modernismo literario en la isla. Durante la primera década
+del siglo XX tomó un giro político afiliado al partido Unión de Puerto Rico
+(1904) tras la consigna del gobierno propio o self-government y la
+definición del status, fungiendo como portavoz de las preocupaciones
+derivadas de la Ley Orgánica de 1900 (Ley Foraker) y la organización del
+gobierno civil, atento al progreso económico e intelectual de Puerto Rico.
+'''
+    # end if bib_type == 2
+    else:
+        raise ValueError("Unknown bib_type={}}.format(bit_type)")
 
     # These element names will be runtime params
     parent_tag_name="mods:mods"
@@ -546,7 +668,7 @@ Diputados, quienes nunca se reunieron por estallar la Guerra.
     child_model_element.text = child_model_text
     sys.stdout.flush()
 
-    run(input_folder=input_folder,
+    run(backup_folder=backup_folder, input_folder=input_folder,
         log_file_name='batchlog.txt',
         file_globs = ['**/*.mets.xml'],
         parent_tag_name=parent_tag_name,
