@@ -503,6 +503,8 @@ if __name__ == "__main__":
     ######## Set up args for xml node replacements
     #
 
+    # { These variables will be runtime parameters
+
     child_model_text = '''El periódico La Democracia, fundado y dirigido por
 Luis Muñoz Rivera en 1890 y publicado en principios desde Ponce, Puerto Rico.
 
@@ -524,9 +526,10 @@ concentró sus esfuerzos en el tema político hasta la elección de los
 Diputados, quienes nunca se reunieron por estallar la Guerra.
 '''
 
-    # These element names will be user params
+    # These element names will be runtime params
     parent_tag_name="mods:mods"
     child_tag_name = 'mods:abstract'
+    # }
 
     eparts = child_tag_name.split(':')
     if len(eparts) == 2:
