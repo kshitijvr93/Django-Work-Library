@@ -1,6 +1,6 @@
 '''
-Program harvest_zenodo harvests a particular zenodo collection and creates
-some test mets file.
+Program harvest_zenodo_item harvests a particular zenodo item and creates
+a test mets file.
 
 String mets_format_str is a python format string template to create a mets
 file for ufdc.
@@ -36,8 +36,8 @@ print("Using local local module folder='{}'".format(local_module_folder))
 sys.path.append(local_module_folder) #my current place on UF pc
 '''
 
-folder_output_linux='/home/robert/'
-folder_output_windows='U:/'
+folder_output_linux='/home/robert/data/'
+folder_output_windows='U:/data/'
 
 output_folder = etl.data_folder(linux=folder_output_linux,
     windows=folder_output_windows,
@@ -174,8 +174,16 @@ mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 from lxml import etree
 import datetime
 import requests
+zenodo_ids =['1293007']
 
 request_uf1='https://zenodo.org/oai2d?verb=ListRecords&set=user-genetics-datasets&metadataPrefix=oai_dc'
+
+
+request_uf1=("https://zenodo.org/oai2d?verb=GetRecord"
+  "&identifier=oai:zenodo.org:{}&metadataPrefix=oai_dc"
+  .format(zenodo_ids[0])
+
+ msg = ("Using request = {}".format(request_uf1))
 
 '''
 d_oai_zenodo is configuration info to do API calls to zenodo
@@ -223,7 +231,7 @@ def add_curl_command(d_request):
     #print("Curl={}".format(curl))
     return
 
-def url_of_zenodo(d_search, dataset_name='user-genetics-datasets', verbosity=0):
+def xxurl_of_zenodo(d_search, dataset_name='user-genetics-datasets', verbosity=0):
     me = "url_of_zenodo"
     if d_search is None:
         raise(ValueError,"d_search is required")
@@ -235,9 +243,9 @@ def url_of_zenodo(d_search, dataset_name='user-genetics-datasets', verbosity=0):
     add_curl_command(d_search)
     return url
 
-def response_of_zenodo(d_search, dataset_name=None, verbosity= 0):
-    d_headers = d_search['d_request_headers']
-    url = url_of_zenodo(d_search, dataset_name=dataset_name, verbosity=verbosity)
+def response_of_zenodo(d_request, dataset_name=None, verbosity= 0):
+    d_headers = d_request['d_request_headers']
+    url = url_of_zenodo(d_request, dataset_name=dataset_name, verbosity=verbosity)
     return requests.get(url, headers=d_headers)
 
 class OAI_Harvester(object):
