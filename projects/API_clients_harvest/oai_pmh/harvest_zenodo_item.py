@@ -174,14 +174,15 @@ mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 from lxml import etree
 import datetime
 import requests
-zenodo_ids =['1293007']
+zenodo_ids =['1293007'] # 20180626 used ListIdentifiers and the original url
+# provided by a ufdc patron to infer
+# that string '1293007' in the original url is a zenodo identifier
 
 request_uf1='https://zenodo.org/oai2d?verb=ListRecords&set=user-genetics-datasets&metadataPrefix=oai_dc'
 
-
 request_uf1=("https://zenodo.org/oai2d?verb=GetRecord"
   "&identifier=oai:zenodo.org:{}&metadataPrefix=oai_dc"
-  .format(zenodo_ids[0])
+  .format(zenodo_ids[0]))
 
  msg = ("Using request = {}".format(request_uf1))
 
@@ -192,7 +193,8 @@ which is the url to get the oai list of records for a named set of items.
 
 '''
 d_oai_zenodo = {
-    'pub_search': { # This entry has data used to do a zenodo ListRecords query for a specific dataset
+    'pub_search': { # This entry has data used to do a zenodo ListRecords
+        # query for a specific dataset
         'd_request_headers': {
             'Accept' : 'application/xml',
         },
@@ -231,20 +233,22 @@ def add_curl_command(d_request):
     #print("Curl={}".format(curl))
     return
 
-def xxurl_of_zenodo(d_search, dataset_name='user-genetics-datasets', verbosity=0):
+def url_of_zenodo(d_request, dataset_name='user-genetics-datasets', verbosity=0):
     me = "url_of_zenodo"
-    if d_search is None:
-        raise(ValueError,"d_search is required")
+    if d_request is None:
+        raise(ValueError,"d_request is required")
     if verbosity != 0 :
         print("{}:Starting".format(me))
 
-    url = d_search['url_format'].format(dataset_name)
-    d_search['url'] = url # save for diagnostics
-    add_curl_command(d_search)
+    url = d_request['url_format'].format(dataset_name)
+    d_request['url'] = url # save for diagnostics
+    add_curl_command(d_request)
+
     return url
 
 def response_of_zenodo(d_request, dataset_name=None, verbosity= 0):
     d_headers = d_request['d_request_headers']
+    #todo - pull next line back into url_of_zenodo?
     url = url_of_zenodo(d_request, dataset_name=dataset_name, verbosity=verbosity)
     return requests.get(url, headers=d_headers)
 
