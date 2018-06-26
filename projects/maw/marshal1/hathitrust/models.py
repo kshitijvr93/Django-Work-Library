@@ -81,21 +81,38 @@ class Yaml(models.Model):
       db_index=True, blank=True, null=True)
 
     #Fields required for all materials
-    bitonal_resolution_dpi = PositiveIntegerField(null=False, default=0
-      ,help_text="Required if images lack resolution information.")
-    contone_resolution_dpi = PositiveIntegerField(null=False, default=0
-      ,help_text="Required if images lack resolution information.")
+    bitonal_resolution_dpi = PositiveIntegerField(null=False,
+      default=600,
+      help_text="Required if images lack resolution information."
+      "<a  href="
+      "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
+      ">More</a>",
+      )
+
+    contone_resolution_dpi = PositiveIntegerField(null=False,
+      default=600,
+      help_text="Required if images lack resolution information."
+      "<a  href="
+      "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
+      ">More</a>",)
 
     # Maybe make  fieldset?
     image_compression_date = models.DateTimeField(
       db_index=True, blank=False,
       help_text="Required if images were compressed before "
       "Submittal Item Package was generated."
+      "<a  href="
+      "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
+      ">More</a>",
       )
+
     image_compression_agent = SpaceCharField(max_length=255,
       blank=True,
       help_text="Required if images were compressed before "
-      "Submittal Item Package was generated. Eg, ImageMatick 6.7.8",
+      "Submittal Item Package was generated. Eg, ImageMagick 6.7.8. "
+      "<a  href="
+      "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
+      ">More</a>",
       )
 
     #
@@ -105,15 +122,25 @@ class Yaml(models.Model):
     )
     scanning_order = SpaceCharField(max_length=255,
       choices=ORDER_CHOICES,
-      help_text="Either left-to-right or right-to-left",
-      default='l2r'
+      default='l2r',
+      help_text="Either left-to-right or right-to-left... "
+      "<a  href="
+      "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
+      ">More</a>",
       )
 
     reading_order = SpaceCharField(max_length=255,
       choices=ORDER_CHOICES,
-      help_text="Example: use right-to-left ...",
-      default='l2r'
+      default='l2r',
+      help_text="Example: use right-to-left ..."
+      "<a  href="
+      "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
+      ">More</a>",
       )
+
+    def __str__(self):
+        return self.item.bib_vid
+
 
 
 class PrintScanYaml(models.Model):
@@ -123,19 +150,34 @@ class PrintScanYaml(models.Model):
 
     capture_datetime = models.DateTimeField(
       db_index=True, blank=False,
-      help_text="Date and time of original print scan, estimate OK."
+      help_text="Date and time of original print scan, estimate OK. "
+        "<a  href="
+        "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
+        ">More</a>",
       )
 
     scanner_make = SpaceCharField(max_length=255,
-        blank = True,
-        default='CopiBook')
+      blank = True,
+      help_text="<a  href="
+      "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
+      ">Help</a>",
+      default='CopiBook')
 
     scanner_model = SpaceCharField(max_length=255,
-        default='tbd')
+      help_text="<a  href="
+      "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
+      ">Help</a>",
+      default='' )
 
     scanner_user = SpaceCharField(max_length=255,
-        blank = True,
-        default='University of Florida Digtal Processing Services')
+      blank = True,
+      help_text="<a  href="
+        "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
+        ">Help</a>",
+     default='UF Digtal Processing Services')
+
+    def __str__(self):
+        return self.yaml.item.bib_vid
 
 
 class DigitalBornYaml(models.Model):
@@ -146,22 +188,40 @@ class DigitalBornYaml(models.Model):
 
     creation_datetime = models.DateTimeField(db_index=True,
       blank=False,
-      help_text="Creation time of original file/item. Eg, PDF file's date"
+      help_text="Required: Creation time of original file/item. Eg, PDF file's date. "
+        "<a  href="
+        "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
+        ">More</a>",
       )
 
     creation_agent = SpaceCharField(max_length=255,
         blank=False,
-        help_text ='HathiTrust organization code who created digital file.')
+        help_text ='Required: HathiTrust organization code who created digital file.'
+        "<a  href="
+        "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
+        ">More</a>",
+        )
 
     digital_content_provider = SpaceCharField(max_length=255,
         blank=True,
         help_text="Optional File-specific content provider's "
-          "HathiTrust organization code.")
+          "HathiTrust organization code. "
+          "<a  href="
+          "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
+          ">More</a>",
+          )
     tiff_artist = SpaceCharField(max_length=255,
         blank=True,
         help_text="Required if images lack TIFF Artist or XMP "
-          "tiff:Artist header."
+          "tiff:Artist header. "
+          "<a  href="
+          "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
+          ">More</a>",
         )
+
+    def __str__(self):
+        return self.yaml.item.bib_vid
+
 
 # end class DigitalBornYaml
 
@@ -178,7 +238,11 @@ class Item(models.Model):
     name = models.CharField(max_length=255, unique=True,
         default='Hathitrust item name')
     modify_date = models.DateTimeField(auto_now=True)
-    folder_path = models.CharField(max_length=1024)
+
+    bib_vid = models.CharField(max_length=255,
+        default = "AB12345678_12345",
+        unique=True,
+        help_text="Bib_vid in format XX12345678_12345" )
 
     STATUS_CHOICES = (
         ( 'new' ,'new'),
@@ -194,7 +258,7 @@ class Item(models.Model):
         default='new')
 
     def __str__(self):
-        return self.name
+        return self.bib_vid
 
     ''' note: DO not set db_table. Let Django do its thing
         and create the db table name via a prefix of the table

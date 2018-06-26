@@ -69,11 +69,10 @@ class FileInline(admin.TabularInline):
 
 
 class ItemModelAdmin(HathiModelAdmin):
-    list_display = ['name', 'status', 'folder_path', 'modify_date',]
+    list_display = ['name', 'status', 'bib_vid', 'modify_date',]
     search_fields = ['name','status',]
     inlines = (FileInline,)
 
-admin.site.register(Item, ItemModelAdmin)
 
 
 from django import forms
@@ -142,6 +141,7 @@ class FileModelAdmin(HathiModelAdmin):
 # end class FileModelAdmin
 
 admin.site.register(File, FileModelAdmin)
+admin.site.register(Item, ItemModelAdmin)
 admin.site.register(Yaml, admin.ModelAdmin)
 admin.site.register(PrintScanYaml, admin.ModelAdmin)
 admin.site.register(DigitalBornYaml, admin.ModelAdmin)
