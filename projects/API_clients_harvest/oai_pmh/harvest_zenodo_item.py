@@ -120,14 +120,7 @@ mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
   </mods:role>
 </mods:name>
 
-{{% for creator in creators %}}
-<mods:name type="personal">
-  <mods:namePart>{{creator}}</mods:namePart>
-  <mods:role>
-    <mods:roleTerm type="text">creator</mods:roleTerm>
-  </mods:role>
-</mods:name>
-{{% endfor %}}
+{xml_sobekcm_creators}
 
 <!-- subject topics- These from Elsevier are phrases with no authority info -->
 {mods_subjects}
@@ -364,6 +357,10 @@ class OAI_Harvester(object):
         # and namespaces. Eg, before calling, caller can set namespaces  like:
         # namespaces={key:value for key,value in dict(node_root.nsmap).items()
         # if key is not None}
+        me = 'node_record_process'
+
+        if self.verbosity > 0:
+            print("{}: Using save_xml={}".format(me,save_xml))
 
         if node_record is None:
            node_record = self.node_record
@@ -385,17 +382,21 @@ class OAI_Harvester(object):
               "identifier_normalized={}"
               .format(bib_vid, identifier_normalized))
 
-        if save_xml is True:
+        if save_xml == True:
             # Parse the input record and save it to a string
             record_str = etree.tostring(node_record, pretty_print=True,
                 xml_declaration=True, encoding='utf-8')
 
-            filename_received = ( output_folder + '/received/'
-                + identifier_normalized )
+            save_folder = self.output_folder + '/recieved/'
+            os.makedirs(save_folder, exist_ok=True)
+            save_file = ( save_folder + identifier_normalized )
 
-            fn = filename_received
-            with open(fn, 'wb') as outfile:
-                print("Writing filename_received ='{}'".format(fn))
+            if self.verbosity > 0:
+                print("Writing save file ='{}'".format(save_file))
+
+            with open(save_file, 'wb') as outfile:
+                if self.verbosity > 0:
+                    print("Writing save_file ='{}'".format(save_file))
                 outfile.write(record_str)
 
         # Set some variables to potentially output into the Zenodo METS
@@ -436,6 +437,17 @@ class OAI_Harvester(object):
             print("Got creators='{}''".format(dc_creators))
             sys.stdout.flush()
 
+        xml_sobekcm_creators = ''
+        for creator in dc_creators:
+            xml_sobekcm_creators += (
+                '''
+<mods:name type="personal">
+  <mods:namePart>{}</mods:namePart>
+  <mods:role>
+    <mods:roleTerm type="text">creator</mods:roleTerm>
+  </mods:role>
+</mods:name>
+                '''.format(creator))
 
         dc_date_orig = node_oaidc.find("./dc:date",
             namespaces=namespaces_oaidc).text
@@ -450,8 +462,9 @@ class OAI_Harvester(object):
             namespaces=namespaces_oaidc)
 
         # Make an element tree style tree to invoke pattern to remove innter xml
+        # If strip newlines, text with newlines runs together so replace a space
         str_description = (tostring(node_description,encoding='unicode',
-            method='text').strip().replace('\n',''))
+            method='text').strip().replace('\n',' '))
         # Special doctype needed to handle nbsp... copyright
         xml_dtd = '''<?xml version="1.1" encoding="UTF-8" ?><!DOCTYPE naughtyxml [
             <!ENTITY nbsp "&#0160;">
@@ -518,8 +531,7 @@ class OAI_Harvester(object):
             'xml_sobekcm_aggregations' : xml_sobekcm_aggregations,
             'doi': doi,
             'description' : dc_description,
-            # 'creator' : dc_creator,
-            'creators' : dc_creators,
+            'xml_sobekcm_creators' : xml_sobekcm_creators,
             'bibid': bibid_str,
             'vid': vid_str,
             'type_of_resource' : dc_type,
@@ -660,31 +672,6 @@ def xxlist_records_to_mets_xml_files(d_run_params,
         bib_vid = "{}_{}".format(bibid,vid)
 
 
-        rv = node_record_process(node_record=node_record,
-          bib_vid=bib_vid, namespaces=d_namespaces)
-
-
-
-        node_type= node_record.find(".//{}type", namespaces=d_namespaces)
-        genre = '' if not node_type else node_type.text
-
-        header_identifier = node_record.find("./{*}header/{*}identifier").text
-
-        identifier_normalized = header_identifier.replace(':','_') + '.xml'
-        print("using bib_vid={} to output item with zenodo identifier_normalized={}"
-              .format(bib_vid, identifier_normalized))
-        #zenodo_string_xml = etree.tostring(node_record, pretty_print=True)
-
-        # Parse the input record and save it to a string
-        record_str = etree.tostring(node_record, pretty_print=True,
-            xml_declaration=True, encoding='utf-8')
-
-        filename_received = output_folder + '/received/' + identifier_normalized
-
-        fn = filename_received
-        with open(fn, 'wb') as outfile:
-            print("Writing filename_received ='{}'".format(fn))
-            outfile.write(record_str)
 
         # Set some variable to potentially output into the METS template
         utc_now = datetime.datetime.utcnow()
@@ -824,7 +811,8 @@ def run(verbosity=0):
         verbosity=verbosity)
 
     result = harvest.get_record(identifier='1293007')
-    harvest.node_record_process(bibid_str='DS00000009', vid_str='00001')
+    harvest.node_record_process(bibid_str='DS00000010', vid_str='00001',
+        save_xml=True)
 
     return "run:Done"
 
