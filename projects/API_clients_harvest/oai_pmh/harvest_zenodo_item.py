@@ -119,12 +119,15 @@ mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
     <mods:roleTerm type="text">host institution</mods:roleTerm>
   </mods:role>
 </mods:name>
+
+{{% for creator in creators %}}
 <mods:name type="personal">
-  <mods:namePart>{creator}</mods:namePart>
+  <mods:namePart>{{creator}}</mods:namePart>
   <mods:role>
     <mods:roleTerm type="text">creator</mods:roleTerm>
   </mods:role>
 </mods:name>
+{{% endfor %}}
 
 <!-- subject topics- These from Elsevier are phrases with no authority info -->
 {mods_subjects}
@@ -194,8 +197,8 @@ msg = ("Using request = {}".format(request_uf1))
 '''
 
 '''
-d_oai_zenodo['GetRecord'] is special configuration info to do API calls to zenodo
-GetRecord API.
+d_oai_zenodo['GetRecord'] is special configuration info
+to do API calls to zenodo GetRecord API.
 
 '''
 d_oai_zenodo = {
@@ -245,131 +248,364 @@ def url_of_zenodo(d_request, dataset_name='user-genetics-datasets', verbosity=0)
 def response_of_zenodo(d_request, dataset_name=None, verbosity= 0):
     d_headers = d_request['d_request_headers']
     #todo - pull next line back into url_of_zenodo?
-    url = url_of_zenodo(d_request, dataset_name=dataset_name, verbosity=verbosity)
+    url = url_of_zenodo(d_request, dataset_name=dataset_name,
+        verbosity=verbosity)
     return requests.get(url, headers=d_headers)
 
 class OAI_Harvester(object):
 
-  def __init__(self, d_oai=None,  output_folder=None, verbosity=None):
-    required_args = ['d_oai','output_folder',]
-    if not all(required_args):
-      raise ValueError("Error: Some parameters in {} not set: {}."
-          .format(repr(required_args)))
+    def __init__(self, d_oai=None,  output_folder=None, verbosity=None):
+      required_args = ['d_oai','output_folder',]
+      if not all(required_args):
+          raise ValueError("Error: Some parameters in {} not set: {}."
+            .format(repr(required_args)))
 
-    # All URL requests we send to the OAI-PMH server start with base_url part
-    self.d_oai = d_oai
-    self.base_url = d_oai['base_url']
+      # All URL requests we send to the OAI-PMH server start with base_url part
+      self.d_oai = d_oai
+      self.base_url = d_oai['base_url']
+      self.output_folder = output_folder
 
-    self.output_folder = output_folder
-    # Later: can use API with verb metadataFormats to get them.
-    # Now use the first listed metadata_prefix
-    #
-    self.metadata_prefixes = d_oai['metadata_prefixes']
-    self.preferred_metadata_prefix = d_oai['metadata_prefixes'][0]
+      self.response_type = None
+      # Later: can use API with verb metadataFormats to get them.
+      # Now use the first listed metadata_prefix
+      #
+      self.metadata_prefixes = d_oai['metadata_prefixes']
+      self.preferred_metadata_prefix = d_oai['metadata_prefixes'][0]
 
-    self.verbosity = verbosity # default verbosity
+      self.verbosity = verbosity # default verbosity
 
-    self.basic_verbs = [
+      self.basic_verbs = [
          # see http://www.oaforum.org/tutorial/english/page4.htm
          'GetRecord', 'Identify',
          'ListIdentifiers', 'ListMetaDataFormats', 'ListRecords' , 'ListSets'
-    ]
+      ]
 
 # end def
 
-  def url_list_records(self, set_spec=None, metadata_prefix=None):
-    url = ("{}?ListRecords&set={}&metadataPrefix={}"
-      .format(self.oai_url,set_spec,metadata_prefix))
-    return request.get(url)
+    def url_list_records(self, set_spec=None, metadata_prefix=None):
+        url = ("{}?ListRecords&set={}&metadataPrefix={}"
+            .format(self.base_url,set_spec,metadata_prefix))
+        return request.get(url)
 
-  '''
-  sample url to get a record from zenodo:
-  https://zenodo.org/oai2d?verb=GetRecord&identifier=oai:zenodo.org:164231&metadataPrefix=oai_dc
+    '''
+    method get_record():
 
-  '''
-  def get_record(self, identifier=None, metadata_prefix=None):
+    For consistency with some other methods, return nodes_record[] list of records
+    nodes, but from this method, that value it will always have length of 1
 
-    prefixes = self.d_oai['metadata_prefixes']
-    if metadata_prefix is None:
-        metadata_prefix = prefixes[0]
-        metadata_prefex = 'abcdef'
-    elif metadata_prefix not in prefixes:
-        raise ValueError("Given metadata_prefix {} is not in {}"
-            .format(metadata_prefix, prefixes))
+    sample request url to get a single record from zenodo:
+    https://zenodo.org/oai2d?verb=GetRecord&identifier=oai:zenodo.org:164231&metadataPrefix=oai_dc
 
-    base_url = self.d_oai['base_url']
-    format_id = self.d_oai['verbs']['GetRecord']['format_identifier']
-    identifier_part = format_id.format(identifier)
+    This generates and sends the request url, saves the resulting xml
+    in self.xml, parses it and saves self.node_root and self.nodes_record
+    and self.namespaces for the xml document for further processing.
+    For example node_record_process() is designed to do further processing.
 
-    url = ("{}verb=GetRecord{}&metadataPrefix={}"
-      .format(base_url, identifier_part, metadata_prefix))
 
-    if self.verbosity > 0:
-        print("metadata_prefix='{}'".format(metadata_prefix))
-        msg = "get_record: using url='{}'".format(url)
-        print(msg)
-        sys.stdout.flush()
+    '''
+    def get_record(self, identifier=None, metadata_prefix=None):
 
-    return requests.get(url)
+        self.response_type = 'get_record'
+        prefixes = self.d_oai['metadata_prefixes']
+        if metadata_prefix is None:
+            metadata_prefix = prefixes[0]
+        elif metadata_prefix not in prefixes:
+            raise ValueError("Given metadata_prefix {} is not in {}"
+                .format(metadata_prefix, prefixes))
 
-  def generator_list_records(self,  metadata_prefix=None, set_spec=None, verbosity=0):
-    pnames = ['metadata_prefix','set_spec',]
+        base_url = self.d_oai['base_url']
+        format_id = self.d_oai['verbs']['GetRecord']['format_identifier']
+        identifier_part = format_id.format(identifier)
 
-    if not all(set_spec):
-      raise ValueError("Error: Some parameters not set: {}.".format(pnames))
+        url = ("{}verb=GetRecord{}&metadataPrefix={}"
+          .format(base_url, identifier_part, metadata_prefix))
 
-    if metadata_prefix not in self.metadata_prefixes:
-      raise ValueError("Error: unknown metadata format: {}.".format(metadata_prefix))
 
-    n_batch = 0;
-    url_list = url_list_records(set_spec=set_spec,metadata_prefix=metadata_prefix)
-    while (url_list is not None):
-      n_batch += 1
-      response = request.get(url_list)
-      xml = response.text.encode('utf-8')
+        if self.verbosity > 0:
+            print("metadata_prefix='{}'".format(metadata_prefix))
+            msg = "get_record: using url='{}'".format(url)
+            print(msg)
+            sys.stdout.flush()
 
-      try:
-          node_root = etree.fromstring(xml)
-      except Exception as e:
-          print("For batch {}, made url request ='{}'. Skipping batch with Parse() exception='{}'"
-                .format(n_batch, url_list_records, repr(e)))
+        self.response_type = 'get_record' #python style naming
+        self.request_url = url
+        self.response = requests.get(url)
+        self.response_xml = self.response.text.encode('utf-8')
+        self.node_root = etree.fromstring(self.response_xml)
 
-          print("Traceback: {}".format(traceback.format_exc()))
-          # Break here - no point to continue because we cannot parse/discover the resumptionToken
-          break
-      # str_pretty = etree.tostring(node_root, pretty_print=True)
-      d_namespaces = {key:value for key,value in dict(node_root.nsmap).items() if key is not None}
-      nodes_record = node_root.findall(".//{*}record", namespaces=d_namespaces)
+        self.namespaces={key:value for key,value in
+           dict(self.node_root.nsmap).items() if key is not None}
+        # str_pretty = etree.tostring(node_root, pretty_print=True)
+        self.nodes_record = self.node_root.findall(".//{*}record",
+              namespaces=self.namespaces)
 
-      print ("ListRecords request found root tag name='{}', and {} records"
-             .format(node_root.tag, len(nodes_record)))
+        # Exactly one node_record should exist, since we check response_type,
+        # it may be overkill to recheck here... but maybe add later if issues.
+        self.node_record = self.nodes_record[0]
+        return self.nodes_record
+    # end def get_record in OAI_Harvester
 
-      # For every record, write an output file.
-      for node_record in nodes_record:
-          yield node_record
+    '''
+    NOTE: This is highly-zenodo-output specific, may be worth teasing out
+    common parts to a base class later, but maybe not after looking at a few
+    different formats produced from OAI-PMH Servers.
 
-      node_resumption = node_root.find('.//{*}resumptionToken', namespaces=d_namespaces)
-      url_list = None
-      if node_resumption is not None:
-          # Note: manioc allows no other args than resumption token, so try with all oai servers
-          #url_list = ('{}?verb=ListRecords&set={}&metadataPrefix=oai_dc&resumptionToken={}'
-          #    .format(self.url_base, set_spec, node_resumption.text))
-          url_list = ('{}?verb=ListRecords&resumptionToken={}'
-              .format(self.url_base,  node_resumption.text))
-      if verbosity > 0:
-          print("{}:Next url='{}'".format(me,url_list))
-    # end while url_list is not None
-    return None
-  # end def generator_list_records()
+    This is called after th get_record() method to optionally write out saved
+    xml for a zenodo item, and to always output a ufdc mets file with the
+    zenodo data encoded into it.
+    The mets.xml file is designed to be ingested by the sobekcm builder.
+    '''
+    def node_record_process(self,node_record=None, namespaces=None,
+        bibid_str='DS12345678', # format 'XY12345678'
+        vid_str='12345',  # format '12345'
+        save_xml=False):
+
+        # Caller with node_root can provide overrides for node_record or
+        # and namespaces. Eg, before calling, caller can set namespaces  like:
+        # namespaces={key:value for key,value in dict(node_root.nsmap).items()
+        # if key is not None}
+
+        if node_record is None:
+           node_record = self.node_record
+        if namespaces is None:
+           namespaces = self.namespaces
+
+        #bibid = bib_prefix + str(bibint).zfill(8)
+        bib_vid = "{}_{}".format(bibid_str,vid_str)
+
+        node_type= node_record.find(".//{}type", namespaces=namespaces)
+        genre = '' if not node_type else node_type.text
+
+        # NOTE: this also appers to be the OAI Server record identifier
+        header_identifier = node_record.find("./{*}header/{*}identifier").text
+
+        identifier_normalized = header_identifier.replace(':','_') + '.xml'
+        if self.verbosity > 0:
+            print("using bib_vid={} to output item with zenodo "
+              "identifier_normalized={}"
+              .format(bib_vid, identifier_normalized))
+
+        if save_xml is True:
+            # Parse the input record and save it to a string
+            record_str = etree.tostring(node_record, pretty_print=True,
+                xml_declaration=True, encoding='utf-8')
+
+            filename_received = ( output_folder + '/received/'
+                + identifier_normalized )
+
+            fn = filename_received
+            with open(fn, 'wb') as outfile:
+                print("Writing filename_received ='{}'".format(fn))
+                outfile.write(record_str)
+
+        # Set some variables to potentially output into the Zenodo METS
+        # output template
+
+        utc_now = datetime.datetime.utcnow()
+        utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        #Get basic values from input doc
+        node_oaidc = node_record.find(".//{*}dc", namespaces=namespaces)
+
+        if node_oaidc is None:
+            raise Exception("Cannot find oai_dc:dc node")
+
+        namespaces_oaidc = {key:value for key,value in
+            dict(node_oaidc.nsmap).items() if key is not None}
+
+        if self.verbosity > 0:
+            print("Got oai_dc prefix map='{}'\n\n"
+                .format(repr(namespaces_oaidc)))
+
+        node_creator = node_oaidc.find(".//dc:creator",
+            namespaces=namespaces_oaidc)
+
+        dc_creator = '' if node_creator is None else node_creator.text
+
+        nodes_creator = node_oaidc.findall(
+            ".//dc:creator", namespaces=namespaces_oaidc)
+
+        # Handle multiple creators
+        dc_creators = []
+        for node_creator in nodes_creator:
+            dc_creators.append(node_creator.text)
+
+
+        if self.verbosity > 0:
+            print("Got creator={}".format(dc_creator))
+            print("Got creators='{}''".format(dc_creators))
+            sys.stdout.flush()
+
+
+        dc_date_orig = node_oaidc.find("./dc:date",
+            namespaces=namespaces_oaidc).text
+        if self.verbosity > 0:
+            print("Got dc date orig={}".format(dc_date_orig))
+        # Must convert dc_date_orig to valid METS format:
+        dc_date = '{}T12:00:00Z'.format(dc_date_orig)
+        if self.verbosity > 0:
+            print("Got dc_date='{}'".format(dc_date))
+
+        node_description = node_oaidc.find(".//{*}description",
+            namespaces=namespaces_oaidc)
+
+        # Make an element tree style tree to invoke pattern to remove innter xml
+        str_description = (tostring(node_description,encoding='unicode',
+            method='text').strip().replace('\n',''))
+        # Special doctype needed to handle nbsp... copyright
+        xml_dtd = '''<?xml version="1.1" encoding="UTF-8" ?><!DOCTYPE naughtyxml [
+            <!ENTITY nbsp "&#0160;">
+            <!ENTITY copy "&#0169;">
+            ]>'''
+        xml_description =  '{}<doc>{}</doc>'.format(xml_dtd,str_description)
+        if self.verbosity > 0:
+            print("Got str_description='{}'".format(str_description))
+        if self.verbosity > 0:
+            print("Got xml_description='{}'".format(xml_description))
+
+        # See: https://stackoverflow.com/questions/19369901/python-element-tree-extract-text-from-element-stripping-tags#19370075
+        tree_description = ET.fromstring(xml_description)
+        dc_description = etl.escape_xml_text(''.join(tree_description.itertext()))
+        #dc_description = xml_description
+        if self.verbosity > 0:
+            print("Using dc_description='{}'".format(dc_description))
+
+        nodes_identifier = node_oaidc.findall(".//{*}identifier",
+            namespaces=namespaces_oaidc)
+        #inferred the following indexes by pure manual inspection!
+        doi = nodes_identifier[0].text
+        zenodo_id = nodes_identifier[2].text
+        related_url = '{}'.format(doi)
+
+        #relation_doi = node_oaidc.find(".//{*}relation").text
+        nodes_rights = node_oaidc.findall(".//{*}rights",
+            namespaces=namespaces_oaidc)
+        rights_text = 'See:'
+        for node_rights in nodes_rights:
+            rights_text += ' ' + node_rights.text
+
+        nodes_subject = node_oaidc.findall(".//{*}subject",
+            namespaces=namespaces_oaidc)
+        mods_subjects = ''
+        for node_subject in nodes_subject:
+            mods_subjects += ('<mods:subject><mods:topic>' + node_subject.text
+              + '</mods:topic></mods:subject>\n')
+
+        dc_title = node_oaidc.find(".//{*}title").text
+        dc_type = node_oaidc.find(".//{*}type").text
+
+        sobekcm_aggregations = ['UFDATASETS']
+        xml_sobekcm_aggregations = ''
+        for aggregation in sobekcm_aggregations:
+            xml_sobekcm_aggregations += (
+                '<sobekcm:Aggregation>{}</sobekcm:Aggregation>'
+                .format(aggregation))
+
+        # Apply basic input values to METS template variables
+
+        d_var_val = {
+            'bib_vid' : bib_vid,
+            'create_date' : dc_date,
+            'last_mod_date' : utc_secs_z,
+            'agent_creator_individual_name': dc_creator,
+            'agent_creator_individual_note' : 'Creation via zenodo harvest',
+            'identifier' : header_identifier,
+            'mods_subjects' : mods_subjects,
+            'rights_text' : rights_text,
+            'utc_secs_z' :  utc_secs_z,
+            'title' : dc_title,
+            'related_url' : related_url,
+            'xml_sobekcm_aggregations' : xml_sobekcm_aggregations,
+            'doi': doi,
+            'description' : dc_description,
+            # 'creator' : dc_creator,
+            'creators' : dc_creators,
+            'bibid': bibid_str,
+            'vid': vid_str,
+            'type_of_resource' : dc_type,
+            'sha1-mets-v1' : '',
+            'genre' : 'dataset',
+            'genre_authority': 'zenodo',
+        }
+
+        # Create mets_str and write it
+        mets_str = mets_format_str.format(**d_var_val)
+
+        mets_output_folder = self.output_folder + '/mets_output/'
+        item_output_folder = mets_output_folder + '/' + bib_vid
+        os.makedirs(item_output_folder, exist_ok=True)
+        filename_mets = item_output_folder + '/' + bib_vid + '.mets.xml'
+
+        if self.verbosity > 0:
+            print("WRITING METS.XML to {}".format(filename_mets))
+
+        fn = filename_mets
+        with open(fn, 'wb') as outfile:
+            print("Writing filename='{}'".format(fn))
+            outfile.write(mets_str.encode('utf-8'))
+        # end with ... outfile
+
+    # end def node_record_process
+
+
+    def xxgenerator_list_records(self,  metadata_prefix=None, set_spec=None, verbosity=0):
+	    pnames = ['metadata_prefix','set_spec',]
+
+	    if not all(set_spec):
+	      raise ValueError("Error: Some parameters not set: {}.".format(pnames))
+
+	    if metadata_prefix not in self.metadata_prefixes:
+	      raise ValueError("Error: unknown metadata format: {}.".format(metadata_prefix))
+
+	    n_batch = 0;
+	    url_list = url_list_records(set_spec=set_spec,metadata_prefix=metadata_prefix)
+	    while (url_list is not None):
+	      n_batch += 1
+	      response = request.get(url_list)
+	      xml = response.text.encode('utf-8')
+
+	      try:
+	          node_root = etree.fromstring(xml)
+	      except Exception as e:
+	          print("For batch {}, made url request ='{}'. Skipping batch with Parse() exception='{}'"
+	                .format(n_batch, url_list_records, repr(e)))
+
+	          print("Traceback: {}".format(traceback.format_exc()))
+	          # Break here - no point to continue because we cannot parse/discover the resumptionToken
+	          break
+	      # str_pretty = etree.tostring(node_root, pretty_print=True)
+	      d_namespaces = {key:value for key,value in dict(node_root.nsmap).items() if key is not None}
+	      nodes_record = node_root.findall(".//{*}record", namespaces=d_namespaces)
+
+	      print ("ListRecords request found root tag name='{}', and {} records"
+	             .format(node_root.tag, len(nodes_record)))
+
+	      # For every record, write an output file.
+	      for node_record in nodes_record:
+	          yield node_record
+
+	      node_resumption = node_root.find('.//{*}resumptionToken', namespaces=d_namespaces)
+	      url_list = None
+	      if node_resumption is not None:
+	          # Note: manioc allows no other args than resumption token, so try with all oai servers
+	          #url_list = ('{}?verb=ListRecords&set={}&metadataPrefix=oai_dc&resumptionToken={}'
+	          #    .format(self.url_base, set_spec, node_resumption.text))
+	          url_list = ('{}?verb=ListRecords&resumptionToken={}'
+	              .format(self.url_base,  node_resumption.text))
+	      if verbosity > 0:
+	          print("{}:Next url='{}'".format(me,url_list))
+	    # end while url_list is not None
+	    return None
+	# end def generator_list_records()
 
 # end class OAI_Harvester
 
 #
 #{ Method list_records_to_mets_xml_files
-# Query the zenodo api for all records in the tiven set_spec
+# Query the zenodo api for all records in the given set_spec.
 # Under the output folder, create subdir mets_output and under it
-# create a mets file for each record received from the zenodo api
-def list_records_to_mets_xml_files(d_run_params,
+# a new mets file for each record received from the zenodo api
+def xxlist_records_to_mets_xml_files(d_run_params,
     set_spec='user-genetics-datasets',verbosity=1):
     #
     if verbosity > 0:
@@ -423,6 +659,12 @@ def list_records_to_mets_xml_files(d_run_params,
         bibid = bib_prefix + str(bibint).zfill(8)
         bib_vid = "{}_{}".format(bibid,vid)
 
+
+        rv = node_record_process(node_record=node_record,
+          bib_vid=bib_vid, namespaces=d_namespaces)
+
+
+
         node_type= node_record.find(".//{}type", namespaces=d_namespaces)
         genre = '' if not node_type else node_type.text
 
@@ -434,7 +676,8 @@ def list_records_to_mets_xml_files(d_run_params,
         #zenodo_string_xml = etree.tostring(node_record, pretty_print=True)
 
         # Parse the input record and save it to a string
-        record_str = etree.tostring(node_record, pretty_print=True, xml_declaration=True)
+        record_str = etree.tostring(node_record, pretty_print=True,
+            xml_declaration=True, encoding='utf-8')
 
         filename_received = output_folder + '/received/' + identifier_normalized
 
@@ -453,12 +696,14 @@ def list_records_to_mets_xml_files(d_run_params,
         if node_oaidc is None:
             raise Exception("Cannot find oai_dc:dc node")
 
-        namespaces = {key:value for key,value in dict(node_oaidc.nsmap).items() if key is not None}
+        namespaces = {key:value for key,value in dict(node_oaidc.nsmap).items()
+            if key is not None}
 
         print("Got oai_dc prefix map='{}'\n\n".format(repr(namespaces)))
 
         node_creator = node_oaidc.find(".//dc:creator", namespaces=namespaces)
         dc_creator = '' if node_creator is None else node_creator.text
+
         print("Got creator={}".format(dc_creator))
 
         dc_date_orig = node_oaidc.find("./dc:date", namespaces=namespaces).text
@@ -541,6 +786,7 @@ def list_records_to_mets_xml_files(d_run_params,
 
         # Create mets_str and write it
         mets_str = mets_format_str.format(**d_var_val)
+
         item_output_folder = mets_output_folder + '/' + bib_vid
         os.makedirs(item_output_folder, exist_ok=True)
         filename_mets = item_output_folder + '/' + bib_vid + '.mets.xml'
@@ -571,15 +817,19 @@ d_run_params = {
 def run(verbosity=0):
     output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
         data_relative_folder='data/outputs/zenodo_mets')
+    if verbosity > 0:
+        print("Using output_folder='{}'".format(output_folder))
 
     harvest = OAI_Harvester(d_oai=d_oai_zenodo, output_folder=output_folder,
         verbosity=verbosity)
 
     result = harvest.get_record(identifier='1293007')
-    msg = "run: Got result='{}'".format(result)
-    return msg
+    harvest.node_record_process(bibid_str='DS00000009', vid_str='00001')
+
+    return "run:Done"
 
 #test run
+
 msg = run(verbosity=1)
 print(msg)
 sys.stdout.flush()
