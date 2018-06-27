@@ -20,8 +20,22 @@ feed to mets for UFDC SobekCM ingestion.
 import sys, os, os.path, platform
 
 # Add the parent Path for misc UF modules
-sys.path.append('{}/git/citrus/modules'.format(os.path.expanduser('~')))
+
+def register_modules():
+    platform_name = platform.system().lower()
+    if platform_name == 'linux':
+        modules_root = '/home/robert/'
+        #raise ValueError("MISSING: Enter code here to define modules_root")
+    else:
+        # assume rvp office pc running windows
+        modules_root="C:\\rvp\\"
+    sys.path.append('{}'.format(modules_root))
+    sys.path.append('{}git/citrus/modules'.format(modules_root))
+    return platform_name
+
+platform_name=register_modules()
 print("sys.path={}".format(repr(sys.path)))
+
 
 import etl
 from lxml.etree import tostring
@@ -174,48 +188,39 @@ mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 from lxml import etree
 import datetime
 import requests
-zenodo_ids =['1293007'] # 20180626 used ListIdentifiers and the original url
 # provided by a ufdc patron to infer
 # that string '1293007' in the original url is a zenodo identifier
 
-request_uf1='https://zenodo.org/oai2d?verb=ListRecords&set=user-genetics-datasets&metadataPrefix=oai_dc'
+'''
+xxrequest_uf1=('https://zenodo.org/oai2d?verb=ListRecords'
+    '&set=user-genetics-datasets&metadataPrefix=oai_dc')
 
-request_uf1=("https://zenodo.org/oai2d?verb=GetRecord"
+xrequest_uf1=("https://zenodo.org/oai2d?verb=GetRecord"
   "&identifier=oai:zenodo.org:{}&metadataPrefix=oai_dc"
   .format(zenodo_ids[0]))
 
- msg = ("Using request = {}".format(request_uf1))
+msg = ("Using request = {}".format(request_uf1))
+'''
 
 '''
-d_oai_zenodo is configuration info to do API calls to zenodo
-The most likely value to be changed by a caller is ['pub_search']['url'],
-which is the url to get the oai list of records for a named set of items.
+d_oai_zenodo['GetRecord'] is special configuration info to do API calls to zenodo
+GetRecord API.
 
 '''
 d_oai_zenodo = {
-    'pub_search': { # This entry has data used to do a zenodo ListRecords
-        # query for a specific dataset
-        'd_request_headers': {
+    'request_headers': {
             'Accept' : 'application/xml',
+     },
+    'base_url' : 'https://zenodo.org/oai2d?',
+    'metadata_prefixes' : ['oai_dc'],
+    'verbs' : { #Using the official OAI-PMH verb names
+        'GetRecord': {
+            'format_identifier' : (
+              '&identifier=oai:zenodo.org:{}')
         },
-        'url_base': 'https://zenodo.org/oai2d?verb=ListRecords&set=user-genetics-datasets&metadataPrefix=oai_dc',
-        'start_item_count': 0,
-        'result_item_quantity_max': 200, # Max per ORCID docs is 200 ao 20170503
-        # See ORCID docs on the solr_query_string options, field and variable names.
-        # This is part of a GET URL, so use the %22 and + and any other applicable url-encodings
-        'solr_query_string': 'affiliation-org-name:%22University+of+Florida%22',
-        'url_format': 'https://pub.orcid.org/v2.0/{}/record',
-
-        'url': '', #Do not edit - just a placeholder, a method will compute this
-    },
-    'pub_record': {
-        'd_request_headers': {
-            'Authorization' : 'Bearer c32ea2ba-0efc-45db-b771-eb793879b232',
-            'Accept' : 'application/vnd.orcid+xml',
-        },
-        'url_format': 'https://pub.orcid.org/v2.0/{}/record',
-        # Consider:'d_format': {'orcid_id':'',} #User fills in d_format values for str.format_map()
-        'url': '', #Do not edit - just a placeholder, a method will compute this
+        'ListRecords': {
+            'format_setname' : ('verb=ListRecord&set={}')
+        }
     },
 }
 
@@ -253,39 +258,80 @@ def response_of_zenodo(d_request, dataset_name=None, verbosity= 0):
     return requests.get(url, headers=d_headers)
 
 class OAI_Harvester(object):
-  def __init__(self, oai_url=None, output_folder=None,verbosity=None):
-    pnames = ['oai_url','output_folder',]
-    if not all(output_folder, oai_url):
-      raise ValueError("Error: Some parameters not set: {}.".format(pnames))
-    self.oai_url = oai_url
+
+  def __init__(self, d_oai=None,  output_folder=None, verbosity=None):
+    required_args = ['d_oai','output_folder',]
+    if not all(required_args):
+      raise ValueError("Error: Some parameters in {} not set: {}."
+          .format(repr(required_args)))
+
+    # All URL requests we send to the OAI-PMH server start with base_url part
+    self.d_oai = d_oai
+    self.base_url = d_oai['base_url']
+
     self.output_folder = output_folder
-    # Later: use API with verb metadataFormats to get them. Now try a one-size-fits-all list
+    # Later: can use API with verb metadataFormats to get them.
+    # Now use the first listed metadata_prefix
     #
-    self.metadata_formats=['oai_dc']
+    self.metadata_prefixes = d_oai['metadata_prefixes']
+    self.preferred_metadata_prefix = d_oai['metadata_prefixes'][0]
+
     self.verbosity = verbosity # default verbosity
-    self.basic_verbs = [ # see http://www.oaforum.org/tutorial/english/page4.htm
-         'GetRecord', 'Identify'
-         , 'ListIdentifiers', 'ListMetaDataFormats', 'ListRecords' , 'ListSets'
+
+    self.basic_verbs = [
+         # see http://www.oaforum.org/tutorial/english/page4.htm
+         'GetRecord', 'Identify',
+         'ListIdentifiers', 'ListMetaDataFormats', 'ListRecords' , 'ListSets'
     ]
 
-    pass
+# end def
 
-  def url_list_records(self, set_spec=None, metadata_format=None):
+  def url_list_records(self, set_spec=None, metadata_prefix=None):
     url = ("{}?ListRecords&set={}&metadataPrefix={}"
-      .format(self.oai_url,set_spec,metadata_format))
+      .format(self.oai_url,set_spec,metadata_prefix))
     return request.get(url)
 
-  def generator_list_records(self,  metadata_format=None, set_spec=None, verbosity=0):
-    pnames = ['metadata_format','set_spec',]
+  '''
+  sample url to get a record from zenodo:
+  https://zenodo.org/oai2d?verb=GetRecord&identifier=oai:zenodo.org:164231&metadataPrefix=oai_dc
+
+  '''
+  def get_record(self, identifier=None, metadata_prefix=None):
+
+    prefixes = self.d_oai['metadata_prefixes']
+    if metadata_prefix is None:
+        metadata_prefix = prefixes[0]
+        metadata_prefex = 'abcdef'
+    elif metadata_prefix not in prefixes:
+        raise ValueError("Given metadata_prefix {} is not in {}"
+            .format(metadata_prefix, prefixes))
+
+    base_url = self.d_oai['base_url']
+    format_id = self.d_oai['verbs']['GetRecord']['format_identifier']
+    identifier_part = format_id.format(identifier)
+
+    url = ("{}verb=GetRecord{}&metadataPrefix={}"
+      .format(base_url, identifier_part, metadata_prefix))
+
+    if self.verbosity > 0:
+        print("metadata_prefix='{}'".format(metadata_prefix))
+        msg = "get_record: using url='{}'".format(url)
+        print(msg)
+        sys.stdout.flush()
+
+    return requests.get(url)
+
+  def generator_list_records(self,  metadata_prefix=None, set_spec=None, verbosity=0):
+    pnames = ['metadata_prefix','set_spec',]
 
     if not all(set_spec):
       raise ValueError("Error: Some parameters not set: {}.".format(pnames))
 
-    if metadata_format not in self.metadata_formats:
-      raise ValueError("Error: unknown metadata format: {}.".format(metadata_format))
+    if metadata_prefix not in self.metadata_prefixes:
+      raise ValueError("Error: unknown metadata format: {}.".format(metadata_prefix))
 
     n_batch = 0;
-    url_list = url_list_records(set_spec=set_spec,metadata_format=metadata_format)
+    url_list = url_list_records(set_spec=set_spec,metadata_prefix=metadata_prefix)
     while (url_list is not None):
       n_batch += 1
       response = request.get(url_list)
@@ -531,10 +577,18 @@ d_run_params = {
     }
 }
 
-output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
+def run(verbosity=0):
+    output_folder = etl.data_folder(linux='/home/robert/', windows='U:/',
         data_relative_folder='data/outputs/zenodo_mets')
 
-d_run_params['output_folder'] = output_folder
-set_spec='user-genetics-datasets'
+    harvest = OAI_Harvester(d_oai=d_oai_zenodo, output_folder=output_folder,
+        verbosity=verbosity)
 
-list_records_to_mets_xml_files(d_run_params, set_spec=set_spec)
+    result = harvest.get_record(identifier='1293007')
+    msg = "run: Got result='{}'".format(result)
+    return msg
+
+#test run
+run(verbosity=1)
+print(msg)
+sys.stdout.flush()
