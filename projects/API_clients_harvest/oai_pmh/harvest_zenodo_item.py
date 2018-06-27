@@ -18,6 +18,8 @@ feed to mets for UFDC SobekCM ingestion.
 #Get local pythonpath of modules from 'citrus' main project directory
 
 import sys, os, os.path, platform
+from lxml.etree import tostring
+import xml.etree.ElementTree as ET
 
 # Add the parent Path for misc UF modules
 
@@ -36,19 +38,10 @@ def register_modules():
 platform_name=register_modules()
 print("sys.path={}".format(repr(sys.path)))
 
-
+# Import local modules
 import etl
-from lxml.etree import tostring
-import xml.etree.ElementTree as ET
 
-'''home_directory = os.path.expanduser('~')
-print("Using home_directory='{}'".format(home_directory),file=sys.stdout)
-sys.stdout.flush()
 
-local_module_folder = '{}/github/citrus/modules'.format(home_directory)
-print("Using local local module folder='{}'".format(local_module_folder))
-sys.path.append(local_module_folder) #my current place on UF pc
-'''
 
 folder_output_linux='/home/robert/data/'
 folder_output_windows='U:/data/'
@@ -59,8 +52,6 @@ output_folder = etl.data_folder(linux=folder_output_linux,
 
 print("Using output_folder='{}'".format(output_folder),file=sys.stdout)
 
-import etl
-import os
 mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!--  METS/mods file designed to describe a Zenodo OAI-PMH extracted MD  -->
 
@@ -589,6 +580,6 @@ def run(verbosity=0):
     return msg
 
 #test run
-run(verbosity=1)
+msg = run(verbosity=1)
 print(msg)
 sys.stdout.flush()
