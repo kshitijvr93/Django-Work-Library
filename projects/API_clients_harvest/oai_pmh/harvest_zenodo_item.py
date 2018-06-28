@@ -245,12 +245,6 @@ def response_of_zenodo(d_request, dataset_name=None, verbosity= 0):
         verbosity=verbosity)
     return requests.get(url, headers=d_headers)
 
-def xrequire_arg_names(d_caller_locals, names):
-    required_args = [ v for k, v in d_caller_locals.items() if k in names]
-    if not all(required_args):
-          raise ValueError(
-             f"Error: Some required variables in {names!r} not set.")
-
 
 class OAI_Harvester(object):
 

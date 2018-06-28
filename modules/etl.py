@@ -17,6 +17,12 @@ from pathlib import Path
 import shutil
 import stat
 
+'''
+Typical call: Caller will usually provide arg1 as its locals() dict to
+check for provision of its required arguments by its own caller.
+
+      require_arg_names(locals(), ['d_oai', 'output_folder'])
+'''
 def require_arg_names(d_caller_locals, names):
     required_args = [ v for k, v in d_caller_locals.items() if k in names]
     if not all(required_args):
