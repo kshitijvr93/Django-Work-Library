@@ -40,7 +40,7 @@ print("sys.path={}".format(repr(sys.path)))
 
 # Import local modules
 import etl
-
+from etl import require_arg_names
 
 
 folder_output_linux='/home/robert/data/'
@@ -245,13 +245,18 @@ def response_of_zenodo(d_request, dataset_name=None, verbosity= 0):
         verbosity=verbosity)
     return requests.get(url, headers=d_headers)
 
+def xrequire_arg_names(d_caller_locals, names):
+    required_args = [ v for k, v in d_caller_locals.items() if k in names]
+    if not all(required_args):
+          raise ValueError(
+             f"Error: Some required variables in {names!r} not set.")
+
+
 class OAI_Harvester(object):
 
     def __init__(self, d_oai=None,  output_folder=None, verbosity=None):
-      required_args = ['d_oai','output_folder',]
-      if not all(required_args):
-          raise ValueError("Error: Some parameters in {} not set."
-            .format(repr(required_args)))
+
+      require_arg_names(locals(), ['d_oai', 'output_folder'])
 
       # All URL requests we send to the OAI-PMH server start with base_url part
       self.d_oai = d_oai

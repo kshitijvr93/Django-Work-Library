@@ -1,4 +1,6 @@
 #etl - extract transform load tools.
+# python 3.6+ code
+#
 import datetime
 import pytz
 import os
@@ -15,6 +17,11 @@ from pathlib import Path
 import shutil
 import stat
 
+def require_arg_names(d_caller_locals, names):
+    required_args = [ v for k, v in d_caller_locals.items() if k in names]
+    if not all(required_args):
+          raise ValueError(
+             f"Error: Some required variables in {names!r} not set.")
 
 def get_json_result_by_url(url,verbosity=1):
     import urllib
@@ -488,7 +495,7 @@ def sequence_paths(input_folders=None, input_path_globs=None, verbosity=0):
 #
 def get_db_engine_by_name():
     return
-    
+
 # TEST
 def test_sequence_days():
     days = sequence_days(cymd_start='20170715', cymd_end='20170825')
