@@ -31,8 +31,8 @@ def register_modules():
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
-    sys.path.append('{}'.format(modules_root))
-    sys.path.append('{}git/citrus/modules'.format(modules_root))
+    sys.path.append(f'{modules_root}')
+    sys.path.append(f'{modules_root}git/citrus/modules')
     return platform_name
 
 platform_name=register_modules()
@@ -50,7 +50,7 @@ output_folder = etl.data_folder(linux=folder_output_linux,
     windows=folder_output_windows,
     data_relative_folder='data/outputs/zenodo_mets')
 
-print("Using output_folder='{}'".format(output_folder),file=sys.stdout)
+print(f"Using output_folder='{output_folder}'",file=sys.stdout)
 
 mets_format_str = '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!--  METS/mods file designed to describe a Zenodo OAI-PMH extracted MD  -->
@@ -230,7 +230,7 @@ def url_of_zenodo(d_request, dataset_name='user-genetics-datasets', verbosity=0)
     if d_request is None:
         raise(ValueError,"d_request is required")
     if verbosity != 0 :
-        print("{}:Starting".format(me))
+        print(f"{me}:Starting")
 
     url = d_request['url_format'].format(dataset_name)
     d_request['url'] = url # save for diagnostics
@@ -250,7 +250,7 @@ class OAI_Harvester(object):
     def __init__(self, d_oai=None,  output_folder=None, verbosity=None):
       required_args = ['d_oai','output_folder',]
       if not all(required_args):
-          raise ValueError("Error: Some parameters in {} not set: {}."
+          raise ValueError("Error: Some parameters in {} not set."
             .format(repr(required_args)))
 
       # All URL requests we send to the OAI-PMH server start with base_url part
@@ -276,8 +276,8 @@ class OAI_Harvester(object):
 # end def
 
     def url_list_records(self, set_spec=None, metadata_prefix=None):
-        url = ("{}?ListRecords&set={}&metadataPrefix={}"
-            .format(self.base_url,set_spec,metadata_prefix))
+        url = (f"{self.base_url}?ListRecords&set={set_spec}"
+            "&metadataPrefix={metadata_prefix}")
         return request.get(url)
 
     '''
@@ -303,20 +303,19 @@ class OAI_Harvester(object):
         if metadata_prefix is None:
             metadata_prefix = prefixes[0]
         elif metadata_prefix not in prefixes:
-            raise ValueError("Given metadata_prefix {} is not in {}"
-                .format(metadata_prefix, prefixes))
+            raise ValueError(
+              f"Given metadata_prefix {metadata_prefix} is not in {prefixes}")
 
         base_url = self.d_oai['base_url']
         format_id = self.d_oai['verbs']['GetRecord']['format_identifier']
         identifier_part = format_id.format(identifier)
 
-        url = ("{}verb=GetRecord{}&metadataPrefix={}"
-          .format(base_url, identifier_part, metadata_prefix))
-
+        url = ( f"{base_url}verb=GetRecord{identifier_part}"
+                f"&metadataPrefix={metadata_prefix}")
 
         if self.verbosity > 0:
-            print("metadata_prefix='{}'".format(metadata_prefix))
-            msg = "get_record: using url='{}'".format(url)
+            print(f"metadata_prefix='{metadata_prefix}'")
+            msg = f"get_record: using url='{url}'"
             print(msg)
             sys.stdout.flush()
 
@@ -328,6 +327,7 @@ class OAI_Harvester(object):
 
         self.namespaces={key:value for key,value in
            dict(self.node_root.nsmap).items() if key is not None}
+
         # str_pretty = etree.tostring(node_root, pretty_print=True)
         self.nodes_record = self.node_root.findall(".//{*}record",
               namespaces=self.namespaces)
@@ -360,7 +360,7 @@ class OAI_Harvester(object):
         me = 'node_record_process'
 
         if self.verbosity > 0:
-            print("{}: Using save_xml={}".format(me,save_xml))
+            print(f"{me}: Using save_xml={save_xml}")
 
         if node_record is None:
            node_record = self.node_record
@@ -368,7 +368,7 @@ class OAI_Harvester(object):
            namespaces = self.namespaces
 
         #bibid = bib_prefix + str(bibint).zfill(8)
-        bib_vid = "{}_{}".format(bibid_str,vid_str)
+        bib_vid = f"{bibid_str}_{vid_str}"
 
         node_type= node_record.find(".//{}type", namespaces=namespaces)
         genre = '' if not node_type else node_type.text
@@ -378,9 +378,8 @@ class OAI_Harvester(object):
 
         identifier_normalized = header_identifier.replace(':','_') + '.xml'
         if self.verbosity > 0:
-            print("using bib_vid={} to output item with zenodo "
-              "identifier_normalized={}"
-              .format(bib_vid, identifier_normalized))
+            print(f"using bib_vid={bib_vid} to output item with zenodo "
+              "identifier_normalized={identifier_normalized}")
 
         if save_xml == True:
             # Parse the input record and save it to a string
@@ -391,12 +390,9 @@ class OAI_Harvester(object):
             os.makedirs(save_folder, exist_ok=True)
             save_file = ( save_folder + identifier_normalized )
 
-            if self.verbosity > 0:
-                print("Writing save file ='{}'".format(save_file))
-
             with open(save_file, 'wb') as outfile:
                 if self.verbosity > 0:
-                    print("Writing save_file ='{}'".format(save_file))
+                    print(f"Writing save_file ='{save_file}'")
                 outfile.write(record_str)
 
         # Set some variables to potentially output into the Zenodo METS
@@ -415,8 +411,7 @@ class OAI_Harvester(object):
             dict(node_oaidc.nsmap).items() if key is not None}
 
         if self.verbosity > 0:
-            print("Got oai_dc prefix map='{}'\n\n"
-                .format(repr(namespaces_oaidc)))
+            print(f"Got oai_dc prefix map='{namespaces_oaidc}'\n\n")
 
         node_creator = node_oaidc.find(".//dc:creator",
             namespaces=namespaces_oaidc)
@@ -433,21 +428,20 @@ class OAI_Harvester(object):
 
 
         if self.verbosity > 0:
-            print("Got creator={}".format(dc_creator))
-            print("Got creators='{}''".format(dc_creators))
+            print(f"Got creators='{dc_creators}'")
             sys.stdout.flush()
 
         xml_sobekcm_creators = ''
         for creator in dc_creators:
             xml_sobekcm_creators += (
-                '''
+                f'''
 <mods:name type="personal">
-  <mods:namePart>{}</mods:namePart>
+  <mods:namePart>{creator}</mods:namePart>
   <mods:role>
     <mods:roleTerm type="text">creator</mods:roleTerm>
   </mods:role>
 </mods:name>
-                '''.format(creator))
+                ''')
 
         dc_date_orig = node_oaidc.find("./dc:date",
             namespaces=namespaces_oaidc).text
