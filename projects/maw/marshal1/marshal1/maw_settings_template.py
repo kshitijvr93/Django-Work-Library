@@ -1,4 +1,10 @@
-# This is file maw_settings.py, written in Python.
+# This is a placeholder for file maw_settings.py, written in Python.
+# NOTE: a developer may compile his/her own.
+# Rule of thumb: look in the DJANGO main settings.py and be sure to
+# set every maw_settings.xxx variable named there in your maw_settings.py
+# file.
+# Variable MY_SECRESTS_FOLDER must be set in the Django server's OS
+# environment and the settings.py will look there for the maw_settings.py file.
 #
 # The developer must have an environment variable named MY_SECRETS
 # And that variable must have the path of the folder containing this file,
@@ -20,11 +26,21 @@
 # The settings are a mix of strictly secrets, like passwords and varibles with "SECRET" in
 # their names, and other user-customizable settings.
 
+DEBUG = False
+
+# See django docs, add YOUR site like
+if DEBUG == False:
+    # Also you must add your site, eg 'marshal.uflib.ufl.edu' here
+    ALLOWED_HOSTS = ['localhost, ''127.0.0.1', '[::1]']
+else:
+    ALLOWED_HOSTS = []
+
 # MAW_ABSOLUTE_PATH_MEDIA_ROOT='C:\\rvp\\git\\citrus\\projects\\maw\\marshal1\\media_root'
-MAW_ABSOLUTE_PATH_MEDIA_ROOT='{maw_absolute_path_media_root}'
+# This variable name is enhanced used to be explicit about its content type
+MAW_MEDIA_ROOT = '{my_media_root}'
 
 #ENV = 'local'
-ENV = '{my_env_for_webserver}'
+ENV = '{my_maw_ENV}'
 
 #MYSQL_LOCAL_USER='podengo'
 MYSQL_LOCAL_USER='{my_mysql_local_user}'
