@@ -150,6 +150,7 @@ def get_elsevier_bibinfo(engine=None, conn=None,table_name=None,verbosity=1):
           item.c.ItemID, group.c.BibID, item.c.VID, item.c.GroupID,
           item.c.Deleted, item.c.Link, basic.c.Tickler ])
           .where( and_ (
+          item.c.Deleted == 0,
           item.c.ItemID == basic.c.ItemID,
           item.c.GroupID == group.c.GroupID,
           group.c.BibID.like('%LS%'),
