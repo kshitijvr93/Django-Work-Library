@@ -66,7 +66,8 @@ def register_modules():
     else:
         # assume rvp office pc running windows
         modules_root="C:\\rvp\\"
-    sys.path.append('{}'.format(modules_root))
+    MY_SECRETS_FOLDER = os.environ['MY_SECRETS_FOLDER']
+    sys.path.append(os.path.abspath(MY_SECRETS_FOLDER))
     sys.path.append('{}git/citrus/modules'.format(modules_root))
     return
 register_modules()
@@ -96,7 +97,7 @@ from sqlalchemy.sql import select, and_, or_, not_
 import sqlalchemy.sql.sqltypes
 
 # Import slate of databases that this user can use
-from my_secrets.sa_engine_by_name import get_sa_engine_by_name
+from sa_engine_by_name import get_sa_engine_by_name
 
 '''
 <summary name='get_elsevier_bibinfo'>
@@ -318,11 +319,17 @@ def test_translate(
 
 # MAIN CODE
 engine_write_nickname = 'uf_local_mysql_marshal1'
-#table_name_out = 'x_ufdc_production_elsevier_item'
+
 table_name_out = 'item_elsevier_ufdc'
 table_name_out = 'item_elsevier_ufdc_test'
+engine_read_nickname ='integration_sobekdb'
 
-test_translate(engine_read_nickname='integration_sobekdb',
+# PRODUCTION PARAMS
+engine_read_nickname ='production_sobekdb'
+engine_write_nickname = 'uf_local_mysql_marshal1'
+table_name_out = 'prod_ufdc_elsevier_item'
+
+test_translate(engine_read_nickname=engine_read_nickname,
    engine_write_nickname=engine_write_nickname,
    table_name_out=table_name_out)
 

@@ -230,15 +230,25 @@ def spreadsheet_to_engine_table(
   is_index_xls=True, #whether index is a letter like 'a', 'z','aa', etc
   engine=None,
   log_output=None,
-  row_count_header=1, row_count_values_start=2, verbosity=0):
+  row_count_header=1, row_count_values_start=2,
+  verbosity=0):
 
     me = 'spreadsheet_to_engine_table'
-    required_args = [
-      'workbook_path', 'table_core', 'engine', 'od_index_column' ]
+
+    required_args =[
+      'workbook_path',
+      'table_core',
+      'engine',
+      'od_index_column',
+    ]
 
     if not all(required_args):
-      msg = "Missing some required args in {}".format(repr(required_args))
+      msg=("{}:Mising some required args: {}"
+           .format(me,repr(required_args)))
       raise ValueError(msg)
+
+    if log_output is None:
+        log_output = sys.stdout
 
     if log_output is None:
         log_output = sys.stdout
@@ -261,7 +271,7 @@ def spreadsheet_to_engine_table(
         print("+++++++++++= Returned from metadata.reflect(engine)",file=log_output)
         log_output.flush()
 
-    #workbook
+    # workbook
     workbook = xlrd.open_workbook(workbook_path)
     # initialize sheet reader for the workbook
 
@@ -349,13 +359,15 @@ def spreadsheet_to_engine_table(
             else:
                 od_table_column__value[db_column.name] = value
 
-            msg = ("Row {} setting: ss_index={}, db_column_name={}, value={}"
-              .format(i,ss_index,db_column.name, value))
+            msg = (f"Row {i} setting: ss_index={ss_index}, "
+              "db_column_name={db_column_name}, value={value}")
+
             if verbosity > 1:
                 # Tip to avoid windows msg: UnicodeEncodeError...
                 # on prints to windows console, encode in latin1 with
                 # errors some non strict option
-                print(msg.encode('latin1',errors="xmlcharrefreplace"),file=log_output)
+                print(msg.encode('latin1',errors="xmlcharrefreplace")
+                    ,file=log_output)
                 #print(msg)
                 log_output.flush()
 
@@ -368,7 +380,11 @@ def spreadsheet_to_engine_table(
         #msg = ("row={}"
         #  .format(od_table_column__value))
         #engine.execute(engine_table.insert(), od_table_column__value)
+
+        # **********************************************************
         # INSERT A ROW OF THE SPREADSHEET COLUMN VALUES IN ORDER
+        # **********************************************************
+
         try:
             result = engine.execute(table_core.insert(), od_table_column__value)
             if i % 100 == 0:
@@ -383,7 +399,7 @@ def spreadsheet_to_engine_table(
             print("Sample row {}, called insert of {} to table..."
               .format(i,repr(od_table_column__value)),file=log_output)
     #end for row in spreadsheet
-#end spreadsheet_to_engine_table(workbook_path=None, table=None, engine=None):
+#end def spreadsheet_to_engine_table()
 
 '''
 <summary name='spreadsheet_to_table'>
@@ -566,14 +582,27 @@ def run(env=None,verbosity=1):
         })
     elif env == 'windows3':
         engine_nickname = 'integration_sobekdb'
-        workbook_path = ('C:\\rvp\\tmp_am4ir.xls')
+        engine_nickname = 'production_sobekdb'
+        #workbook_path = ('C:\\rvp\\tmp_am4ir.xls')
+        workbook_path = ('C:\\rvp\\data\\am4ir_ufdc_item_context.xls')
         sheet_index = 0
-        table_name = 'elsevier_item_info'
+        '''
+        ### ALREADY CREATED TARGET TABLE externally on SQL SERVER 2012
+        ## via SQL DDL:
+        create table maw_elsevier_item_info(
+        itemid integer,
+        info varchar(500)
+        );
+
+        '''
+
+        table_name = 'maw_elsevier_item_info'
         #For every spreadsheet column index you want to copy to a table column,
         #indicate the spreadsheet column index to use and the associated
         #table column name to put it in.
         od_index_column = OrderedDict({
-          0: Column('ufdc_item_id',Integer),
+          #0: Column('ufdc_item_id',Integer),
+          0: Column('itemid',Integer),
           1: Column('info', String(500))
         })
     elif env == 'windows4':
@@ -855,14 +884,11 @@ def run(env=None,verbosity=1):
     print( "{}:After if clauses -- Using env='{}',nickname='{}'"
         .format(me,env,engine_nickname))
 
-    print(
-      "{}:Using env='{}'',\n"
-      "workbook_path={},sheet_index={},\n"
-      "od_index_column={},\n"
-      "row_count_values_start={},\n"
-      "engine_nickname={},table_name={}"
-      .format(me,env,workbook_path,sheet_index,
-        od_index_column,row_count_values_start,engine_nickname,table_name))
+    print( f"{me}:Using env='{env}'',\n"
+      "workbook_path={workbook_path},sheet_index={sheet_index},\n"
+      "od_index_column={od_index_column},\n"
+      "row_count_values_start={row_count_values-start},\n"
+      "engine_nickname={engine_nickname},table_name={table_name}")
 
     sys.stdout.flush()
 
@@ -902,6 +928,8 @@ env = 'windows5'
 env = 'uf_cuba_libro_item_hls'
 env = 'uf_cuba_libro_item_fug'
 env = 'uf_cuba_libro_20180503' #spreadsheet sent by jessie uf email
+
+env = 'windows3'
 
 if __name__ == '__main__':
     run(env=env)

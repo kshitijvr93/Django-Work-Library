@@ -17,6 +17,13 @@ from pathlib import Path
 import shutil
 import stat
 
+def require_d_local_names(d_local=None, names=None):
+    if d_local is None or names is None:
+        raise ValueError("arg d_local or names is missing")
+    required_args = [ v for k, v in d_local.items() if k in names]
+    if not all(required_args):
+          raise ValueError(
+             f"Error: Some required variables in {names!r} not set.")
 '''
 Typical call: Caller will usually provide arg1 as its locals() dict to
 check for provision of its required arguments by its own caller.

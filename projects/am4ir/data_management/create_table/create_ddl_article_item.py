@@ -1,8 +1,10 @@
 '''
 Generate and output DDL scripts to create Marshaling Application Website
-(MAW) table article_item. Uncomment the database systems of interest below.
+(MAW) table article_item.
 
-Early stages: just run this and copy paste the apt script output to
+Uncomment the database systems of interest below.
+
+Simple program : just run this and copy paste the apt script output to
 MysqlWorkbench, SSMS Server, or an input file for your target database system
 and database name.
 
@@ -14,21 +16,23 @@ from sqlalchemy import (
   CheckConstraint, Column, DateTime, ForeignKeyConstraint, Integer,
   MetaData, String, Table, UniqueConstraint,
   )
-from sqlalchemy.schema import CreateTable
 
+from sqlalchemy.schema import CreateTable
 from sqlalchemy.dialects.postgresql import ARRAY
 
 def tables_create(table_name='article_item'):
     metadata = MetaData()
     tables = []
     #
+    '''
     table =  Table('publisher', metadata,
       Column('publisher_id', Integer, primary_key=True),
       Column('publisher_name', String(250),
              comment="Publisher name in English. Add more languages later."),
       )
-
     tables.append(table)
+    '''
+
 
     table = Table(table_name, metadata,
       Column('article_item_id', Integer, primary_key=True),
@@ -118,4 +122,9 @@ def tables_create(table_name='article_item'):
     return
 # end def tables_create()
 
-tables_create()
+# RUN PARAMETERS
+
+### PROUCTION SOBEK TARGET:
+table_name = 'prod_article_item'
+
+tables_create(table_name=table_name)

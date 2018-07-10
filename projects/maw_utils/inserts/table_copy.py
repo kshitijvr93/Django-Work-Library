@@ -1,14 +1,14 @@
 '''
 Given a source engine and table, expect the table to exist in the engine,
 collect its columns and indexes (not foreign keys), create the table to an output
-table name in a given destination engine, and copy all the rows from the a_source
+table name in a given destination engine, and copy all the rows from the source
 table and insert them into the destination table
 
 First application - copy a table to put into sobekdb production_sobekdb
 warning -- a hack was made for this specific table with a where() condition.
+
 TODO: back it out and move back to a more general utility to eventually put
 under ...modules/sqlalchemy_tools folder.
-
 '''
 import sys, os, os.path, platform
 
@@ -47,14 +47,12 @@ from sqlalchemy import (
   )
 
 from sqlalchemy.schema import CreateTable
-
 from sqlalchemy.sql import select, and_, or_, not_
 import sqlalchemy.sql.sqltypes
 from sqlalchemy.dialects.postgresql import ARRAY
 
 #
 from pathlib import Path
-
 
 '''
     # Consider rename: create_table_dest_by_table_source() and alter
