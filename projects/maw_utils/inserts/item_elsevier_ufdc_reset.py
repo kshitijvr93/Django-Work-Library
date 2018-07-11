@@ -128,7 +128,7 @@ group table object (so can refer to its columns in the fetched rows)
 
 '''
 def get_elsevier_bibinfo(engine=None, conn=None,table_name=None,verbosity=1):
-    me = 'get_rows_elsevier_bibinfo'
+    me = 'get_elsevier_bibinfo'
     if verbosity > 0:
         print("{}: Starting".format(me))
 
@@ -160,8 +160,10 @@ def get_elsevier_bibinfo(engine=None, conn=None,table_name=None,verbosity=1):
       compiled = select_elsevier_info.compile()
       print("{}:compiled select={}".format(me,compiled))
     #
-    # calculate rows from the select_columns- but only works with session.execute()
+    # calculate rows from the select_columns- but only works with
+    # session.execute()
     # Note: does conn close on deletion?
+
     result = conn.execute(select_elsevier_info)
     return result.fetchall(), item, group
 #end get_elsevier_bibinfo()

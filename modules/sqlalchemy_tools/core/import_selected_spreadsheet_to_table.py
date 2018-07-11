@@ -250,9 +250,6 @@ def spreadsheet_to_engine_table(
     if log_output is None:
         log_output = sys.stdout
 
-    if log_output is None:
-        log_output = sys.stdout
-
     #initialize database connections for writing/inserting
 
     if verbosity > 1 and 1 == 2:
@@ -291,9 +288,13 @@ def spreadsheet_to_engine_table(
     #based on od_index_column information
 
     i = 0
+    progress_batch = 1000;
     for row in reader:
         i += 1
-        if (verbosity > 1 ):
+        if i % progress_batch == 0:
+            msg = ("{}:reading ss row {}={}".format(me,i,repr(row)))
+            print(msg.encode('latin1'), file=log_output)
+        elif (verbosity > 1 ):
             msg = ("{}:reading ss row {}={}".format(me,i,repr(row)))
             print(msg.encode('latin1'), file=log_output)
 
@@ -388,11 +389,13 @@ def spreadsheet_to_engine_table(
         try:
             result = engine.execute(table_core.insert(), od_table_column__value)
             if i % 100 == 0:
-              print("On row {}inserted_primary_key={}"
+              print("On row {} inserted_primary_key={}"
                   .format(i,result.inserted_primary_key),file=log_output)
         except Exception as ex:
-            msg = ("SKIP insert: Spreadsheet row_count={}, Reason='{}',row='{}'.\n"
-                .format(i-1+row_count_values_start,repr(ex),repr(od_table_column__value)))
+            msg = (
+              "SKIP insert: Spreadsheet row_count={}, Reason='{}',row='{}'.\n"
+              .format(i-1+row_count_values_start,repr(ex),
+              repr(od_table_column__value)))
             print(msg.encode('latin1',errors="xmlcharrefreplace"),file=log_output)
 
         if i % 100 == 0:
@@ -597,6 +600,21 @@ def run(env=None,verbosity=1):
         '''
 
         table_name = 'maw_elsevier_item_info'
+        #For every spreadsheet column index you want to copy to a table column,
+        #indicate the spreadsheet column index to use and the associated
+        #table column name to put it in.
+        od_index_column = OrderedDict({
+          #0: Column('ufdc_item_id',Integer),
+          0: Column('itemid',Integer),
+          1: Column('info', String(500))
+        })
+    elif env == 'prod_am4ir':
+        engine_nickname = 'production_sobekdb'
+        #workbook_path = ('C:\\rvp\\tmp_am4ir.xls')
+        workbook_path = ('C:\\rvp\\data\\prod_am4ir.xlsx')
+        table_name = 'prod_am4ir_info'
+        sheet_index = 0
+
         #For every spreadsheet column index you want to copy to a table column,
         #indicate the spreadsheet column index to use and the associated
         #table column name to put it in.
@@ -911,6 +929,9 @@ def run(env=None,verbosity=1):
           #Set the desired output engine/table_name
           verbosity=1,
           )
+    else:
+        msg = "No sheet index given."
+        raise ValueError(msg)
 
     print("Done!")
     return
@@ -930,6 +951,7 @@ env = 'uf_cuba_libro_item_fug'
 env = 'uf_cuba_libro_20180503' #spreadsheet sent by jessie uf email
 
 env = 'windows3'
+env = 'prod_am4ir'
 
 if __name__ == '__main__':
     run(env=env)

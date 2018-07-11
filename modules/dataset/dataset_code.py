@@ -78,6 +78,8 @@ class SheetDictReader(object):
         if sheet_index is None:
             raise ValueError("sheet_index is None")
         self.sheet_index = sheet_index
+        self.verbosity = verbosity
+
         if row_count_header is None or int(row_count_header < 1):
             msg="row_count_header must be >= 1"
             raise ValueError(msg)
@@ -102,7 +104,7 @@ class SheetDictReader(object):
             self.column_names.append(column_name)
             self.od_name_value[column_name] = ""
 
-        if verbosity > 0:
+        if self.verbosity > 0:
             print("{}: At row count {}, found header names = {}"
                  .format(me,row_count_header, self.column_names))
 
