@@ -1,8 +1,10 @@
 # This is a placeholder for file maw_settings.py, written in Python.
 # NOTE: a developer may compile his/her own.
+maw_settings_template = '''
 # Rule of thumb: look in the DJANGO main settings.py and be sure to
 # set every maw_settings.xxx variable named there in your maw_settings.py
 # file.
+#
 # Variable MY_SECRESTS_FOLDER must be set in the Django server's OS
 # environment and the settings.py will look there for the maw_settings.py file.
 #
@@ -31,11 +33,15 @@ DEBUG = False
 # See django docs, add YOUR site like
 if DEBUG == False:
     # Also you must add your site, eg 'marshal.uflib.ufl.edu' here
-    ALLOWED_HOSTS = ['localhost, ''127.0.0.1', '[::1]']
+    ip_lib_marshal = '128.227.24.223'
+    ip_test_digoc = '159.65.161.16'
+    ALLOWED_HOSTS = ['localhost',  '127.0.0.1', '[::1]',{l_allowed_hosts}]
 else:
     ALLOWED_HOSTS = []
 
-# MAW_ABSOLUTE_PATH_MEDIA_ROOT='C:\\rvp\\git\\citrus\\projects\\maw\\marshal1\\media_root'
+# MAW_ABSOLUTE_PATH_MEDIA_ROOT=(
+# 'C:\\rvp\\git\\citrus\\projects\\maw\\marshal1\\media_root')
+
 # This variable name is enhanced used to be explicit about its content type
 MAW_MEDIA_ROOT = '{my_media_root}'
 
@@ -173,3 +179,4 @@ my_project_params = {
             }, # end database_connections
         }, # end project lcroyster settings
     } # end my_project_params
+'''
