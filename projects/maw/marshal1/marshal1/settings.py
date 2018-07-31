@@ -185,6 +185,34 @@ DB_ENGINE_BACKENDS_STANDARD=['sqlite3','postgresql','mysql','oracle']
 
 DATABASES = {}
 
+# cuba_libra env
+cuba_libro_env = maw_settings.CUBA_LIBRO_ENV
+
+if cuba_libro_env == 'test':
+    DATABASES.update({
+        'cuba_libro_connection': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'maw1_db_test',
+            'USER': maw_settings.ARCHCOLL_MYSQL_USER,
+            'PASSWORD': maw_settings.ARCHCOLL_MYSQL_PASSWORD,
+            'HOST': '10.241.33.139',
+            'PORT': '3306',
+        } })
+elif cuba_libro_env == 'local':
+    DATABASES.update({
+        'cuba_libro_connection': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'maw1_db',
+            'USER': maw_settings.MYSQL_LOCAL_USER,
+            'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
+            'HOST': '127.0.0.1',
+            'PORT': '3306',
+        } })
+else:
+    msg = (f"ERROR:maw_settings.CUBA_LIBRO_ENV '{maw_settings.CUBA_LIBRO_ENV}'"
+        " not implemented.")
+    raise ValueError(msg)
+
 # Keep submit  project ENV settings separated for flexibility:
 
 submit_env = maw_settings.SUBMIT_ENV
@@ -254,8 +282,6 @@ if lcroyster_env == 'production':
 elif lcroyster_env == 'test':
     DATABASES.update({'lcroyster_connection': {
         'ENGINE': 'django.db.backends.mysql',
-        # The maw1_db database will host hathitrust and probably
-        # some other maw apps
         'NAME': 'lcroyster1_test',
         'USER': maw_settings.LCROYSTER_TEST_MYSQL_USER,
         'PASSWORD': maw_settings.LCROYSTER_TEST_MYSQL_PASSWORD,
@@ -271,8 +297,6 @@ elif lcroyster_env == 'test':
 elif lcroyster_env == 'local':
     DATABASES.update({'lcroyster_connection' : {
         'ENGINE': 'django.db.backends.mysql',
-        # The maw1_db database will host hathitrust and probably
-        # some other maw apps
         'NAME': 'lcroyster1',
         'USER': maw_settings.LCROYSTER_LOCAL_MYSQL_USER,
         'PASSWORD': maw_settings.LCROYSTER_LOCAL_MYSQL_PASSWORD,
@@ -306,8 +330,6 @@ if maw_settings.ENV == 'test':
         },
         'maw1_db_connection': {
             'ENGINE': 'django.db.backends.mysql',
-            # The maw1_db database will host hathitrust and probably
-            # some other maw apps
             'NAME': 'maw1_db_test',
             'USER': maw_settings.MYSQL_ARCHCOLL_TEST_USER,
             'PASSWORD': maw_settings.MYSQL_ARCHCOLL_TEST_PASSWORD,
@@ -315,16 +337,6 @@ if maw_settings.ENV == 'test':
             'PORT': '3306',
         },
         'hathitrust_connection': {
-            'ENGINE': 'django.db.backends.mysql',
-            # The maw1_db database will host hathitrust and probably
-            # some other maw apps
-            'NAME': 'maw1_db_test',
-            'USER': maw_settings.MYSQL_ARCHCOLL_TEST_USER,
-            'PASSWORD': maw_settings.MYSQL_ARCHCOLL_TEST_PASSWORD,
-            'HOST': '10.241.33.139',
-            'PORT': '3306',
-        },
-        'cuba_libro_connection': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'maw1_db_test',
             'USER': maw_settings.MYSQL_ARCHCOLL_TEST_USER,
@@ -347,8 +359,6 @@ elif maw_settings.ENV == 'local':
         },
         'maw1_db_connection': {
             'ENGINE': 'django.db.backends.mysql',
-            # The maw1_db database will host hathitrust and probably
-            # some other maw apps
             'NAME': 'maw1_db',
             'USER': maw_settings.MYSQL_LOCAL_USER,
             'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
@@ -357,18 +367,6 @@ elif maw_settings.ENV == 'local':
         },
         'hathitrust_connection': {
             'ENGINE': 'django.db.backends.mysql',
-            # The maw1_db database will host hathitrust and probably
-            # some other maw apps
-            'NAME': 'maw1_db',
-            'USER': maw_settings.MYSQL_LOCAL_USER,
-            'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
-            'HOST': '127.0.0.1',
-            'PORT': '3306',
-        },
-        'cuba_libro_connection': {
-            'ENGINE': 'django.db.backends.mysql',
-            # The maw1_db database will host hathitrust and probably
-            # some other maw apps
             'NAME': 'maw1_db',
             'USER': maw_settings.MYSQL_LOCAL_USER,
             'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
