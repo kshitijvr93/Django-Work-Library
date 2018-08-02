@@ -1,4 +1,6 @@
 # Create your views here.
+from django.conf import settings
+import maw_settings
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
 from django.template import loader
@@ -82,8 +84,11 @@ def import20180503(request):
     table_name = 'cuba_libro_item'
 
     # This is the workbook to import from
-    workbook_path = ('C:\\rvp\\downloads\\'
-          'cuba_libro_item_20180503.xlsx')
+    try:
+        workbook_path = maw_settings.CUBA_LIBRO_WORKBOOK_PATH
+    except NameError:
+        workbook_path = ('C:\\rvp\\downloads\\'
+               'cuba_libro_item_20180503.xlsx')
 
     # Sheet index values start at 0.
     # Worksheets indexes for those we want to use to import table data
