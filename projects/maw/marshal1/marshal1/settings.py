@@ -220,14 +220,12 @@ print("USING: maw_settings.SUBMIT_ENV={}"
     .format(maw_settings.SUBMIT_ENV))
 sys.stdout.flush()
 
-if submit_env == 'test':
+if submit_env == 'test2': # Experiment later with this one
     DATABASES.update({'submit_connection' : {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'submit_test',
-        'USER': maw_settings.SUBMIT_USER,
-        'PASSWORD': maw_settings.SUBMIT_TEST_PASSWORD,
-        #'HOST': 'ict-prod-hosting02.mysql.osg.ufl.edu',
-        #'PORT': '3354',
+        'USER': maw_settings.TEST_PSQL_USER,
+        'PASSWORD': maw_settings.TEST_PSQL_PASSWORD,
         'HOST': '10.241.33.139',
         'PORT': '5432',
         'TIME_ZONE': None,
@@ -237,13 +235,25 @@ if submit_env == 'test':
         #    },
         },
     })
-elif submit_env == 'local_mysql':
+elif submit_env == 'test':
     # Use this for local tests on mysql database
     DATABASES.update({'submit_connection' : {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'submit',
-        'USER': maw_settings.SUBMIT_USER,
-        'PASSWORD': maw_settings.SUBMIT_TEST_PASSWORD,
+        'USER': maw_settings.TEST_MYSQL_SUBMIT_USER,
+        'PASSWORD': maw_settings.TEST_MYSQL_SUBMIT_PASSWORD,
+        'HOST': '10.241.33.139',
+        'PORT': '5432',
+        'TIME_ZONE': None,
+        },
+    })
+elif submit_env == 'local':
+    # Use this for local tests on mysql database
+    DATABASES.update({'submit_connection' : {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'submit',
+        'USER': maw_settings.LOCAL_MYSQL_SUBMIT_USER,
+        'PASSWORD': maw_settings.LOCAL_MYSQL_SUBMIT_PASSWORD,
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'TIME_ZONE': None,
