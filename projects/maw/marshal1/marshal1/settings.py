@@ -20,6 +20,8 @@ import maw_settings
 #sys.stdout.flush()
 
 sys.path.append(maw_settings.MODULES_FOLDER)
+print (f"Using MODULES_FOLDER={MODULES_FOLDER}, sys.path={sys.path}')
+sys.stdout.flush()
 
 # Some MAW extract,translate, load utilities, some others too.
 #import etl
