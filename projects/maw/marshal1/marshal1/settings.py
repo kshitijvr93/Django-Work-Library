@@ -20,7 +20,8 @@ import maw_settings
 #sys.stdout.flush()
 
 sys.path.append(maw_settings.MODULES_FOLDER)
-print (f"Using MODULES_FOLDER={MODULES_FOLDER}, sys.path={sys.path}')
+print (f'Using MODULES_FOLDER={maw_settings.MODULES_FOLDER},'
+       f' sys.path={sys.path}')
 sys.stdout.flush()
 
 # Some MAW extract,translate, load utilities, some others too.
@@ -45,9 +46,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '@0-(8hq&*mj^ctt!x%118=s5w1c^l^)#6j*a#710se@)76jmwb'
+SECRET_KEY = maw_settings.DJANGO_SECRET_KEY
 
-# SECURITY WARNING: don't run with debug turned on in production!
 
 DEBUG = maw_settings.DJANGO_DEBUG
 ALLOWED_HOSTS = maw_settings.DJANGO_ALLOWED_HOSTS
@@ -241,11 +241,11 @@ elif submit_env == 'test':
     # Use this for local tests on mysql database
     DATABASES.update({'submit_connection' : {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'submit',
+        'NAME': 'maw1_db_test',
         'USER': maw_settings.TEST_MYSQL_SUBMIT_USER,
         'PASSWORD': maw_settings.TEST_MYSQL_SUBMIT_PASSWORD,
         'HOST': '10.241.33.139',
-        'PORT': '5432',
+        'PORT': '3306',
         'TIME_ZONE': None,
         },
     })
@@ -335,24 +335,24 @@ if maw_settings.ENV == 'test':
             'ENGINE': 'django.db.backends.mysql',
             # The maw1_default_db database will host misc django default data
             'NAME': 'maw1_default_db',
-            'USER': maw_settings.MYSQL_ARCHCOLL_TEST_USER,
-            'PASSWORD': maw_settings.MYSQL_ARCHCOLL_TEST_PASSWORD,
+            'USER': maw_settings.TEST_MYSQL_USER,
+            'PASSWORD': maw_settings.TEST_MYSQL_PASSWORD,
             'HOST': '10.241.33.139',
             'PORT': '3306',
         },
         'maw1_db_connection': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'maw1_db_test',
-            'USER': maw_settings.MYSQL_ARCHCOLL_TEST_USER,
-            'PASSWORD': maw_settings.MYSQL_ARCHCOLL_TEST_PASSWORD,
+            'USER': maw_settings.TEST_MYSQL_USER,
+            'PASSWORD': maw_settings.TEST_MYSQL_PASSWORD,
             'HOST': '10.241.33.139',
             'PORT': '3306',
         },
         'hathitrust_connection': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'maw1_db_test',
-            'USER': maw_settings.MYSQL_ARCHCOLL_TEST_USER,
-            'PASSWORD': maw_settings.MYSQL_ARCHCOLL_TEST_PASSWORD,
+            'USER': maw_settings.TEST_MYSQL_USER,
+            'PASSWORD': maw_settings.TEST_MYSQL_PASSWORD,
             'HOST': '10.241.33.139',
             'PORT': '3306',
         },
