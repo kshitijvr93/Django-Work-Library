@@ -193,8 +193,8 @@ if cuba_libro_env == 'test':
         'cuba_libro_connection': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'maw1_db_test',
-            'USER': maw_settings.ARCHCOLL_MYSQL_USER,
-            'PASSWORD': maw_settings.ARCHCOLL_MYSQL_PASSWORD,
+            'USER': maw_settings.TEST_MYSQL_USER,
+            'PASSWORD': maw_settings.TEST_MYSQL_PASSWORD,
             'HOST': '10.241.33.139',
             'PORT': '3306',
         } })
@@ -203,8 +203,8 @@ elif cuba_libro_env == 'local':
         'cuba_libro_connection': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'maw1_db',
-            'USER': maw_settings.MYSQL_LOCAL_USER,
-            'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
+            'USER': maw_settings.LOCAL_MYSQL_USER,
+            'PASSWORD': maw_settings.LOCAL_MYSQL_PASSWORD,
             'HOST': '127.0.0.1',
             'PORT': '3306',
         } })
@@ -362,24 +362,24 @@ elif maw_settings.ENV == 'local':
             # The maw1_default_db database will host misc django default
             # data
             'NAME': 'maw1_default_db',
-            'USER': maw_settings.MYSQL_LOCAL_USER,
-            'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
+            'USER': maw_settings.LOCAL_MYSQL_USER,
+            'PASSWORD': maw_settings.LOCAL_MYSQL_PASSWORD,
             'HOST': '127.0.0.1',
             'PORT': '3306',
         },
         'maw1_db_connection': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'maw1_db',
-            'USER': maw_settings.MYSQL_LOCAL_USER,
-            'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
+            'USER': maw_settings.LOCAL_MYSQL_USER,
+            'PASSWORD': maw_settings.LOCAL_MYSQL_PASSWORD,
             'HOST': '127.0.0.1',
             'PORT': '3306',
         },
         'hathitrust_connection': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'maw1_db',
-            'USER': maw_settings.MYSQL_LOCAL_USER,
-            'PASSWORD': maw_settings.MYSQL_LOCAL_PASSWORD,
+            'USER': maw_settings.LOCAL_MYSQL_USER,
+            'PASSWORD': maw_settings.LOCAL_MYSQL_PASSWORD,
             'HOST': '127.0.0.1',
             'PORT': '3306',
         },
