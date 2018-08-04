@@ -292,7 +292,7 @@ def spreadsheet_to_engine_table(
     for row in reader:
         i += 1
         if i % progress_batch == 0:
-            msg = ("{}:reading ss row {}={}".format(me,i,repr(row)))
+            msg = (f"{me}:reading ss row {i}={row}")
             print(msg.encode('latin1'), file=log_output)
         elif (verbosity > 1 ):
             msg = ("{}:reading ss row {}={}".format(me,i,repr(row)))
@@ -377,7 +377,6 @@ def spreadsheet_to_engine_table(
         # Now od_table_column__value has the setting pairs to insert this
         # spreadhsheet row's columns of interest into the db table
 
-
         #msg = ("row={}"
         #  .format(od_table_column__value))
         #engine.execute(engine_table.insert(), od_table_column__value)
@@ -456,8 +455,7 @@ def spreadsheet_to_table(
 
     me = 'spreadsheet_to_table'
     if verbosity > 0:
-        print("{}: Starting with engine_nickname='{}'"
-          .format(me,engine_nickname))
+        print(f"{me}: Starting with engine '{engine_nickname}'")
 
     required_args =[
       'input_workbook_path',
@@ -468,8 +466,7 @@ def spreadsheet_to_table(
     ]
 
     if not all(required_args):
-      msg=("{}:Mising some required args: {}"
-           .format(me,repr(required_args)))
+      msg=(f"{me}:Mising some args from: {required_args}")
       raise ValueError(msg)
 
     if log_output is None:
@@ -522,7 +519,7 @@ def spreadsheet_to_table(
        engine=my_db_engine,
        table_core=table_core,
        log_output=log_output,
-       verbosity=1,
+       verbosity=verbosity,
        )
 
     return

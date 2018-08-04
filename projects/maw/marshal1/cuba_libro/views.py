@@ -17,7 +17,11 @@ def home(request):
 
 
 ########################### IMPORT
-#from sqlalchemy_tools.core.import_selected_spreadsheet_to_table import spreadsheet_to_table
+# NB; WARNING - canNOT use parens to make an import multiline in python
+# yet. Must use bakslash.
+from sqlalchemy_tools.core.import_selected_spreadsheet_to_table \
+  import spreadsheet_to_table
+
 #from sqlalchemy_tools.core import spreadsheet_to_table
 from collections import OrderedDict
 from sqlalchemy import (
