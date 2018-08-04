@@ -32,6 +32,7 @@ from sqlalchemy import (
   )
 def import20180503(request):
     import io
+    me = 'import20180503'
     log_output = io.StringIO()
 
     od_index_column = OrderedDict({
@@ -85,15 +86,21 @@ def import20180503(request):
 
     # This is the db with the table to put the data.
     engine_nickname = 'uf_local_mysql_maw1_db'
+    engine_nickname = maw_settings.CUBA_LIBRO_SA_ENGINE_NICKNAME
     table_name = 'cuba_libro_item'
 
     # This is the workbook to import from
-    try:
-        workbook_path = maw_settings.CUBA_LIBRO_WORKBOOK_PATH
-    except NameError:
-        workbook_path = ('C:\\rvp\\downloads\\'
-               'cuba_libro_item_20180503.xlsx')
+    workbook_path = maw_settings.CUBA_LIBRO_WORKBOOK_PATH
 
+    if workbook_path.startswith('C:'):
+        # TODO: unify django and sa db key names later, this is bandaid change
+        # to populate a demo database
+        engine_nickname = 'uf_local_mysql_maw1_db'
+    else: # lib-archcoll demo
+        engine_nickname = 'lib_archcoll_mysql_maw1_db'
+    log_contents = (
+      f'<h2>{me}: USING workbook={workbook_path}, sa_engine={engine_nickname}'
+      '</h2>')
     # Sheet index values start at 0.
     # Worksheets indexes for those we want to use to import table data
     l_sheet_index = [0,1,2,4,5,6]
@@ -105,7 +112,6 @@ def import20180503(request):
     is_index_xls = True
 
     # Import the rows from each spreadsheet of interest:
-    log_contents = ''
     for sheet_index in l_sheet_index:
         spreadsheet_to_table(
           # Identify the workbook pathname of the input workbook
@@ -127,15 +133,13 @@ def import20180503(request):
           verbosity=1,
           )
         log_contents += log_output.getvalue()
-
     #end for sheet_index in l_sheet_index
 
-    html='''
+    html=f'''
     <h3>Importing 20180503 data...</h3>
-    {}
+    {log_contents}
     <p>Import is finished.</p>
-    '''.format(log_contents)
-
+    '''
     return (HttpResponse(html))
 
 def index(request):

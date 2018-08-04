@@ -22,6 +22,7 @@ register_modules()
 print("Using sys.path={}".format(repr(sys.path)))
 
 import etl
+
 # Import slate of databases that podengo can use
 from my_secrets.sa_engine_by_name import get_sa_engine_by_name
 
@@ -455,7 +456,9 @@ def spreadsheet_to_table(
 
     me = 'spreadsheet_to_table'
     if verbosity > 0:
-        print(f"{me}: Starting with engine '{engine_nickname}'")
+        o='<h2>'
+        c='</h2>'
+        print(f"{o}{me}: Starting with engine '{engine_nickname}'{c}")
 
     required_args =[
       'input_workbook_path',
