@@ -98,7 +98,7 @@ class Item(models.Model):
         null=True, auto_now=True, editable=False)
 
     STATUS_CHOICES = (
-        ( '' ,'Unclaimed'),
+        ( '' ,'Pending'),
         ( 'IP', 'In Process'),
         ( 'DZ', 'Digitized'),
     )
