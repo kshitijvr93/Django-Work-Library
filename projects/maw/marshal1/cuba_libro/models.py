@@ -104,7 +104,8 @@ class Item(models.Model):
     )
 
     status = models.CharField('Status',
-        blank=True, default='', max_length=50,
+        blank=True, default='', null=False,
+        max_length=50,
         choices=STATUS_CHOICES,
         help_text="Status of processing for this item.")
 
