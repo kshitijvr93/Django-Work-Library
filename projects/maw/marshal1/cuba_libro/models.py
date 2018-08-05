@@ -98,12 +98,12 @@ class Item(models.Model):
         null=True, auto_now=True, editable=False)
 
     STATUS_CHOICES = (
-        ( '' ,''),
+        ( 'U' ,'Unclaimed'),
         ( 'IP', 'In Process'),
         ( 'DZ', 'Digitized'),
     )
 
-    status = models.CharField('Status', null=True, default='',
+    status = models.CharField('Status', null=True, default='Unclaimed',
         blank=True, max_length=50, choices=STATUS_CHOICES,
         help_text="Status of processing for this item.")
 
