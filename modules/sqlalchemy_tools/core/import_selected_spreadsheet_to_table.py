@@ -24,7 +24,10 @@ print("Using sys.path={}".format(repr(sys.path)))
 import etl
 
 # Import slate of databases that podengo can use
-from my_secrets.sa_engine_by_name import get_sa_engine_by_name
+#from my_secrets.sa_engine_by_name import get_sa_engine_by_name
+#from maw_settings.sa_engine_by_name import get_sa_engine_by_name
+#from my_secrets.sa_engine_by_name import get_sa_engine_by_name
+from sa_engine_by_name import get_sa_engine_by_name
 
 #### Sqlalchemy
 import datetime
