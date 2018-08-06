@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath(MY_SECRETS_FOLDER))
 print ("Using MY_SECRETS_FOLDER='{}'".format(MY_SECRETS_FOLDER))
 
 # IMPORT SETTINGS FOR MARSHALING APPLICATION WEBSITE (MAW) settings
-#from maw_settings import *
+# from maw_settings import *
 import maw_settings
 
 #print("Got maw_settings.MODULES_FOLDER={}"
@@ -327,8 +327,14 @@ else:
 
 # END LCROYSTER_ENV sensitive settings
 
+# Start checks for hathitrust_env settings
+try:
+    hathitrust_env = maw_settings.HATHITRUST_ENV
+except (AttributeError, NameError) as error:
+    hathitrust_env = 'local'
 
-if maw_settings.ENV == 'test':
+
+if hathitrust_env == 'test':
     DATABASES.update({
         # This db will hold users and groups info
         'default': {
@@ -357,7 +363,7 @@ if maw_settings.ENV == 'test':
             'PORT': '3306',
         },
     }) # maw_settings.ENV = 'test'
-elif maw_settings.ENV == 'local':
+elif hathitrust_env == 'local':
     DATABASES.update({
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -387,8 +393,56 @@ elif maw_settings.ENV == 'local':
         },
     }) # END ENV LOCAL DATABASES
 else:
+    msg = ( f"Bad maw_settings.HATHITRUST_ENV name='{hathitrust_env}'. "
+      "Not found in ['local','test']" )
+    raise ValueError(msg)
+# END Checks for hathitrust_env
+
+if maw_settings.ENV == 'test':
+    DATABASES.update({
+        # This db will hold users and groups info
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            # The maw1_default_db database will host misc django default data
+            'NAME': 'maw1_default_db',
+            'USER': maw_settings.TEST_MYSQL_USER,
+            'PASSWORD': maw_settings.TEST_MYSQL_PASSWORD,
+            'HOST': '10.241.33.139',
+            'PORT': '3306',
+        },
+        'maw1_db_connection': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'maw1_db_test',
+            'USER': maw_settings.TEST_MYSQL_USER,
+            'PASSWORD': maw_settings.TEST_MYSQL_PASSWORD,
+            'HOST': '10.241.33.139',
+            'PORT': '3306',
+        },
+    }) # maw_settings.ENV = 'test'
+elif maw_settings.ENV == 'local':
+    DATABASES.update({
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            # The maw1_default_db database will host misc django default
+            # data
+            'NAME': 'maw1_default_db',
+            'USER': maw_settings.LOCAL_MYSQL_USER,
+            'PASSWORD': maw_settings.LOCAL_MYSQL_PASSWORD,
+            'HOST': '127.0.0.1',
+            'PORT': '3306',
+        },
+        'maw1_db_connection': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'maw1_db',
+            'USER': maw_settings.LOCAL_MYSQL_USER,
+            'PASSWORD': maw_settings.LOCAL_MYSQL_PASSWORD,
+            'HOST': '127.0.0.1',
+            'PORT': '3306',
+        },
+    }) # END ENV LOCAL DATABASES
+else:
     msg = ("Bad maw_settings.ENV name='{}' given for user. "
-    "Not found in ['local','test','production']".format(maw_settings.ENV) )
+    "Not found in ['local','test']".format(maw_settings.ENV) )
     raise ValueError(msg)
 
 # END ENVIRONMENT DATABASE SETTINGS
@@ -426,7 +480,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
@@ -440,7 +493,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
-
 from django.urls import reverse_lazy
 #{See https://fosstack.com/how-to-add-google-authentication-in-django/
 # These should be set here in settings.py rather than any urls.py

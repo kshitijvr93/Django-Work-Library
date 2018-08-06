@@ -3,7 +3,6 @@ from django.urls import include, path, re_path
 from . import views
 
 #NB: typically this is included from a urls.py with url prefix 'hathitrust/'
-
 urlpatterns = [
     re_path(route=r'^$', view=views.index, name='index'),
     path(route=r'index', view=views.index, name='index'),
@@ -14,4 +13,6 @@ urlpatterns = [
         name='file_download'),
     re_path(r'^public/(?P<file_id>\d+)/$',view=views.public,
         name='public'),
+    re_path(r'^testone/$',view=views.testone,
+        name='testone'),
 ]

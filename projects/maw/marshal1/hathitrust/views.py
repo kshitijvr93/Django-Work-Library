@@ -59,7 +59,6 @@ class FormUploadFile(forms.ModelForm):
         super(FormUploadFile, self).__init__(*args, **kwargs)
     #} See https://stackoverflow.com/questions/29112847/the-value-of-form-must-inherit-from-basemodelform
 
-
     topic = forms.CharField(max_length=128,required=False,
       widget=TextInput( attrs={'size':'100'}))
     down_name = forms.CharField(max_length=128,required=False,
@@ -69,9 +68,79 @@ class FormUploadFile(forms.ModelForm):
     # required FileField widget with the Browse button is overridden.
     file  = forms.FileField(max_length=128,
         # widget=TextInput( attrs={'size':'100'})
-      )
+        )
 # end class FormUploadFile
 
+import os
+import maw_settings
+def line(s):
+    return '</br>' + s
+def resource_path_by_bib_vid(bib_vid=None):
+    if not bib_vid:
+        raise ValueError(f'Bad bib_vid={bib_vid}')
+    parts = bib_vid.split('_')
+    count = len(parts)
+    if count != 2:
+        raise ValueError(f'Bad count of parts for bib_vid={bib_vid}')
+    if len(parts[0]) != 10:
+        raise ValueError(f'Bib is not 8 characters in bib_vid={bib_vid}')
+    if len(parts[1]) != 5:
+        raise ValueError(f'Vid is not 5 characters in bib_vid={bib_vid}')
+    path = ''
+    sep = ''
+    for i in range(0,10,2):
+        path = path + sep + parts[0][i:i+2]
+        sep = os.sep
+    path += sep
+    path += parts[1]
+    return path
+
+
+from pathlib import Path
+from natsort import natsorted
+def testone(request):
+
+    me = 'testone'
+    bib_vid='AA00036823_00001'
+
+    msg = ( f'<h3>{me}: processing {bib_vid}</h3>')
+    ufdc = maw_settings.HATHITRUST_UFDC
+
+    # input dir
+    resources = os.path.join(ufdc,'resources')
+    in_dir = resources + os.sep + resource_path_by_bib_vid(bib_vid)
+    msg += line(f'INPUT dir={in_dir}')
+
+    # output dir
+    out_dir = os.path.join(resources,'maw_work',bib_vid)
+    msg += line(f'OUTPUT dir={out_dir}')
+
+    # make the directory if not exists
+    os.makedirs(out_dir, exist_ok=True)
+    #Find all jp2 files in the input dir, in sorted order
+    # NOTE: each file will be copied to a renamed output file, per
+    # Hathitrust file naming requirements
+    # First get the paths for all files in input directory;
+    hathi_image_globs = ['*.tif*', '*.jp2']
+    for glob in hathi_image_globs:
+        # Copy image files of this glob
+        paths = list(Path(in_dir).glob(glob))
+        msg += line(f'For glob={glob}, got paths={paths}')
+
+        # Sort the paths
+        sorted_paths = natsorted(paths)
+        msg += line(f'Got natsorted paths={paths}')
+
+        #Copy each file to one with the HathiTrust-preferred name
+        for path in sorted_paths:
+            #
+            pass
+
+    msg += line('')
+    msg += line(f'{me}: Done.')
+    return HttpResponse(msg)
+
+#end def testone}}}
 def upload_success(request, file_id):
 
     template_file= 'hathitrust/upload_success.html'
