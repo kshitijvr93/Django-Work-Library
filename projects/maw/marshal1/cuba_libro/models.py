@@ -88,6 +88,7 @@ class Item(models.Model):
         ( 'Available' ,'Available'),
         ( 'Harvard','Harvard'),
         ( 'NC State','North Carolina State University'),
+        ( 'UNC','University of North Carolina Chapel Hill'),
     )
 
     agent = models.CharField('Partner', null=True, default='Available',
