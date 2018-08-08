@@ -328,12 +328,7 @@ else:
 # END LCROYSTER_ENV sensitive settings
 
 # Start checks for hathitrust_env settings
-try:
-    hathitrust_env = maw_settings.HATHITRUST_ENV
-except (AttributeError, NameError) as error:
-    hathitrust_env = 'local'
-
-
+hathitrust_env = maw_settings.HATHITRUST_ENV
 if hathitrust_env == 'test':
     DATABASES.update({
         # This db will hold users and groups info

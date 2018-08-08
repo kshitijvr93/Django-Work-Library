@@ -188,8 +188,8 @@ class DigitalBornYaml(models.Model):
 
     creation_datetime = models.DateTimeField(db_index=True,
       blank=False,
-      help_text="Required: Creation time of original file/item. Eg, PDF file's date. "
-        "<a  href="
+      help_text="Required: Creation time of original file/item. "
+        "Eg, PDF file's date. <a  href="
         "'https://drive.google.com/file/d/0B0EHs5JWGUMLWjU2OHVhQzN5WEk/view'"
         ">More</a>",
       )
@@ -251,10 +251,10 @@ class Item(models.Model):
     # and resets this column value.
     # This helps minimize accidental HathiTrust package changes.
     # It is not user editable.
-    zip_md5 = models.CharField(max_length=255,
-        default = "AB12345678_12345",
-        unique=True,
-        help_text="Bib_vid in format XX12345678_12345" )
+    #zip_md5 = models.CharField(max_length=255,
+    #    default = "AB12345678_12345",
+    #    unique=True,
+    #    help_text="Bib_vid in format XX12345678_12345" )
 
     STATUS_CHOICES = (
         ( 'new' ,'new'),

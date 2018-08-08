@@ -8,6 +8,196 @@ from .models import Item, File, UploadFile
 from django.forms import TextInput, Textarea
 from django.conf import settings
 
+# meta_yaml - initial test yaml file
+meta_yaml_example = '''# This is an example meta.yml file that provides additional metadata used for
+# ingesting material into HathiTrust. This file must be a well-formed YAML file.
+# See the YAML specification for more information:
+#
+# http://www.yaml.org/spec/1.2/spec.html
+#
+# Lines that start with a # character are comments.
+
+####### FOR MATERIAL SCANNED FROM PRINT ONLY ##########################################
+# Required - the date and approximate time the volume was scanned. This date
+# will be used for the PREMIS capture event. It will also be used to populate
+# the ModifyDate TIFF header and XMP tiff:DateTime image headers if they are
+# missing in the submitted images.
+#
+# This must be in the ISO8601 combined date format with time zone
+# (see https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations)
+#
+# Note: the -05:00 is a representation of a time zone offset from UTC, not
+# a representation of a time range.
+capture_date: 2013-11-01T12:31:00-05:00
+
+# If the submitted images are missing information about the scanner make and
+# model (XMP tiff:Make and tiff:Model header) it can be supplied here. It will
+# only be used if the submitted images do not have the scanner make.  This
+# element is optional.
+scanner_make: CopiBook
+scanner_model: HD
+
+# If the submitted images do not have the TIFF Artist or XMP tiff:Artist
+# header, this value must be supplied. It should reflect "who pushed the
+# button" to actually scan the item. This could be an organizational unit or an
+# outside vendor. It will only be used if the submitted images are missing the
+# TIFF Artist and XMP tiff:Artist headers.
+scanner_user: "University of Michigan: Digital Conversion Unit"
+
+############## END OF SECTION FOR MATERIAL SCANNED FROM PRINT #####################
+
+####### FOR BORN DIGITAL MATERIAL ONLY ##########################################
+
+# Required: date the digital file this submission was created from was created.
+# For example, suppose a university press provides a born-digital PDF file for ingest
+# into HathiTrust. Record the creation date of that PDF here.
+creation_date: 2013-10-01T12:23:42-05:00
+
+# Required: HathiTrust organization code of who created the digital file. This is
+# typically the organization-specific part of the domain name. If the organization code
+# is unknown, contact HathiTrust staff.
+creation_agent: knowledgeunlatched
+
+# Optional: If there is a "content provider" of the digital item that differs per
+# item in the submission batch, record the HathiTrust organization code here. For
+# example, if several different publishers provided digital files to Michigan that were
+# prepared for ingest into HathiTrust, the publisher would be recorded here. Most of
+# the time, this will be the same as the creation agent.
+digital_content_provider: dukeupress
+
+# If the submitted images do not have the TIFF Artist or XMP tiff:Artist header, this
+# value must be supplied. It should reflect who created the original born digital item.
+# Frequently this will be the author or publisher of the item. It will only be used if
+# the submitted images are missing the TIFF Artist and XMP tiff:Artist headers.
+tiff_artist: "Duke University Press"
+######## END OF SECTION FOR BORN DIGITAL MATERIAL     ###########################
+
+
+##############FOR ALL MATERIAL####################################################
+
+# If the submitted images are missing resolution information, the resolution must
+# be supplied here. It will only be used if the submitted images do not contain
+# resolution information.
+
+# Resolution for bitonal TIFFs
+bitonal_resolution_dpi: 600
+# Resolution for contone TIFFs or JPEG2000 images
+contone_resolution_dpi: 300
+
+# If the images were compressed, converted, or normalized before SIP
+# generation, these values should be supplied. The date must be in ISO8601
+# combined date format and the agent must be a HathiTrust organization code.
+# The tools should list the software tool names and versions.
+
+image_compression_date: 2013-11-01T12:15:00-05:00
+image_compression_agent: umich
+image_compression_tool: ["kdu_compress v7.2.3","ImageMagick 6.7.8"]
+
+# If this volume was scanned right-to-left and/or should read right-to-left,
+# put "right-to-left" for the scanning or reading order here. If this information
+# is not provided, volumes are assumed to be scanned left-to-right and read
+# left-to-right. For born digital material, "scanning order" really means
+# "rasterization order".
+
+# The possibilities are:
+#
+# Book reads left-to-right and 00000001.tif is the FRONT cover of the book:
+#   scanning_order: left_to_right; reading_order: left_to_right
+# Book reads left-to-right but 00000001.tif is the BACK cover of the book:
+#   scanning_order: right_to_left; reading_order: left_to_right
+# Book reads right-to-left and 00000001.tif is the FRONT cover of the book:
+#   scanning_order: right_to_left; reading_order: right_to_left
+# Book reads right-to-left but 00000001.tif is the BACK cover of the book:
+#   scanning_order: left_to_right; reading_order: right_to_left
+#
+# For more complicated cases (e.g. books that are half in English and half in Hebrew and
+# are read either left to right or right to left, or books that are in two left-to-right
+# languages and one language is printed upside-down from the other), pick the correct
+# scanning order and one of the correct reading orders. Users of the other language can
+# use the interface to adjust the view appropriately.
+scanning_order: left-to-right
+reading_order: left-to-right
+
+# Optionally, page numbers and page tag data can be supplied here.
+# The orderlabel is the page number and the label is the page tag.
+# Multiple page tags should be comma-separated.
+#
+# Allowable page tags include:
+#
+# BACK_COVER - Image of the back cover
+#
+# BLANK - An intentionally blank page.
+#
+# CHAPTER_PAGE - A sort of half title page for a chapter of grouping of
+# chapters -- that is, a page that gives the name of the chapter or section
+# that begins on the next page.
+#
+# CHAPTER_START - Subsequent chapters with regular page numbering after the
+# first. Also use this for the beginning of each appendix.
+#
+# COPYRIGHT - Title page verso (the back of the real title page)
+#
+# FIRST_CONTENT_CHAPTER_START - First page of the first chapter with regular
+# page numbering. If the first chapter with regular numbering is called the
+# introduction, that's okay.
+#
+# FOLDOUT - A page that folded out of the print original
+#
+# FRONT_COVER - Image of the front cover (if the cover of the book was scanned)
+#
+# IMAGE_ON_PAGE - Use for plates (pages with only images, which often do not
+# contain the regular page numbering)
+#
+# INDEX - The first page in a sequence containing an index
+#
+# MULTIWORK_BOUNDARY: for items with multiple volumes bound together
+#
+# PREFACE - First page of each section that appears between the title page
+# verso and the first regularly numbered page. For example, a one-page
+# dedication on page xvi would get this tag, and then the first page of a
+# three-page preface starting on page xviii would also get this.  However, if
+# the introduction of the text starts on page 1 (or on an unnumbered page
+# followed by page 2), do not use this tag. Use for components occurring before
+# and after the table of contents.
+#
+# REFERENCES - The first page in a sequence containing endnotes or a
+# bibliography
+#
+# TABLE_OF_CONTENTS - First page of the table of contents
+#
+# TITLE - Title page recto (the front of the real title page)
+#
+# TITLE_PARTS - Half title page (a sort of preliminary title page before the
+# real one)
+#
+# Please contact HathiTrust staff for additional guidance in mapping your page tags
+# to HathiTrust conventions.
+#
+# Note: the indentation here must use only spaces, never tabs: see
+# http://www.yaml.org/spec/1.2/spec.html#id2777534
+
+pagedata:
+  00000001.jp2: { label: "FRONT_COVER" }
+  00000007.jp2: { label: "TITLE" }
+  00000008.jp2: { label: "COPYRIGHT" }
+  00000009.jp2: { orderlabel: "i", label: "TABLE_OF_CONTENTS" }
+  00000010.jp2: { orderlabel: "ii", label: "PREFACE" }
+  00000011.jp2: { orderlabel: "iii" }
+  00000012.jp2: { orderlabel: "iv" }
+  00000013.jp2: { orderlabel: "v" }
+  00000014.jp2: { orderlabel: "vi" }
+  00000015.jp2: { orderlabel: "1", label: "FIRST_CONTENT_CHAPTER_START" }
+  00000016.jp2: { orderlabel: "2" }
+  00000017.jp2: { orderlabel: "3" }
+  00000018.jp2: { orderlabel: "4", label: "IMAGE_ON_PAGE" }
+
+'''
+
+meta_yaml_test = '''#HathiTrust-compliant meta.yml file
+capture_date: {capture_date}
+scanner_user: "University of Florida, George A. Smathers Libraries: Digital Production Services"
+'''
+
 def detail (request, item_id):
     item = get_object_or_404(Item, pk=item_id)
 
@@ -103,10 +293,20 @@ def md5(fname):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
 
+import os
+import datetime
+def modification_utc_str_by_filename(filename):
+    t = os.path.getmtime(filename)
+    d = datetime.datetime.fromtimestamp(t)
+    du = datetime.datetime.utcfromtimestamp(t)
+    tz = du - d
+    utc_str = du.strftime("%Y-%m-%dT%H:%M:%SZ")
+    d_str = d.strftime("%Y-%m-%dT%H:%M:%S")
+    return d_str, tz, utc_str
 
 from pathlib import Path
 from natsort import natsorted
-from shutil import copy2, make_archive
+from shutil import copy2, make_archive, move
 
 def testone(request):
 
@@ -115,6 +315,7 @@ def testone(request):
     # Vendoria items
     vitems = [
         'AA00026199_00001', #2 pages
+        'AA00023597_00001', #4 pages
         'AA00023062_00001', #12 pages
         'AA00013566_00001', #302 pages
         'AA00013566_00001',
@@ -134,16 +335,16 @@ def testone(request):
     # output dir for files
     out_dir_files = os.path.join(out_dir_bib,'files')
 
-    # msg += line(f'out_dir_files={out_dir_files}')
 
-    # make the directory if not exists
+    # make the output directory if not exists
     os.makedirs(out_dir_files, exist_ok=True)
+
     # We will output md5 info to this file in the bib dir.
     # After it is completed we will move it to the files dir.
-    #
-
     out_name_md5 = out_dir_bib + os.sep + 'checksum.md5'
-    with open(out_name_md5,mode='w') as out_file_md5:
+    capture_date = ''
+
+    with open(out_name_md5, mode='w') as out_file_md5:
         #Find all jp2 files in the input dir, in sorted order
         # NOTE: each file will be copied to a renamed output file, per
         # Hathitrust file naming requirements
@@ -161,10 +362,17 @@ def testone(request):
 
             # Sort the paths
             sorted_paths = natsorted(paths)
-
             #Copy each file to one with the HathiTrust-preferred name
             for i, in_path in enumerate(sorted_paths, 1):
                 in_name = str(in_path)
+
+                if i == 1:
+                    dstr, tz, utcstr = modification_utc_str_by_filename(in_path)
+                    msg += line(f'\nGot dstr={dstr}\n')
+                    msg += line(f'\nGot tz={tz}\n')
+                    msg += line(f'\nGot utcstr={utcstr}\n')
+                    capture_date = f'{dstr}-{tz}'
+                    msg += line(f'\nGot capture_date={capture_date}\n')
 
                 out_base = str(i).zfill(8)
                 out_base_ext = out_base + ext
@@ -202,14 +410,26 @@ def testone(request):
                 # end
             #end
         #end for hathi_image_tuples
+        # output required HathiTrust meta.yml file
+        yaml_base_name = 'meta.yml'
+        yaml_file_name = out_dir_files + os.sep + yaml_base_name
+        with open(yaml_file_name, mode='w') as yaml_file:
+            yaml_file.write(meta_yaml_test.format(
+                **{'capture_date':capture_date}))
+
+        md5sum = md5(yaml_file_name)
+        msg += line( f"YAML FILE: {yaml_file_name} md5sum='{md5sum}'")
+        out_file_md5.write(f'{md5sum} {yaml_base_name}\n')
     #with open --- checksum.md5 as out_file_md5
 
-    #move the checksum.md5 file from the bib dir to the files dir
-    # TODO:
+    # TODO:move the checksum.md5 file from the bib dir to the files dir
+    out_renamed_md5 = out_dir_files + os.sep + 'checksum.md5'
+    move(out_name_md5, out_renamed_md5)
+
     # Create zip archive
     out_base_archive_file = out_dir_bib + os.sep +  bib_vid
     make_archive(out_base_archive_file, 'zip', out_dir_files)
-    msg += line( f'Made archive file {out_base_archive_file} for '
+    msg += line( f'Made archive file {out_base_archive_file}.zip for '
                  f'directory {out_dir_files}')
     msg += line('')
     msg += line(f'{me}: Done.')
