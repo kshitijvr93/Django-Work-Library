@@ -244,6 +244,18 @@ class Item(models.Model):
         unique=True,
         help_text="Bib_vid in format XX12345678_12345" )
 
+    # md5 value of the zip file associated with this item.
+    # Upon save, if no associated zip file exists, it is created.
+    # Or if 1 does exist, but its current md5 does not match this
+    # value, then the zip is recreated, zip_md5 is recalculated,
+    # and resets this column value.
+    # This helps minimize accidental HathiTrust package changes.
+    # It is not user editable.
+    zip_md5 = models.CharField(max_length=255,
+        default = "AB12345678_12345",
+        unique=True,
+        help_text="Bib_vid in format XX12345678_12345" )
+
     STATUS_CHOICES = (
         ( 'new' ,'new'),
         ( 'compiling','compiling'),
