@@ -87,7 +87,6 @@ class Item(models.Model):
         ( 'UF' ,'University of Florida'),
         ( 'Available' ,'Available'),
         ( 'Harvard','Harvard'),
-        ( 'NC State','North Carolina State University'),
         ( 'UNC','University of North Carolina at Chapel Hill'),
     )
 
