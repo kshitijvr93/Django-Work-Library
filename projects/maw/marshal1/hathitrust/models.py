@@ -244,6 +244,19 @@ class Item(models.Model):
         unique=True,
         help_text="Bib_vid in format XX12345678_12345" )
 
+    # selected data is really created date of this row -- when this item is
+    # selected from a UFDC resource bib item.
+    #
+    selected_date = models.DateTimeField(auto_now=True)
+
+    # Date when this item was lack packaged into a zip
+    packaged_date = models.DateTimeField(null=True)
+    # md5 hash of the zip file itself
+    zip_md5 = models.Charfield(max_length=32)
+
+    # submission_date -- potential future: when we handle item submissions here
+    # and/or when we track milestons in the HathiTrust submission process
+
     # md5 value of the zip file associated with this item.
     # Upon save, if no associated zip file exists, it is created.
     # Or if 1 does exist, but its current md5 does not match this

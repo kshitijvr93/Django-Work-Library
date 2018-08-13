@@ -48,14 +48,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = maw_settings.DJANGO_SECRET_KEY
 
-
 DEBUG = maw_settings.DJANGO_DEBUG
 ALLOWED_HOSTS = maw_settings.DJANGO_ALLOWED_HOSTS
 print(f"USING: ALLOWED_HOSTS={ALLOWED_HOSTS}")
 sys.stdout.flush()
 
 # Application definition
-
 INSTALLED_APPS = [
     #'maw_home.apps.MawHomeConfig',
     'django.contrib.admin',
@@ -81,7 +79,6 @@ INSTALLED_APPS = [
 ]
 
 STATIC_URL = '/static/'
-
 MEDIA_ROOT = maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT
 print("USING: maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT={}"
     .format(maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT))

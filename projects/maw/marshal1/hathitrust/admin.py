@@ -48,6 +48,7 @@ class HathiModelAdmin(admin.ModelAdmin):
     From the django admin cookbook: method to delete an action from admin,
     and in this case it is the 'delete_selected' action.
     '''
+
     def get_actions(self, request):
         actions = super().get_actions(request)
         action_to_delete = 'delete_selected'

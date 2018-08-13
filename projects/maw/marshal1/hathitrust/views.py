@@ -370,8 +370,13 @@ def testone(request):
                     dstr, tz, utcstr = modification_utc_str_by_filename(in_path)
                     msg += line(f'\nGot dstr={dstr}\n')
                     msg += line(f'\nGot tz={tz}\n')
+                    # Lop of the 'seconds' part of the tz
+                    str_tz = str(tz)
+                    index_last_colon = str_tz.rfind(':')
+                    if index_last_colon > 0:
+                        str_tz = str_tz[0:index_last_colon]
                     msg += line(f'\nGot utcstr={utcstr}\n')
-                    capture_date = f'{dstr}-{tz}'
+                    capture_date = f'{dstr}-{str_tz}'
                     msg += line(f'\nGot capture_date={capture_date}\n')
 
                 out_base = str(i).zfill(8)
