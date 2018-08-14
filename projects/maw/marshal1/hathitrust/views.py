@@ -351,7 +351,7 @@ def testone(request):
         # First get the paths for all files in input directory;
         # hathi_image_tuples = [('*.tif*','.tif'), ('*.jp2','.jp2') ]
         # 20180806 - Now we only do jp2 images.
-        hathi_image_tuples = [('*.jp2','.jp2') ]
+        hathi_image_tuples = [('*.jp2',) ]
         for tuple in hathi_image_tuples:
             # Copy image files of this glob
             glob = tuple[0]
@@ -370,11 +370,12 @@ def testone(request):
                     dstr, tz, utcstr = modification_utc_str_by_filename(in_path)
                     msg += line(f'\nGot dstr={dstr}\n')
                     msg += line(f'\nGot tz={tz}\n')
-                    # Lop of the 'seconds' part of the tz
+                    # str_tz : Lop of the 'seconds' part of the tz
                     str_tz = str(tz)
                     index_last_colon = str_tz.rfind(':')
                     if index_last_colon > 0:
                         str_tz = str_tz[0:index_last_colon]
+
                     msg += line(f'\nGot utcstr={utcstr}\n')
                     capture_date = f'{dstr}-{str_tz}'
                     msg += line(f'\nGot capture_date={capture_date}\n')
@@ -396,7 +397,8 @@ def testone(request):
                 out_file_md5.write(f'{md5sum} {out_base_ext}\n')
 
                 # Copy txt and pro files
-                for ext_t in ['.pro','.txt']:
+                #for ext_t in ['.pro','.txt']:
+                for ext_t in ['.txt',]:
                     try:
                         in_name = in_base + ext_t
                         out_base_ext = out_base + ext_t
