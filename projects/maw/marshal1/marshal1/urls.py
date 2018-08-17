@@ -31,7 +31,11 @@ urlpatterns = [
     path('am4ir/', include('hathitrust.urls')),
     path('aspace/', include('hathitrust.urls')),
     path('cattleman/', include('hathitrust.urls')),
-    path('cuba_libro/', include('cuba_libro.urls')),
+    #20180817 - I told google oauth2 login to redirect to cuba_libro,
+    #but just tweak next now , because prefer home now, but should change google
+    #account project setting later to go to home
+    #path('cuba_libro/', include('cuba_libro.urls')),
+    path('cuba_libro/', TemplateView.as_view(template_name='home.html')),
     path('elsevier/', include('hathitrust.urls')),
     path('hathitrust/', include('hathitrust.urls')),
     path('ifas_citations/', include('hathitrust.urls')),
@@ -59,5 +63,5 @@ urlpatterns = [
 
     #url(r'^admin/', admin.site.urls),
 ]
-#LOGIN_URL = 'login'
-#LOGOUT_URL = 'logout'
+LOGIN_URL = 'login'
+LOGOUT_URL = 'logout'
