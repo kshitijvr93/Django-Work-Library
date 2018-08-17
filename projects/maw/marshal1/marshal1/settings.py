@@ -489,8 +489,8 @@ from django.urls import reverse_lazy
 #{See https://fosstack.com/how-to-add-google-authentication-in-django/
 # These should be set here in settings.py rather than any urls.py
 
-LOGIN_REDIRECT_URL = "/admin"
-LOGOUT_REDIRECT_URL = "/login"
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "home"
 LOGIN_URL = 'login'
 LOGOUT_URL = 'logout'
 #}

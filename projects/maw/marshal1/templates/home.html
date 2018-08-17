@@ -6,8 +6,21 @@
 {% block content %}
 {% if user.is_authenticated %}
   Hi {{ user.username }}!
+  <p>Please stay as long as you like, and when you are finished, please
+     remember to <a href="{% url 'logout' %}">logout</a>.</p>
 {% else %}
   <p>You are not logged in</p>
   <a href="{% url 'login' %}">login</a>
 {% endif %}
+<h3>UF Library MAW Applications</h3>
+<p>Access Innovations APIs</p>
+<p>ArchivesSpace Resets</p>
+<p><a href='admin/cuba_libro/item'>Cuba Libro Item Management</a></p>
+<p>Elsevier API and Data Updates Management</p>
+<p><a href='admin/hathitrust/'>HathiTrust Submittals</a></p>
+<p><a href='admin/lcroyster'>Lone Cabbage Reef Oyster Project</a></p>
+<p><a href='admin/snow'>Metadata and Taxonomy Snowflakes</a></p>
+<p>METS Batch Edits</p>
+<p>OAI-PMH Clients/Servers Management</p>
+<p><a href='admin/auth'>User Administration</a></p>
 {% endblock %}
