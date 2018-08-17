@@ -252,7 +252,7 @@ class Item(models.Model):
     # Date when this item was lack packaged into a zip
     packaged_date = models.DateTimeField(null=True)
     # md5 hash of the zip file itself
-    zip_md5 = models.Charfield(max_length=32)
+    zip_md5 = models.CharField(max_length=32)
 
     # submission_date -- potential future: when we handle item submissions here
     # and/or when we track milestons in the HathiTrust submission process

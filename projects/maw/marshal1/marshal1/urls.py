@@ -18,11 +18,13 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from . import views
 from django.conf.urls import url
+from django.views.generic.base import TemplateView
 
 # Set admin site display title
 admin.site.site_header = "UF Libraries Marshaling Apps Web (MAW) Admin"
 urlpatterns = [
     # path('', include('maw_home.urls')),
+    path('', TemplateView.as_view(template_name='home.html'), name='home'),
     # path('home/', include('maw_home.urls')),
     path('am4ir/', include('hathitrust.urls')),
     path('admin/', admin.site.urls),

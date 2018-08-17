@@ -1,16 +1,26 @@
+<!-- templates/registration/login.tml -->
+{% extends 'main_base.html' %}
 
-<h1>UF Smathers Libraries - Marshaling Application Website</h1>
-<h2>Please Choose Your Account Type and Login</h2>
+{% block title %}UF Libraries Marshaling Applications Login{% endblock %}
+
+{% block content %}
+<h3>Login</h3>
+  Please Use your Google Gmail account to Login</h2>
+  <a href="{% url 'social:begin' 'google-oauth2' %}"><h3>Google</h3></a><br>
+
+<!-- { more maybe to add later
 <ul>
   <a href="{% url 'social:begin' 'google-oauth2' %}"><h3>Google</h3></a><br>
   <a href="{% url 'social:begin' 'facebook' %}"><h3>Facebook</h3></a><br>
   <a href="{% url 'social:begin' 'twitter' %}"><h3>Twitter</h3></a><br>
   <a href="{% url 'social:begin' 'github' %}"><h3>GitHub</h3></a><br>
 </ul>
+} -->
 
-<h3>Optional UF Local Network Login (testing only)</h3>
+<h3>Optional UF Administration Login</h3>
   <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Login</button>
   </form>
+{% endblock %}
