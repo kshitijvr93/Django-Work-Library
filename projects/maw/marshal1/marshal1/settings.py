@@ -76,8 +76,10 @@ INSTALLED_APPS = [
     'mptt',
     'snow.apps.SnowConfig',
     'submit.apps.SubmitConfig',
+    'users',
 ]
 
+AUTH_USER_MODEL = 'users.CustomUser'
 STATIC_URL = '/static/'
 MEDIA_ROOT = maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT
 print("USING: maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT={}"
