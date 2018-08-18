@@ -331,23 +331,6 @@ hathitrust_env = maw_settings.HATHITRUST_ENV
 if hathitrust_env == 'test':
     DATABASES.update({
         # This db will hold users and groups info
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            # The maw1_default_db database will host misc django default data
-            'NAME': 'maw1_default_db',
-            'USER': maw_settings.TEST_MYSQL_USER,
-            'PASSWORD': maw_settings.TEST_MYSQL_PASSWORD,
-            'HOST': '10.241.33.139',
-            'PORT': '3306',
-        },
-        'maw1_db_connection': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'maw1_db_test',
-            'USER': maw_settings.TEST_MYSQL_USER,
-            'PASSWORD': maw_settings.TEST_MYSQL_PASSWORD,
-            'HOST': '10.241.33.139',
-            'PORT': '3306',
-        },
         'hathitrust_connection': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'maw1_db_test',
@@ -359,24 +342,6 @@ if hathitrust_env == 'test':
     }) # maw_settings.ENV = 'test'
 elif hathitrust_env == 'local':
     DATABASES.update({
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            # The maw1_default_db database will host misc django default
-            # data
-            'NAME': 'maw1_default_db',
-            'USER': maw_settings.LOCAL_MYSQL_USER,
-            'PASSWORD': maw_settings.LOCAL_MYSQL_PASSWORD,
-            'HOST': '127.0.0.1',
-            'PORT': '3306',
-        },
-        'maw1_db_connection': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'maw1_db',
-            'USER': maw_settings.LOCAL_MYSQL_USER,
-            'PASSWORD': maw_settings.LOCAL_MYSQL_PASSWORD,
-            'HOST': '127.0.0.1',
-            'PORT': '3306',
-        },
         'hathitrust_connection': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'maw1_db',
