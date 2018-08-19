@@ -76,10 +76,12 @@ INSTALLED_APPS = [
     'mptt',
     'snow.apps.SnowConfig',
     'submit.apps.SubmitConfig',
-    'users',
 ]
 
-AUTH_USER_MODEL = 'users.CustomUser'
+# Avoid using AUTH_USER_MODEL, rather use get_user_model(), see
+# https://wsvincent.com/django-referencing-the-user-model/
+# AUTH_USER_MODEL = 'users.CustomUser'
+
 STATIC_URL = '/static/'
 MEDIA_ROOT = maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT
 print("USING: maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT={}"
