@@ -91,16 +91,13 @@ def get_my_institution_code(request):
 
 def claim_for_my_institution(modeladmin, request, queryset):
     my_institution_code = get_my_institution_code(request)
-    # 20180820 - MUST use next 2 lines, chaining filter(x).update(y) FAILS.
-    queryset = queryset.filter(agent='-')
-    queryset.update(agent=my_institution_code)
+    queryset.filter(agent='-').update(agent=my_institution_code)
 claim_for_my_institution.short_description = "Claim for my institution "
 #end
 
 def unclaim_from_my_institution(modeladmin, request, queryset):
     my_institution_code = get_my_institution_code(request)
-    queryset=queryset.filter(agent=my_institution_code)
-    queryset.update(agent='-')
+    queryset=queryset.filter(agent=my_institution_code).update(agent='-')
 unclaim_from_my_institution.short_description = "Unclaim from my institution"
 #end
 
