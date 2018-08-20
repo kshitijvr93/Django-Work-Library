@@ -5,7 +5,7 @@
 
 {% block content %}
 {% if user.is_authenticated %}
-  Hi {{ user.username }}!
+  Hi {{ user.first_name }}!
   <p>Please stay as long as you like, and when you are finished, please
      remember to <a href="{% url 'logout' %}">logout</a>.</p>
 {% else %}

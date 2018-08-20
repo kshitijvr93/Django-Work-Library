@@ -85,12 +85,12 @@ class Item(models.Model):
     # Add to these PARTNER_CHOICES as we learn of more partners.
     PARTNER_CHOICES = (
         ( 'UF' ,'University of Florida'),
-        ( 'Harvard','Harvard'),
+        ( 'HVD','Harvard'),
         ( 'UNC','University of North Carolina at Chapel Hill'),
         ( '-','-'),
     )
 
-    agent = models.CharField('Claimed', null=True, default='-',
+    agent = models.CharField('Claimed', null=False, default='-',
         blank=True, max_length=50, choices=PARTNER_CHOICES,
         help_text="Partner who claimed to verify or edit this item.")
 

@@ -91,7 +91,8 @@ def get_my_institution_code(request):
 
 def claim_for_my_institution(modeladmin, request, queryset):
     my_institution_code = get_my_institution_code(request)
-    queryset.filter(agent='-').update(agent=my_institution_code)
+    queryset = queryset.filter(agent='-')
+    queryset.update(agent=my_institution_code)
 claim_for_my_institution.short_description = "Claim for my institution "
 #end
 
