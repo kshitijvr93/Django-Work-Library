@@ -364,7 +364,7 @@ if maw_settings.ENV == 'test':
         # This db will hold users and groups info
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'maw_default_db',
+            'NAME': 'maw1_default_db',
             'USER': maw_settings.TEST_MYSQL_USER,
             'PASSWORD': maw_settings.TEST_MYSQL_PASSWORD,
             'HOST': '10.241.33.139',
@@ -385,7 +385,7 @@ elif maw_settings.ENV == 'local':
             'ENGINE': 'django.db.backends.mysql',
             # The maw1_default_db database will host misc django default
             # data
-            'NAME': 'maw_default_db',
+            'NAME': 'maw1_default_db',
             'USER': maw_settings.LOCAL_MYSQL_USER,
             'PASSWORD': maw_settings.LOCAL_MYSQL_PASSWORD,
             'HOST': '127.0.0.1',

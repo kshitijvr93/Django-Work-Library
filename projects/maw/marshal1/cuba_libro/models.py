@@ -77,7 +77,7 @@ class Item(models.Model):
     id = models.AutoField(primary_key=True)
 
     # Many fields based on Jessica English UF email of 20180319
-    # Jessica informed us that accession_number is or should be
+    # Jessica informed us that accession_number is or should beUniversity of North Carolina at Chapel Hill
     # unique to UF and all other cuba_libro partners.
     accession_number = models.CharField(max_length=255, unique=True,
         default="Enter accession number here", editable=True)
@@ -85,14 +85,14 @@ class Item(models.Model):
     # Add to these PARTNER_CHOICES as we learn of more partners.
     PARTNER_CHOICES = (
         ( 'UF' ,'University of Florida'),
-        ( 'Available' ,'Available'),
         ( 'Harvard','Harvard'),
         ( 'UNC','University of North Carolina at Chapel Hill'),
+        ( '-','-'),
     )
 
-    agent = models.CharField('Partner', null=True, default='Available',
+    agent = models.CharField('Claimed', null=True, default='-',
         blank=True, max_length=50, choices=PARTNER_CHOICES,
-        help_text="Partner to verify or edit this item.")
+        help_text="Partner who claimed to verify or edit this item.")
 
     agent_modify_date = models.DateTimeField('Modify Date (UTC)',
         null=True, auto_now=True, editable=False)

@@ -69,18 +69,40 @@ class CubaLibroModelAdmin(admin.ModelAdmin):
         # on the 'other' database.
         return super().formfield_for_manytomany(db_field, request,
             using=self.using, **kwargs)
-
+    # end def formfield_for_manytomany
 #end class CubaLibroModelAdmin
+from django.contrib.auth.models import User, Group
+import sys
+def get_my_institution_code(request):
+        institution = 'XX' #default for now
+        for group in request.user.groups.filter(name__startswith='Cuba Libro '):
+            # ASSUME exactly one group starts with cuba_libro_
+            # Admin Superuser must manage users and assign exactly one group
+            # that startswith cuba_libro_ and endswith one of the item.agent
+            # choice codes
+            try:
+                # print(f'Loop group name "{group.name}"' ,file=sys.stdout)
+                institution = group.name.split(' ')[2].upper()
+                # print(f'Loop institution "{institution}"' ,file=sys.stdout)
+            except:
+                continue
+        # sys.stdout.flush()
+        return institution
 
-def agent_available_to_uf(modeladmin, request, queryset):
-        queryset.filter(agent='Available').update(agent='UF')
+def claim_for_my_institution(modeladmin, request, queryset):
+    my_institution_code = get_my_institution_code(request)
+    # 20180820 - MUST use next 2 lines, chaining filter(x).update(y) FAILS.
+    queryset = queryset.filter(agent='-')
+    queryset.update(agent=my_institution_code)
+claim_for_my_institution.short_description = "Claim for my institution "
+#end
 
-agent_available_to_uf.short_description = "Change Available to UF Partner"
-
-def agent_uf_to_available(modeladmin, request, queryset):
-        queryset.filter(agent='UF').update(agent='Available')
-
-agent_uf_to_available.short_description = "Change UF partner to Available "
+def unclaim_from_my_institution(modeladmin, request, queryset):
+    my_institution_code = get_my_institution_code(request)
+    queryset=queryset.filter(agent=my_institution_code)
+    queryset.update(agent='-')
+unclaim_from_my_institution.short_description = "Unclaim from my institution"
+#end
 
 class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 
@@ -93,14 +115,12 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
         ,'pub_year_span', 'place_of_publication'
         ,'isbn_issn', 'call_number','doi', 'pmid','pmcid'
         ]
-
     #date_hierarchy = 'agent_modify_date'
-
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.
                          # Need reference doc?
-        agent_uf_to_available, #External, so set the function value
-        agent_available_to_uf, #External, so set the function value
+        unclaim_from_my_institution, #External, so set the function value
+        claim_for_my_institution, #External, so set the function value
     ]
 
     list_display = [
@@ -122,7 +142,6 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
         ]
 
     # admin item detailed view order of display fields
-
     # We also have 'Other Fields' in the database, but Jessica did not
     # select any as important fields to edit.
     # Consider setting editable=False for them?
@@ -174,14 +193,19 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
     '''
     From the django admin cookbook: method to delete an action from admin,
     and in this case it is the 'delete_selected' action.
+    Also can allow only certain actions for users in certain groups.
     '''
     def get_actions(self, request):
         actions = super().get_actions(request)
-        action_to_delete = 'delete_selected'
-        if action_to_delete in actions:
-            #print("actions='{}'".format(repr(actions)))
-            del actions[action_to_delete]
+        actions_to_delete = ['delete_selected']
+
+        # change this logic later
+        for action_to_delete in actions_to_delete:
+            if action_to_delete in actions:
+                #print("actions='{}'".format(repr(actions)))
+                del actions[action_to_delete]
         return actions
+    #end def get_actions
 
     '''
     More django admin cookbook tips: to delete add and delete buttons (as all
