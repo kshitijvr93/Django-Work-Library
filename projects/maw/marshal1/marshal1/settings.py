@@ -270,6 +270,7 @@ else:
 # among submit and snow tables
 DATABASES['snow_connection'] = DATABASES['submit_connection']
 d = DATABASES['snow_connection']
+
 print("CONNECTION snow_connection: engine={}, dbname={}"
   .format(d['ENGINE'], d['NAME']))
 sys.stdout.flush()

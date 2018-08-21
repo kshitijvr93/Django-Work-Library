@@ -125,11 +125,8 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
          'id',
          'accession_number',
          'title_primary',
-         #'pub_year_span',
-         #'reference_type',
          'agent',
-         'holding',
-         #'agent_modify_date',
+         'pub_year_span',
          ]
 
     list_filter = [
