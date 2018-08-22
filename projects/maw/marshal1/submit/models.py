@@ -17,7 +17,7 @@ put it here. Also see settings.py should include this python import dot-path
 as one of the listed strings in the list setting for DATABASE_ROUTERS.
 
 '''
-# Maybe move the HathiRouter later, but for now keep here
+# Maybe move the Router later, but for now keep here
 #
 class SubmitRouter:
     '''
