@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Item
+from .models import Item, Profile
 from django.forms import TextInput, Textarea
 from django.db import models
 
@@ -217,8 +217,11 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 
 #end class ItemAdmin
 
+class ProfileAdmin(CubaLibroModelAdmin):
+    pass
 
 
 admin.site.register(Item, ItemAdmin)
+admin.site.register(Profile, ProfileAdmin)
 
 # Register your models here.

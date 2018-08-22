@@ -261,12 +261,16 @@ class Item(models.Model):
     '''
 
 '''
-Model Item_file will be a single file that a user uploads that will be
-associated with a particular Hathitrust item.
-So it will have a foreign key to a Hathitrust item.
+Model profile is a one-to-one model with table users, and it maintains a list
+of users who are authorized to use the cuba_libro application.
 '''
-class Item_file(models.Model):
+from django.contrib.auth.models import User
+class Profile(models.Model):
+    # also see: https://simpleisbetterthancomplex.com/tutorial/2016/07/22/how-to-extend-django-user-model.html#onetoone
+    #
     #id is a default integer auto field, which is perfect, so let django make itself.
-    item_id = models.ForeignKey('Item', on_delete=models.CASCADE,)
+    user = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
+    insitution_code = models.CharField(max_length=64, null=False, default='')
+    notes = models.TextField(max_length=2555, null=False, default='')
 
 #end class Hathi_item
