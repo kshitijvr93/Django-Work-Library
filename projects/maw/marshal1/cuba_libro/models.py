@@ -83,11 +83,17 @@ class Item(models.Model):
         default="Enter accession number here", editable=True)
 
     # Add to these PARTNER_CHOICES as we learn of more partners.
+    # NOTE: Partner choices should have same spelled-out names on
+    # right as HOLDING choices
     PARTNER_CHOICES = (
-        ( 'UF' ,'University of Florida'),
-        ( 'HVD','Harvard'),
-        ( 'UNC','University of North Carolina at Chapel Hill'),
         ( '-','-'),
+        ( 'DUKE', 'Duke University'),
+        ( 'FIU', 'Florida International'),
+        ( 'HVD','Harvard'),
+        ( 'NYP', 'New York Public'),
+        ( 'UF' ,'University of Florida'),
+        ( 'UMI' ,'University of Miami'),
+        ( 'UNC','U of North Carolina'),
     )
 
     agent = models.CharField('Claimed', null=False, default='-',
@@ -116,9 +122,21 @@ class Item(models.Model):
     # set both hold_count_low and hold_count_high to NNN
     # If neither NNN nor MMM is given, set both to 0
 
-    # import colum 0
-    holding = models.CharField(null=True,max_length=20, default='',
-        blank=True, editable=True)
+    # HOLDING CHOICES are long-standing OCLC codes, so they differ
+    # from more friendly PARTNER_CHOICES codes above
+    HOLDING_CHOICES = (
+        ( 'NDD', 'Duke University'),
+        ( 'FXG', 'Florida International'),
+        ( 'HLS', 'Harvard'),
+        ( 'NYP', 'New York Public'),
+        ( 'FUG', 'University of Florida'),
+        ( 'FQG' ,'University of Miami'),
+        ( 'NOC', 'U of North Carolina'),
+    )
+
+    holding = SpaceCharField(max_length=255, default='',
+        blank=True, null=False,editable=False,
+        choices=HOLDING_CHOICES)
 
     #reference type on imported files from UF and Harverd as of 20180320
     # seems to empirically comport with one of the values: [' Book, Whole', 'Journal Article', 'Map',
@@ -259,7 +277,6 @@ class Item(models.Model):
         class Meta:
           db_table = 'item'
     '''
-
 '''
 Model profile is a one-to-one model with table users, and it maintains a list
 of users who are authorized to use the cuba_libro application.
