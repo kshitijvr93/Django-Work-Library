@@ -104,7 +104,9 @@ unclaim_from_my_institution.short_description = "Unclaim from my institution"
 
 class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 
-    readonly_fields = ['id']
+    readonly_fields = ['id',
+                 'holding',
+                 ]
     #admin change list display fields to show
     # CHANGE LIST VIEW
     search_fields = ['id','accession_number'
@@ -123,14 +125,17 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 
     list_display = [
          'id',
-         'accession_number',
+         # 'accession_number',
          'title_primary',
-         'agent',
+         'holding',
          'pub_year_span',
+         'agent',
+         'status',
          ]
 
     list_filter = [
         'agent',
+        'status',
         'holding',
         # 'reference_type'
         #,'language', 'place_of_publication',
@@ -166,7 +171,6 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
              'classes': ('collapse',),
              'fields': (
                  'reference_type',
-                 'holding',
                  'periodical_full',
                  'periodical_abbrev',
                  'pub_date_free_from',
