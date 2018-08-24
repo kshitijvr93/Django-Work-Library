@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Item, Profile
+from .models import Item
 from django.forms import TextInput, Textarea
 from django.db import models
 
@@ -72,8 +72,18 @@ class CubaLibroModelAdmin(admin.ModelAdmin):
     # end def formfield_for_manytomany
 #end class CubaLibroModelAdmin
 from django.contrib.auth.models import User, Group
+from profile.models import CubaLibro
+
 import sys
 def get_my_institution_code(request):
+        cl_institution = request.user.CubaLibro.agent
+        try:
+            agent = CubaLibro.get(user=request.user).agent
+        except:
+            return ""
+        
+        print(f'profile_cuba_libro.agent "{group.name}"', file=sys.stdout)
+
         institution = 'XX' #default for now
         for group in request.user.groups.filter(name__startswith='Cuba Libro '):
             # ASSUME exactly one group starts with cuba_libro_
@@ -221,11 +231,4 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 
 #end class ItemAdmin
 
-class ProfileAdmin(CubaLibroModelAdmin):
-    pass
-
-
 admin.site.register(Item, ItemAdmin)
-admin.site.register(Profile, ProfileAdmin)
-
-# Register your models here.

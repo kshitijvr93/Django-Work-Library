@@ -47,6 +47,13 @@ class Cuba_LibroRouter:
         if (   obj1._meta.app_label == self.app_label
            or  obj2._meta.app_label == self.app_label):
            return True
+        """
+        Allow relations if a model in the auth app is involved.
+        """
+        if obj1._meta.app_label == 'auth' or \
+           obj2._meta.app_label == 'auth':
+           return True
+
         return None
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
@@ -277,17 +284,4 @@ class Item(models.Model):
         class Meta:
           db_table = 'item'
     '''
-'''
-Model profile is a one-to-one model with table users, and it maintains a list
-of users who are authorized to use the cuba_libro application.
-'''
-from django.contrib.auth.models import User
-class Profile(models.Model):
-    # also see: https://simpleisbetterthancomplex.com/tutorial/2016/07/22/how-to-extend-django-user-model.html#onetoone
-    #
-    #id is a default integer auto field, which is perfect, so let django make itself.
-    user = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
-    insitution_code = models.CharField(max_length=64, null=False, default='')
-    notes = models.TextField(max_length=2555, null=False, default='')
-
-#end class Hathi_item
+#end class Item

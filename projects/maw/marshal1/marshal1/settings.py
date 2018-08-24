@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     'hathitrust.apps.HathitrustConfig',
     'lcroyster.apps.LcroysterConfig',
     'mptt',
+    'profile.apps.ProfileConfig',
     'snow.apps.SnowConfig',
     'submit.apps.SubmitConfig',
 ]
@@ -416,6 +417,8 @@ DATABASE_ROUTERS = [
     'submit.models.SubmitRouter',
 ]
 
+# At server startup, print the databases in use
+#
 for cname, cdict in DATABASES.items():
     print ("\nCONNECTION NAME='{}'".format(cname))
     for key, val in cdict.items():
