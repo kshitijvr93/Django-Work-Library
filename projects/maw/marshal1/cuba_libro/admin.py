@@ -107,21 +107,19 @@ def get_agent(request):
         return agent
 
 def claim_by_agent(modeladmin, request, queryset):
+    f = sys.stdout
+    print(f"modleadmin {type(modeladmin)}",file=f)
+    print(f"request {type(request)}",file=f)
+    print(f"queryset {type(queryset)}",file=f)
     n_checked = len(queryset)
     print(f"claim: N_checked={n_checked}", file=sys.stdout)
     agent = get_agent(request)
     queryset = queryset.filter(agent='-')
-    lq = len(queryset)
-    queryset = queryset.update(agent=agent)
-    print(f"claim: found count {lq} to change to {agent}"
+    update_count = queryset.update(agent=agent)
+    print(f"claim: updated count {update_count} to change to {agent}"
         ,file=sys.stdout)
     sys.stdout.flush()
-
-    lq = len(queryset)
-    print(f"claim: found count {lq} to change",file=sys.stdout)
-    sys.stdout.flush()
-
-    queryset.update(agent=my_institution_code)
+    queryset.update(agent=agent)
 # end def
 claim_by_agent.short_description = "Claim for my institution "
 #end
