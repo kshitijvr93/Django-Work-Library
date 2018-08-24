@@ -75,14 +75,20 @@ from django.contrib.auth.models import User, Group
 from profile.models import CubaLibro
 
 import sys
-def get_my_institution_code(request):
-        cl_institution = request.user.CubaLibro.agent
+def get_agent(request):
+        user = User.objects.get(username=request.user)
+        print(f'get_agent "{user}"...', file=sys.stdout)
         try:
-            agent = CubaLibro.get(user=request.user).agent
+            agent = CubaLibro.objects.get(user=user).agent
+            print(f'profile_cuba_libro.agent "{agent}"', file=sys.stdout)
         except:
+            print(f'user "{user}" not in cuba_libro.', file=sys.stdout)
             return ""
-        
-        print(f'profile_cuba_libro.agent "{group.name}"', file=sys.stdout)
+
+        print(f'RETURN profile_cuba_libro.agent "{agent}"', file=sys.stdout)
+
+        sys.stdout.flush()
+        return agent
 
         institution = 'XX' #default for now
         for group in request.user.groups.filter(name__startswith='Cuba Libro '):
@@ -97,19 +103,33 @@ def get_my_institution_code(request):
             except:
                 continue
         # sys.stdout.flush()
-        return institution
+        #return institution
+        return agent
 
-def claim_for_my_institution(modeladmin, request, queryset):
-    my_institution_code = get_my_institution_code(request)
+def claim_by_agent(modeladmin, request, queryset):
+    n_checked = len(queryset)
+    print(f"claim: N_checked={n_checked}", file=sys.stdout)
+    agent = get_agent(request)
     queryset = queryset.filter(agent='-')
+    lq = len(queryset)
+    queryset = queryset.update(agent=agent)
+    print(f"claim: found count {lq} to change to {agent}"
+        ,file=sys.stdout)
+    sys.stdout.flush()
+
+    lq = len(queryset)
+    print(f"claim: found count {lq} to change",file=sys.stdout)
+    sys.stdout.flush()
+
     queryset.update(agent=my_institution_code)
-claim_for_my_institution.short_description = "Claim for my institution "
+# end def
+claim_by_agent.short_description = "Claim for my institution "
 #end
 
-def unclaim_from_my_institution(modeladmin, request, queryset):
-    my_institution_code = get_my_institution_code(request)
-    queryset=queryset.filter(agent=my_institution_code).update(agent='-')
-unclaim_from_my_institution.short_description = "Unclaim from my institution"
+def unclaim_by_agent(modeladmin, request, queryset):
+    agent = get_agent(request)
+    queryset=queryset.filter(agent=agent).update(agent='-')
+unclaim_by_agent.short_description = "Unclaim from my institution"
 #end
 
 class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
@@ -129,8 +149,8 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.
                          # Need reference doc?
-        unclaim_from_my_institution, #External, so set the function value
-        claim_for_my_institution, #External, so set the function value
+        unclaim_by_agent, #External, so set the function value
+        claim_by_agent, #External, so set the function value
     ]
 
     list_display = [
