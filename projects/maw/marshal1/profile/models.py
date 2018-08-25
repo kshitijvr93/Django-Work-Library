@@ -9,7 +9,8 @@ from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
 
 class CubaLibro(models.Model):
     id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, unique=True, null=False
+      , on_delete=models.CASCADE)
 
     # May add model later, but for now use same field def as
     # used in cuba_libro_item.agent -

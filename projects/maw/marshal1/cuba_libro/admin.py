@@ -117,13 +117,13 @@ def claim_by_agent(modeladmin, request, queryset):
     #    ,file=sys.stdout)
     # queryset.update(agent=agent)
 # end def
-claim_by_agent.short_description = "Claim for my institution "
+claim_by_agent.short_description = "Claim by my institution "
 #end
 
 def unclaim_by_agent(modeladmin, request, queryset):
     agent = get_agent(request)
     queryset=queryset.filter(agent=agent).update(agent='-')
-unclaim_by_agent.short_description = "Unclaim from my institution"
+unclaim_by_agent.short_description = "Unclaim by my institution"
 #end
 
 class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
