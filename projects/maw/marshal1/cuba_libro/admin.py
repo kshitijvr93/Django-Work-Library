@@ -77,33 +77,15 @@ from profile.models import CubaLibro
 import sys
 def get_agent(request):
         user = User.objects.get(username=request.user)
-        print(f'get_agent "{user}"...', file=sys.stdout)
+        #print(f'get_agent "{user}"...', file=sys.stdout)
         try:
             agent = CubaLibro.objects.get(user=user).agent
-            print(f'profile_cuba_libro.agent "{agent}"', file=sys.stdout)
+           # print(f'profile_cuba_libro.agent "{agent}"', file=sys.stdout)
         except:
-            print(f'user "{user}" not in cuba_libro.', file=sys.stdout)
+           # print(f'user "{user}" not in cuba_libro.', file=sys.stdout)
             return ""
-
-        print(f'RETURN profile_cuba_libro.agent "{agent}"', file=sys.stdout)
-
-        sys.stdout.flush()
-        return agent
-
-        institution = 'XX' #default for now
-        for group in request.user.groups.filter(name__startswith='Cuba Libro '):
-            # ASSUME exactly one group starts with cuba_libro_
-            # Admin Superuser must manage users and assign exactly one group
-            # that startswith cuba_libro_ and endswith one of the item.agent
-            # choice codes
-            try:
-                # print(f'Loop group name "{group.name}"' ,file=sys.stdout)
-                institution = group.name.split(' ')[2].upper()
-                # print(f'Loop institution "{institution}"' ,file=sys.stdout)
-            except:
-                continue
-        # sys.stdout.flush()
-        #return institution
+        #print(f'RETURN profile_cuba_libro.agent "{agent}"', file=sys.stdout)
+        #sys.stdout.flush()
         return agent
 
 def claim_by_agent(modeladmin, request, queryset):

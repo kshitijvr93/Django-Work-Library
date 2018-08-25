@@ -9,6 +9,13 @@ from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
 
 class CubaLibro(models.Model):
     id = models.AutoField(primary_key=True)
+    # Note: Django gives hint that OneToOne field usually is
+    # better than a unique ForeignKey, as we use here for field
+    # 'user', but in the case of models in app 'profile',, we
+    # anticipate many such models in this 'profile' app to have
+    # this type of relationship with the User table, where
+    # same field names would collide, if using a OneToOne field,
+    # so this way seems better.
     user = models.ForeignKey(User, unique=True, null=False
       , on_delete=models.CASCADE)
 
