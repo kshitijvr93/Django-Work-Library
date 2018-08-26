@@ -176,7 +176,6 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
         ( 'Other Fields', {
              'classes': ('collapse',),
              'fields': (
-                 'reference_type',
                  'periodical_full',
                  'periodical_abbrev',
                  'pub_date_free_from',

@@ -41,8 +41,13 @@ urlpatterns = [
     path('ifas_citations/', include('hathitrust.urls')),
     path('lcroyster/', include('lcroyster.urls')),
 
-    path('login/', auth_views.login, name='login'),
-    path('logout/', auth_views.logout, name='logout'),
+    #older django 2.0 line
+    #path('login/', auth_views.login, name='login'),
+    # new to django 2.1
+    path('login/', auth_views.LoginView.as_view(), name='login'),
+
+    #path('logout/', auth_views.logout, name='logout'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('oauth/', include('social_django.urls',namespace='social')),
     #path('login/', auth_views.login, name='login'),
     #path('logout/', auth_views.logout, name='logout'),
@@ -55,11 +60,10 @@ urlpatterns = [
     #path('login/', auth_views.login, name='login'),
     #path('logout/', auth_views.logout, name='logout'),
 
-    url(r'^login/$', auth_views.login, name='login'),
+    #url(r'^login/$', auth_views.login, name='login'),
     # path('successfully_logged_out/', views.successfully_logged_out),
-    url(r'^logout/$', auth_views.logout, name='logout',
-      #{'next_page':'login/'}
-      ),
+    #url(r'^logout/$', auth_views.logout, name='logout',
+    #{'next_page':'login/'} ),
 
     #url(r'^admin/', admin.site.urls),
 ]
