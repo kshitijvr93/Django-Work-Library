@@ -12,6 +12,7 @@
   <p>You are not logged in</p>
   <a href="{% url 'login' %}">login</a>
 {% endif %}
+
 <h3>UF Library MAW - Marshaling Application Website</h3>
 <p><a href='admin'>MAW Administration</a></p>
 <h4>Applications Ready for Testing </h4>
@@ -19,23 +20,36 @@ Please email podengo@ufl.edu to request test login-password:
 <ol>
 <li>Cuba Libro Partner Item Management</li>
 <li>Lone Cabbage Reef Oyster Project</li>
-</ol>
-<h4>Applications in Development</h4>
-In order of imminent release for testing or production.
+<li>UFDC ITEM Tools
 <ol>
-<li>HathiTrust Packaging and Submittal</li>
-<li>OAI-PMH API Client Ingests from Manioc and others</li>
-<li>GetSuggestedTerms API</li>
-<li>METS Batch Abstract Insertions</li>
-<li>UFDC Taxonomy Hierarchies</li>
-<li>Metadata XML Hierarchies</li>
+<li>HathiTrust Packaging for Submittal</li>
+<li>Batch METS Abstract Insert or Replace</li>
+</ol>
+</li>
+</ol>
+
+<h4>Applications in Development</h4>
+<ol>
+  <li>UFDC ITEM Tools
+  <ol>
+    <li>OAI-PMH Manioc (etc) API Client to ingest items.</li>
+    <li>GetSuggestedTerms from UF and AI Thesauri</li>
+  </ol>
+  <li>UFDC METS Tools</li>
+  <ol>
+     <li>Metadata XML Hierarchies</li>
+  </ol>
+<li>UF DPS and Catalogging</li>
+  <ol><li>Define Taxonomy Hierarchies</li>
+  <li>Update Access Innovations with UF Taxonomies</li>
+  </ol>
 </ol>
 <h4>Applications With Some Design</h4>
 <ol>
 <li>UFDC Collections Hierarchies</li>
 <li>UFDC BibVids and Sets - Define batches of bib items for marshaling</li>
 <li>ArchivesSpace Resets</li>
-<li>XML2RDB Relational Reports and Data Updates
+<li>XML2RDB XML and METS Relational Reports and Data Updates
 <li>RDB2XML Conversion to XML and UFDC METS files</li>
 </ol>
 <h4>Applications Envisioned With Feature Requests</h4>

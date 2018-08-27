@@ -1,5 +1,6 @@
 '''
 mets_batch_edit.py
+20180827-Robert Phillips - bib_type 3 added for Melissa Jerome request
 20180620-Robert Phillips
 
 Python 3.6+ code
@@ -225,94 +226,111 @@ def file_add_or_replace_xml(input_file_name=None,
         child_check_path, namespaces=d_namespace)
 
     if child_nodes is not None and len(child_nodes) > 0:
-        clen = len(child_nodes)
-        if replace_children == True:
-            # TODO: implement and add code here to delete these nodes...
-            pass
-        else:
-            # Leave old children in place and skip this file
-            if verbosity > 0:
-                msg = ("{}: in {}, found {} extant '{}' child node occurences. "
-                  "NOT adding . Skipping file."
-                  .format(me, input_file_name,clen,child_check_path))
-                print(msg, file=log_file)
-            return -2
+        have_child = True
     else:
-        # It is OK to add a new child here.
+        have_child = False
 
-        if verbosity > 1:
-            msg = ('{}: in {}, found PARENT to receive a new  node'
-              .format(me, input_file_name))
-            print(msg, file=log_file)
-
-        # Create child node to append for this parent
-        child_element = etree.Element(cet_name)
-        child_element.text = child_model_element.text
-
-        parent_nodes[0].append(child_element)
-        if verbosity > 1:
-            print("Using etname='{}'".format(cet_name),file=log_file)
-            msg = ("appended to parent {} the child {}"
-               .format(parent_nodes[0].tag, child_element.tag))
-            print(msg, file=log_file)
-
-
-        # Done modifying the in-memory documet.
-        # Now output it in its file.
-        # TODO: CHANGE AFTER TESTING
-        # output_file_name = "{}.txt".format(input_file_name)
-        # Production
-
-        # Backup original mets file to a file under sub-directory sobek_files
-        #
-        # First, construct the backup file name
-        vid_folder, relative_mets_file_name = os.path.split(input_file_name)
-        fparts = relative_mets_file_name.split('.')
-        # This extracts the bib_vid part of the mets.xml file name, assumed
-        # to comply with the ufdc *.mets.xml file naming convention
-        bib_vid = fparts[0]
-        backup_folder_name = "{}\\sobek_files\\".format(vid_folder)
-
-        # Just in case, make sure the backup dir is made
-        os.makedirs(backup_folder_name, exist_ok=True)
-
-        # Save the input file per UFDC conventions, in subfolder sobek_files
-        backup_file_basename = "{}_{}.mets.bak".format(bib_vid,utc_yyyy_mm_dd)
-        backup_file_name = ("{}{}"
-          .format(backup_folder_name, backup_file_basename))
-
-        # Make the file backup copy
+    if replace_children == False and have_child:
+        # Do not replace any target child elements found.
+        # Leave old children in place and skip this file
+        clen = len(child_nodes)
         if verbosity > 0:
-            msg="{} creating backup copy file='{}'".format(me,backup_file_name)
-            print(msg)
+            msg = ("{}: in {}, found {} extant '{}' child node occurences. "
+              "NOT adding . Skipping file."
+              .format(me, input_file_name,clen,child_check_path))
             print(msg, file=log_file)
-            sys.stdout.flush()
+        return -2
 
-        # Use copy2 to preserve original creation date
-        # So the span of relevance for this record goes from the file md
-        # creation date to the file name's encoded date
-        copy2(input_file_name, backup_file_name)
-
-        #Now overwrite the original input file
-
-        output_file_name = input_file_name
-        with open(output_file_name, 'wb') as output_file:
-            # NOTE: alt to next would be
-            # output_string = etree.tostring(node_root_input,
-             #   xml_declaration=True).decode('utf-8')
-            #output_string = (etree.tostring(
-            #    node_root_input, pretty_print=True).decode('utf-8'))
-
-            if verbosity > 0:
-                msg="Writing to output file={}".format(output_file_name)
+    if replace_children == True and have_child:
+        if replace_children == True:
+            # Delete these obsolete child nodes
+            for obsolete in child_nodes:
+                parent = obsolete.getparent()
+                par0 = parent_nodes[0]
+                otag = obsolete.tag
+                parent.remove(obsolete)
+                print( f"From parent='{parent}'',removed obsolete='{otag}'"
+                    ,file=log_file)
+                msg = (f"From par0 '{par0}' removed otag='{otag}'")
                 print(msg, file=log_file)
-            #output_string = output_string.replace(xml_tag_replace_char, ':')
-            #REM: opened with mode='w' to output this type, a string
-            # output_file.write(output_string)
-            #doctree.write(output_file, xml_declaration=True)
-            #doctree.write(output_file, xml_declaration=True, encoding="utf-8")
-            doctree.write(output_file, xml_declaration=True, encoding="utf-8")
-        return 1
+
+    # add the child element as either new or a replacement
+
+    # It is OK to add a new child here.
+
+    if verbosity > 1:
+        msg = ('{}: in {}, found PARENT to receive a new  node'
+          .format(me, input_file_name))
+        print(msg, file=log_file)
+
+    # Create child node to append for this parent
+    child_element = etree.Element(cet_name)
+    child_element.text = child_model_element.text
+
+    parent_nodes[0].append(child_element)
+    if verbosity > 1:
+        print("Using etname='{}'".format(cet_name),file=log_file)
+        msg = ("appended to parent {} the child {}"
+           .format(parent_nodes[0].tag, child_element.tag))
+        print(msg, file=log_file)
+
+
+    # Done modifying the in-memory documet.
+    # Now output it in its file.
+    # TODO: CHANGE AFTER TESTING
+    # output_file_name = "{}.txt".format(input_file_name)
+    # Production
+
+    # Backup original mets file to a file under sub-directory sobek_files
+    #
+    # First, construct the backup file name
+    vid_folder, relative_mets_file_name = os.path.split(input_file_name)
+    fparts = relative_mets_file_name.split('.')
+    # This extracts the bib_vid part of the mets.xml file name, assumed
+    # to comply with the ufdc *.mets.xml file naming convention
+    bib_vid = fparts[0]
+    backup_folder_name = "{}\\sobek_files\\".format(vid_folder)
+
+    # Just in case, make sure the backup dir is made
+    os.makedirs(backup_folder_name, exist_ok=True)
+
+    # Save the input file per UFDC conventions, in subfolder sobek_files
+    backup_file_basename = "{}_{}.mets.bak".format(bib_vid,utc_yyyy_mm_dd)
+    backup_file_name = ("{}{}"
+      .format(backup_folder_name, backup_file_basename))
+
+    # Make the file backup copy
+    if verbosity > 0:
+        msg="{} creating backup copy file='{}'".format(me,backup_file_name)
+        print(msg)
+        print(msg, file=log_file)
+        sys.stdout.flush()
+
+    # Use copy2 to preserve original creation date
+    # So the span of relevance for this record goes from the file md
+    # creation date to the file name's encoded date
+    copy2(input_file_name, backup_file_name)
+
+    #Now overwrite the original input file
+
+    output_file_name = input_file_name
+    with open(output_file_name, 'wb') as output_file:
+        # NOTE: alt to next would be
+        # output_string = etree.tostring(node_root_input,
+         #   xml_declaration=True).decode('utf-8')
+        #output_string = (etree.tostring(
+        #    node_root_input, pretty_print=True).decode('utf-8'))
+
+        if verbosity > 0:
+            msg="Writing to output file={}".format(output_file_name)
+            print(msg, file=log_file)
+        #output_string = output_string.replace(xml_tag_replace_char, ':')
+        #REM: opened with mode='w' to output this type, a string
+        # output_file.write(output_string)
+        #doctree.write(output_file, xml_declaration=True)
+        #doctree.write(output_file, xml_declaration=True, encoding="utf-8")
+        doctree.write(output_file, xml_declaration=True, encoding="utf-8")
+    return 1
 # end def file_add_or_replace_xml
 
 '''
@@ -403,12 +421,14 @@ def process_files(
     # child_tag_namespace allows for use of file-extant namespace prefixes
     child_tag_namespace=None,
     child_model_element=None,
+    replace_children=False,
     progress_count=100,
     verbosity=1,
     ):
 
         me = 'process_files'
         n_files = 0
+        test_one = 1
 
         total_file_lines = 0
         log_file = log_file
@@ -458,6 +478,7 @@ def process_files(
                 parent_tag_name=parent_tag_name,
                 child_tag_namespace=child_tag_namespace,
                 child_model_element=child_model_element,
+                replace_children=replace_children,
                 verbosity=verbosity)
 
             period = progress_count
@@ -471,7 +492,7 @@ def process_files(
                 sys.stdout.flush()
                 log_file.flush()
 
-            if rv <= 0:
+            if rv is None or rv <= 0:
                 n_unchanged += 1
             else:
                 n_changed +=1
@@ -481,6 +502,10 @@ def process_files(
                    "{}: Processed file {}={} with rv={}."
                   .format(me, n_files, input_file_name, rv)
                   ,file=log_file)
+            if test_one == 1:
+                print("Test_one - test break")
+                break
+
         # end for path in paths
 
         if verbosity > 0:
@@ -505,6 +530,7 @@ def run(backup_folder=None,
     parent_tag_name=None,
     child_tag_namespace=None,
     child_model_element=None,
+    replace_children=False,
     strftime_format="%Y%m%dT%H%MZ",
     verbosity=1,):
 
@@ -555,6 +581,7 @@ def run(backup_folder=None,
       child_tag_namespace=child_tag_namespace,
       child_model_element=child_model_element,
       file_globs=file_globs,
+      replace_children=replace_children,
       log_file=log_file, verbosity=verbosity)
 
     msg = ("{}: ENDING: Processed {} files, and added a child node to {}.\n"
@@ -611,16 +638,19 @@ if __name__ == "__main__":
     # PRODUCTION -
     # backup_folder = ('C:\\rvp\\data\\backups\\mets_batch_editor')
     backup_folder = None
+    replace_children = False
     #20180625b - use None as backup folder - now we assume we have sub folder
     # sobek_files per item and write backup there
-    # bib 1 of iinterest
+    # bib_type =  1
 
-    bib_type = 2
+    # bib_type = 2
+    bib_type = 3
 
     if bib_type == 1:
         input_folder = ('F:\\ufdc\\resources\\AA'
           '\\00\\05\\28\\74\\'
           )
+        replace_children = False
     # TESTING
     # input_folder = ('c:\\rvp\\tmpdir\\' )
     # input_folder = ('c:\\rvp\\data\\test_vids\\' )
@@ -657,6 +687,7 @@ Diputados, quienes nunca se reunieron por estallar la Guerra.
         # TESTING
         # { These variables will be runtime parameters
 
+        replace_children = False
         child_model_text = '''Como un eco de La Correspondencia de España, el
 diario La Correspondencia de Puerto Rico fue fundado por Ramón B. López en
 San Juan, el 18 de diciembre de 1890. Llegó a ser el periódico de mayor
@@ -701,6 +732,28 @@ derivadas de la Ley Orgánica de 1900 (Ley Foraker) y la organización del
 gobierno civil, atento al progreso económico e intelectual de Puerto Rico.
 '''
     # end if bib_type == 2
+    elif bib_type == 3:
+        #Request by Melissa Jerome via email 20180813 to rvp
+        input_folder = (
+          'F:\\ufdc\\resources\\AA\\00\\05\\28\\74\\'
+          )
+
+        replace_children = True
+        child_model_text = '''La Democracia
+
+El periódico La Democracia, fundado y dirigido por Luis Muñoz Rivera en 1890 y publicado en principios desde Ponce, Puerto Rico.
+
+Abogó por los principios del Partido Autonomista, de corte liberal que buscaba mayores derechos con la Corona Española. Incluía temas políticos como situaciones internas de delegados y protestas del pueblo, mantenía diálogo con otros periódicos, publicaba las propuestas de los diputados a Cortes, los tratados de España con otros países y la insurrección de Cuba. En cuanto a lo económico, protestó la imposición de tarifas sobre azúcar y otros productos y la prohibición del café hacia Cuba, publicó protestas de comerciantes de San Juan y embargos de fincas. Apoyó la creación de Asociación de Agricultores, el Banco Agrícola y la Exposición Santurce, en busca de soluciones económicas, sin éxito.
+
+En 1895, al declararse la guerra de Cuba, y luego de la reorganización del Partido Autonomista, Muñoz Rivera viajó a Madrid en busca de la autonomía, desde donde escribía regularmente en el periódico. Entre 1896-98, el periódico concentró sus esfuerzos en el tema político hasta la elección de los Diputados, quienes nunca se reunieron por estallar la Guerra Hispanoamericana. A principios de 1899, Muñoz Rivera viajó a Washington para exigir gobierno civil y fue respaldado por listas de liberales de todos los pueblos, publicadas en el periódico.
+
+Con la Ley Foraker, o el gobierno civil, continuaron las protestas en el periódico por quiebras, emigraciones a Cuba, mala calidad harinas importadas, Tarifa Dingley a importaciones, Bill Hollander, horrores de emigración a Hawaii, manifestaciones socialistas, exigencia a los maestros de pasar examen de inglés, celebración de días patrios de Estados Unidos, castigos corporales a los niños en las escuelas y la intromisión de los carpetbaggers. En 1904, Muñoz Rivera fundó un nuevo partido llamado Unión, para unir a federales y republicanos contra los atropellos de las leyes impuestas, e imposibilidad de acción de la Cámara de Delegados que el periódico llamó cámara de esclavos.
+
+El aspecto social y cultural de Puerto Rico a través de los anuncios y editoriales, es tema importante del periódico.  Antes del ’98, anuncios de compañías extranjeras como vapores de correos franceses, seguros contra incendios de Hamsburgo, compañía italiana de teatro, reseñas sobre vida en Haití y el circo americano, demuestran aperturas del mercado puertorriqueño.  Internamente, anuncios de actividades del Ateneo, certámenes literarios, de música y pintura, actividades del Círculo Sangermeño, de Escuela Laica Espiritista, problemas de la Iglesia Católica, Celebraciones del Cuarto Centenario, son huellas de vida cotidiana. Luego del ’99, se anuncia la New York Porto Rico Steamship Co. y la Colonial Leaf Tobacco Co., se diseña un nuevo escudo para Porto Rico, se legisla el Código Civil que permitía el divorcio, se comienza a discutir el feminismo, y se distribuyen pasaportes puertorriqueños.
+
+Para 1905, el periódico se anuncia como el de más circulación de Puerto Rico y con su sede en San Juan.  Para esa época, es uno comercial y más interesado en la noticia que se crea desde la esferas gubernamentales.
+
+        '''
     else:
         raise ValueError("Unknown bib_type={}}.format(bit_type)")
 
@@ -730,6 +783,7 @@ gobierno civil, atento al progreso económico e intelectual de Puerto Rico.
         parent_tag_name=parent_tag_name,
         child_tag_namespace=child_tag_namespace,
         child_model_element=child_model_element,
+        replace_children=replace_children,
         verbosity=2)
 
 #end if __name__ == "__main__"

@@ -407,6 +407,8 @@ else:
     "Not found in ['local','test']".format(maw_settings.ENV) )
     raise ValueError(msg)
 
+# END some settings dependent on maw_settings.ENV
+
 # END ENVIRONMENT DATABASE SETTINGS
 
 DATABASE_ROUTERS = [
@@ -470,7 +472,6 @@ LOGOUT_URL = 'logout'
 ## not sure if ckeditor needs this?
 SITE_ID = 1
 #
-
 ####################################
     ##  CKEDITOR CONFIGURATION ##
 ####################################
