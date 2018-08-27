@@ -428,7 +428,7 @@ def process_files(
 
         me = 'process_files'
         n_files = 0
-        test_one = 1
+        test_one = 0
 
         total_file_lines = 0
         log_file = log_file
