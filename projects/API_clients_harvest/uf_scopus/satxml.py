@@ -1,5 +1,26 @@
-import sys, os, os.path, platform
+'''
+Python 3.5 or so code worked OK in year 2017, 2016.
+Maybe the api key expired or the API was dismantled/moved.
+On 20180827, got error for each and every api request like:
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+    <soapenv:Body>
+        <soapenv:Fault>
+            <faultcode>soapenv:Server</faultcode>
+            <faultstring>Policy Falsified</faultstring>
+            <faultactor>https://api.elsevier.com/content/search/scopus?api%20Key=d91051fb976425e3b5f00750cbd33d8b&amp;query=affil({University%20of%20%20Florida})%20and%20public%20is%202017%20and%20subjarea(vete)&amp;httpAccept=application/xml</faultactor>
+            <detail>
+                <l7:policyResult status="Internal Server Error" xmlns:l7="http://www.layer7tech.com/ws/policy/fault"/>
+            </detail>
+        </soapenv:Fault>
+    </soapenv:Body>
+</soapenv:Envelope>
 
+'''
+
+
+
+'''
 def get_path_modules(verbosity=0):
   env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
   path_user = os.environ.get(env_var)
@@ -8,6 +29,21 @@ def get_path_modules(verbosity=0):
     print("Assigned path_modules='{}'".format(path_modules))
   return path_modules
 sys.path.append(get_path_modules())
+'''
+import sys, os, os.path, platform
+from collections import OrderedDict
+
+def register_modules():
+    platform_name = platform.system().lower()
+    if platform_name == 'linux':
+        modules_root = '/home/robert/'
+        #raise ValueError("MISSING: Enter code here to define modules_root")
+    else:
+        # assume rvp office pc running windows
+        modules_root="C:\\rvp\\"
+    sys.path.append('{}git/citrus/modules'.format(modules_root))
+    return
+register_modules()
 
 import etl
 
@@ -15,14 +51,19 @@ from io import StringIO, BytesIO
 import shutil
 
 '''
-Program satxml (Scopus Api To XML) reads information from Scopus Search API for
-UF-Authored (affiliated) articles and for each, it seeks it in the Scopus Full-text API.
+Program satxml (Scopus Api To XML) reads information from Scopus Search API
+for UF-Authored (affiliated) articles and for each, it seeks it in the Scopus
+Full-text API.
 
-NOTE: Scopus has a 5000 article per request maximum. That is why each request is limited to
-a subject area, subj_area, and the UF affiliation, to make sure the 5K maximum is not exceeded, otherwise
-there would be no known way to get data after the 5000th article in any request. Currently for UF and
-subj area of medicine, for pub year 2016, is around 4000 at the end of the year, so if UF gets much more
-prolilfic, some UF med articles would be/may become inaccessible via this Scopus API/Policy.
+NOTE: Scopus has a 5000 article per request maximum. That is why each
+request is limited to a subject area, subj_area, and the UF affiliation, to
+make sure the 5K maximum is not exceeded, otherwise
+there would be no known way to get data after the 5000th article in any
+request.
+
+Currently for UF and subj area of medicine, for pub year 2016, is around
+4000 at the end of the year, so if UF gets much more prolific, some UF
+med articles would be/may become inaccessible via this Scopus API/Policy.
 
 If not found, it logs an error message, otherwise it outputs a file named
 scopus_{scopus_id}.xml in the given output directory for each article.
@@ -30,7 +71,8 @@ scopus_{scopus_id}.xml in the given output directory for each article.
 '''
 from lxml import etree
 #Note: Official Python 3.5 docs use different library, ElementTree ET
-#Maybe try it if lxml shows flaws -- update: lxml shows no flaws so far after months of use
+#Maybe try it if lxml shows flaws -- update: lxml shows no flaws so far
+# after months of use
 import xml.etree.ElementTree as ET
 from pathlib import Path
 import datetime
@@ -49,10 +91,10 @@ d_scopus_uf_af_ids= {
 
 class ScopusAPI(object):
     # base url here. Add on apiKey=x
-    url_base_content_search = "http://api.elsevier.com/content/search/scopus?"
+    url_base_content_search = "https://api.elsevier.com/content/search/scopus?"
     # url_search based on 20161025 docs. Note that one result tag, dc:identifier, which
     # provides content: SCOPUS_ID:x, where x is the scopus id of the sought url, parroted back.
-    url_base_article_abstract_search = "http://api.elsevier.com/content/abstract/scopus_id/"
+    url_base_article_abstract_search = "https://api.elsevier.com/content/abstract/scopus_id/"
     utc_created = datetime.datetime.utcnow()
     utc_secs_z = utc_created.strftime("%Y-%m-%dT%H:%M:%SZ")
     article_id_tag='{*}eid'
@@ -95,7 +137,8 @@ class ScopusAPI(object):
         # Note: default apiKey is for UF
         if not apiKey or not af_ids:
             raise ValueError("apiKey or af_ids argument is not given")
-        # apiKey is the spelling used in the url paramter, so keep that naming convention for consistency.
+        # apiKey is the spelling used in the url paramter, so keep that naming
+        # convention for consistency.
         self.apiKey = apiKey
         self.af_ids = af_ids
         self.d_qparams = {'httpAccept':'application/xml', 'apiKey':apiKey}
@@ -111,7 +154,8 @@ class ScopusAPI(object):
                .format(self.url_base_content_search, self.apiKey
                , affil, pubyear,'application/xml'))
 
-    def initial_search_url_by_affil_pubyear_subjarea(self, affil=None, pubyear=None, subjarea=None):
+    def initial_search_url_by_affil_pubyear_subjarea(self, affil=None,
+        pubyear=None, subjarea=None):
         if not (affil and pubyear and subjarea):
             raise ValueError('Affil and pubyear and subjarea not all given.')
         return('{}apiKey={}&query=affil({{{}}}) and pubyear is {} and subjarea({})'
@@ -128,7 +172,7 @@ class ScopusAPI(object):
         #return etree.parse(search_url_initial)
         return search_url_initial
     def get_url_affiliation_search(self,subject_area=None):
-        base_url = 'http://api.elsevier.com/content/search/affiliation'
+        base_url = 'https://api.elsevier.com/content/search/affiliation'
         d_qparams = self.d_qparams
         d_qparams.update({'query':'affil({University of Florida})'})
         url = '{}?{}'.format(base_url, urllib.parse.urlencode(d_qparams))
@@ -142,7 +186,8 @@ def scopus_response_entries_collect(sapi=None,d_scopus_info=None, pubyear=None
     , results_tree=None, d_namespaces=None
     , d_params=None, d_batch=None, verbosity=1):
     '''
-    Given d_params input params dictionary and an article search results tree corresponding to
+    Given d_params input params dictionary and an article search results tree
+    corresponding to
     one 'page' of scopus results (usually 25 entries), loop over the
     tree's entries, where each entry is for a result article.
     We save each entry in file scopus_entry_{scopus_id}.xml,
@@ -152,9 +197,9 @@ def scopus_response_entries_collect(sapi=None,d_scopus_info=None, pubyear=None
     (1) We write a file named entry/scopus_{scopus_id}.xml
     (2) We write a file under doi/doi_{doi-normalized}.xml
 
-    Note: we also could add a dictionary argument used to track incoming pii values
-    and reject duplicate pii values across calls here during processing the results of a query,
-    but that has not been a problem (so far).
+    Note: we also could add a dictionary argument used to track incoming pii
+    values and reject duplicate pii values across calls here during processing
+    the results of a query, but that has not been a problem (so far).
 
     RETURN values: batch_entries_collected, link_next_batch
 
@@ -173,7 +218,7 @@ def scopus_response_entries_collect(sapi=None,d_scopus_info=None, pubyear=None
 
     # Remove old output folder - we will rewrite the entire year of doi data since
     # the 2016 scopus API only provides a full year date range.
-    entry_tag = '{http://www.w3.org/2005/Atom}entry' # could use instead of {*} in '{*}entry' below.
+    entry_tag = '{https://www.w3.org/2005/Atom}entry' # could use instead of {*} in '{*}entry' below.
     result_link_next = ""
 
     result_root = results_tree.getroot()
@@ -359,17 +404,24 @@ def run_satxml_by_affil_pubyear(affil=None, pubyear=None,d_params=None):
         #if n_subjarea > 2:
         #    break
         n_batch = 1
-        url_next_searchi = sapi.initial_search_url_by_affil_pubyear_subjarea(affil, pubyear,subjarea)
-        print("\n{}:Finding articles in SUBJECT AREA: {}\n".format(me, subjarea), file=stdout)
-
+        url_next_search = sapi.initial_search_url_by_affil_pubyear_subjarea(
+            affil, pubyear,subjarea)
+        print("\n{}:Finding articles in SUBJECT AREA: {}\n"
+           .format(me, subjarea), file=stdout)
+        count_search = 0
         while (url_next_search):
-            print ('{}:n_batch={}, using search_url={}'.format(me,n_batch,url_next_search))
-
+            count_search += 1
+            if count_search > 2:
+                break;
+            print ('{}:n_batch={}, count_search={}, using search_url={}'
+                .format(me,n_batch,count_search,url_next_search))
             try:
                 results_tree = etree.parse(url_next_search)
             except:
                 e = sys.exc_info()[0]
-                msg = ('Skipping: Cannot parse url={}. Error is {}'.format(url_next_search,e))
+                msg = ('Skipping: Cannot parse url={}. Error is {}'
+                    .format(url_next_search,e))
+                print (msg, file=sys.stdout)
                 continue
 
             results_root = results_tree.getroot()
@@ -380,7 +432,8 @@ def run_satxml_by_affil_pubyear(affil=None, pubyear=None,d_params=None):
             d_batch = {}
             #d_batches[batch_key] = d_batch
 
-            # PROCESS THE SEARCH RESULTS ENTRY DATA GIVEEN IN results_tree FOR THIS BATCH OF ARTICLES
+            # PROCESS THE SEARCH RESULTS ENTRY DATA GIVEN IN results_tree FOR
+            # THIS BATCH OF ARTICLES
             (url_next_search, n_collected, n_excepted, l_retrievals,d_scopus_info) = (
               scopus_response_entries_collect(sapi=sapi,
                 d_scopus_info=d_scopus_info, pubyear=pubyear, subjarea=subjarea
@@ -423,7 +476,7 @@ me = 'main'
 # Set two normally changed parameters:
 #201703 - use 2017 alone, instead of [2016,2017] because 2016 has sort of settled out by now
 pubyears=[2017]
-output_folder = 'c:/rvp/elsevier/output_satxml'
+output_folder = 'c:/rvp/scopus/output_satxml'
 
 # Save also run context parameters
 d_params = {}

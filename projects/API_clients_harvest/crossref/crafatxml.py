@@ -25,6 +25,7 @@
 # "University of Florida" for dates specified by Crossref params
 # from-index-date and until-index-date.
 # ONLINE API DOCS: see https://github.com/CrossRef/rest-api-doc/blob/master/rest_api.md
+'''
 import sys, os, os.path, platform
 def get_path_modules(verbosity=0):
   env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
@@ -36,6 +37,23 @@ def get_path_modules(verbosity=0):
 sys.path.append(get_path_modules())
 print("Sys.path={}".format(sys.path))
 sys.stdout.flush()
+'''
+
+import sys, os, os.path, platform
+from collections import OrderedDict
+
+def register_modules():
+    platform_name = platform.system().lower()
+    if platform_name == 'linux':
+        modules_root = '/home/robert/'
+        #raise ValueError("MISSING: Enter code here to define modules_root")
+    else:
+        # assume rvp office pc running windows
+        modules_root="C:\\rvp\\"
+    sys.path.append('{}git/citrus/modules'.format(modules_root))
+    return
+register_modules()
+
 import etl
 
 #import requests

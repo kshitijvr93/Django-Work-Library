@@ -539,6 +539,9 @@ class Role(MPTTModel):
     def __str__(self):
             return '{}'.format(self.name)
 
+    class MPTTMeta:
+        order_insertion_by = ['name']
+
 # end class Role
 
 

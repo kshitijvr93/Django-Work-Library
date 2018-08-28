@@ -173,8 +173,14 @@ class SchemaAdmin(
 
 # end class
 
-
+# NB: Must stick to django 2.0.7 or visit to this model
+# using django 2.1 failsnwhen
+#using django-mptt version 0.91 latest on 20180828
+# maybe recheck later. Tradeoff is we need django 2.1 to
+# manage 'view' model permissions.. so keep checking.
 class NodeAdmin(DjangoMpttAdmin):
+    # stab in the dark... to provide sortable_by value...
+    # https://github.com/django-mptt/django-mptt/search?q=sortable_by&unscoped_q=sortable_by
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
           attrs={'size':'20'})},
@@ -182,6 +188,9 @@ class NodeAdmin(DjangoMpttAdmin):
           attrs={'rows':1, 'cols':'60'})},
     }
     inlines = [AttributeInline, ]
+
+    def get_sortable_by():
+        return []
 #end class NodeAdmin
 
 class RoleAdmin(DjangoMpttAdmin):
@@ -191,6 +200,10 @@ class RoleAdmin(DjangoMpttAdmin):
         models.TextField: { 'widget': Textarea(
           attrs={'rows':1, 'cols':'60'})},
     }
+    def get_sortable_by():
+        return []
+
+    #sortable_by = super.list_display
 
 #end class RoleAdmin
 

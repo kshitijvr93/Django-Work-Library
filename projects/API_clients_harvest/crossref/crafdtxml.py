@@ -26,17 +26,20 @@ Use the Crossref API to (1) harvest metadata for articles of a certain day
 and (2) later, to apply python filter to yield affiliations that match
 "University of Florida".
 '''
+
 import sys, os, os.path, platform
-def get_path_modules(verbosity=0):
-  env_var = 'HOME' if platform.system().lower() == 'linux' else 'USERPROFILE'
-  path_user = os.environ.get(env_var)
-  path_modules = '{}/git/citrus/modules'.format(path_user)
-  if verbosity > 1:
-    print("Assigned path_modules='{}'".format(path_modules))
-  return path_modules
-sys.path.append(get_path_modules())
-print("Sys.path={}".format(sys.path))
-sys.stdout.flush()
+from collections import OrderedDict
+def register_modules():
+    platform_name = platform.system().lower()
+    if platform_name == 'linux':
+        modules_root = '/home/robert/'
+        #raise ValueError("MISSING: Enter code here to define modules_root")
+    else:
+        # assume rvp office pc running windows
+        modules_root="C:\\rvp\\"
+    sys.path.append('{}git/citrus/modules'.format(modules_root))
+    return
+register_modules()
 import etl
 import time
 import urllib.parse
@@ -138,7 +141,6 @@ def  all_article_affilations_update(
     return d_all_article_affiliations
 
 '''
-
 Method crafatxml: CrossRef API To XML - Read the CrossRef REST API github docs for details.
 
 Get XML Metadata for each DOI-identified article and save it to a file named
@@ -477,17 +479,19 @@ def run(od_target_affiliation_info):
   # So here, since we are using CrossRef APIs, the cymd_start and
   # cymd_end days are INCLUDED in the API query results, aka closed interval
 
-  cymd_start = '20171031'
+  cymd_start = '20180101'
 
-  # CRAFATXML - Here, we do only one day at a time...
-  cymd_end = '20171031'
+  # CRAFDTXML - Here, we do only one day at a time...
+  cymd_end = '20180827'
 
   utc_now = datetime.datetime.utcnow()
   # secsz_start: secz means seconds in utc(suffix 'z') when this run started
   secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
 
+  #20180828 - change output_folder_base back to an older name for the
+  #convenience of grouping new data with older data
   output_folder_base = etl.data_folder(linux='/home/robert/', windows='U:/',
-      data_relative_folder='data/outputs/crafdtxml/')
+      data_relative_folder='data/elsevier/output_crafdtxml/')
 
   print ("START CRAFDTXML RUN at {}\n\twith:\ncymd_start='{}', cymd_end='{}'\n  "
          "output_folder_base={},verbosity={}"

@@ -15,17 +15,17 @@ as one of the listed strings in the list setting for DATABASE_ROUTERS.
 '''
 # Maybe move the HathiRouter later, but for now keep here
 #
-class TermRouter:
+class ThesRouter:
     '''
     A router to control all db ops on models in this Application. See apps.py.
     '''
 
     # app_label is really an app name. Here it is hathitrust.
-    app_label = 'term'
+    app_label = 'thes'
 
     # app_db is really a main settings.py DATABASES name, which is
     # more properly a 'connection' name
-    app_db = 'default'
+    app_db = 'submit'
 
     '''
     See: https://docs.djangoproject.com/en/2.0/topics/db/multi-db/
@@ -73,24 +73,38 @@ class TypeModel(models.Model):
 # NB: we accept the django default of prefixing each real
 # db table name with the app_name.
 
-class Resource(TypeModel):
-    #todo: go ahead and descend the resources directory and do not add
-    #a row to this table unless the named bibvid (AA12345678_00001) exists.
+class Bibvid(TypeModel):
+    # Todo: go ahead and descend the resources directory and do not add
+    # a row to this table unless the named bibvid (AA12345678_00001) exists.
+    # fields to consider: bib, vid, resource_subpath
+    # counts of various file types, pdf, jpeg, etc.
+    # total file count, including mets, etc in main folder
+    # count of subfolders, maybe a count
     #
     pass
 
-class Thesaurus(TypeModel):
+class Thesauri(models.Model)
+    # Thesaurus- a row should exist for every topterm in model thesauri
     pass
 
-class Retrieval(models.Model):
+class Thesaurus(models.Model)
+    # Thesaurus- a row should exist for every topterm in model thesauri
+    pass
+
+# Machine Automated Indexing result
+class Termsearch(models.Model):
     id = models.AutoField(primary_key=True)
-    retrieval_datetime = models.DateTimeField('Retrieval DateTime (UTC)',
+    retrieval_datetime = models.DateTimeField('Term search DateTime (UTC)',
         null=False, auto_now=True, editable=False)
 
-    # thesaurus name known to Access Innovations:
-    # eg, 'floridathes', 'geofloridathes'
+    # Thesaurus name known to Access Innovations, which was used to
+    # retrieve this set of TermResult terms # eg, 'floridathes', 'geofloridathes'
     thesaurus = models.ForeignKey('Thesaurus', null=False, on_delete=models.CASCADE)
+    # The Bib_vid whose content w used to match
     bibvid = models.ForeignKey('Bibvid', null=False, on_delete=models.CASCADE)
+
+    # count of terms suggeted in this result
+    count_suggested = PositiveIntegerField(null=False)
 
     # Note: when saving a retrieval row: (1) the bibvid is analyzed and
     # (2) an API GetSuggestedTerms request is sent to AI and
@@ -117,16 +131,18 @@ class Retrieval(models.Model):
     #and a retrieval for each individual page... etc.. and on and on
     pass
 
-class Apiterm(models.Model):
-    retrieval = models.ForeignKey('Retrieval', null=False,
+'''
+class TermEval
+Evaluation of the aptness of the term for the bib of the
+'''
+class TermEval(models.Model):
+    termsearch = models.ForeignKey('Termsearch', null=False,
         on_delete=models.CASCADE,
-        help_text="API Retrieval which generated this api term."
+        help_text="GetSuggestedTerm API search which generated this term."
         )
-    # Many fields based on Jessica English UF email of 20180319
-    # Jessica informed us that accession_number is or should beUniversity of North Carolina at Chapel Hill
-    # unique to UF and all other cuba_libro partners.
 
-    name = models.SpaceCharField(max_length=255, unique=True,
+    # name of the suggested term
+    suggested_term = models.SpaceCharField(max_length=255, unique=True,
         default="Term name", editable=True)
 
     # A user edits this field to record the decision whether to insert the
@@ -149,7 +165,8 @@ class Apiterm(models.Model):
         a refresher review of migrations docs.
 
         class Meta:
-          db_table = 'item'
+          # Do NOT do this else django migrations get confused!
+          # Just leave db_table unset.
+          db_table = 'something'
     '''
-
 #end class Term
