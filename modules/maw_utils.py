@@ -114,6 +114,33 @@ class SpaceCharField(models.CharField):
 '''
 field for "Plus" integers. So starting at 1, not 0.
 '''
+class PlusIntegerField(models.PositiveIntegerField):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def translate(self,value):
+        # Disallow 0.
+        # Just set 0 to 1 without generating an Exception.
+        if value < 1:
+            value = 1
+        return value
+
+    def from_db_value(self,value,expression,connection):
+        if value is None:
+            return value
+        return(self.translate(value))
+
+    def to_python(self, value):
+        if value is None:
+            return value;
+        return(self.translate(value))
+
+'''
+Replace other MAW code refs to PositiveIntegerField to "PlusIntegerField",
+which name is more explicit and less confusing with
+models.PositiveIntegerField.
+Then delete this.
+'''
 class PositiveIntegerField(models.PositiveIntegerField):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

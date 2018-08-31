@@ -174,7 +174,7 @@ class SchemaAdmin(
 # end class
 
 # NB: Must stick to django 2.0.7 or visit to this model
-# using django 2.1 failsnwhen
+# using django 2.1 fails when
 #using django-mptt version 0.91 latest on 20180828
 # maybe recheck later. Tradeoff is we need django 2.1 to
 # manage 'view' model permissions.. so keep checking.

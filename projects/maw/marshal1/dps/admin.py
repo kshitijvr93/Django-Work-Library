@@ -55,7 +55,7 @@ class ExportCvsMixin:
 
 # end class ExportCvsMixin
 
-#Modeled after snow's admin.py AttributeInline
+#Modeled after snow's admin.py class AttributeInline
 class RelatedTermInline(
     #MinValidatedInlineMixIn, SnowNestedStackedInline):
     MinValidatedInlineMixIn, admin.TabularInline):
@@ -72,12 +72,54 @@ class RelatedTermInline(
         models.TextField: { 'widget': Textarea(
           attrs={'rows':1, 'cols':'60'})},
     }
-
     def get_filters(self, obj):
         return((''))
+# end class RelatedTermInline
 
+#Modeled after snow's admin.py class AttributeInline
+class TermEvalInline(
+    #MinValidatedInlineMixIn, SnowNestedStackedInline):
+    MinValidatedInlineMixIn, admin.TabularInline):
+    model = Attribute
+    # A node may only contain only child nodes, and it is possible for
+    # a node to have no attributes, so we set min_num = 0
+    min_num = 0
+    #classes = ['collapse','collapsed']
+    extra = 0 # Extra 'empty' rows to show to accommodate immediate adding.
+
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'20'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'60'})},
+    }
+    def get_filters(self, obj):
+        return((''))
+# end class TermEvalInline
+
+# { Admin for model Thesauri
+# NB: Must stick to django 2.0.7 or visit to this model
+# using django 2.1 fails when
+#using django-mptt version 0.91 latest on 20180828
+# maybe recheck later. Tradeoff is we need django 2.1 to
+# manage 'view' model permissions.. so keep checking.
+#
 class ThesauriAdmin(DjangoMpttAdmin):
+    # stab in the dark... to provide sortable_by value...
+    # https://github.com/django-mptt/django-mptt/search?q=sortable_by&unscoped_q=sortable_by
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'20'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'60'})},
+    }
+    inlines = [RelatedTermInline, ]
+    def get_sortable_by():
+        return []
+# end class ThesauriAdmin(DjangoMpttAdmin)
+admin.site.register(Thesauri, ThesauriAdmin)
 
+# } Admin for model Thesauri
 
 class DpsModelAdmin(admin.ModelAdmin):
     # Using value should be a settings.py DATABASES key,
@@ -90,9 +132,6 @@ class DpsModelAdmin(admin.ModelAdmin):
         models.TextField: { 'widget': Textarea(
           attrs={'rows':1, 'cols':'80'})},
     }
-
-    #On admin change list page, show item name, not uuid(the default)
-    #list_display = ('item_name',)
 
     def save_model(self, request, obj, form, change):
         # Tell Django to save objects to the 'other' database.
@@ -118,131 +157,25 @@ class DpsModelAdmin(admin.ModelAdmin):
         return super().formfield_for_manytomany(db_field, request,
             using=self.using, **kwargs)
     # end def formfield_for_manytomany
-#end class CubaLibroModelAdmin
+# end class DpsModelAdmin(admin.ModelAdmin)
 
-from django.contrib.auth.models import User, Group
-import sys
-
-class Admin(CubaLibroModelAdmin, ExportCvsMixin):
-
-    readonly_fields = ['id']
-    #admin change list display fields to show
-    # CHANGE LIST VIEW
-    search_fields = ['id','accession_number'
-        ,'reference_type', 'language'
-        ,'authors_primary', 'title_primary'
-        ,'pub_year_span', 'place_of_publication'
-        ,'isbn_issn', 'call_number','doi', 'pmid','pmcid'
-        ]
-    #date_hierarchy = 'agent_modify_date'
-    actions = [
-        'export_as_csv', # Mixin: so set the method name string value.
-                         # Need reference doc?
-        unclaim_from_my_institution, #External, so set the function value
-        claim_for_my_institution, #External, so set the function value
-    ]
-
-    list_display = [
-         'id',
-         'accession_number',
-         'title_primary',
-         'agent',
-         'pub_year_span',
-         ]
-
-    list_filter = [
-        'agent',
-        'holding',
-        # 'reference_type'
-        #,'language', 'place_of_publication',
-        ]
-
-    # admin item detailed view order of display fields
-    # We also have 'Other Fields' in the database, but Jessica did not
-    # select any as important fields to edit.
-    # Consider setting editable=False for them?
-    fieldsets = (
-        ( None,
-            {'fields':(
-                 'accession_number',
-                 'title_primary',
-                 'pub_year_span',
-                 'agent',
-                 'status',
-                 'authors_primary',
-                 'notes',
-                 'personal_notes',
-                 'place_of_publication',
-                 'publisher',
-                 'language',
-                 'link_url',
-                 'links',
-                 'edition_url',
-                 'sub_file_database',
-                 'reference_type',
-        )}),
-
-        # DETAILED VIEW
-        ( 'Other Fields', {
-             'classes': ('collapse',),
-             'fields': (
-                 'reference_type',
-                 'holding',
-                 'periodical_full',
-                 'periodical_abbrev',
-                 'pub_date_free_from',
-                 'volume', 'issue', 'start_page', 'other_pages',
-                 'keywords','abstract',
-                 'title_secondary', 'titles_tertiary',
-                 'authors_secondary', 'authors_tertiary',
-                 'authors_quaternary', 'authors_quinary',
-                 'edition',
-                 'isbn_issn', 'availability', 'author_address',
-                 'classification', 'original_foreign_title',
-                 'doi', 'pmid','pmcid', 'call_number',
-                 'database', 'data_source', 'identifying_phrase',
-                 'retrieved_date',
-                 )
-            }
-        )
-    )
-    '''
-    From the django admin cookbook: method to delete an action from admin,
-    and in this case it is the 'delete_selected' action.
-    Also can allow only certain actions for users in certain groups.
-    '''
-    def get_actions(self, request):
-        actions = super().get_actions(request)
-        actions_to_delete = ['delete_selected']
-
-        # change this logic later
-        for action_to_delete in actions_to_delete:
-            if action_to_delete in actions:
-                #print("actions='{}'".format(repr(actions)))
-                del actions[action_to_delete]
-        return actions
-    #end def get_actions
-
-    '''
-    More django admin cookbook tips: to delete add and delete buttons (as all
-    CubaLibro data should be imported?)
-    Remove the _exp method name suffix to implement.
-    '''
-    def has_add_permission_exp(self,request, obj=None):
-        # With this, no 'add' button should appear per item
-        return False
-
-    def has_delete_permission_exp(self,request, obj=None):
-        # With this, no 'delete' button should appear per item
-        return False
-
-#end class ItemAdmin
-
-class ProfileAdmin(CubaLibroModelAdmin):
+# { Admin for model Bibvid}
+class BibvidAdmin:
     pass
+admin.site.register(Bibvid, BibVidAdmin)
+# } Admin for model Bibvid}
 
-
-admin.site.register(Item, ItemAdmin)
-admin.site.register(Profile, ProfileAdmin)
-
-# Register your models here.
+# { Admin code
+class TermReponseAdmin:
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'20'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'60'})},
+    }
+    inlines = [TermEvalInline, ]
+    def get_sortable_by():
+        return []
+    pass
+admin.site.register(TermResponse, TermResponseAdmin)
+# } Admin code

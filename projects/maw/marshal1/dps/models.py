@@ -5,7 +5,7 @@ from django.db import models
 #other useful model imports at times (see django docs, tutorials):
 import datetime
 from django.utils import timezone
-from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
+from maw_utils import SpaceTextField, SpaceCharField, PlusIntegerField
 from mptt.models import MPTTModel, TreeForeignKey
 
 '''
@@ -72,6 +72,7 @@ class TypeModel(models.Model):
             return '{}'.format(self.name)
     class Meta:
         abstract = True
+# end class TypeModel (abstract)
 
 # NB: we accept the django default of prefixing each real
 # db table name with the app_name.
@@ -81,7 +82,7 @@ and applies an xml2rdb config to gen a zip file of sql creation script to
 download to apply to local postgres database.
 '''
 
-class Bibvid(TypeModel):
+class Bibvid(models.Model):
     '''
     Use id as unique index
     consider bibvid as alternate unique index that allows NULL because
@@ -100,6 +101,17 @@ class Bibvid(TypeModel):
       mets (foreignkey of a mptt model's row that reps the top node
             of the mets file)
     '''
+    id = models.AutoField(primary_key=True)
+
+    name = SpaceCharField(verbose_name='Thesaurus term name', max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text= ("If no parent, name of thesaurus, else the name"
+          " for this narrower term under the broader parent.")
+        , editable=True)
+
+    note = SpaceTextField(max_length=2550, null=True, default='', blank=True,
+      editable=True,
+
     pass
 
 class Thesauri(MPTTModel)
@@ -178,7 +190,7 @@ class TermResponse(models.Model):
         on_delete=models.CASCADE)
 
     # count of terms suggeted in this result
-    count_suggested = PositiveIntegerField(null=False)
+    count_suggested = models.PositiveIntegerField(null=False)
 
     # Note: when saving a retrieval row: (1) the bibvid is analyzed and
     # (2) an API GetSuggestedTerms request is sent to AI and
@@ -192,7 +204,7 @@ class TermResponse(models.Model):
     # formulation (just jp2, just txt files used, maybe count of files etc)
     # (*) also the mets file is parsed if any, and metsterm rows are populated
 
-    note = SpaceTextField(max_length=255, null=True, default='', blank=True,
+    note = SpaceTextField(max_length=2550, null=True, default='', blank=True,
       editable=True,
     # Some value to consider adding here:
     # N  of pages, N of files of various types
@@ -204,6 +216,7 @@ class TermResponse(models.Model):
     #Maybe allow stats per page sent, or one main retrieval for all text,
     #and a retrieval for each individual page... etc.. and on and on
     pass
+# end class TermResponse
 
 '''
 class TermEval
@@ -233,7 +246,8 @@ class TermEval(models.Model):
         and create the db table name via a prefix of the table
         class of app_name and _.
         It makes future
-        migrations and many management operations much easier down the line.
+        migrations and many management operations much easier down
+        the line.
         Changing it after doing some migrations will
         confuse migrations, too, which can be somewhat messy, or require
         a refresher review of migrations docs.
