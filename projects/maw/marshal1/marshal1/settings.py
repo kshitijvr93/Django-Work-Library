@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     'profile.apps.ProfileConfig',
     'snow.apps.SnowConfig',
     'submit.apps.SubmitConfig',
+    'dps.apps.DpsConfig',
 ]
 
 # Avoid using AUTH_USER_MODEL, rather use get_user_model(), see
@@ -398,6 +399,7 @@ else:
 
 DATABASE_ROUTERS = [
     'cuba_libro.models.Cuba_LibroRouter',
+    'dps.models.DpsRouter',
     'hathitrust.models.HathiRouter',
     'lcroyster.models.LcroysterRouter',
     'snow.models.SnowRouter',

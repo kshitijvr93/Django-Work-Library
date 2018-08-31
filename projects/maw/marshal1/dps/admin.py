@@ -5,11 +5,14 @@ from .models import (
     TermEval,
     TermResponse,
     Thesauri,
-    Thesaurus,
+    # Thesaurus,
     )
 
 from django.forms import TextInput, Textarea
 from django.db import models
+from maw_utils import ExportCvsMixin
+from nested_inline.admin import NestedStackedInline, NestedModelAdmin
+from django_mptt_admin.admin import DjangoMpttAdmin
 
 '''
 TODO: move to common module - used also in other MAW apps
@@ -24,42 +27,16 @@ class MinValidatedInlineMixIn:
     def get_formset(self, *args, **kwargs):
         return super().get_formset(
             validate_min=self.validate_min, *args, **kwargs)
+# end class MinValidatedInlineMixIn
 
-
-'''
-TODO: move to common module - used also in other MAW apps
-Nice ExportCvsMixin class presented and covered, on 20180402 by:
-https://books.agiliq.com/projects/django-admin-cookbook/en/latest/export.html
-'''
 import csv
 from django.http import HttpResponse
-
-class ExportCvsMixin:
-    def export_as_csv(self, request, queryset):
-        meta = self.model._meta
-        field_names = [field.name for field in meta.fields]
-
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = (
-            'attachment; filename={}.csv'.format(meta))
-        writer = csv.writer(response)
-
-        writer.writerow(field_names)
-        for obj in queryset:
-            row = writer.writerow(
-                [getattr(obj, field) for field in field_names])
-
-        return response
-
-    export_as_csv.short_description = "Export Selected"
-
-# end class ExportCvsMixin
 
 #Modeled after snow's admin.py class AttributeInline
 class RelatedTermInline(
     #MinValidatedInlineMixIn, SnowNestedStackedInline):
     MinValidatedInlineMixIn, admin.TabularInline):
-    model = Attribute
+    model = RelatedTerm
     # A node may only contain only child nodes, and it is possible for
     # a node to have no attributes, so we set min_num = 0
     min_num = 0
@@ -80,7 +57,7 @@ class RelatedTermInline(
 class TermEvalInline(
     #MinValidatedInlineMixIn, SnowNestedStackedInline):
     MinValidatedInlineMixIn, admin.TabularInline):
-    model = Attribute
+    model = TermEval
     # A node may only contain only child nodes, and it is possible for
     # a node to have no attributes, so we set min_num = 0
     min_num = 0
@@ -160,13 +137,15 @@ class DpsModelAdmin(admin.ModelAdmin):
 # end class DpsModelAdmin(admin.ModelAdmin)
 
 # { Admin for model Bibvid}
-class BibvidAdmin:
+class BibvidAdmin(admin.ModelAdmin):
     pass
-admin.site.register(Bibvid, BibVidAdmin)
+#end class BibvidAdmin()
+
+admin.site.register(Bibvid, BibvidAdmin)
 # } Admin for model Bibvid}
 
 # { Admin code
-class TermReponseAdmin:
+class TermResponseAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
           attrs={'size':'20'})},
@@ -176,6 +155,8 @@ class TermReponseAdmin:
     inlines = [TermEvalInline, ]
     def get_sortable_by():
         return []
-    pass
+
+#end class TermResponseAdmin
+
 admin.site.register(TermResponse, TermResponseAdmin)
 # } Admin code

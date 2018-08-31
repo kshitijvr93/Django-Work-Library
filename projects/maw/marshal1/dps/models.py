@@ -56,8 +56,7 @@ class DpsRouter:
         if app_label == self.app_label:
             return db == self.app_db
         return None
-
-#end class
+# end class DpsRouter
 
 class TypeModel(models.Model):
     id = models.AutoField(primary_key=True)
@@ -103,18 +102,28 @@ class Bibvid(models.Model):
     '''
     id = models.AutoField(primary_key=True)
 
-    name = SpaceCharField(verbose_name='Thesaurus term name', max_length=255,
-        unique=False, blank=False, null=False, default='',
+    bibvid = SpaceCharField(verbose_name='Bibvid AA12345678_NNNN',
+        max_length=255, unique=False, blank=False, null=False, default='',
         help_text= ("If no parent, name of thesaurus, else the name"
-          " for this narrower term under the broader parent.")
-        , editable=True)
+          " for this narrower term under the broader parent."),
+        editable=True)
+
+    resource_subpath = SpaceCharField(max_length=255, null=True, default='',
+      blank=True, editable=True,
+      )
+    count_files = models.PositiveIntegerField(null=False)
+    count_pdf = models.PositiveIntegerField(null=False)
+    count_jp2 = models.PositiveIntegerField(null=False)
+    count_jpeg = models.PositiveIntegerField(null=False)
 
     note = SpaceTextField(max_length=2550, null=True, default='', blank=True,
+      help_text= ("General note"),
       editable=True,
+      )
 
     pass
 
-class Thesauri(MPTTModel)
+class Thesauri(MPTTModel):
     '''
     A mptt tree of all thesauri of interest. Each row with a null parent value
     (ie without a parent), is a 'root node' of a thesaurus.
@@ -137,13 +146,13 @@ class Thesauri(MPTTModel)
         , editable=True)
 # end class Thesauri(MPTTModel)
 
-class RelatedTerm(models.Model)
+class RelatedTerm(models.Model):
     id = models.AutoField(primary_key=True)
 
     # Only one relation in a schema has a null parent
-    primary_term = ForeignKey('Thesauri', blank=False,
+    primary_term = models.ForeignKey('Thesauri', blank=False,
       related_name='related_term', db_index=True,
-      help_text= "Primary term in thesauri to which this term is related"
+      help_text= "Primary term in thesauri to which this term is related",
       on_delete=models.CASCADE,)
 
     # Note, internally a unique suffix for the relation name
@@ -151,46 +160,60 @@ class RelatedTerm(models.Model)
     name = SpaceCharField(verbose_name='Related term name', max_length=255,
         unique=False, blank=False, null=False, default='',
         help_text= ("If no parent, name of thesaurus, else the name"
-          " for this narrower term under the broader parent."
-        , editable=True)
+          " for this narrower term under the broader parent."),
+        editable=True)
 
-class Thesaurus(models.Model)
+#  Todo: add a one-to-one model with Theseaurus with
+#  to use to record the xml tag to use for each thesaurus.
+#  This way limited access can be provided for that value
+class Thesaurus(models.Model):
     '''
-    Thesaurus- a row should exist for every root thesaurus (no parent)
-    in model thesauri
+    Thesaurus- for each row here, a row should exist in Thesauri for
+    every "root thesaurus".
+    A Thesauri row with no parent (Null value) is a 'root_thesarus'.
 
-    To contain metdata on the thesaurus
-    # TODO - design and implement code to import to a thesaurus from a
+    To contain metadata on the thesaurus
+    TODO - design and implement code to import to a thesaurus from a
     spreadsheet  like Suzanne's, and to export to a spreadsheet.
     '''
+    id = models.AutoField(primary_key=True)
+
+    root = models.ForeignKey('Thesauri', null=False,
+        on_delete=models.CASCADE)
     # name_ai - name of this thesaurus as an access innovations
     # GetSuggestedTerm 'location' parameter
     # See DataHarmony developers guide version 3.13
-    name_ai_location = models.SpaceCharField(max_length=255, unique=True,
-        default="Term name", editable=True)
-    root_node = models.ForeignKey('Thesauri', null=False,
-        on_delete=models.CASCADE)
+    name_ai_location = SpaceCharField(max_length=255,
+        default="Term name", unique=True, editable=True)
     pass
 
-# Machine Automated Indexing result
+# TermResponse - each row represents a "GetSuggestedTerms"
+# Response, and some associated request parameters
 class TermResponse(models.Model):
     '''
-    A row exists for every GetSuggestedTerm API response (GAR)
+    A row exists for every GetSuggestedTerm API response.
     '''
     id = models.AutoField(primary_key=True)
+
+    # The Bib_vid whose content was used to in the request
+    bibvid = models.ForeignKey('Bibvid', null=False, on_delete=models.CASCADE,
+      help_text =('The Bib_vid whose content was used to request '
+      'suggested terms'),
+    )
+
+    # Thesaurus is a row in thesauri with a name that is a 'location' name
+    # known to Access Innovations GetSuggestedTerm API Request.
+    # eg, 'floridathes', 'geofloridathes'
+    # It was used in such a request to
+    # elicit the response set of TermResponse terms
+    thesaurus = models.ForeignKey('Thesaurus', null=False,
+      on_delete=models.CASCADE,
+      help_text =('The thesaurus use for the "location" parameter in '
+         'the GetSuggestedTerms API request to Access Innovations'),
+      )
+
     retrieval_datetime = models.DateTimeField('Term search DateTime (UTC)',
         null=False, auto_now=True, editable=False)
-
-    # Thesaurus name known to Access Innovations, which was used to
-    # retrieve this set of TermResult terms # eg, 'floridathes', 'geofloridathes'
-    thesaurus = models.ForeignKey('Thesaurus', null=False,
-        on_delete=models.CASCADE)
-    # The Bib_vid whose content w used to match
-    bibvid = models.ForeignKey('Bibvid', null=False,
-        on_delete=models.CASCADE)
-
-    # count of terms suggeted in this result
-    count_suggested = models.PositiveIntegerField(null=False)
 
     # Note: when saving a retrieval row: (1) the bibvid is analyzed and
     # (2) an API GetSuggestedTerms request is sent to AI and
@@ -205,7 +228,7 @@ class TermResponse(models.Model):
     # (*) also the mets file is parsed if any, and metsterm rows are populated
 
     note = SpaceTextField(max_length=2550, null=True, default='', blank=True,
-      editable=True,
+      editable=True,)
     # Some value to consider adding here:
     # N  of pages, N of files of various types
     # time sent/received of api request/response
@@ -215,39 +238,54 @@ class TermResponse(models.Model):
     #Size in bytes of text document
     #Maybe allow stats per page sent, or one main retrieval for all text,
     #and a retrieval for each individual page... etc.. and on and on
-    pass
+
+    #Note on how the text content was extracted from the bibvid
+    text_content_note = SpaceTextField(max_length=2550, null=True, default='',
+      blank=True, editable=True,)
+
+    # the content extracted from
+    # this bibvid that was sent with the GetSuggestedTerm request to get the
+    # response.
+
+    text_content = SpaceTextField(max_length=25000, null=True,
+      default='', blank=True, editable=True, )
+
 # end class TermResponse
 
 '''
 class TermEval
-Evaluation of the aptness of the term for the bib of the
+Evaluation of the aptness of the each for the bibvid of each TermResponse
 '''
 class TermEval(models.Model):
-    termsearch = models.ForeignKey('Termsearch', null=False,
+    id = models.AutoField(primary_key=True)
+    response = models.ForeignKey('TermResponse', null=False,
         on_delete=models.CASCADE,
         help_text="GetSuggestedTerm API search which generated this term."
         )
 
     # name of the suggested term
-    suggested_term = models.SpaceCharField(max_length=255, unique=True,
+    suggested_term = SpaceCharField(max_length=255, unique=True,
         default="Term name", editable=True)
 
-    # A user edits this field to record the decision whether to insert the
-    # term as a subject into the item's mets file
-    accepted_status = models.SpaceCharField('Status',
+    # The parent result's value for the 'count' of this suggested term.
+    count_suggested = models.PositiveIntegerField(null=False)
+
+    # A web site user edits this field to record the decision whether to
+    # insert the  term as a subject into the item's METS file.
+    approval_rating = models.PositiveIntegerField('Status',
         blank=True, default='', null=False,
-        max_length=50,
-        help_text="Status of acceptance decision."
+        help_text="If rated over 50, this term will be recorded in the METS."
+        )
 
     def __str__(self):
         return str(self.id)
 
-    ''' note: Do -not- set db_table. Let Django do its thing
+    ''' note: Do -not- set Meta.db_table
+        Let Django do its thing
         and create the db table name via a prefix of the table
         class of app_name and _.
-        It makes future
-        migrations and many management operations much easier down
-        the line.
+        It makes future migrations and many management operations much easier
+        down the line.
         Changing it after doing some migrations will
         confuse migrations, too, which can be somewhat messy, or require
         a refresher review of migrations docs.
@@ -257,4 +295,4 @@ class TermEval(models.Model):
           # Just leave db_table unset.
           db_table = 'something'
     '''
-#end class Term
+#end class TermEval
