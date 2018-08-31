@@ -50,8 +50,8 @@ class AttributeInline(
     #MinValidatedInlineMixIn, SnowNestedStackedInline):
     MinValidatedInlineMixIn, admin.TabularInline):
     model = Attribute
-    # A node may only contain only child nodes, so it is possible to have
-    # no attributes, so we set min_num = 0
+    # A node may only contain only child nodes, and it is possible for
+    # a node to have no attributes, so we set min_num = 0
     min_num = 0
     #classes = ['collapse','collapsed']
     extra = 0 # Extra 'empty' rows to show to accommodate immediate adding.

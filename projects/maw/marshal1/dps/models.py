@@ -6,6 +6,7 @@ from django.db import models
 import datetime
 from django.utils import timezone
 from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
+from mptt.models import MPTTModel, TreeForeignKey
 
 '''
 NOTE: rather than have a separate file router.py to host HathiRouter, I just
@@ -15,17 +16,19 @@ as one of the listed strings in the list setting for DATABASE_ROUTERS.
 '''
 # Maybe move the HathiRouter later, but for now keep here
 #
-class ThesRouter:
+class DpsRouter:
     '''
     A router to control all db ops on models in this Application. See apps.py.
     '''
 
-    # app_label is really an app name. Here it is hathitrust.
-    app_label = 'thes'
+    # Model django_migration database rows use app_label as the 'app' value,
+    # and app_label followed by '_', is the db table name prefix
+    # for all models of this app.
+    app_label = 'dps'
 
-    # app_db is really a main settings.py DATABASES name, which is
-    # more properly a 'connection' name
-    app_db = 'submit'
+    # Main settings.py file will set up a DATABASES[app_db] dictionary to
+    # specify this app's database connection.
+    app_db = 'dps_connection'
 
     '''
     See: https://docs.djangoproject.com/en/2.0/topics/db/multi-db/
@@ -72,36 +75,107 @@ class TypeModel(models.Model):
 
 # NB: we accept the django default of prefixing each real
 # db table name with the app_name.
+'''
+Consider utility that takes an mptt row-node or a root folder of xml files
+and applies an xml2rdb config to gen a zip file of sql creation script to
+download to apply to local postgres database.
+'''
 
 class Bibvid(TypeModel):
-    # Todo: go ahead and descend the resources directory and do not add
-    # a row to this table unless the named bibvid (AA12345678_00001) exists.
-    # fields to consider: bib, vid, resource_subpath
-    # counts of various file types, pdf, jpeg, etc.
-    # total file count, including mets, etc in main folder
-    # count of subfolders, maybe a count
-    #
+    '''
+    Use id as unique index
+    consider bibvid as alternate unique index that allows NULL because
+    may consider items 'being constructed' might not have bibvids assigned.
+
+    Todo: add utility to go ahead and descend the resources directory and
+    add a row to this table where the named bibvid folder (...AA12345678/00001)
+    exists. Maybe it will also get extra data from sobek, if extant.
+
+    Fields to consider:
+      bib, vid, bibvid(with underbar separator)
+      resource_subpath
+      counts of various file types, pdf, jpeg, etc.
+      total file count, including mets, etc in main folder
+      count of subfolders, maybe a count
+      mets (foreignkey of a mptt model's row that reps the top node
+            of the mets file)
+    '''
     pass
 
-class Thesauri(models.Model)
-    # Thesaurus- a row should exist for every topterm in model thesauri
-    pass
+class Thesauri(MPTTModel)
+    '''
+    A mptt tree of all thesauri of interest. Each row with a null parent value
+    (ie without a parent), is a 'root node' of a thesaurus.
+    '''
+
+    id = models.AutoField(primary_key=True)
+
+    # Only one relation in a schema has a null parent
+    parent = TreeForeignKey('self', null=True, blank=True,
+      related_name='children', db_index=True,
+      verbose_name = "Parent relation",
+      on_delete=models.CASCADE,)
+
+    # Note, internally a unique suffix for the relation name
+    # NOTE: it must be unique within the snow flake tree
+    name = SpaceCharField(verbose_name='Thesaurus term name', max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text= ("If no parent, name of thesaurus, else the name"
+          " for this narrower term under the broader parent.")
+        , editable=True)
+# end class Thesauri(MPTTModel)
+
+class RelatedTerm(models.Model)
+    id = models.AutoField(primary_key=True)
+
+    # Only one relation in a schema has a null parent
+    primary_term = ForeignKey('Thesauri', blank=False,
+      related_name='related_term', db_index=True,
+      help_text= "Primary term in thesauri to which this term is related"
+      on_delete=models.CASCADE,)
+
+    # Note, internally a unique suffix for the relation name
+    # NOTE: it must be unique within the snow flake tree
+    name = SpaceCharField(verbose_name='Related term name', max_length=255,
+        unique=False, blank=False, null=False, default='',
+        help_text= ("If no parent, name of thesaurus, else the name"
+          " for this narrower term under the broader parent."
+        , editable=True)
 
 class Thesaurus(models.Model)
-    # Thesaurus- a row should exist for every topterm in model thesauri
+    '''
+    Thesaurus- a row should exist for every root thesaurus (no parent)
+    in model thesauri
+
+    To contain metdata on the thesaurus
+    # TODO - design and implement code to import to a thesaurus from a
+    spreadsheet  like Suzanne's, and to export to a spreadsheet.
+    '''
+    # name_ai - name of this thesaurus as an access innovations
+    # GetSuggestedTerm 'location' parameter
+    # See DataHarmony developers guide version 3.13
+    name_ai_location = models.SpaceCharField(max_length=255, unique=True,
+        default="Term name", editable=True)
+    root_node = models.ForeignKey('Thesauri', null=False,
+        on_delete=models.CASCADE)
     pass
 
 # Machine Automated Indexing result
-class Termsearch(models.Model):
+class TermResponse(models.Model):
+    '''
+    A row exists for every GetSuggestedTerm API response (GAR)
+    '''
     id = models.AutoField(primary_key=True)
     retrieval_datetime = models.DateTimeField('Term search DateTime (UTC)',
         null=False, auto_now=True, editable=False)
 
     # Thesaurus name known to Access Innovations, which was used to
     # retrieve this set of TermResult terms # eg, 'floridathes', 'geofloridathes'
-    thesaurus = models.ForeignKey('Thesaurus', null=False, on_delete=models.CASCADE)
+    thesaurus = models.ForeignKey('Thesaurus', null=False,
+        on_delete=models.CASCADE)
     # The Bib_vid whose content w used to match
-    bibvid = models.ForeignKey('Bibvid', null=False, on_delete=models.CASCADE)
+    bibvid = models.ForeignKey('Bibvid', null=False,
+        on_delete=models.CASCADE)
 
     # count of terms suggeted in this result
     count_suggested = PositiveIntegerField(null=False)

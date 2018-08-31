@@ -1,9 +1,33 @@
 from django.contrib import admin
-from .models import Item, Profile
+from .models import (
+    Bibvid,
+    RelatedTerm,
+    TermEval,
+    TermResponse,
+    Thesauri,
+    Thesaurus,
+    )
+
 from django.forms import TextInput, Textarea
 from django.db import models
 
 '''
+TODO: move to common module - used also in other MAW apps
+Nice solution to validate minimum populated inline (foreign
+key-selected authors) of 1 for at least 1 primary author author,
+file inlines, etc.
+See 20180406t0732 answer from Klimenko at:
+https://stackoverflow.com/questions/877723/inline-form-validation-in-django
+'''
+class MinValidatedInlineMixIn:
+    validate_min = True
+    def get_formset(self, *args, **kwargs):
+        return super().get_formset(
+            validate_min=self.validate_min, *args, **kwargs)
+
+
+'''
+TODO: move to common module - used also in other MAW apps
 Nice ExportCvsMixin class presented and covered, on 20180402 by:
 https://books.agiliq.com/projects/django-admin-cookbook/en/latest/export.html
 '''
@@ -31,10 +55,34 @@ class ExportCvsMixin:
 
 # end class ExportCvsMixin
 
-class CubaLibroModelAdmin(admin.ModelAdmin):
+#Modeled after snow's admin.py AttributeInline
+class RelatedTermInline(
+    #MinValidatedInlineMixIn, SnowNestedStackedInline):
+    MinValidatedInlineMixIn, admin.TabularInline):
+    model = Attribute
+    # A node may only contain only child nodes, and it is possible for
+    # a node to have no attributes, so we set min_num = 0
+    min_num = 0
+    #classes = ['collapse','collapsed']
+    extra = 0 # Extra 'empty' rows to show to accommodate immediate adding.
+
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'20'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'60'})},
+    }
+
+    def get_filters(self, obj):
+        return((''))
+
+class ThesauriAdmin(DjangoMpttAdmin):
+
+
+class DpsModelAdmin(admin.ModelAdmin):
     # Using value should be a settings.py DATABASES key,
     # actually called a 'connection' name in misc Django messages
-    using = 'cuba_libro_connection'
+    using = 'dps_connection'
     # Smaller text form regions
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
@@ -71,38 +119,11 @@ class CubaLibroModelAdmin(admin.ModelAdmin):
             using=self.using, **kwargs)
     # end def formfield_for_manytomany
 #end class CubaLibroModelAdmin
+
 from django.contrib.auth.models import User, Group
 import sys
-def get_my_institution_code(request):
-        institution = 'XX' #default for now
-        for group in request.user.groups.filter(name__startswith='Cuba Libro '):
-            # ASSUME exactly one group starts with cuba_libro_
-            # Admin Superuser must manage users and assign exactly one group
-            # that startswith cuba_libro_ and endswith one of the item.agent
-            # choice codes
-            try:
-                # print(f'Loop group name "{group.name}"' ,file=sys.stdout)
-                institution = group.name.split(' ')[2].upper()
-                # print(f'Loop institution "{institution}"' ,file=sys.stdout)
-            except:
-                continue
-        # sys.stdout.flush()
-        return institution
 
-def claim_for_my_institution(modeladmin, request, queryset):
-    my_institution_code = get_my_institution_code(request)
-    queryset = queryset.filter(agent='-')
-    queryset.update(agent=my_institution_code)
-claim_for_my_institution.short_description = "Claim for my institution "
-#end
-
-def unclaim_from_my_institution(modeladmin, request, queryset):
-    my_institution_code = get_my_institution_code(request)
-    queryset=queryset.filter(agent=my_institution_code).update(agent='-')
-unclaim_from_my_institution.short_description = "Unclaim from my institution"
-#end
-
-class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
+class Admin(CubaLibroModelAdmin, ExportCvsMixin):
 
     readonly_fields = ['id']
     #admin change list display fields to show

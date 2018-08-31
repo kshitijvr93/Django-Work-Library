@@ -218,15 +218,25 @@ else:
     raise ValueError(msg)
 
 # Keep submit  project ENV settings separated for flexibility:
+# use try-except to phase-in this code to work with older maw_settings.py files
+try:
+    dps_env = maw_settings.DPS_ENV
+except AttributeError:
+    dps_env = ''
 
+# TODO: edit all maw_settings.py files to set maw_settings.DPS_ENV
+# but not SUBMIT_ENV nor SNOW_ENV
 submit_env = maw_settings.SUBMIT_ENV
-print("USING: maw_settings.SUBMIT_ENV={}"
-    .format(maw_settings.SUBMIT_ENV))
+
+print(f"USING: maw_settings.DPS_ENV={dps_env}")
 sys.stdout.flush()
 
-if submit_env == 'test2': # Experiment later with this one
-    DATABASES.update({'submit_connection' : {
+#20180829 - standardize on postgresql for dps database needs
+# TODO: create a production psql database  named dps
+if dps_env == 'test' or submit_env == 'test2': # Experiment later with this one
+    DATABASES.update({'dps_connection' : {
         'ENGINE': 'django.db.backends.postgresql',
+        # TODO: change db name "submit_test" to "dps_test"
         'NAME': 'submit_test',
         'USER': maw_settings.TEST_PSQL_USER,
         'PASSWORD': maw_settings.TEST_PSQL_PASSWORD,
@@ -239,42 +249,17 @@ if submit_env == 'test2': # Experiment later with this one
         #    },
         },
     })
-elif submit_env == 'test':
-    # Use this for local tests on mysql database
-    DATABASES.update({'submit_connection' : {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'maw1_db_test',
-        'USER': maw_settings.TEST_MYSQL_SUBMIT_USER,
-        'PASSWORD': maw_settings.TEST_MYSQL_SUBMIT_PASSWORD,
-        'HOST': '10.241.33.139',
-        'PORT': '3306',
-        'TIME_ZONE': None,
-        },
-    })
-elif submit_env == 'local':
-    # Use this for local tests on mysql database
-    DATABASES.update({'submit_connection' : {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'submit',
-        'USER': maw_settings.LOCAL_MYSQL_SUBMIT_USER,
-        'PASSWORD': maw_settings.LOCAL_MYSQL_SUBMIT_PASSWORD,
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
-        'TIME_ZONE': None,
-        },
-    })
 else:
-    msg="ERROR:Setting SUBMIT_ENV '{}' not implemented.".format(submit_env)
+    msg="ERROR:Setting DPS_ENV '{}' not implemented.".format(submit_env)
     raise ValueError(msg)
 
-# For app "snow"  - stick with submit database too. Will need some joins
-# among submit and snow tables
-DATABASES['snow_connection'] = DATABASES['submit_connection']
-d = DATABASES['snow_connection']
+# Ensure that some apps (dps, snow, submit for now)
+# that do inter-app table joins and foreign
+# key references use the same database connection.
 
-print("CONNECTION snow_connection: engine={}, dbname={}"
-  .format(d['ENGINE'], d['NAME']))
-sys.stdout.flush()
+dbc = DATABASES['dps_connection']
+DATABASES['snow_connection'] = dbc
+DATABASES['submit_connection'] = dbc
 
 lcroyster_env = maw_settings.LCROYSTER_ENV
 if lcroyster_env == 'production':
