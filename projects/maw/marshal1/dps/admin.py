@@ -1,11 +1,13 @@
 from django.contrib import admin
 from .models import (
     Bibvid,
+    BibvidTerm,
     RelatedTerm,
     TermEval,
-    TermResponse,
-    Thesauri,
-    # Thesaurus,
+    TermSuggestion,
+    ThesTree,
+
+    #Thesaurus,
     )
 
 from django.forms import TextInput, Textarea
@@ -53,6 +55,32 @@ class RelatedTermInline(
         return((''))
 # end class RelatedTermInline
 
+class BibvidTermInline(
+    #MinValidatedInlineMixIn, SnowNestedStackedInline):
+    MinValidatedInlineMixIn, admin.TabularInline):
+    model = BibvidTerm
+    # A node may only contain only child nodes, and it is possible for
+    # a node to have no attributes, so we set min_num = 0
+    min_num = 0
+    #classes = ['collapse','collapsed']
+    extra = 0 # Extra 'empty' rows to show to accommodate immediate adding.
+
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'20'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'60'})},
+    }
+    def get_filters(self, obj):
+        return((''))
+# end class RelatedTermInline
+
+#Modeled after snow's admin.py class AttributeInline
+class TermEvalInline(
+    #MinValidatedInlineMixIn, SnowNestedStackedInline):
+    MinValidatedInlineMixIn, admin.TabularInline):
+    model = TermEval
+
 #Modeled after snow's admin.py class AttributeInline
 class TermEvalInline(
     #MinValidatedInlineMixIn, SnowNestedStackedInline):
@@ -74,14 +102,14 @@ class TermEvalInline(
         return((''))
 # end class TermEvalInline
 
-# { Admin for model Thesauri
+# { Admin for model ThesTree
 # NB: Must stick to django 2.0.7 or visit to this model
 # using django 2.1 fails when
 #using django-mptt version 0.91 latest on 20180828
 # maybe recheck later. Tradeoff is we need django 2.1 to
 # manage 'view' model permissions.. so keep checking.
 #
-class ThesauriAdmin(DjangoMpttAdmin):
+class ThesTreeAdmin(DjangoMpttAdmin):
     # stab in the dark... to provide sortable_by value...
     # https://github.com/django-mptt/django-mptt/search?q=sortable_by&unscoped_q=sortable_by
     formfield_overrides = {
@@ -93,10 +121,10 @@ class ThesauriAdmin(DjangoMpttAdmin):
     inlines = [RelatedTermInline, ]
     def get_sortable_by():
         return []
-# end class ThesauriAdmin(DjangoMpttAdmin)
-admin.site.register(Thesauri, ThesauriAdmin)
+# end class ThesTreeAdmin(DjangoMpttAdmin)
+admin.site.register(ThesTree, ThesTreeAdmin)
 
-# } Admin for model Thesauri
+# } Admin for model ThesTree
 
 class DpsModelAdmin(admin.ModelAdmin):
     # Using value should be a settings.py DATABASES key,
@@ -138,6 +166,7 @@ class DpsModelAdmin(admin.ModelAdmin):
 
 # { Admin for model Bibvid}
 class BibvidAdmin(admin.ModelAdmin):
+    inlines = [BibvidTermInline, ]
     pass
 #end class BibvidAdmin()
 
@@ -145,7 +174,7 @@ admin.site.register(Bibvid, BibvidAdmin)
 # } Admin for model Bibvid}
 
 # { Admin code
-class TermResponseAdmin(admin.ModelAdmin):
+class TermSuggestionAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
           attrs={'size':'20'})},
@@ -156,7 +185,7 @@ class TermResponseAdmin(admin.ModelAdmin):
     def get_sortable_by():
         return []
 
-#end class TermResponseAdmin
+#end class TermSuggestionAdmin
 
-admin.site.register(TermResponse, TermResponseAdmin)
+admin.site.register(TermSuggestion, TermSuggestionAdmin)
 # } Admin code
