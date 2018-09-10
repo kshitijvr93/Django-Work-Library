@@ -100,6 +100,8 @@ def claim_by_agent(modeladmin, request, queryset):
     n_checked = len(queryset)
     items = queryset.filter(agent__exact='-')
     n_claimed = len(items)
+    #  UPDATE the items
+    items.update(agent=agent)
     n_not_claimed = n_checked - n_claimed
 
     if n_not_claimed == 0:
@@ -112,7 +114,7 @@ def claim_by_agent(modeladmin, request, queryset):
           f"{n_not_claimed} item(s) you checked were not "
           "just now claimed because those were already claimed. "
           )
-        messages.error(request,msg)
+        messages.warning(request,msg)
 
     #print(f"claim: updated count {update_count} to change to {agent}"
     #    ,file=sys.stdout)
@@ -124,8 +126,9 @@ claim_by_agent.short_description = "Claim by my institution "
 def unclaim_by_agent(modeladmin, request, queryset):
     agent = get_agent(request)
     n_checked = len(queryset)
-    queryset=queryset.filter(agent=agent).update(agent=agent)
-    n_unclaimed = len(queryset)
+    items = queryset.filter(agent=agent)
+    n_unclaimed = len(items)
+    items.update(agent='-')
     n_not_unclaimed = n_checked - n_unclaimed
 
     if n_not_unclaimed == 0:
@@ -139,9 +142,8 @@ def unclaim_by_agent(modeladmin, request, queryset):
           "just now unclaimed because those were not claimed by your "
           "institution. "
           )
-        messages.error(request,msg)
-
-
+        messages.warning(request,msg)
+# end def unclaim_by_agent
 
 unclaim_by_agent.short_description = "Unclaim by my institution"
 #end
