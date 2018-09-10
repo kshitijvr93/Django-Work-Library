@@ -101,6 +101,9 @@ class Bibvid(models.Model):
     count_pdf = models.PositiveIntegerField(default=0,null=False)
     count_jp2 = models.PositiveIntegerField(default=0,null=False)
     count_jpeg = models.PositiveIntegerField(default=0,null=False)
+    count_alto = models.PositiveIntegerField(default=0,null=False)
+    count_pro = models.PositiveIntegerField(default=0,null=False)
+    count_xml = models.PositiveIntegerField(default=0,null=False)
 
     note = SpaceTextField(max_length=2550, null=True, default='note', blank=True,
       help_text= ("General note"),

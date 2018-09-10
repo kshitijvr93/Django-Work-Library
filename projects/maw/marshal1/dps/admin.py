@@ -110,6 +110,7 @@ class TermEvalInline(
 # manage 'view' model permissions.. so keep checking.
 #
 class ThesTreeAdmin(DjangoMpttAdmin):
+    mptt_level_indent = 100
     # stab in the dark... to provide sortable_by value...
     # https://github.com/django-mptt/django-mptt/search?q=sortable_by&unscoped_q=sortable_by
     formfield_overrides = {

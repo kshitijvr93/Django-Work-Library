@@ -75,6 +75,11 @@ from django.contrib.auth.models import User, Group
 from profile.models import CubaLibro
 
 import sys
+
+'''
+Get the profile_CubaLibro.agent field
+object of the current request's user and return it.
+'''
 def get_agent(request):
         user = User.objects.get(username=request.user)
         #print(f'get_agent "{user}"...', file=sys.stdout)
@@ -88,13 +93,27 @@ def get_agent(request):
         #sys.stdout.flush()
         return agent
 
+from django.contrib import messages
 def claim_by_agent(modeladmin, request, queryset):
     agent = get_agent(request)
     # print(f"claim: got user's agent={agent}", file=f)
+    n_checked = len(queryset)
     items = queryset.filter(agent__exact='-')
-    #for item in items:
-    #    print(f"item.agent_checked={item.agent}")
-    update_count = queryset.update(agent=agent)
+    n_claimed = len(items)
+    n_not_claimed = n_checked - n_claimed
+
+    if n_not_claimed == 0:
+        msg = f"You just now claimed all {n_claimed} of your checked item(s)."
+        messages.info(request,msg)
+    else:
+        msg = (
+          "You may only claim unclaimed items. "
+          f"You just now claimed {n_claimed} checked item(s), but "
+          f"{n_not_claimed} item(s) you checked were not "
+          "just now claimed because those were already claimed. "
+          )
+        messages.error(request,msg)
+
     #print(f"claim: updated count {update_count} to change to {agent}"
     #    ,file=sys.stdout)
     # queryset.update(agent=agent)
@@ -104,7 +123,26 @@ claim_by_agent.short_description = "Claim by my institution "
 
 def unclaim_by_agent(modeladmin, request, queryset):
     agent = get_agent(request)
-    queryset=queryset.filter(agent=agent).update(agent='-')
+    n_checked = len(queryset)
+    queryset=queryset.filter(agent=agent).update(agent=agent)
+    n_unclaimed = len(queryset)
+    n_not_unclaimed = n_checked - n_unclaimed
+
+    if n_not_unclaimed == 0:
+        msg = f"You just now unclaimed all {n_unclaimed} of your checked item(s)."
+        messages.info(request,msg)
+    else:
+        msg = (
+          "You may only unclaim items claimed by your institution. "
+          f"You just now unclaimed {n_unclaimed} checked item(s), but "
+          f"{n_not_unclaimed} item(s) you checked were not "
+          "just now unclaimed because those were not claimed by your "
+          "institution. "
+          )
+        messages.error(request,msg)
+
+
+
 unclaim_by_agent.short_description = "Unclaim by my institution"
 #end
 
