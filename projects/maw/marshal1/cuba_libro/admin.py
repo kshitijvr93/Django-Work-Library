@@ -104,9 +104,10 @@ def claim_by_agent(modeladmin, request, queryset):
     items.update(agent=agent)
     n_not_claimed = n_checked - n_claimed
 
-    msg = (f"Of your {n_checked} checked items, you just now "
-      f"claimed {n_claimed} items.")
-    messages.info(request,msg)
+    if n_claimed > 0:
+        msg = (f"Of your {n_checked} checked items, you just now "
+          f"claimed {n_claimed} items.")
+        messages.info(request,msg)
 
     if n_not_claimed > 0:
         msg = (
@@ -128,9 +129,10 @@ def unclaim_by_agent(modeladmin, request, queryset):
     items.update(agent='-')
     n_not_unclaimed = n_checked - n_unclaimed
 
-    msg = (f"Of your {n_checked} checked items, you just "
-      f"unclaimed {n_unclaimed} items.")
-    messages.info(request,msg)
+    if n_claimed > 0:
+        msg = (f"Of your {n_checked} checked items, you just "
+          f"unclaimed {n_unclaimed} items.")
+        messages.info(request,msg)
     if n_not_unclaimed > 0:
         msg = (
           f"Of your {n_checked} checked items, {n_not_unclaimed} items "
