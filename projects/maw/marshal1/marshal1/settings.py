@@ -225,20 +225,16 @@ try:
 except AttributeError:
     dps_env = ''
 
-# TODO: edit all maw_settings.py files to set maw_settings.DPS_ENV
-# but not SUBMIT_ENV nor SNOW_ENV
-submit_env = maw_settings.SUBMIT_ENV
-
 print(f"USING: maw_settings.DPS_ENV={dps_env}")
 sys.stdout.flush()
 
 #20180829 - standardize on postgresql for dps database needs
 # TODO: create a production psql database  named dps
-if dps_env == 'test' or submit_env == 'test2': # Experiment later with this one
+if dps_env == 'test': # Experiment later with this one
     DATABASES.update({'dps_connection' : {
         'ENGINE': 'django.db.backends.postgresql',
         # TODO: change db name "submit_test" to "dps_test"
-        'NAME': 'submit_test',
+        'NAME': 'dps',
         'USER': maw_settings.TEST_PSQL_USER,
         'PASSWORD': maw_settings.TEST_PSQL_PASSWORD,
         'HOST': '10.241.33.139',
@@ -251,7 +247,7 @@ if dps_env == 'test' or submit_env == 'test2': # Experiment later with this one
         },
     })
 else:
-    msg="ERROR:Setting DPS_ENV '{}' not implemented.".format(submit_env)
+    msg=(f"ERROR:Setting DPS_ENV '{dps_env}' not implemented.")
     raise ValueError(msg)
 
 # Ensure that some apps (dps, snow, submit for now)
