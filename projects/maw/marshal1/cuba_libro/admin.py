@@ -104,22 +104,19 @@ def claim_by_agent(modeladmin, request, queryset):
     items.update(agent=agent)
     n_not_claimed = n_checked - n_claimed
 
-    if n_not_claimed == 0:
-        msg = f"You just now claimed all {n_claimed} of your checked item(s)."
-        messages.info(request,msg)
-    else:
+    msg = (f"Of your {n_checked} checked items, you just "
+      f"claimed {n_claimed} items.")
+    messages.info(request,msg)
+
+    if n_not_claimed > 0:
         msg = (
-          "You may only claim unclaimed items. "
-          f"You just now claimed {n_claimed} checked item(s), but "
-          f"{n_not_claimed} item(s) you checked were not "
-          "just now claimed because those were already claimed. "
+          f"Of your {n_checked} checked items, {n_not_claimed} items "
+          "were not just now claimed by you because those were already "
+          "claimed by an institution. "
           )
         messages.warning(request,msg)
-
-    #print(f"claim: updated count {update_count} to change to {agent}"
-    #    ,file=sys.stdout)
-    # queryset.update(agent=agent)
 # end def
+
 claim_by_agent.short_description = "Claim by my institution "
 #end
 
@@ -131,18 +128,17 @@ def unclaim_by_agent(modeladmin, request, queryset):
     items.update(agent='-')
     n_not_unclaimed = n_checked - n_unclaimed
 
-    if n_not_unclaimed == 0:
-        msg = f"You just now unclaimed all {n_unclaimed} of your checked item(s)."
-        messages.info(request,msg)
-    else:
+    msg = (f"Of your {n_checked} checked items, you just "
+      f"unclaimed {n_unclaimed} items.")
+    messages.info(request,msg)
+    if n_not_unclaimed > 0:
         msg = (
-          "You may only unclaim items claimed by your institution. "
-          f"You just now unclaimed {n_unclaimed} checked item(s), but "
-          f"{n_not_unclaimed} item(s) you checked were not "
-          "just now unclaimed because those were not claimed by your "
-          "institution. "
+          f"Of your {n_checked} checked items, {n_not_unclaimed} items "
+          "were not just now unclaimed by you because those were not "
+          "claimed by your institution. "
           )
         messages.warning(request,msg)
+
 # end def unclaim_by_agent
 
 unclaim_by_agent.short_description = "Unclaim by my institution"
@@ -197,7 +193,9 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
                  'accession_number',
                  'title_primary',
                  'pub_year_span',
-                 'agent',
+                 # comment out next field so it can be governed only by
+                 # user actions on 'change list' admin page
+                 # 'agent',
                  'status',
                  'authors_primary',
                  'notes',
