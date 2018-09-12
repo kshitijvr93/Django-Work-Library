@@ -247,6 +247,8 @@ if dps_env == 'test': # Experiment later with this one
         },
     })
 else:
+    #Future: if var django_database_dict_dps exists, do:
+    # DATABASES.update({'dps_connection': django_database_dict_dps})
     msg=(f"ERROR:Setting DPS_ENV '{dps_env}' not implemented.")
     raise ValueError(msg)
 
