@@ -233,7 +233,6 @@ sys.stdout.flush()
 if dps_env == 'test': # Experiment later with this one
     DATABASES.update({'dps_connection' : {
         'ENGINE': 'django.db.backends.postgresql',
-        # TODO: change db name "submit_test" to "dps_test"
         'NAME': 'dps',
         'USER': maw_settings.TEST_PSQL_USER,
         'PASSWORD': maw_settings.TEST_PSQL_PASSWORD,
@@ -320,12 +319,13 @@ if hathitrust_env == 'test':
     DATABASES.update({
         # This db will hold users and groups info
         'hathitrust_connection': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'maw1_db_test',
-            'USER': maw_settings.TEST_MYSQL_USER,
-            'PASSWORD': maw_settings.TEST_MYSQL_PASSWORD,
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'dps',
+            'USER': maw_settings.TEST_PSQL_USER,
+            'PASSWORD': maw_settings.TEST_PSQL_PASSWORD,
             'HOST': '10.241.33.139',
-            'PORT': '3306',
+            'PORT': '5432',
+            'TIME_ZONE': None,
         },
     }) # maw_settings.ENV = 'test'
 elif hathitrust_env == 'local':
