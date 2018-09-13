@@ -2,6 +2,7 @@ from django.contrib import admin
 from .models import Item
 from django.forms import TextInput, Textarea
 from django.db import models
+from collections import OrderedDict
 
 '''
 Nice ExportCvsMixin class presented and covered, on 20180402 by:
@@ -104,7 +105,7 @@ def claim_by_agent(modeladmin, request, queryset):
     items.update(agent=agent)
     n_not_claimed = n_checked - n_claimed
 
-    
+
     if n_claimed > 0:
         msg = (f"Of your {n_checked} checked items, you just now "
           f"claimed {n_claimed} items.")
@@ -113,7 +114,7 @@ def claim_by_agent(modeladmin, request, queryset):
     if n_not_claimed > 0:
         msg = (
           f"Of your {n_checked} checked items, {n_not_claimed} items "
-          "were not just now claimed by you because those were already "
+          "were not just now claimed by you because those are already "
           "claimed by an institution. "
           )
         messages.warning(request,msg)
@@ -137,7 +138,7 @@ def unclaim_by_agent(modeladmin, request, queryset):
     if n_not_unclaimed > 0:
         msg = (
           f"Of your {n_checked} checked items, {n_not_unclaimed} items "
-          "were not just now unclaimed by you because those were not "
+          "were not just now unclaimed by you because those are not "
           "claimed by your institution. "
           )
         messages.warning(request,msg)
@@ -149,10 +150,7 @@ unclaim_by_agent.short_description = "Unclaim by my institution"
 
 class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 
-    readonly_fields = ['id',
-                 'holding',
-                 ]
-    #admin change list display fields to show
+    # admin change list display fields to search
     # CHANGE LIST VIEW
     search_fields = ['id','accession_number'
         ,'reference_type', 'language'
@@ -179,59 +177,86 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
          ]
 
     list_filter = [
+        'holding',
         'agent',
         'status',
-        'holding',
         # 'reference_type'
         #,'language', 'place_of_publication',
         ]
 
+    # Now for 'CHANGE ITEM" view'
     # admin item detailed view order of display fields
     # We also have 'Other Fields' in the database, but Jessica did not
     # select any as important fields to edit.
     # Consider setting editable=False for them?
-    fieldsets = (
-        ( None,
-            {'fields':(
-                 'accession_number',
-                 'title_primary',
-                 'pub_year_span',
-                 # comment out next field so it can be governed only by
+    # field type:
+    #    ed is editable, ro is readonly (aka display only)
+    #    hed is default hidden editable, hros default hidden and readonly
+    d_field_type = OrderedDict({
+                 'accession_number': 'ro',
+                 'title_primary':'ed',
+                 'pub_year_span':'ed',
+                 # 'agent' field is readonly as it should be edited only by
                  # user actions on 'change list' admin page
-                 # 'agent',
-                 'status',
-                 'authors_primary',
-                 'notes',
-                 'personal_notes',
-                 'place_of_publication',
-                 'publisher',
-                 'language',
-                 'link_url',
-                 'links',
-                 'edition_url',
-                 'sub_file_database',
-                 'reference_type',
-        )}),
+                 # and also need not be displayed here.
+                 'agent':'ro',
+                 'status':'ed',
+                 'status_notes':'ed',
+                 'authors_primary':'ed',
+                 'notes':'ed',
+                 'personal_notes':'ed',
+                 'place_of_publication':'ed',
+                 'publisher':'ed',
+                 'language':'ed',
+                 'link_url':'ed',
+                 'links':'ed',
+                 'edition_url':'ed',
+                 'sub_file_database':'ed',
+                 'reference_type':'ed',
+                 'holding':'ro',
+                 # 'id':'ed',
+                 'periodical_full':'hro',
+                 'periodical_abbrev':'hro',
+                 'pub_date_free_from':'hro',
+                 'volume':'hro',
+                 'issue':'hro',
+                 'start_page':'hro',
+                 'other_pages':'hro',
+                 'keywords':'hro',
+                 'abstract':'hro',
+                 'title_secondary':'hro',
+                 'titles_tertiary':'hro',
+                 'authors_secondary':'hro',
+                 'authors_tertiary':'hro',
+                 'authors_quaternary':'hro',
+                 'authors_quinary':'hro',
+                 'edition':'hro',
+                 'isbn_issn':'hro',
+                 'availability':'hro',
+                 'author_address':'hro',
+                 'classification':'hro',
+                 'original_foreign_title':'hro',
+                 'doi':'hro',
+                 'pmid':'hro',
+                 'call_number':'hro',
+                 'database':'hro',
+                 'data_source':'hro',
+                 'identifying_phrase':'hro',
+                 'retrieved_date': 'hro'
+    })
 
-        # DETAILED VIEW
-        ( 'Other Fields', {
+    readonly_fields = [ k for k,v in d_field_type.items() if v == 'ro']
+
+    fieldsets = (
+        ( None, # Editible 'normal' form fields
+            {'fields': [ k for k,v in d_field_type.items() if v == 'ed'] }
+        ),
+        ( 'Display Fields', # Editible 'normal' form fields
+            {'fields': readonly_fields }
+        ),
+        ( 'Hidden Display Fields', {
              'classes': ('collapse',),
-             'fields': (
-                 'periodical_full',
-                 'periodical_abbrev',
-                 'pub_date_free_from',
-                 'volume', 'issue', 'start_page', 'other_pages',
-                 'keywords','abstract',
-                 'title_secondary', 'titles_tertiary',
-                 'authors_secondary', 'authors_tertiary',
-                 'authors_quaternary', 'authors_quinary',
-                 'edition',
-                 'isbn_issn', 'availability', 'author_address',
-                 'classification', 'original_foreign_title',
-                 'doi', 'pmid','pmcid', 'call_number',
-                 'database', 'data_source', 'identifying_phrase',
-                 'retrieved_date',
-                 )
+             'fields': [ k for k,v in d_field_type.items() if v == 'hro']
             }
         )
     )

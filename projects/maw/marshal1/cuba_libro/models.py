@@ -122,6 +122,9 @@ class Item(models.Model):
         choices=STATUS_CHOICES,
         help_text="Status of processing for this item.")
 
+    status_notes = SpaceTextField(null=True,  default='',
+        blank=True,editable=True)
+
     # Original source data for holding is of the form XXX[-NNN[-MMM]]
     # Later I may modify this model to separate them into: holder,
     # hold_count_low, hold_count_high values if needed.
