@@ -84,7 +84,8 @@ class Item(models.Model):
     id = models.AutoField(primary_key=True)
 
     # Many fields based on Jessica English UF email of 20180319
-    # Jessica informed us that accession_number is or should beUniversity of North Carolina at Chapel Hill
+    # Jessica informed us that accession_number is or should beUniversity of
+    # North Carolina at Chapel Hill
     # unique to UF and all other cuba_libro partners.
     accession_number = models.CharField(max_length=255, unique=True,
         default="Enter accession number here", editable=True)

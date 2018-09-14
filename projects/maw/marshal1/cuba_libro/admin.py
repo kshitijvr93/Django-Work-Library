@@ -167,7 +167,7 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
     ]
 
     list_display = [
-         'id',
+         #'id',
          # 'accession_number',
          'title_primary',
          'holding',
@@ -245,18 +245,20 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
                  'retrieved_date': 'hro'
     })
 
-    readonly_fields = [ k for k,v in d_field_type.items() if v == 'ro']
+    fields_readonly = [ k for k,v in d_field_type.items() if v == 'ro']
+    hidden_readonly = [ k for k,v in d_field_type.items() if v == 'hro']
+    readonly_fields = hidden_readonly + fields_readonly
 
     fieldsets = (
         ( None, # Editible 'normal' form fields
             {'fields': [ k for k,v in d_field_type.items() if v == 'ed'] }
         ),
-        ( 'Display Fields', # Editible 'normal' form fields
-            {'fields': readonly_fields }
+        ( 'Display Only Fields', # Editible 'normal' form fields
+            {'fields': fields_readonly }
         ),
-        ( 'Hidden Display Fields', {
+        ( 'Hidden Display Only Fields', {
              'classes': ('collapse',),
-             'fields': [ k for k,v in d_field_type.items() if v == 'hro']
+             'fields': hidden_readonly,
             }
         )
     )
