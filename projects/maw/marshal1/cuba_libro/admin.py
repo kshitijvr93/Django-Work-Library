@@ -16,7 +16,8 @@ class ExportCvsMixin:
         meta = self.model._meta
         field_names = [field.name for field in meta.fields]
 
-        response = HttpResponse(content_type='text/csv')
+        #response = HttpResponse(content_type='text/csv')
+        response = HttpResponse(content_type='text/csv charset=utf-8')
         response['Content-Disposition'] = (
             'attachment; filename={}.csv'.format(meta))
         writer = csv.writer(response)
