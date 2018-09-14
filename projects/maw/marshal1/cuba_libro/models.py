@@ -87,7 +87,8 @@ class Item(models.Model):
     # Jessica informed us that accession_number is or should beUniversity of
     # North Carolina at Chapel Hill
     # unique to UF and all other cuba_libro partners.
-    accession_number = models.CharField(max_length=255, unique=True,
+    accession_number = models.CharField('OCLC accession number',
+        max_length=255, unique=True,
         default="Enter accession number here", editable=True)
 
     # Add to these PARTNER_CHOICES as we learn of more partners.
@@ -106,13 +107,15 @@ class Item(models.Model):
 
     agent = models.CharField('Claimed', null=False, default='-',
         blank=True, max_length=50, choices=PARTNER_CHOICES,
-        help_text="Partner who claimed to verify or edit this item.")
+        help_text="Partner who claimed this item via an 'Action:' on the "
+           "parent 'Items' page.")
 
     agent_modify_date = models.DateTimeField('Modify Date (UTC)',
         null=True, auto_now=True, editable=False)
 
     STATUS_CHOICES = (
-        ( '' ,'Pending'),
+        ( '' ,'-'),
+        ( 'PG' ,'Pending'),
         ( 'IP', 'In Process'),
         ( 'DZ', 'Digitized'),
     )

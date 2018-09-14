@@ -176,6 +176,10 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
          'status',
          ]
 
+    # EXPLICIT - (but this is also done implicitly, but implies you can
+    # one or more link fields, and also need not use than the first)
+    list_display_links = [list_display[0]]
+
     list_filter = [
         'holding',
         'agent',
@@ -193,27 +197,28 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
     #    ed is editable, ro is readonly (aka display only)
     #    hed is default hidden editable, hros default hidden and readonly
     d_field_type = OrderedDict({
-                 'accession_number': 'ro',
-                 'title_primary':'ed',
-                 'pub_year_span':'ed',
+                 'title_primary':'title',
+                 #Some posts say next syntax puts multi fields on one display
+                 #line, but does not work. Leave as is for posterity.
+                 ('pub_year_span','link_url'):'title',
+                 'accession_number': 'title_ro',
                  # 'agent' field is readonly as it should be edited only by
                  # user actions on 'change list' admin page
                  # and also need not be displayed here.
-                 'agent':'ro',
-                 'status':'ed',
-                 'status_notes':'ed',
+                 'agent':'mgmt_ro',
+                 'status':'mgmt',
+                 'status_notes':'mgmt',
                  'authors_primary':'ed',
                  'notes':'ed',
                  'personal_notes':'ed',
                  'place_of_publication':'ed',
                  'publisher':'ed',
                  'language':'ed',
-                 'link_url':'ed',
                  'links':'ed',
                  'edition_url':'ed',
                  'sub_file_database':'ed',
                  'reference_type':'ed',
-                 'holding':'ro',
+                 'holding':'mgmt_ro',
                  # 'id':'ed',
                  'periodical_full':'hro',
                  'periodical_abbrev':'hro',
@@ -245,23 +250,40 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
                  'retrieved_date': 'hro'
     })
 
-    fields_readonly = [ k for k,v in d_field_type.items() if v == 'ro']
-    hidden_readonly = [ k for k,v in d_field_type.items() if v == 'hro']
-    readonly_fields = hidden_readonly + fields_readonly
+    # Must include names of all model-defined uneditable (editable=False)
+    #  fields in the readonly_fields[] list  below, else get runtime error.
+    # Now 'holding' is the only model-defined editable=False field.
+    # So it -must- appear in this readonly_fields list.
+    # However it is OK, as done here, to also add some editble=True fields
+    # to the readonly_fields list. Later I might change those, too,
+    # in the database model to set editible=False.
+    readonly_fields = ( [ k for k,v in d_field_type.items() if v == 'title_ro']
+         + [ k for k,v in d_field_type.items() if v == 'mgmt_ro']
+         + [ k for k,v in d_field_type.items() if v == 'hro']
+    )
 
     fieldsets = (
-        ( None, # Editible 'normal' form fields
+        ( 'Identity', # Editible 'normal' form fields
+            {'fields': tuple([ k for k,v in d_field_type.items() if v == 'title']
+            + [ k for k,v in d_field_type.items() if v == 'title_ro']) }
+        ),
+        ( 'Item Management', # Editible 'normal' form fields
+            {'fields': [ k for k,v in d_field_type.items() if v == 'mgmt']
+            + [ k for k,v in d_field_type.items() if v == 'mgmt_ro'] }
+        ),
+        ( 'Editable Fields', # Editible 'normal' form fields
             {'fields': [ k for k,v in d_field_type.items() if v == 'ed'] }
         ),
-        ( 'Display Only Fields', # Editible 'normal' form fields
-            {'fields': fields_readonly }
-        ),
-        ( 'Hidden Display Only Fields', {
+        ( 'Other Fields', {
              'classes': ('collapse',),
-             'fields': hidden_readonly,
+             'fields': [ k for k,v in d_field_type.items() if v == 'hro']
             }
-        )
+        ),
     )
+    # Control the admin change list order of displayed rows
+    def get_ordering(self, request):
+        return['title_primary']
+
     '''
     From the django admin cookbook: method to delete an action from admin,
     and in this case it is the 'delete_selected' action.
