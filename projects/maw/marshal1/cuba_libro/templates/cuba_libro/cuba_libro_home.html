@@ -2,6 +2,19 @@
 {% load static %}
 
 {% block content %}
-  <h2>Cuba Libro Home Pge</h2>
+  <h2>Cuba Libro Home Page</h2>
   <p>Hola, {{ user.username }}!</p>
+  <h3>Select database items to for your initial view</h3>
+  <ol>
+  <li>
+      <p><a href='/admin/cuba_libro/item'>All Items </a></p>
+  </<li>
+  <li>
+      <p><a href='/admin/cuba_libro/item/?holding__exact=FUG'>
+        Items Held by University of Florida</a></p>
+  <li>
+      <p><a href='/admin/cuba_libro/item/?agent__exact=UF'>
+        Items Claimed by University of Florida</a></p>
+  </li>
+  </ol>
 {% endblock %}

@@ -1,0 +1,70 @@
+<!-- .../maw/marshal1/templates/home.html -->
+{% extends 'main_base.html' %}
+{# MUST ADD load static HERE though body is defined in parent? #}
+{% load static %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+  Hi {{ user.first_name }}!
+  <p>Please stay as long as you like, and when you are finished, please
+     remember to <a href="{% url 'logout' %}">logout</a>.</p>
+{% else %}
+  <p>You are not logged in</p>
+  <a href="{% url 'login' %}">login</a>
+{% endif %}
+
+<h3>UF Library MAW - Marshaling Application Website</h3>
+<p><a href='admin'>MAW Administration</a></p>
+<h4>Applications Ready for Testing </h4>
+Please email podengo@ufl.edu to request test login-password:
+<ol>
+<li>Cuba Libro Partner Item Management</li>
+<li>Lone Cabbage Reef Oyster Project</li>
+<li>UFDC ITEM Tools
+<ol>
+<li>HathiTrust Packaging for Submittal</li>
+<li>Batch METS Abstract Insert or Replace</li>
+</ol>
+</li>
+</ol>
+
+<h4>Applications in Development</h4>
+<ol>
+  <li>UFDC ITEM Tools
+  <ol>
+    <li>OAI-PMH Manioc (etc) API Client to ingest items.</li>
+    <li>GetSuggestedTerms from UF and AI Thesauri</li>
+  </ol>
+  <li>UFDC METS Tools</li>
+  <ol>
+     <li>Metadata XML Hierarchies</li>
+  </ol>
+<li>UF DPS and Catalogging</li>
+  <ol><li>Define Taxonomy Hierarchies</li>
+  <li>Update Access Innovations with UF Taxonomies</li>
+  </ol>
+</ol>
+<h4>Applications With Some Design</h4>
+<ol>
+<li>UFDC Collections Hierarchies</li>
+<li>UFDC BibVids and Sets - Define batches of bib items for marshaling</li>
+<li>ArchivesSpace Resets</li>
+<li>XML2RDB XML and METS Relational Reports and Data Updates
+<li>RDB2XML Conversion to XML and UFDC METS files</li>
+</ol>
+<h4>Applications Envisioned With Feature Requests</h4>
+<ol>
+<li>MAW Processing Statistics</li>
+<ol>
+<li>METS Batch Edit Counts</li>
+<li>HathiTrust Bib Package Counts</li>
+<li>Cuba Libro Item Counts</li>
+<li>OAI-PMH Client Counts Items Packaged for UFDC</li>
+<li>UFDC Collection Bib Counts</li>
+</ol>
+<li>UF Library Staff Password Management</li>
+<li>OAI-PMH Server Processes</li>
+</ol>
+  {% endblock %}

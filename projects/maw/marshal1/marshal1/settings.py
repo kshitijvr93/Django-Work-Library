@@ -39,6 +39,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 APPEND_SLASH = True
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -89,16 +90,10 @@ STATIC_URL = '/static/'
 #Set up some static file management.
 #See https://docs.djangoproject.com/en/2.1/intro/tutorial06/
 #See https://docs.djangoproject.com/en/2.1/ref/settings/
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'marshal1/static'),
-    os.path.join(BASE_DIR, 'marshal1/marshal1/static'),
-]
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
-
-
 
 MEDIA_ROOT = maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT
 print("USING: maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT={}"
@@ -487,5 +482,11 @@ CKEDITOR_CONFIGS = {
         'toolbar': None,
     },
 }
+
+print(f"BASE_DIR={BASE_DIR}")
+# Do NOT tack on the last 'marshal1' here, rather use it as the
+# first part of the 'url' in templates
+STATICFILES_DIRS = [ os.path.join(BASE_DIR, 'marshal1','static'), ]
+#print(f'STATICFILES_DIRS={STATICFILES_DIRS}')
 
 ###################################

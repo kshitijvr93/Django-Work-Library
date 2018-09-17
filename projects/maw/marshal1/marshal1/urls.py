@@ -36,7 +36,8 @@ urlpatterns = [
     #but just tweak next now , because prefer home now, but should change google
     #account project setting later to go to home
     #path('cuba_libro/', include('cuba_libro.urls')),
-    path('cuba_libro/', TemplateView.as_view(template_name='home.html')),
+    #path('cuba_libro/', TemplateView.as_view(template_name='home.html')),
+    path('cuba_libro/', include('cuba_libro.urls')),
     path('elsevier/', include('hathitrust.urls')),
     path('hathitrust/', include('hathitrust.urls')),
     path('ifas_citations/', include('hathitrust.urls')),
