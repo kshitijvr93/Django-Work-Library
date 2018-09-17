@@ -27,6 +27,7 @@ urlpatterns = [
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
     # path('home/', include('maw_home.urls')),
     path('am4ir/', include('hathitrust.urls')),
+    path('admin/doc/', include('django.contrib.admindocs.urls')),
     path('admin/', admin.site.urls),
     path('am4ir/', include('hathitrust.urls')),
     path('aspace/', include('hathitrust.urls')),

@@ -108,7 +108,7 @@ class Item(models.Model):
     agent = models.CharField('Claimed', null=False, default='-',
         blank=True, max_length=50, choices=PARTNER_CHOICES,
         help_text="Partner who claimed this item via an 'Action:' on the "
-           "parent 'Items' page.")
+           "parent 'Items' web page.")
 
     agent_modify_date = models.DateTimeField('Modify Date (UTC)',
         null=True, auto_now=True, editable=False)

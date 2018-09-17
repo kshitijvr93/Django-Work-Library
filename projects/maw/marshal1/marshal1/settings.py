@@ -57,6 +57,7 @@ sys.stdout.flush()
 INSTALLED_APPS = [
     #'maw_home.apps.MawHomeConfig',
     'django.contrib.admin',
+    'django.contrib.admindocs',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -85,6 +86,20 @@ INSTALLED_APPS = [
 # AUTH_USER_MODEL = 'users.CustomUser'
 
 STATIC_URL = '/static/'
+#Set up some static file management.
+#See https://docs.djangoproject.com/en/2.1/intro/tutorial06/
+#See https://docs.djangoproject.com/en/2.1/ref/settings/
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'marshal1/static'),
+    os.path.join(BASE_DIR, 'marshal1/marshal1/static'),
+]
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
+
+
+
 MEDIA_ROOT = maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT
 print("USING: maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT={}"
     .format(maw_settings.MAW_ABSOLUTE_PATH_MEDIA_ROOT))
@@ -101,6 +116,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
+    'django.contrib.admindocs.middleware.XViewMiddleware',
 ]
 
 ROOT_URLCONF = 'marshal1.urls'
@@ -327,7 +343,7 @@ if hathitrust_env == 'test':
             'PORT': '5432',
             'TIME_ZONE': None,
         },
-    }) # maw_settings.ENV = 'test'
+    }) # hathitrust_env = 'test'
 elif hathitrust_env == 'local':
     DATABASES.update({
         'hathitrust_connection': {
