@@ -1,10 +1,8 @@
 {% extends 'cuba_libro/cuba_libro_base.html' %}
-{% load static %}
 
 {% block content %}
-  <h2>Cuba Libro Home Page</h2>
-  <p>Hola, {{ user.username }}!</p>
-  <h3>Select database items to for your initial view</h3>
+  <h3>Hola, {{ user.username }}!</h3>
+  <h4>Please select database items for your initial view:</h4>
   <ol>
   <li>
       <p><a href='/admin/cuba_libro/item'>All Items </a></p>

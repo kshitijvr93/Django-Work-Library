@@ -1,0 +1,12 @@
+  /*
+  Assuming settings.py is correct (see django static files docs),
+  this file is linked in from a django html file like:
+  {% load static %}
+  <link rel="stylesheet" type="text/css" href="{% static 'cuba_libro/css/style.css' %}">
+  */
+body {
+  background:
+    yellow
+    url("images/USACH00236_pct_16.png")
+    no-repeat;
+  }
