@@ -87,7 +87,7 @@ INSTALLED_APPS = [
 # AUTH_USER_MODEL = 'users.CustomUser'
 
 STATIC_URL = '/static/'
-STATIC_ROOT = maw_settings.STATIC_ROOT
+#STATIC_ROOT = maw_settings.STATIC_ROOT
 #Set up some static file management.
 #See https://docs.djangoproject.com/en/2.1/intro/tutorial06/
 #See https://docs.djangoproject.com/en/2.1/ref/settings/
