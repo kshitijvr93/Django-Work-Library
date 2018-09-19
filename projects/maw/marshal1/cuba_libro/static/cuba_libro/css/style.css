@@ -4,7 +4,6 @@
   {% load static %}
   <link rel="stylesheet" type="text/css" href="{% static 'cuba_libro/css/style.css' %}">
   */
-{% load static %}
 body {
   background:
     white
@@ -12,7 +11,19 @@ body {
     processed with template renderer.
     url({% static "cuba_libro/images/USACH00236_pct_16.png" %} )
     */
-    /* Next works when settings.py has: STATIC_URL='/static' */
+    /* Next works when settings.py has: STATIC_URL='/static' 
     url("/static/cuba_libro/images/USACH00236_pct_16.png" )
+    */
+    /* Next works during development using 'runserver' works because it
+    is relative to the directory of this
+    particular css file in the source code and it comports with the
+    directory structure under the ...static/cuba_libro folder.
+    That is this file is under the static directory,
+    which is a sibling to the images directory which containes the image file we want
+    It also works during production because this local directory hierarchy
+    will be preserved in the STATIC_ROOT area that is created by the
+    manage.py collectstatic command
+    */
+    url("../images/USACH00236_pct_16.png" )
     no-repeat;
   }
