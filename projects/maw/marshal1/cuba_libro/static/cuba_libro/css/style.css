@@ -11,7 +11,7 @@ body {
     processed with template renderer.
     url({% static "cuba_libro/images/USACH00236_pct_16.png" %} )
     */
-    /* Next works when settings.py has: STATIC_URL='/static' 
+    /* Next works when settings.py has: STATIC_URL='/static'
     url("/static/cuba_libro/images/USACH00236_pct_16.png" )
     */
     /* Next works during development using 'runserver' works because it
@@ -24,6 +24,6 @@ body {
     will be preserved in the STATIC_ROOT area that is created by the
     manage.py collectstatic command
     */
-    url("../images/USACH00236_pct_16.png" )
-    no-repeat;
+    url("../images/USACH00236_50_pct.png" )
+    ;
   }
