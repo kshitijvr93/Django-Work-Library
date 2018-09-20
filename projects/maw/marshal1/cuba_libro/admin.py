@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Item
+from .models import Institution, Item
+from django import forms
 from django.forms import TextInput, Textarea
 from django.db import models
 from collections import OrderedDict
@@ -149,7 +150,97 @@ def unclaim_by_agent(modeladmin, request, queryset):
 unclaim_by_agent.short_description = "Unclaim by my institution"
 #end
 
+class InstitutionAdmin(CubaLibroModelAdmin, ExportCvsMixin):
+
+    # admin change list display fields to search
+    # CHANGE LIST VIEW
+    search_fields = ['id','name20' ,'name', 'notes']
+
+    #date_hierarchy = 'agent_modify_date'
+    actions = [
+        'export_as_csv', # Mixin: so set the method name string value.
+                         # Need reference doc?
+    ]
+
+    list_display = [
+         # 'id',
+         # 'accession_number',
+         'name20',
+         'name',
+         'notes',
+         ]
+
+    # EXPLICIT - (but this is also done implicitly, but implies you can
+    # one or more link fields, and also need not use than the first)
+    list_display_links = [list_display[0],list_display[1]]
+    fields = list_display
+
+    # Control the admin change list order of displayed rows
+    def get_ordering(self, request):
+        return['name20']
+
+    '''
+    From the django admin cookbook: method to delete an action from admin,
+    and in this case it is the 'delete_selected' action.
+    Also can allow only certain actions for users in certain groups.
+    '''
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        actions_to_delete = ['delete_selected']
+
+        # change this logic later
+        for action_to_delete in actions_to_delete:
+            if action_to_delete in actions:
+                #print("actions='{}'".format(repr(actions)))
+                del actions[action_to_delete]
+        return actions
+    #end def get_actions
+
+    '''
+    More django admin cookbook tips: to delete add and delete buttons (as all
+    CubaLibro data should be imported?)
+    Remove the _exp method name suffix to implement.
+    '''
+    def has_add_permission_exp(self,request, obj=None):
+        # With this, no 'add' button should appear per item
+        return False
+
+    def has_delete_permission_exp(self,request, obj=None):
+        # With this, no 'delete' button should appear per item
+        return False
+# end InstitutionAdmin
+
+admin.site.register(Institution, InstitutionAdmin)
+
+class ItemListForm(forms.ModelForm):
+    '''
+    This is the "Select" or admin "List" form for Cuba Libro object 'Item'
+    It is created to substitute entirely for the default Item form used by
+    the admin List or Select item page to allow/provide a dropdown widget filter
+    instead of a lengthy filter that displays all options at once.
+    See: https://stackoverflow.com/questions/21497044/filter-a-field-in-a-dropdown-lit-in-django-admin#21497167
+
+    '''
+    class Meta:
+        model = Item
+        fields = '__all__'
+
+    # continue later after have model Institution working
+    institutions = (Institution.objects.values_list('institution', flat=True).
+        order_by('institution').distinct() )
+
+    choice_list = []
+    for institution in institutions:
+        choice_list.append(institution)
+    INSTITUTION_CHOICES = choice_list
+
+    institution = forms.ChoiceField(widget=forms.Select,
+        choices=INSTITUTION_CHOICES)
+
+
 class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
+   # custom form defined above
+   form = ItemListForm
 
     # admin change list display fields to search
     # CHANGE LIST VIEW
@@ -159,6 +250,7 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
         ,'pub_year_span', 'place_of_publication'
         ,'isbn_issn', 'call_number','doi', 'pmid','pmcid'
         ]
+
     #date_hierarchy = 'agent_modify_date'
     actions = [
         'export_as_csv', # Mixin: so set the method name string value.
@@ -168,12 +260,13 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
     ]
 
     list_display = [
-         #'id',
+         # 'id',
          # 'accession_number',
          'title_primary',
          'holding',
          'pub_year_span',
          'agent',
+         'institution',
          'status',
          ]
 
@@ -182,6 +275,7 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
     list_display_links = [list_display[0]]
 
     list_filter = [
+        'institution',
         'holding',
         'agent',
         'status',
@@ -207,6 +301,7 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
                  # user actions on 'change list' admin page
                  # and also need not be displayed here.
                  'agent':'mgmt_ro',
+                 'institution':'mgmt',
                  'status':'mgmt',
                  'status_notes':'mgmt',
                  'authors_primary':'ed',

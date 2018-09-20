@@ -24,6 +24,6 @@ body {
     will be preserved in the STATIC_ROOT area that is created by the
     manage.py collectstatic command
     */
-    url("../images/USACH00236_50_pct.png" )
+    url("../images/USACH00236_32_pct.png" )
     ;
   }
