@@ -78,25 +78,25 @@ utc_now = datetime.datetime.utcnow()
 utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 '''
-yield_new_item_node(input_file, item_tag, parse_tags, delim='^',
-    log_file, verbosity=0)
+def yield_new_item_node(
+   input_file_name=None, item_tag=None, parse_tags=None, delim='^',
+    log_file=None, verbosity=0):
 
-DO: given an input file, and string item_tag try to read the next input
-    line and:
-
+DO: given an input file name, and string item_tag try to read the next input
+    line set for an 'item_tag' item and:
 
 Return null if:
 
-(1) no line, or
-(2) the line does not begin with the <item_tag>
+(1) no line left in input file, or
+(2) the next line does not begin with the <item_tag>
 
-Buffer lines into a string and keep reading until:
+Buffer input lines into a string and keep reading until:
 case: an end of file,
    in which case return null
 case: an </item_tag> is found
    in which case
-   -  parse the buffer into an lxml doc,
-   - find any nodes in the list of given caret_tags
+   - parse the input buffer into an lxml doc,
+   - find any nodes in the item with named in given caret_tags
    - for each such caret-node, if it has text content:
       -- parse its text content into sub-values
       -- remove its text content
@@ -105,15 +105,55 @@ case: an </item_tag> is found
              for every sub value
   - yield the root xml node
 
-NOTE for Future: return a tuple, always the firt value is the prescribed value,
-and as second value, return the buffer. So, if buffer not len 0, then maybe
-caller wants to do something with it.
+NOTE for Future: consider to return a tuple, where always the first value
+is the prescribed item node (or None), and as a new second value, return the buffer.
+So, if buffer is not len 0, then maybe caller wants to do something with it.
 
- until an and </item_tag> is encountered
-
-if noline (else return null)
 '''
-def yield_item()
+def yield_new_item_node(
+    input_file_name=None, item_tag=None, parse_tags=None, delim='^',
+    log_file=None, verbosity=0):
+
+    me = 'yield_new_item_node'
+    lines = ''
+    with open(input_file_name,mode="r") as input_file:
+        try:
+            line = input_file.readline()
+        except eoferror as ex:
+            # This is expected at the end of file.
+            # just return None
+            return None
+
+        sw =f"<{item_tag}"
+        if ! line.startswith(sw):
+            if verbosity > 0:
+                print(f"{me}:Error: line  '{line}' does not startwith '{sw}'")
+            return None
+        lines += line
+        sw =f"</{item_tag}"
+        while(line = input_file.readline()):
+            lines += line
+            if line.startswith(sw):
+                #Parse the lines buffer as xml and return the item node
+
+
+        #if we got here this is premature end of file
+        print(f"{me}: premature end of input file {input_file}")
+        return None
+
+
+                # end of this item
+
+
+        pass
+    # end with
+    return None
+
+# end def yield_new_item_node
+
+
+
+
 '''
 From input file mode=rb (read bytes),
 expect to read this single file, and that it contains for
