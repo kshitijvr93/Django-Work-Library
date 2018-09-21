@@ -70,36 +70,45 @@ def sql_mining_params():
             ('author_fname',''),
             ('author_lname',''),
             ('pub_d',''),    # ./UFDC id
-            ('addr_ymd',''),    # ./common:orcid-identifier/common:path
-            ('add_code',''),    # ./common:orcid-identifier/common:path
+            ('add_ymd',''),    # ./common:orcid-identifier/common:path
+            ('add_initials',''),    # ./common:orcid-identifier/common:path
             ('change_ymd',''),
-            ('change_code',''),    # ./common:orcid-identifier/common:path
+            ('change_initials',''),    # ./common:orcid-identifier/common:path
         ])),
         ('topic', OrderedDict([ #
             ('term',''),
-            ('keep',''),
+            ('keep','y'),
             ('marc','653'),
             ('ind1',' '),
-            ('ind2','4'),
+            ('ind2','7'),
         ])),
         ('oldlcsh', OrderedDict([ #
             ('term',''),
-            ('keep',''),
-            ('marc',''),
-            ('ind1',''),
-            ('ind2',''),
+            ('keep','n'),
+            ('marc','650'),
+            ('ind1',' '),
+            ('ind2','4'),
+        ])),
+        # Note: use rel oldnewkw to allow additions, but initially
+        # populate it with <oldkw> items that default to keep=n.
+        ('oldnewkw', OrderedDict([ #
+            ('term',''),
+            ('keep','n'),
+            ('marc','650'),
+            ('ind1',' '),
+            ('ind2','4'),
         ])),
         ('geo', OrderedDict([ #
             ('term',''),    # ./UFDC id
-            ('keep',''),
-            ('marc',''),
-            ('ind1',''),
-            ('ind2',''),
+            ('keep','y'),
+            ('marc','651'),
+            ('ind1',' '),
+            ('ind2','7'),
         ])),
         ('floridians', OrderedDict([ #
             ('term',''),    # ./UFDC id
-            ('keep',''),
-            ('marc','650'),
+            ('keep','y),
+            ('marc','600'),
             ('ind1',' '),
             ('ind2','7'),
         ])),
@@ -113,18 +122,34 @@ def sql_mining_params():
         #
         'multiple':0,
         'child_xpaths' : {
-            "./common:orcid-identifier/common:path" : {
-                'attrib_column':{'text':'orcid_id'},
+            "./ID" : {
+                'attrib_column':{'text':'bibvid'},
             },
-            "./preferences:preferences/preferences:locale" : {
-                'attrib_column':{'text':'preferred_language'},
+            "./ADD/D" : {
+                'attrib_column':{'text':'add_ymd'},
             },
-            "./person:person/person:name/personal-details:given-names" : {
-                'attrib_column':{'text':'givens'},
+            "./ADD/IN" : {
+                'attrib_column':{'text':'add_initials'},
             },
-            "./person:person/person:name/personal-details:family-name" : {
-                'attrib_column':{'text':'family'},
+            "./CHG/D" : {
+                'attrib_column':{'text':'change_ymd'},
             },
+            "./CHG/IN" : {
+                'attrib_column':{'text':'change_initials'},
+            },
+            "./AU/FNAME" : {
+                'attrib_column':{'text':'au_fname'},
+            },
+            "./AU/LNAME" : {
+                'attrib_column':{'text':'au_Lname'},
+            },
+            "./TI" : {
+                'attrib_column':{'text':'title'},
+            },
+            "./DPUB" : {
+                'attrib_column':{'text':'pub_year'},
+            },
+            #"./person:person/person:name/personal-details:family-name"{
             #"./person:person/person:name/personal-details:family-name"{
             #    'attrib_column':{'text':'family-given'},
             #},
