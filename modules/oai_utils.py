@@ -121,11 +121,14 @@ class OAI_Server(object):
     def get_url_list_metadata_formats(self):
       url = ("{}?verb=ListMetadataFormats".format(self.oai_url))
       return url
+
     '''
-    <summary>list_oai_nodes is a generator function that accepts a url
-    and a record xpath and expects a 'resumptiontoken', ala oai-pmh standards,
+    <summary>list_oai_nodes is a generator function that accepts
+    (1) url_list, and
+    (2) a record xpath and expects a 'resumptiontoken', ala oai-pmh standards,
     to indicate multiple 'batches' of responses that comprise a complete
     logical response
+
     </summary>
 
     <param name=record_xpath> is the xpath tag name that contains a record of
@@ -134,6 +137,7 @@ class OAI_Server(object):
     (and possible others) because the normal character encoding detection
     (that usually works for other oai servers) does not work for miami-merric
     </param>
+
     <return> a dictionary with:
     'record': node_record - the lxml doc node of the this record
     'namespaces': node_record - dictionary of the namespaces of the
@@ -147,8 +151,9 @@ class OAI_Server(object):
     encoding "iso-8559-1" explicitly as an argument and not trust the 'chardet'
     default encoding of the requests package.
     '''
-    def list_nodes(self, url_list=None, verb=None, metadata_prefix=None, encoding=None
-        , verbosity=1):
+
+    def list_nodes(self, url_list=None, verb=None, metadata_prefix=None,
+        encoding=None , verbosity=1):
         me = 'list_nodes'
         rparams = ['url_list','verb']
         if not all(rparams):
@@ -274,7 +279,7 @@ class OAI_Server(object):
               print("{}:next url='{}'".format(me,url_list))
         # end while url_list is not None
         return
-    # end def list_oai_nodes()
+    # end def list_nodes()
 
     ''' generator functions for specific oai lists
     '''

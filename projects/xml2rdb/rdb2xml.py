@@ -849,7 +849,6 @@ def rdb2xml_test():
   # root relation.
   # It should facilitate some diagnostic and error reporting
 
-
   # Set up the input relation hierarchy via hard coded list
   parent_child_tuples = [
   ('','record'),
