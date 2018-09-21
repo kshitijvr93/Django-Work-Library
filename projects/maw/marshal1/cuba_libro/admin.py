@@ -226,7 +226,7 @@ class ItemListForm(forms.ModelForm):
         fields = '__all__'
 
     # continue later after have model Institution working
-    institutions = (Institution.objects.values_list('institution', flat=True).
+    institutions = (Item.objects.values_list('institution', flat=True).
         order_by('institution').distinct() )
 
     choice_list = []
@@ -234,13 +234,13 @@ class ItemListForm(forms.ModelForm):
         choice_list.append(institution)
     INSTITUTION_CHOICES = choice_list
 
-    institution = forms.ChoiceField(widget=forms.Select,
-        choices=INSTITUTION_CHOICES)
+    institution2 = (forms.ChoiceField(widget=forms.Select,
+        choices=INSTITUTION_CHOICES))
 
 
 class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
-   # custom form defined above
-   form = ItemListForm
+    # custom form defined above
+    form = ItemListForm
 
     # admin change list display fields to search
     # CHANGE LIST VIEW

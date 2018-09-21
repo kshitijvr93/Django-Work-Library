@@ -1134,6 +1134,7 @@ def xml2rdb( input_path_list=None,
 # end def xml2rdb
 
 def run(study=None,rel_prefix='e2018_'):
+
     ''' SET UP MAIN ENVIRONMENT PARAMETERS FOR A RUN OF XML2RDB
     Now all these parameters are 'hard-coded' here, but they could go into
     a configuration file later for common usage.
@@ -1161,6 +1162,7 @@ def run(study=None,rel_prefix='e2018_'):
      , 'oadoi'
      , 'orcid'
      , 'scopus'
+     , 'xis_subject'
     ]
 
     # Study selection KEEP ONLY ONE LINE next
