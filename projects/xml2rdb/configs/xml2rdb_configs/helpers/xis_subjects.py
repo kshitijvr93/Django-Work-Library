@@ -165,7 +165,7 @@ def generator_new_xis_items(
 
                 # render the updated item tree
 
-                newlines = lines
+                newlines = etree.tostring(node_root, pretty_print=True)
                 lines = ''
 
                 # Find all nodes and do special parsing and reconstruction
@@ -189,13 +189,14 @@ def run():
     ofn =  r'C:\rvp\data\xis\export_subjects\output.txt'
     lfn =  r'C:\rvp\data\xis\export_subjects\log.txt'
 
-    n_nodes=0
+    n_items=0
     max_nodes = 2
     lines = ''
     verbosity = 1
 
-    with open(ofn, mode='w') as out_file, \
+    with open(ofn, mode='wb') as out_file, \
         open(lfn, mode='w') as log_file:
+        # Use wb for  out_ifle as lines is byte str
         seq_new_items = generator_new_xis_items(input_file_name=ifn,
                 item_tag = 'Thesis',
                 parse_tags = ['TOPIC', 'OLDLCSH', 'OLDKW', 'GEO',
@@ -205,10 +206,12 @@ def run():
                 )
             #Print node output here to file
         for lines in seq_new_items:
-            n_nodes +=1
-            print(f"Parsing output node number {n_nodes}\n", file=log_file)
-            print(f"Got output node number {n_nodes},lines={lines}\n", file=log_file)
-            if  n_nodes == max_nodes:
+            n_items += 1
+            print(f"Outputting output item number {n_items}\n", file=log_file)
+            print(f"Got output item number {n_items},lines={lines}", file=log_file)
+
+            out_file.write(lines)
+            if  n_items == max_nodes:
                 break
         # end while
     # end with context
