@@ -134,13 +134,14 @@ def generator_new_xis_items(
         lines += line
         sw =f"</{item_tag}"
         for line in input_file:
-            if verbosity > 0:
+            if verbosity > 1:
                 print(f"{seq}: Got input line='{line}'")
             lines += line
             if line.startswith(sw):
                 #Parse the lines buffer as xml and return the item node
                 lines = f"<{all_tag}>{lines}</{all_tag}>"
-                print(f"{seq}: Made all lines='{lines}'")
+                if verbosity > 1:
+                    print(f"{seq}: Made all lines='{lines}'")
                 node_root = etree.fromstring(str.encode(lines))
 
                 for parse_tag in parse_tags:
@@ -152,7 +153,8 @@ def generator_new_xis_items(
                         node.text = None
                         terms = text.split(delim)
                         l = len(terms)
-                        print(f"Found node of {xp} found {terms} terms." )
+                        if verbosity > 1:
+                            print(f"Found node of {xp} found {terms} terms.")
                         for term in terms:
                             #Create child elts 'I' for items of terms
                             child_element = etree.Element("I")
@@ -189,8 +191,8 @@ def run():
     ofn =  r'C:\rvp\data\xis\export_subjects\output.txt'
     lfn =  r'C:\rvp\data\xis\export_subjects\log.txt'
 
-    n_items=0
-    max_nodes = 2
+    n_items = 0
+    max_items = 0 
     lines = ''
     verbosity = 1
 
@@ -207,11 +209,15 @@ def run():
             #Print node output here to file
         for lines in seq_new_items:
             n_items += 1
-            print(f"Outputting output item number {n_items}\n", file=log_file)
-            print(f"Got output item number {n_items},lines={lines}", file=log_file)
+            if verbosity > 1:
+                print( f"Outputting output item number {n_items}\n",
+                  file=log_file)
+                print(
+                  f"Got output item number {n_items},lines={lines}",
+                    file=log_file)
 
             out_file.write(lines)
-            if  n_items == max_nodes:
+            if max_items > 0 and n_items == max_items:
                 break
         # end while
     # end with context
