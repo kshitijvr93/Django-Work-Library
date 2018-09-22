@@ -113,7 +113,7 @@ So, if buffer is not len 0, then maybe caller wants to do something with it.
 '''
 def generator_new_xis_items(
     input_file_name=None,
-    item_tag=None, parse_tags=None, all_tag='ALL',
+    item_tag=None, parse_tags=None,
     delim='^', log_file=None,
     verbosity=0):
 
@@ -139,7 +139,6 @@ def generator_new_xis_items(
             lines += line
             if line.startswith(sw):
                 #Parse the lines buffer as xml and return the item node
-                lines = f"<{all_tag}>{lines}</{all_tag}>"
                 if verbosity > 1:
                     print(f"{seq}: Made all lines='{lines}'")
                 node_root = etree.fromstring(str.encode(lines))
@@ -188,13 +187,14 @@ def generator_new_xis_items(
 
 def run():
     ifn = r'C:\rvp\data\xis\export_subjects\input.txt'
-    ofn =  r'C:\rvp\data\xis\export_subjects\output.txt'
+    ofn =  r'C:\rvp\data\xis\export_subjects\xis_subjects_parsed.xml'
     lfn =  r'C:\rvp\data\xis\export_subjects\log.txt'
 
     n_items = 0
-    max_items = 0 
+    max_items = 0
     lines = ''
     verbosity = 1
+    create_root_tag = True
 
     with open(ofn, mode='wb') as out_file, \
         open(lfn, mode='w') as log_file:
@@ -207,6 +207,8 @@ def run():
                 verbosity=verbosity,
                 )
             #Print node output here to file
+        if create_root_tag:
+            out_file.write(bytes("<ALL>\n".encode('utf-8')))
         for lines in seq_new_items:
             n_items += 1
             if verbosity > 1:
@@ -220,6 +222,9 @@ def run():
             if max_items > 0 and n_items == max_items:
                 break
         # end while
+        if (create_root_tag):
+            out_file.write(bytes("</ALL>\n".encode('utf-8')))
+
     # end with context
 # end def run
 

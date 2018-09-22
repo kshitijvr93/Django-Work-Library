@@ -18,7 +18,8 @@ from collections import OrderedDict
 from mappers import make_date
 
 '''
-#Sample XIS-exported input file with subject keywords has sequence of items like this:
+#Sample XIS-exported input file with subject keywords, parsed and converted by
+helper program: xis_subjects_parse.py has sequence of items like this:
 -------
 <Thesis n="0000002">
 <ADD><D>20170214</D>
