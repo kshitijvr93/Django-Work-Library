@@ -254,8 +254,7 @@ def file_add_or_replace_xml(input_file_name=None,
                 msg = (f"From par0 '{par0}' removed otag='{otag}'")
                 print(msg, file=log_file)
 
-    # add the child element as either new or a replacement
-
+    # prepare to add the child element as either new or a replacement
     # It is OK to add a new child here.
 
     if verbosity > 1:
