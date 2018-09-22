@@ -28,11 +28,11 @@ helper program: xis_subjects_parse.py has sequence of items like this:
 <CHG><D>20180629</D>
 <IN>win</IN>
 </CHG>
-<TOPIC>Globalization^Sovereignty^Financial markets^Financial transactions^Currency^Information technology^Financial services^International organizations^Flexible spending accounts^Conceptualization</TOPIC>
-<OLDLCSH />
-<OLDKW>globalization, sovereignty, uk^Political Science^Florida State University^Cocoa High School (Cocoa, Fla.)^Globalization^Sovereignty^Financial markets^Currency^Financial transactions^Financial services^Information technology^Finance^Flexible spending accounts^Conceptualization</OLDKW>
-<GEO>Union County (Florida)</GEO>
-<FLORIDIANS>Florida State University^Cocoa High School (Cocoa, Fla.)</FLORIDIANS>
+<TOPIC><I>Globalization</I><I>Sovereignty</I></TOPIC>
+<OLDLCSH><I></I></OLDLCSH>
+<OLDKW><I>globalization, sovereignty, uk</I><I>Political Science</I><I>Florida State University</I><I>Cocoa High School (Cocoa, Fla.)</I><I>Globalization</I><I>Sovereignty</I><I>Financial markets</I><I>Currency</I><I>Financial transactions</I><I>Financial services</I><I>Information technology</I><I>Finance</I><I>Flexible spending accounts</I><I>Conceptualization</I></OLDKW>
+<GEO><I>Union County (Florida)</I></GEO>
+<FLORIDIANS><I>Florida State University</I><I>Cocoa High School (Cocoa, Fla.)</I></FLORIDIANS>
 <AU><FNAME>Jamie E</FNAME>
 <LNAME>Scalera</LNAME>
 </AU>
@@ -78,6 +78,14 @@ def sql_mining_params():
             ('add_initials',''),    # ./common:orcid-identifier/common:path
             ('change_ymd',''),
             ('change_initials',''),    # ./common:orcid-identifier/common:path
+        ])),
+        ('term', OrderedDict([ #
+            ('source_tag',''),
+            ('term',''),
+            ('keep','y'),
+            ('marc','653'),
+            ('ind1',' '),
+            ('ind2','7'),
         ])),
         ('topic', OrderedDict([ #
             ('term',''),
@@ -151,6 +159,15 @@ def sql_mining_params():
             },
             "./DPUB" : {
                 'attrib_column':{'text':'pub_year'},
+            },
+            "./TOPIC" : {
+                'dbname':'term',
+                'attrib_column':{'text':'term'},
+                'column_constant':{
+                    'source_tag': 'TOPIC',
+                    'marc': '653', 'indcator1': ' ',
+                    'indicator2': '7', 'keep': 'y',
+                },
             },
         },
     } # end d_node_params1

@@ -1162,7 +1162,7 @@ def run(study=None,rel_prefix='e2018_'):
      , 'oadoi'
      , 'orcid'
      , 'scopus'
-     , 'xis_subject'
+     , 'x2018' # a xis export of subject terms info for 29k etd items
     ]
 
     # Study selection KEEP ONLY ONE LINE next
@@ -1194,6 +1194,7 @@ def run(study=None,rel_prefix='e2018_'):
         rel_prefix = 'orcid'
         rel_prefix = 'ccila'
         rel_prefix = 'e201710_17'
+        rel_prefix = 'x2018'
 
     print("Using rel_prefix-'{}'".format(rel_prefix))
 
@@ -1349,6 +1350,50 @@ def run(study=None,rel_prefix='e2018_'):
 
         doc_rel_name = 'doc'
         doc_root_xpath = './{*}full-text-retrieval-response'
+
+        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
+        od_rel_datacolumns, d_node_params = config.sql_mining_params()
+
+    elif rel_prefix == 'x2018':
+        import xml2rdb_configs.elsevier as config
+
+        print("Setting parameters for rel_prefix-'{}'".format(rel_prefix))
+        file_count_first = 0
+        file_count_span = 0
+        # here may define a Item object , where for xis it is initialized
+        # to read a xis file
+        # And it has its  method
+        # next_item that returns the xml tree for it.
+        # Later change all studies to initialized the Item.. add the
+        # Item class's init params to the xml config  file
+        #
+
+
+        # { 20180922 todo:  implement a separate object called FolderSet to contain these params:
+        input_folders = []
+        for year in range(2018, 2019):
+            input_folder =('{}/output_ealdxml/{}/'
+               .format(data_elsevier_folder,year))
+            print("Got rel_prefix={}, input_folder={}"
+              .format(rel_prefix,input_folder)
+            )
+            input_folders.append(input_folder)
+        # } todo:  implement a separate object called FolderSet to contain these params:
+
+        # { todo: create ITEM object
+        # to contol the item READER -
+        # input_path_glob will be one if its  init params...
+        # Eg, for a reader of independent item files in a hierarchy
+        input_path_glob = '**/pii_*.xml'
+        # NOTE: Tod0, depending on oher init params of ItemReader, may also add the
+        # FolderSet as optional init param,
+
+        # Todo - create a new object ItemParser and initialize with doc_root_xpath,
+        # etc
+        # For document/item - the relation name to hold on instance
+
+        doc_rel_name = 'bibvid'
+        doc_root_xpath = 'Thesis'
 
         # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
@@ -1678,5 +1723,9 @@ def run(study=None,rel_prefix='e2018_'):
 # Flush STDOUT for this print
 print("Starting!",flush=True)
 sys.stdout.flush()
-run(rel_prefix='e2018')
+
+rel_prefix = 'e2018'
+rel_prefix = 'x2018'
+
+run(rel_prefix='x2018')
 print("Done!")

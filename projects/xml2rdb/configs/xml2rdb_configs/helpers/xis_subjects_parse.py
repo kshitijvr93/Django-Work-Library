@@ -41,7 +41,6 @@ child <I> (item) elements, eg:
 ---
 '''
 
-
 import sys, os, os.path, platform
 from io import StringIO, BytesIO
 import codecs
