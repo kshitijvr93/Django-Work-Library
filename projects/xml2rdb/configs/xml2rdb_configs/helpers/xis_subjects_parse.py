@@ -13,7 +13,7 @@ sample input file has sequence of these 'item' subject term info sections:
 <ADD><D>20170214</D>
 <IN>DJV</IN>
 </ADD>
-<CHG><D>20180629</D>
+<CHG><D>20180629</D'
 <IN>win</IN>
 </CHG>
 <TOPIC>Globalization^Sovereignty^Financial markets^Financial transactions^Currency^Information technology^Financial services^International organizations^Flexible spending accounts^Conceptualization</TOPIC>

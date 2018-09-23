@@ -119,7 +119,7 @@ def sql_mining_params():
         ])),
         ('floridians', OrderedDict([ #
             ('term',''),    # ./UFDC id
-            ('keep','y),
+            ('keep','y'),
             ('marc','600'),
             ('ind1',' '),
             ('ind2','7'),
