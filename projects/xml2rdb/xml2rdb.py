@@ -1133,6 +1133,12 @@ def xml2rdb( input_path_list=None,
     return log_filename, pretty_log
 # end def xml2rdb
 
+class ItemNodes():
+    def __init__(self, input_folders=None,input_file_glob=None,verbosity=0)
+        pass
+    pass
+#end lass ItemNodes
+
 def run(study=None,rel_prefix='e2018_'):
 
     ''' SET UP MAIN ENVIRONMENT PARAMETERS FOR A RUN OF XML2RDB
@@ -1355,8 +1361,7 @@ def run(study=None,rel_prefix='e2018_'):
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
 
     elif rel_prefix == 'x2018':
-        import xml2rdb_configs.elsevier as config
-
+        import xml2rdb_configs.xis_subjects as config
         print("Setting parameters for rel_prefix-'{}'".format(rel_prefix))
         file_count_first = 0
         file_count_span = 0
@@ -1366,25 +1371,19 @@ def run(study=None,rel_prefix='e2018_'):
         # next_item that returns the xml tree for it.
         # Later change all studies to initialized the Item.. add the
         # Item class's init params to the xml config  file
-        #
+        # r'C:\rvp\data\xis\export_subjects\xis_subjects_parsed.xml'
 
 
         # { 20180922 todo:  implement a separate object called FolderSet to contain these params:
-        input_folders = []
-        for year in range(2018, 2019):
-            input_folder =('{}/output_ealdxml/{}/'
-               .format(data_elsevier_folder,year))
-            print("Got rel_prefix={}, input_folder={}"
-              .format(rel_prefix,input_folder)
-            )
-            input_folders.append(input_folder)
+        input_folder = r'c:\rvp\data\xis\export_subjects\'
+        input_folders = [input_folder]
         # } todo:  implement a separate object called FolderSet to contain these params:
 
         # { todo: create ITEM object
         # to contol the item READER -
         # input_path_glob will be one if its  init params...
         # Eg, for a reader of independent item files in a hierarchy
-        input_path_glob = '**/pii_*.xml'
+        input_path_glob = 'xis_subjects_parsed.xml'
         # NOTE: Tod0, depending on oher init params of ItemReader, may also add the
         # FolderSet as optional init param,
 
@@ -1394,12 +1393,19 @@ def run(study=None,rel_prefix='e2018_'):
 
         doc_rel_name = 'bibvid'
         doc_root_xpath = 'Thesis'
-
         # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
 
     else:
          raise ValueError("Unknown rel_prefix = '{}'. Exit.".format(rel_prefix))
+
+    # Item Nodes is an object that identifies the full set of  individual input
+    # item lxml tree and its method, generator_next() a genertor/reader.
+    # Successive calls to the generator yield eturns the root doc node of the next item's
+    # lxml tree.
+
+    item_nodes = ItemNodes(input_folders=input_folders, input_file_glob=input_path_glob,
+        verbosity=1))
 
     # migrate rest of these
     '''
@@ -1716,7 +1722,6 @@ def run(study=None,rel_prefix='e2018_'):
     for key, val in d_params.items():
         print("{}={}".format(key, val))
 
-
     print("{}:Done.".format(me))
 #end def run()
 #
@@ -1727,5 +1732,5 @@ sys.stdout.flush()
 rel_prefix = 'e2018'
 rel_prefix = 'x2018'
 
-run(rel_prefix='x2018')
+run(rel_prefix=rel_prefix)
 print("Done!")
