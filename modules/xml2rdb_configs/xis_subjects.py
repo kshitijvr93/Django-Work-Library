@@ -161,15 +161,76 @@ def sql_mining_params():
             "./DPUB" : {
                 'attrib_column':{'text':'pub_year'},
             },
-            "./TOPIC" : {
-                'dbname':'term',
+            # TOPIC KEYWORDS
+            "./TOPIC/I" : {
+                'multiple':1,
+                'db_name':'term',
                 'attrib_column':{'text':'term'},
                 'column_constant':{
                     'source_tag': 'TOPIC',
-                    'marc': '653', 'indcator1': ' ',
-                    'indicator2': '7', 'keep': 'y',
+                    'marc': '653',
+                    'indcator1': ' ',
+                    'indicator2': '7',
+                    'keep': 'y',
                 },
             },
+
+            # GEO KEYWORDS
+            "./GEO/I" : {
+                'multiple':1,
+                'db_name':'term',
+                'attrib_column':{'text':'term'},
+                'column_constant':{
+                    'source_tag': 'GEO',
+                    'marc': '651',
+                    'indcator1': ' ',
+                    'indicator2': '7',
+                    'keep': 'y',
+                },
+            },
+
+            # GEO KEYWORDS
+            "./OLDKW/I" : {
+                'multiple':1,
+                'db_name':'term',
+                'attrib_column':{'text':'term'},
+                'column_constant':{
+                    'source_tag': 'OLDKW',
+                    'marc': '650',
+                    'indcator1': ' ',
+                    'indicator2': '4',
+                    'keep': 'n',
+                },
+            },
+
+            # FLORIDIANS KEYWORDS
+            "./FLORIDIANS/I" : {
+                'multiple':1,
+                'db_name':'term',
+                'attrib_column':{'text':'term'},
+                'column_constant':{
+                    'source_tag': 'FLORIDIANS',
+                    'marc': '600',
+                    'indcator1': ' ',
+                    'indicator2': '7',
+                    'keep': 'y',
+                },
+            },
+
+            # OLDLCSH KEYWORDS
+            "./OLDLCSH/I" : {
+                'multiple':1,
+                'db_name':'term',
+                'attrib_column':{'text':'term'},
+                'column_constant':{
+                    'source_tag': 'OLDLCSH',
+                    'marc': '600',
+                    'indcator1': ' ',
+                    'indicator2': '7',
+                    'keep': 'y',
+                },
+            },
+
         },
     } # end d_node_params1
 

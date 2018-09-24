@@ -11,7 +11,6 @@ document.
 '''
 import sys, os, os.path, platform
 
-
 def register_modules():
     platform_name = platform.system().lower()
     if platform_name == 'linux':
@@ -63,6 +62,46 @@ from lxml.etree import tostring
     selected sub-analyses of the entire pool of xml data.
 '''
 
+'''
+DocNodeSet instantiates a description of documents to use as input.
+Its method generator_doc_nodes creates a generator of a sequence
+of lxml document root nodes, where each is to an input document to be
+processed.
+'''
+class DocNodeSet():
+    def __init__(self, input_folders=None, input_file_glob=None,
+        progress_batch_size=1000,
+        doc_root_tag="Thesis",
+        attribute_text = 'text',
+        verbosity=0):
+        self.input_folders = input_folders
+        self.input_glob = input_glob
+        self.input_path_list = list(Path(input_folder).glob(input_file_glob))
+        self.progress_batch_size = progress_batch_size
+        # Upon parsing, converting input xml to rdb, use this as the
+        # 'pseudo attribute name' for the text content of any doc node
+        self.attribute_text = attribute_text
+        # Similar, but for innerhtml of a doc node? ouutput? maybe dicard this.
+        self.attribute_innerhtml = attribute_innerhtml
+
+        pass
+
+    '''
+    method: generator_doc_nodes
+    create and return a generator for a sequence of doc_nodes
+
+    Also, internally uses the glob.iglob generator instead of glob.globe so the
+    entire input path list need not be generated first and stored in memory.
+
+    max_test_nodes: if non-zero, generated sequence will end after max_test_nodes
+
+    TODO: provide optional report of failed file reads and parses..
+    See older version of xml2rdb code for prototype, messages to report.
+    '''
+    def generator_doc_nodes(self, max_text_nodes=0):
+        return None
+
+#end class DocNodeSet
 '''
 Method new_od_relation
 
@@ -535,23 +574,23 @@ From given xml doc(eg, from an Elsevier full text retrieval apifile),
 convert the xml doc for output to relational data and output to relational tab-separated-value (tsv) files.
 Excel and other apps allow the '.txt' filename extension for tab-separated-value files.
 
-20180923 TODO: make sure the input root node generator increments file_count
-node_count variable properly, returns what it needs for next call to this ...
+20180923 TODO: make sure the input root node generator increments
+doc_count variable properly, returns what it needs for next call to this ...
 but later, the file sequencer should be part of the input_root_node generator
 preface code too, or use multi-level generator..
 '''
 def xml_doc_rdb2(
-    od_relation=None
-    ,output_folder=None
-    ,input_file_name=None
-    ,file_count=None
-    ,doc_rel_name=None
-    ,doc_root=None # IGNORE - we create our own in this modified method
-    ,doc_root_xpath=None
-    ,d_node_params=None
-    ,od_rel_datacolumns=None
-    ,d_root_node_params=None
-    ,d_xml_params=None
+    input_root_node=None,
+    doc_count=None,
+    od_relation=None,
+    output_folder=None,
+    doc_rel_name=None,
+    doc_root=None, # IGNORE - we create our own in this modified method
+    doc_root_xpath=None,
+    d_node_params=None,
+    od_rel_datacolumns=None,
+    d_root_node_params=None,
+    d_xml_params=None,
     # first draft: slice_name a slice name apply to the root node.
     #
     # Later:
@@ -562,20 +601,18 @@ def xml_doc_rdb2(
     #   With a proper offset row integer, all outputted tables data files
     #   will be also suitable to be appended to their respective DB tables. The user is responsible for
     #   creating the SQL to do this, at this point.
-    ,load_name=None # A name to apply to this load group-segment of outputted  rows.
-    ,verbosity=0):
+    load_name=None, # A name to apply to this load group-segment of outputted  rows.
+    verbosity=0,):
 
     me = 'xml_doc_rdb2'
     log_messages = []
     err = 0
     if (
-        input_file_name is None or output_folder is None or
+        doc_root_node is None or output_folder is None or
         d_node_params is None or d_xml_params is None):
         err=1
     if ( od_rel_datacolumns is None):
         err = 'od_rel_datacolumns is None'
-    if (file_count is None ):
-        err = 'file_count is None'
     if (doc_rel_name is None):
         err='doc_rel_name is None'
     if (d_xml_params is None):
@@ -587,10 +624,10 @@ def xml_doc_rdb2(
 
     if err != 0:
         msg = ("{}:Got input file_name='{}', output_folder='{}', od_relation='{}',"
-           "file_count='{}', doc_root='{}',doc_root_xpath='{}', len d_node_params='{}'"
+           "doc_root='{}',doc_root_xpath='{}', len d_node_params='{}'"
            " len od_rel_datacolumns={}. Bad arguments."
           .format(me, input_file_name, output_folder, repr(od_relation)
-                  ,file_count,doc_root, doc_root_xpath,len(d_node_params)
+                  ,doc_root, doc_root_xpath,len(d_node_params)
                  ,len(od_rel_datacolumns)))
         #log_messages.append(msg)
         print(msg)
@@ -598,7 +635,7 @@ def xml_doc_rdb2(
         sys.stdout.flush()
         raise Exception("{}:bad arguments. err = {}".format(me,err))
 
-    msg = "{}:Using input_file_name='{}'".format(me, input_file_name)
+    msg = f"{me}:Starting..."
 
     # Review this check...?
     if load_name is not None:
@@ -630,38 +667,36 @@ def xml_doc_rdb2(
     # correcting newlines and doubling up on curlies so format() works on them later.
     # 20180923  TODO: derive root_item_tag from doc_root_xpath or maintain a new
     # plain tag value for doc_root_tag
-    seq_doc_root_nodes = generator_doc_root_nodes(
-      input_file_name=input_file_name, root_item_tag='Thesis',
-      verbosity=verbosity)
 
-    n_file_docs = 0
-    for input_root_node in seq_doc_root_nodes:
-        # TODO: make the below a method, and simplify the parent calling code
-        # to use a new object to setup/initialize and manage the input root
-        # node generation
-        n_file_docs += 1 # one more document found in this file
+    input_root_node = doc_root_node
 
-        # We must create a separate doc root for every doc input root node
-        doc_root = etree.Element("doc")
-        doc_root.attrib['file_name'] = input_file_name
+    #for input_root_node in seq_doc_root_nodes:
 
-        # For our INTERNAL doc_root, append this xml file's input root node
-        # so it can be processed, wallked.
+    # TODO: make the below a method, and simplify the parent calling code
+    # to use a new object to setup/initialize and manage the input root
+    # node generation
 
-        # NOTE: we prepend our higher level doc_root to all output to contains
-        # various metadata about the group of processed input nodes
-        doc_root.append(input_node_root)
+    # We must create a separate doc root for every doc input root node
+    doc_root = etree.Element("doc")
+    doc_root.attrib['file_name'] = "no_file_name"
 
-        # Do not put the default namespace (as it has no tag prefix) into the
-        # d_namespaces dict.
-        d_nsmap = dict(input_node_root.nsmap)
-        d_namespaces = {key:value
-           for key,value in d_nsmap.items() if key is not None}
+    # For our INTERNAL doc_root, append this xml file's input root node
+    # so it can be processed, wallked.
+
+    # NOTE: we prepend our higher level doc_root to all output to contains
+    # various metadata about the group of processed input nodes
+    doc_root.append(input_node_root)
+
+    # Do not put the default namespace (as it has no tag prefix) into the
+    # d_namespaces dict.
+    d_nsmap = dict(input_node_root.nsmap)
+    d_namespaces = {key:value
+        for key,value in d_nsmap.items() if key is not None}
 
         # OrderedDict with key of parent tag name and value is parent's index
         # among its siblings.
-        od_parent_index = OrderedDict()
-        node_index = file_count
+    od_parent_index = OrderedDict()
+    node_index = doc_count
 
         # In this scheme, the root node always has multiple = 1
         #  that is, it may have multiple
@@ -683,180 +718,9 @@ def xml_doc_rdb2(
          )
 
     # end for input_root node in seq_doc_root_nodes
+
     return n_file_docs, log_messages
 # end def xml_doc_rdb2:
-
-'''
-Method xml_doc_rdb:
-From given xml doc(eg, from an Elsevier full text retrieval apifile),
-convert the xml doc for output to relational data and output to relational tab-separated-value (tsv) files.
-Excel and other apps allow the '.txt' filename extension for tab-separated-value files.
-'''
-def xml_doc_rdb(
-    od_relation=None
-    ,output_folder=None
-    ,input_file_name=None
-    ,file_count=None
-    ,doc_rel_name=None
-    ,doc_root=None # doc element is meta element to use as root xml node per article/doc
-    ,doc_root_xpath=None
-    ,d_node_params=None
-    ,od_rel_datacolumns=None
-    ,d_root_node_params=None
-    ,d_xml_params=None
-    # first draft: slice_name a slice name apply to the root node.
-    #
-    # Later:
-    #   We also will add a naturally useful row offset integer paramemter:
-    #   If user intends to append extant data tables with the rows in the output data,
-    #   USER IS RESPONSIBLE to set row offset to beyond the highest
-    #   offset in the root table to which to append these rows.
-    #   With a proper offset row integer, all outputted tables data files
-    #   will be also suitable to be appended to their respective DB tables. The user is responsible for
-    #   creating the SQL to do this, at this point.
-    ,load_name=None # A name to apply to this load group-segment of outputted  rows.
-    ,verbosity=0):
-
-    me = 'xml_doc_rdb()'
-    log_messages = []
-    err = 0
-    if (
-        input_file_name is None or output_folder is None or
-        d_node_params is None or d_xml_params is None):
-        err=1
-    if ( od_rel_datacolumns is None):
-        err = 'od_rel_datacolumns is None'
-    if (file_count is None ):
-        err = 'file_count is None'
-    if (doc_rel_name is None):
-        err='doc_rel_name is None'
-    if (d_xml_params is None):
-        err='doc_xml_params is None'
-    if (doc_root is None
-        or doc_root_xpath is None or od_relation is None
-       ):
-        err = 3
-
-    if err != 0:
-        msg = ("{}:Got input file_name='{}', output_folder='{}', od_relation='{}',"
-           "file_count='{}', doc_root='{}',doc_root_xpath='{}', len d_node_params='{}'"
-           " len od_rel_datacolumns={}. Bad arguments."
-          .format(me, input_file_name, output_folder, repr(od_relation)
-                  ,file_count,doc_root, doc_root_xpath,len(d_node_params)
-                 ,len(od_rel_datacolumns)))
-        #log_messages.append(msg)
-        print(msg)
-        import sys
-        sys.stdout.flush()
-        raise Exception("{}:bad arguments. err = {}".format(me,err))
-
-    msg = "{}:Using input_file_name='{}'".format(me, input_file_name)
-    #log_messages.append(msg)
-    #print(msg)
-
-    # (1) Read an input xml file to variable input_xml_str
-    # correcting newlines and doubling up on curlies so format() works on them later.
-    with open (str(input_file_name), "r", encoding='utf-8') as input_file:
-        input_xml_str = input_file.read().replace('\n','')
-
-    # (2) and convert input_xml_str to a tree input_doc using etree.fromstring,
-
-    if input_xml_str[0:9] == '<failure>':
-        # IMPORTANT: This 'if clause' is a custom check for a 'bad' xml file common to a
-        # particular set of test UF xml files.
-        # This skipping is not generic feature of xml2rdb and may be removed.
-        # print("This xml file is a <failure>. Skipping it.")
-        log_messages.append("<failure> input_file {}.Skip.".format(input_file_name))
-        return log_messages, None, None
-
-    try:
-        tree_input_doc = etree.parse(input_file_name)
-    except Exception as e:
-        msg = (
-            "Skipping exception='{}' in etree.fromstring failure for input_file_name={}"
-            .format(repr(e), input_file_name))
-        #print(msg)
-        log_messages.append(msg)
-        return log_messages, None, None
-
-    # GET xml ROOT for this file
-    try:
-        input_node_root = tree_input_doc.getroot()
-    except Exception as e:
-        msg = ("Exception='{}' doing getroot() on tree_input_doc={}. Return."
-                .format(repr(e),repr(tree_input_doc)))
-        #print(msg)
-        log_messages.append(msg)
-        return log_messages, None, None
-
-    # TODO:  RVP: 20180923 - STEP 1 to improve calling code architecture,
-    # start with defining a core method that does the below, but takes
-    # input_node_root as main argument and other args except any that affects
-    # the list # or returning of input xml doc tree nodes.
-    # Then change all the  calling architecture to use
-    # input_node_root = item_nodes.next() # or maybe a generator to supply
-    # next doc root  and the code that gens node sequene can/will also parse
-    # and return any multiple of sequential nodes in an input file.
-    # Per code written yesterday in xis_subjects_parse.py,
-    # encapsulate all logic about slicing input folders, etc in init of the
-    # item_nodes = DocNodeSet(various param) initialization.
-    # or maybe doc_root_nodes = DocRootNodes(various params)
-    # can use this object in other utilities, add input sources like apis, etc, later.
-    # the key use will be to return a set of input root xml nodes about a set of input
-    # documents constructed with the same xml format
-
-    # Append this xml files root node to (output) doc_root so it can be processed, wallked.
-    # NOTE: we prepend our higher level doc_root to all output to contains various metadata
-    # about the group of processed input nodes
-    doc_root.append(input_node_root)
-
-    # Do not put the default namespace (as it has no tag prefix) into the d_namespaces dict.
-    d_nsmap = dict(input_node_root.nsmap)
-    d_namespaces = {key:value for key,value in d_nsmap.items() if key is not None}
-
-    # Move this check up somewhere (rvp 20180823)
-    if load_name is not None:
-        print("Warning: User must add column names 'load' and 'file_name' to the root table"
-              " to enable their values to be output in the output data")
-    else:
-        load_name=""
-
-    # document root params
-    d_root_params = {
-        'db_name': doc_rel_name, 'multiple':1,
-        'attrib_column': {
-            'file_name':'file_name',
-            'load': load_name,
-        },
-        'child_xpaths':{doc_root_xpath:d_node_params}
-    }
-
-    if verbosity > 1:
-        print("xml2rdb: Using db_name='{}', doc_root_xpath='{}'"
-          .format(doc_rel_name , doc_root_xpath))
-
-    # OrderedDict with key of parent tag name and value is parent's index among its siblings.
-    od_parent_index = OrderedDict()
-    node_index = file_count
-
-    # In this scheme, the root node always has multiple = 1 - that is, it may have multiple
-    # occurences, specifically, over the set of input xml documents.
-    # Also, this program requires that it be included in the relational output files.
-    multiple = 1
-    d_row = node_visit_output(
-         od_relation=od_relation
-        ,d_namespaces=d_namespaces
-        ,d_node_params=d_root_params
-        ,od_rel_datacolumns=od_rel_datacolumns
-        ,output_folder=output_folder
-        ,od_parent_index=od_parent_index
-        ,node_index=node_index
-        ,node=doc_root
-        ,d_xml_params=d_xml_params
-        ,verbosity=verbosity
-        )
-    return log_messages
-# end def xml_doc_rdb():
 
 '''
 <summary> Method xml_paths_rdb():
@@ -869,7 +733,7 @@ for each input xml doc.
 
 '''
 def xml_paths_rdb(
-      input_path_list=None #List of paths of all input files
+      doc_node_set=None,
     , doc_root_xpath=None #xml tag that is used as document root
     , rel_prefix=None  # Prefix string for all relatinship names
     , doc_rel_name=None
@@ -889,7 +753,7 @@ def xml_paths_rdb(
         bad = 1
     elif not (rel_prefix)and rel_prefix != '':
         bad = 2
-    elif not (input_path_list):
+    elif not (doc_node_set):
         bad = 3
     elif not(doc_root_xpath):
         bad = 4
@@ -910,8 +774,7 @@ def xml_paths_rdb(
         raise Exception("Bad args. See source for Bad code={}".format(bad))
 
     log_messages = []
-    msg = ("{}:START with file_count_first={} among total file count={}"
-           .format(me, file_count_first, len(input_path_list)))
+    msg = (f"{me}:STARTING..."
     if (verbosity > 0):
         print(msg)
 
@@ -926,13 +789,44 @@ def xml_paths_rdb(
     # Caller has already sliced input_path_list with first 'real file count'
     # value being file_count_first. So in the for loop, add i to file_count_first to
     # get the file_count among the input_path_list.
-    for i, path in enumerate(input_path_list):
-        if (max_input_files > 0) and ( i >= max_input_files):
+
+    doc_count = 0
+    dns = doc_node_set
+    sequence_doc_nodes = dns.generator_doc_nodes
+    max_nodes = dns.max_test_nodes
+    progress_batch_size = dns.progress_batch_size
+
+    for doc_node in sequence_doc_nodes:
+        doc_count += 1
+        if (max_nodes > 0) and ( doc_count >= max_nodes):
             if verbosity > 0:
               # This clause used for testing only...
               msg =  "Max number of {} files processed. Breaking.".format(i)
               log_messages.append(msg)
             break
+        if batch_size > 0  and (doc_count % progress_batch_size == 0):
+            progress_report = 1
+        else:
+            progress_report = 0
+
+        if (progress_report):
+            utc_now = datetime.datetime.utcnow()
+            utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+            msg = (
+              "{}: At {}, processed through input document count = {}."
+                   .format(me,utc_secs_z, file_count))
+            print(msg, flush=True)
+            #log_messages.append(msg)
+            # Flush all the output files in od_relation
+            for relation, d_info in od_relation.items():
+                file = d_info.get('db_file', None)
+                if file is not None:
+                    file.flush()
+
+        pass
+
+
+    for i, path in enumerate(input_path_list):
 
         file_count = file_count_first + i + 1
 
@@ -960,45 +854,23 @@ def xml_paths_rdb(
                 if file is not None:
                     file.flush()
 
-        # Try to read the article's input full-text xml file and accrue
-        # its statistics.
-        with open(str(input_file_name), "r", encoding='utf-8') as input_file:
-            try:
-                input_xml_str = input_file.read().replace('\n','')
-                # print("### Got input_xml_str={}".format(input_xml_str))
-            except Exception as e:
-                if 1 == 1:
-                    msg = ( "\tSkipping read failure {} for input_file_name={}"
-                        .format(e,input_file_name))
-                    print("{}:ERROR: {}".format(me,msg))
-                    log_messages.append(msg)
-                count_input_file_failures += 1
-                continue
         if verbosity > 0:
-            print("{}:Have read input file {} with length = {}"
-                  .format(me,input_file_name,len(input_xml_str)))
-        row_index += 1
+            print(f"{me}:Have read doc count {doc_count}")
 
-        #Create an internal root document node to manage database outputs
-        doc_root = etree.Element("doc")
-        doc_root.attrib['file_name'] = input_file_name
-        msg = ("{}:calling xml_doc_rdb with doc_root.tag={}, file_count={},verbosity={}"
-          .format(me,doc_root.tag, file_count,verbosity))
-
-        if verbosity > 0:
-            print("{}:{}".format(me,msg))
-
-        sub_messages = xml_doc_rdb(od_relation=od_relation
-            , output_folder=output_folder
-            , input_file_name=input_file_name
-            , file_count=file_count
-            , doc_rel_name = doc_rel_name
-            , doc_root=doc_root
-            , doc_root_xpath=doc_root_xpath
-            , d_node_params=d_node_params
-            , od_rel_datacolumns=od_rel_datacolumns
-            , verbosity=verbosity
-            , d_xml_params=d_xml_params)
+        sub_messages = xml_doc_rdb2(
+            input_root_node=doc_node,
+            doc_count=doc_count,
+            od_relation=od_relation,
+            output_folder=output_folder,
+            doc_count=doc_count,
+            doc_rel_name = doc_rel_name,
+            doc_root=doc_root,
+            doc_root_xpath=doc_root_xpath,
+            d_node_params=d_node_params,
+            od_rel_datacolumns=od_rel_datacolumns,
+            verbosity=verbosity,
+            d_xml_params=d_xml_params,
+            )
 
         if len(sub_messages) > 0 and False:
             log_messages.append({'xml-tsv':sub_messages})
@@ -1009,8 +881,8 @@ def xml_paths_rdb(
                  )
         # end for i, fname in input_file_list
     # end with open() as output_file
-    print ("{}:Finished processing through file_count={}"
-        .format(me,file_count), flush=True)
+    print ("{}:Finished processing through doc count={}"
+        .format(me,doc_count), flush=True)
 
     log_messages.append(msg)
     print(msg)
@@ -1249,38 +1121,45 @@ import datetime
 import pytz
 import os
 from collections import OrderedDict
+
+
 '''
 xml2rdb is the main method.
 
 It accepts three main groups of input parameters:
-(1) to define the  group of input xml files to read
+(1) DocRootSet to iterate through group of input xml documents to read
 (2) to define the SQL schema for tables and columns to be outputted
 (3) to define the mining map that associates table and column names with
     target nodes (designated by child xpath expressions) and their values in
     each inputted xml file.
 
 If folder_output_base is None, then
-the output folder is defined herein, but it may be promoted to a required argument soon.
+the output folder is defined herein, but it may be promoted to a required
+argument.
 
-These parameters may be re-grouped later into fewer parameters to more plainly separate
-the three groups, each which contains sub-parameters for its group.
+These parameters may be re-grouped later into fewer parameters to more
+plainly separate the three groups, each which contains sub-parameters for
+its group.
 '''
-def xml2rdb(input_path_list=None,
-            doc_root_xpath=None,
-            folder_output_base=None,
-            output_folder_include_secsz=True,
-            rel_prefix=None,
-            doc_rel_name=None, use_db=None,
-            d_node_params=None, od_rel_datacolumns=None,
-            d_params=None, file_count_first=0, file_count_span=1,
-            d_xml_params=None,verbosity=0):
+def xml2rdb(
+        sequence_doc_nodes=None,
+        # input_path_list=None,
+        file_count_first=0, file_count_span=1,
+        doc_root_xpath=None,
+        folder_output_base=None,
+        output_folder_include_secsz=True,
+        rel_prefix=None,
+        doc_rel_name=None, use_db=None,
+        d_node_params=None, od_rel_datacolumns=None,
+        d_params=None,
+        d_xml_params=None, verbosity=0):
     me = "xml2rdb"
     utc_now = datetime.datetime.utcnow()
     utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     print("{}: STARTING at {}".format(me, utc_secs_z))
 
-    if not (input_path_list
+    if not (1 == 1
             and (rel_prefix or rel_prefix == '')
             and doc_root_xpath and use_db and doc_rel_name
             and d_node_params and od_rel_datacolumns
@@ -1293,14 +1172,15 @@ def xml2rdb(input_path_list=None,
 
     if folder_output_base is None:
         # folder_output_base = input_folders + me + '/'
-        folder_output_base = etl.data_folder(linux="/home/robert/", windows="U:/",
-            data_relative_folder='data/outputs/xml2rdb/{}/'.format(rel_prefix))
+        folder_output_base = etl.data_folder(linux="/home/robert/",
+            windows="U:/", data_relative_folder='data/outputs/xml2rdb/{}/'
+            .format(rel_prefix))
 
     d_params['folder-output-base'] = folder_output_base
     os.makedirs(folder_output_base, exist_ok=True)
 
-    # We also use secsz_start as part of a folder name, and windows chokes on ':', so use
-    # all hyphens for delimiters
+    # We also use secsz_start as part of a folder name, and windows chokes
+    # on ':', so use all hyphens for delimiters
     secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
 
     # The output_folder encodes start time of run in its name.
@@ -1314,42 +1194,19 @@ def xml2rdb(input_path_list=None,
     print("Using output folder={}"
           .format(output_folder_final))
 
-    lil = len(input_path_list)
-    print(f"Using total real input file count={lil}")
+    sliced_input_path_list = input_path_list
 
-    if file_count_first is None:
-        input_low_index = 0
-    else:
-        input_low_index = file_count_first
-
-    # Special test - if file count span is 0, then examine all files above low_index
-    if  file_count_span is None or file_count_span <= 0:
-        input_high_index = lil
-    else:
-        input_high_index = file_count_first + file_count_span
-
-    # Use a slice of the total input file list, which may also be the full list.
-    index_max = lil if input_high_index > lil else input_high_index
-    sliced_input_path_list = input_path_list[input_low_index:index_max]
-    #output_name_suffix="_{}_{}".format(input_low_index,index_max)
-
-    #os.makedirs(output_folder_final, exist_ok=True)
-    skip_extant = False
     d_params.update({
         'secsz-1-start': secsz_start
         ,'output-folder': output_folder_final
-        ,'input-files-index-limit-1-low': repr(input_low_index)
-        ,'input-files-index-limit-2-high': repr(input_high_index)
     })
 
     d_log['run_parameters'] = d_params
 
-    #### Open all the output files for all the relations... ####
-
     ################# READ THE INPUT, AND COLLECT AND OUTPUT STATS ################
 
     count_input_file_failures = xml_paths_rdb(
-        input_path_list=sliced_input_path_list
+        doc_node_set=doc_node_set,
       , doc_root_xpath=doc_root_xpath
       , rel_prefix = rel_prefix
       , doc_rel_name = doc_rel_name
@@ -1357,9 +1214,6 @@ def xml2rdb(input_path_list=None,
       , d_node_params=d_node_params
       , od_rel_datacolumns=od_rel_datacolumns
       , use_db=use_db
-      , file_count_first=file_count_first
-      , file_count_span=file_count_span
-      #, output_name_suffix=output_name_suffix
       , verbosity=verbosity
       , d_xml_params=d_xml_params
     )
@@ -1382,20 +1236,13 @@ def xml2rdb(input_path_list=None,
     return log_filename, pretty_log
 # end def xml2rdb
 
-class DocNodeSet():
-    def __init__(self, input_folders=None, input_file_glob=None,verbosity=0):
-        pass
-    def generator_doc_nodes(self):
-        return None
-
-#end lass DocNodeSet
-
 def run(study=None,rel_prefix='e2018_', verbosity=0):
 
     ''' SET UP MAIN ENVIRONMENT PARAMETERS FOR A RUN OF XML2RDB
     Now all these parameters are 'hard-coded' here, but they could go into
     a configuration file later for common usage.
-    Better still, this would all be managed by a web-interface with xml2rdb as a back end.
+    Better still, this would all be managed by a web-interface with xml2rdb
+    as a back end.
     This is where a web service comes in that
     (1) manages thousands of users accounts,
     (2) collects fees for
@@ -1427,8 +1274,8 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
     if study not in study_choices:
         raise ValueError("Unknown study='{}'".format(repr(study)))
 
-    file_count_first = 0
-    file_count_span = 0
+    xfile_count_first = 0
+    xfile_count_span = 0
     use_db = 'silodb'
 
     #folders_base = etl.home_folder_name() + '/'
@@ -1474,8 +1321,8 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
             .format(rel_prefix, len(input_path_list),input_folder))
         # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
-        file_count_first = 0
-        file_count_span = 0
+        xfile_count_first = 0
+        xfile_count_span = 0
 
     elif rel_prefix == 'cr201711':
         import xml2rdb_configs.crossref as config
@@ -1512,8 +1359,8 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
               .format(study, len(input_path_list),input_folder))
         # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
-        file_count_first = 0
-        file_count_span = 0
+        xfile_count_first = 0
+        xfile_count_span = 0
 
     elif rel_prefix == 'ccila': #ccila is cuban collection i? latin america
         import xml2rdb_configs.marcxml as config
@@ -1547,8 +1394,8 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
               .format(study, len(input_path_list),input_folder))
         # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
-        file_count_first = 0
-        file_count_span = 0
+        xfile_count_first = 0
+        xfile_count_span = 0
     # MIGRATING...
     elif rel_prefix == 'orcid':
         # ORCID id data
@@ -1584,14 +1431,14 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
               .format(study, len(input_path_list),input_folder))
         # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
         od_rel_datacolumns, d_node_params = config.sql_mining_params()
-        file_count_first = 0
+        xfile_count_first = 0
 
     elif rel_prefix == 'e2018':
         import xml2rdb_configs.elsevier as config
 
         print("Setting parameters for rel_prefix-'{}'".format(rel_prefix))
-        file_count_first = 0
-        file_count_span = 0
+        xfile_count_first = 0
+        xfile_count_span = 0
         input_path_glob = '**/pii_*.xml'
         # rel_prefix e2017 used 20180124 with range(2010,2018)
         # rel_prefix e2017 used 20180124 with range(2018,2019)
@@ -1614,8 +1461,8 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
     elif rel_prefix == 'x2018':
         import xml2rdb_configs.xis_subjects as config
         print("Setting parameters for rel_prefix-'{}'".format(rel_prefix))
-        file_count_first = 0
-        file_count_span = 0
+        xfile_count_first = 0
+        xfile_count_span = 0
         # here may define a Item object , where for xis it is initialized
         # to read a xis file
         # And it has its  method
@@ -1665,279 +1512,6 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
         verbosity=1)
     sequence_doc_nodes = doc_node_set.generator_doc_nodes()
 
-    # migrate rest of these
-    '''
-    if study == 'crafa':
-        import xml2rdb_configs.crossref as config
-        # Note- input folder is/was populated via program crafatxml
-        rel_prefix = 'y2016_'
-        # All files under the input folder selected for input_path_list below will
-        # be used as input
-        input_folder = '{}/output_crafatxml/doi/2016'.format(input_folders_base)
-        input_folder = etl.home_relative_folder('/output_crafatxml/doi/2016')
-        doc_rel_name = 'cross_doi' # must match highest level table dbname in
-            od_rel_datacolumns
-        #doc_root_xpath = './crossref-api-filter-aff-UF' #this matches root node
-            assignment in crafatxml program
-        doc_root_xpath = './crossref-api-filter-aff-UF/message'
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-        input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
-        print("STUDY={}, got {} input files under {}"
-              .format(study, len(input_path_list),input_folder))
-        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-        od_rel_datacolumns, d_node_params = config.sql_mining_params()
-        file_count_first = 0
-        file_count_span = 0
-
-    elif study in [ 'ccila' ] : #ccila is cuban collection i? latin america
-        import xml2rdb_configs.marcxml as config
-        rel_prefix = 'ccila_'
-        output_folder_include_secsz = False
-
-        # This is where the precursor program marc2xml leaves its marcxml data
-        # for ccila UCRiverside # items
-        in_folder_name = etl.data_folder(linux='/home/robert/', windows='C:/users/podengo/',
-            data_relative_folder='git/outputs/marcxml/UCRiverside/')
-
-        #windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
-        folder_output_base = etl.data_folder(linux='/home/robert/git/outputs/'
-            , windows='C:/users/podengo/git/outputs/'
-            , data_relative_folder=('xml2rdb/{}/'.format(study)))
-
-        print("study {}, using folder_output_base={}".format(study,folder_output_base))
-
-        input_folder = in_folder_name
-        input_folders = []
-        input_folders.append(input_folder)
-        input_path_glob = '**/marc*.xml'
-
-        doc_rel_name = 'record' # must match highest level table dbname in od_rel_datacolumns
-        doc_root_xpath = ".//{*}record"
-
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-        d_xml_params['attribute_text'] = 'text'
-
-        print("STUDY={}, got {} input files under {}"
-              .format(study, len(input_path_list),input_folder))
-        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-        od_rel_datacolumns, d_node_params = config.sql_mining_params()
-        file_count_first = 0
-        file_count_span = 0
-
-    elif study in [ 'entitlement' ] : #
-        import xml2rdb_configs.entitlement as config
-        rel_prefix = 'enttl'
-
-        # This is where the precursor program marc2xml leaves its marcxml data for ccila UCRiverside
-        # items
-        in_folder_name = etl.data_folder(linux='/home/robert/', windows='U:/'
-            , data_relative_folder='data/elsevier/output_entitlement/')
-
-        folder_output_base = etl.data_folder(linux='/home/robert/git/outputs'
-            , windows='U:/data/outputs'
-            , data_relative_folder='outputs/xml2rdb/entitlement/')
-
-        input_folder = in_folder_name
-        input_folders = []
-        input_folders.append(input_folder)
-        input_path_glob = 'pii*.xml'
-
-        doc_rel_name = 'entitlement' # must match highest level table dbname in od_rel_datacolumns
-        doc_root_xpath = ".//{*}document-entitlement"
-
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-        d_xml_params['attribute_text'] = 'text'
-
-        print("STUDY={}, got {} input files under {}"
-              .format(study, len(input_path_list),input_folder))
-        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-        od_rel_datacolumns, d_node_params = config.sql_mining_params()
-        file_count_first = 0
-        file_count_span = 0
-    elif study == 'crawd': # CrossRefApi Works by Doi-list
-        import xml2rdb_configs.crossref as config
-        # Note- input folder is/was populated via program crawdxml- where crawdxml
-        # gets Works Dois MD for 'new' uf articles as found by diffing a week to
-        # week SCOPUS harvest # of UF-affiliated dois/articles
-        rel_prefix = 'crawd_' # maybe try wd_ as a prefix sometime
-        input_folder = '{}/output_crawdxml/doi'.format(data_elsevier_folder)
-        doc_rel_name = 'cross_doi' # must match highest level table dbname in
-            od_rel_datacolumns
-        doc_root_xpath = './response/message'
-        input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
-        print("STUDY={}, got {} input files under {}"
-            .format(study, len(input_path_list),input_folder))
-        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-        od_rel_datacolumns, d_node_params = config.sql_mining_params()
-        file_count_first = 0
-        file_count_span = 0
-
-    elif study == 'crafd': # CrossRefApi filter by D for deposit date (and it
-        # selects only UF affiliations)
-        import xml2rdb_configs.crossref as config
-        # Note- input folder is/was populated via program crafdtxml
-        rel_prefix = 'crafd2017_'
-        # NOTE LIMIT INPUT FOLDER for now...
-        input_folder = '{}/output_crafdtxml/doi/2017/06/23'.format(data_elsevier_folder)
-        input_folders = [ input_folder ]
-        input_path_glob = 'doi_*.xml'
-        doc_rel_name = 'cross_doi' # must match highest level table dbname
-            in od_rel_datacolumns, set below.
-        #Next doc_root_xpath is set by the harvester crafdtxml so see its code.
-        doc_root_xpath = './crossref-api-filter-date-UF/message'
-
-        input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
-        print("STUDY={}, got {} input files under {}"
-              .format(study, len(input_path_list),input_folder))
-        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-        od_rel_datacolumns, d_node_params = config.sql_mining_params()
-        file_count_first = 0
-        file_count_span = 0
-
-    elif study == 'elsevier':
-        import xml2rdb_configs.elsevier as config
-
-        file_count_first = 0
-        file_count_span = 0
-        input_path_glob = '**/pii_*.xml'
-
-        rel_prefix='e2016b_'
-        # Set input folders to 'orig load date' to capture recent years through 20170824,
-        # that is, the latest elsevier harvest to date.
-        rel_prefix='e2017b_'
-
-        input_folders = []
-        for year in range(2010, 2018):
-            input_folders.append('{}/output_ealdxml/{}/'.format(data_elsevier_folder,year))
-
-        doc_rel_name = 'doc'
-        doc_root_xpath = './{*}full-text-retrieval-response'
-
-        # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
-        od_rel_datacolumns, d_node_params = config.sql_mining_params()
-    elif study == 'scopus':
-        import xml2rdb_configs.scopus as config
-        rel_prefix = 'h5_' #h5 is harvest 5 of 20161202
-        rel_prefix = 'h6_' #h6 is harvst 6 of 20161210 saturday
-        rel_prefix = 'h7_' #h7 is 20161216 friday
-        rel_prefix = 'h8_' #h8 is 20161223 friday - not run
-        rel_prefix = 'h9_' #h9 is 20161230 friday - not run
-        rel_prefix = 'h2016_10_' #h2016 is for query pubyear 2016, 10 is for harvest
-           10 done on 20170106 friday
-
-        rel_prefix, year = ('h201709_', '2017')
-
-        # Year 2016 input
-        input_folder = '{}/output_satxml/{}/doi'.format(data_elsevier_folder,year)
-
-        input_path_list = list(Path(input_folder).glob('**/doi_*.xml'))
-
-        doc_rel_name = 'scopus'
-        doc_root_xpath = './{*}entry'
-        od_rel_datacolumns, d_node_params = config.sql_mining_params()
-
-    elif study == 'oadoi':
-        import xml2rdb_configs.oadoi as config
-        # for 20161210 run of satxml(_h6) and oaidoi -
-            # c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
-        # for 20170308 run using dois from crafd_crawd for UF year 2016
-
-        input_folder =  data_elsevier_folder + "/outputs/oadoi/"
-        input_folders = [input_folder]
-        input_path_glob = '**/oadoi_*.xml'
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-
-        print("Study oadoi, input folder={}, input path glob={}, N input files={},"
-              " data_elsevier_folder = {}"
-              .format(input_folder,input_path_glob,len(input_path_list),data_elsevier_folder))
-
-        # rel_prefix 'oa2016_' is used because the oaidoi precursor process
-        # to produce the dois input list
-        # was run on scopus dois fo/der uf authors from year 2016... should
-        # probably change prefix to oa_scopus2016_
-        # input_folder = '{}/output_oadoi/2016-01-10T12-54-23Z'.format(data_elsevier_folder)
-        rel_prefix = 'oa_cruf2016_'
-        doc_rel_name = 'oadoi'
-        doc_root_xpath = './{*}entry'
-        od_rel_datacolumns, d_node_params = config.sql_mining_params()
-
-    elif study == 'orcid':
-        import xml2rdb_configs.orcid as config
-        #for 20161210 run of satxml(_h6) and oaidoi -
-        # c:/rvp/elsevier/output_oadoi/2016-12-10T22-21-19Z
-        #input_folder = '{}/output_oadoi/2017-01-10T12-54-23Z'.format(data_elsevier_folder)
-        # for 20170308 run using dois from crafd_crawd for UF year 2016
-        input_folder = '{}/output_orpubtxml'.format(data_elsevier_folder)
-        input_folders = [ input_folder]
-        input_path_glob = '**/orcid_*.xml'
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-
-        print("Study {}, input folder={}, input path glob={}, input files={}"
-              .format(study, input_folder,input_path_glob,len(input_path_list)))
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-        rel_prefix = 'orcid_'
-        doc_rel_name = 'person'
-        # TODO: add batch id or dict column_constant to define column name and
-        # constant to insert in the
-        # doc_rel_name table to hold hash for external grouping studies,
-        # repeated/longitutinal studies
-        # raise Exception("Development EXIT")
-
-        doc_root_xpath = './{*}record'
-        od_rel_datacolumns, d_node_params = config.sql_mining_params()
-
-    elif study == 'citrus':
-        import xml2rdb_configs.citrus as config
-
-        input_folder = etl.data_folder(linux='/home/robert/', windows='u:/',
-            data_relative_folder='data/citrus_mets_base')
-        input_folders = [ input_folder]
-        input_path_glob = '**/*mets.xml'
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-
-        print("Study {}, input folder={}, input path glob={}, input files={}"
-              .format(study, input_folder,input_path_glob,len(input_path_list)))
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-        rel_prefix = 'citrus_'
-        doc_rel_name = 'mets'
-        # TODO: add batch id or dict column_constant to define column name
-        # and constant to insert in the doc_rel_name table to hold hash
-        # for external grouping studies, repeated/longitutinal studies
-        # raise Exception("Development EXIT")
-
-        doc_root_xpath = './METS:mets'
-        d_xml_params['attribute_text'] = 'attribute_text'
-        d_xml_params['attribute_innerhtml'] =  'attribute_innerhtml'
-
-        od_rel_datacolumns, d_node_params = config.sql_mining_params()
-    elif study == 'merrick_oai_set':
-        import xml2rdb_configs.merrick_oai_sets as config
-
-        input_folder = etl.data_folder(linux='/home/robert/', windows='u:/',
-            data_relative_folder='data/merrick_oai_set')
-        input_folders = [ input_folder]
-        input_path_glob = '**/*listsetspecs.xml'
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-
-        print("Study {}, input folder={}, input path glob={}, input files={}"
-              .format(study, input_folder,input_path_glob,len(input_path_list)))
-        input_path_list = list(Path(input_folder).glob(input_path_glob))
-        rel_prefix = 'merrick_oai_'
-        doc_rel_name = 'parent'
-        # TODO: add batch id or dict column_constant to define column name
-        # and constant to insert in the  doc_rel_name table to hold
-        # hash for external grouping studies, repeated/longitutinal studies
-        # raise Exception("Development EXIT")
-
-        doc_root_xpath = './/{*}ListSets'
-        d_xml_params['attribute_text'] = 'attribute_text'
-        d_xml_params['attribute_innerhtml'] =  'attribute_innerhtml'
-
-        od_rel_datacolumns, d_node_params = config.sql_mining_params()
-    else:
-        raise Exception("Study ={} is not valid.".format(repr(study)))
-    '''
-
     # OPTIONAL - If a study specified multiple input folders and input_path_glob,
     # then honor them when constructing the input_path_list
     if (input_folders is not None and input_path_glob is not None):
@@ -1967,8 +1541,6 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
         ,'input-folders': repr(input_folders)
         ,'folder-output-base': repr(folder_output_base)
         ,'input-files-count': str(len(input_path_list))
-        ,'file-count-first': file_count_first
-        ,'file-count-span': file_count_span
         ,'folders_base': data_elsevier_folder
         ,'doc-rel-name': doc_rel_name
         ,'doc-root-xpath': doc_root_xpath
@@ -1978,15 +1550,16 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
     })
 
     # RUN the analysis and collect stats
+    #using xml2rdb2 now.
     log_filename, pretty_log = xml2rdb(
-        input_path_list=input_path_list,
+        sequence_doc_nodes = sequence_doc_nodes,
+        # input_path_list=input_path_list,
         folder_output_base=folder_output_base,
         output_folder_include_secsz=output_folder_include_secsz,
         doc_root_xpath=doc_root_xpath, rel_prefix=rel_prefix,
         doc_rel_name=doc_rel_name, use_db=use_db,
         d_node_params=d_node_params, od_rel_datacolumns=od_rel_datacolumns,
-        d_params=d_params, file_count_first=file_count_first,
-        file_count_span=file_count_span,
+        d_params=d_params,
         d_xml_params=d_xml_params,
         verbosity=verbosity,
         )

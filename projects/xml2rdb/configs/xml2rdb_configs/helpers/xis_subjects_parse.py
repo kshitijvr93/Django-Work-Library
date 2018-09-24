@@ -181,7 +181,6 @@ def generator_new_xis_items(
     # end with open
     # normal end of file
     return (None, lines)
-
 # end def generator_new_xis_items
 
 def run():
@@ -193,7 +192,7 @@ def run():
     max_items = 0
     lines = ''
     verbosity = 1
-    create_root_tag = True
+    create_root_tag = False
 
     with open(ofn, mode='wb') as out_file, \
         open(lfn, mode='w') as log_file:
