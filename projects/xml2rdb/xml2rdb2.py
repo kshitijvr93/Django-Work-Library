@@ -68,17 +68,96 @@ check for provision of its required arguments by its own caller.
 Where a function requires argument names 'd_oai' and 'output_folder'
 one of its first code lines would be:
 
-      require_arg_names(locals(), ['d_oai', 'output_folder'])
+      require_args_by_me_locals_names(locals=locals(),
+        names=['d_oai', 'output_folder'])
 '''
-def require_arg_names(d_caller_locals, names):
-    required_args = [ v for k, v in d_caller_locals.items() if k in names]
-    if not all(required_args):
-          raise ValueError(
-             f"Error: Some required variables in {names!r} not set.")
+def require_args_by_me_dlocals_names(me=None,dlocals=None, names=None):
+    if me is None or dlocals is None or names is None:
+        raise(ValueError,f"Key argument me, dlocals, or names is missing")
+    required_args = [ v for k, v in dlocals.items() if k in names]
+    for k,v in dlocals.items():
+      if k not in names:
+          continue
+      if not v:
+        raise ValueError(
+          f"Error: {me}: required arg '{k}' is not set.")
+    # end for k,v
+#end def require_args_by_me_dlocals_names
+
+# { def generate_doc_root_nodes
+'''
+def sequence_doc_root_nodes(
+   input_file_name=None, root_item_tag=None
+    log_file=None, verbosity=0):
+
+Generate a generator/sequence,
+given an input file name, and string root_item_tag that defines the tag
+for a doc_root_node in the file. Each sequence iteration yields
+    the lxml doc root node for the next successive input
+    lines that comprise a document in the input file.
+
+Return null if:
+
+(1) no line left in input file, or
+(2) the next line does not begin with the <root_item_tag>
+
+Buffer input lines into a string and keep reading until:
+case: an end of file,
+   in which case return null
+case: an </root_item_tag> is found
+   in which case
+   - parse the input lines buffer into an lxml doc,
+   - yield the root node of the lxml doc
 
 '''
+def sequence_doc_root_nodes_by_filename(
+    filename=None,
+    root_item_tag=None,
+    log_file=None,
+    verbosity=0):
+
+    me = 'sequence_doc_root_nodes'
+    required_args = ['filename', 'root_item_tag']
+    require_args_by_me_dlocals_names(
+      me=me,dlocals=locals(), names=required_args)
+
+    seq = 'sequence_doc_root_nodes_by_filename'
+    node = None
+    lines = ''
+
+    with open(filename,mode="r") as input_file:
+        line = input_file.readline()
+        if verbosity > 0:
+            print(f"{me}: Got first input line='{line}'")
+        start_str =f"<{root_item_tag}"
+        if not line.startswith(start_str):
+            if verbosity > 0:
+                print(
+                  f"{me}:Error: line  '{line}' does not startwith '{start_str}'")
+            return None
+        lines += line
+        end_str =f"</{root_item_tag}"
+        for line in input_file:
+            if verbosity > 1:
+                print(f"{seq}: Got input line='{line}'")
+            lines += line
+            if line.startswith(end_str):
+                #Parse the lines buffer as xml and return the item node
+                if verbosity > 1:
+                    print(f"{seq}: Made all lines='{lines}'")
+                node_root = etree.fromstring(str.encode(lines))
+                yield node_root
+
+        #if we got here this is premature end of file
+        # should never happen with automated inputs, just print it if it does
+        print( f"{me}: premature end of input file {input_file}, lines={lines}")
+        return None
+    # end with open
+    # normal end of file
+    return None
+'''
 DocNodeSet instantiates a description of documents to use as input.
-Its method generator_doc_nodes creates a generator of a sequence
+Its method sequence_doc_nodes creates a generator of a sequence
 of lxml document root nodes, where each is to an input document to be
 processed.
 '''
@@ -94,8 +173,16 @@ class DocNodeSet():
         self.input_folders = input_folders
         self.input_glob = input_glob
         self.input_path_list = []
+        self.doc_root_tag = doc_root_tag
+        # Maybe remove later -- next is not really central info
+        self.max_test_nodes = 0
         for input_folder in input_folders:
-            self.input_path_list += list(Path(input_folder).glob(input_file_glob))
+            self.input_path_list += list(
+              Path(input_folder).glob(input_file_glob))
+
+        #todo: in sequence method, SKIP duplicate path names that
+        #might result due to multiple input folders
+
         self.progress_batch_size = progress_batch_size
         # Upon parsing, converting input xml to rdb, use this as the
         # 'pseudo attribute name' for the text content of any doc node
@@ -104,11 +191,9 @@ class DocNodeSet():
         # Similar, but for innerhtml of a doc node? output? maybe dicard this.
         self.attribute_innerhtml = attribute_innerhtml
     #end def __init__
-#end class DocNodeSet
-
 
     '''
-    method: generator_doc_nodes
+    method: sequence_doc_nodes
     create and return a generator for a sequence of doc_nodes
 
     Also, internally uses the glob.iglob generator instead of glob.globe so the
@@ -118,11 +203,25 @@ class DocNodeSet():
 
     TODO: provide optional report of failed file reads and parses..
     See older version of xml2rdb code for prototype, messages to report.
-    '''
-    def generator_doc_nodes(self, max_text_nodes=0):
-        return None
 
+    #todo: in sequence method, SKIP duplicate path names that
+    #might result due to multiple input folders
+
+    '''
+    def sequence_doc_nodes(self, max_text_nodes=0):
+        for path_count,path in enumerate(self.input_path_list):
+          # Full absolute path of input file name is:
+          input_file_name = "{}/{}".format(path.parents[0], path.name)
+          sequence_doc_root_nodes = sequence_doc_root_nodes_by_filename(
+            root_item_tag=self.doc_root_tag, filename=input_file_name
+            )
+          for doc_root_node in sequence_doc_root_nodes:
+              yield doc_root_node
+          # end for
+        #end for path_count, path
+        return None
 #end class DocNodeSet
+
 '''
 Method new_od_relation
 
@@ -543,75 +642,7 @@ def node_visit_output(
     #print(msg)
     return d_row
 # def end node_visit_output
-
-# { def generate_doc_root_nodes
-'''
-def generator_doc_root_nodes(
-   input_file_name=None, root_item_tag=None
-    log_file=None, verbosity=0):
-
-Generate a generator/sequence,
-given an input file name, and string root_item_tag that defines the tag
-for a doc_root_node in the file. Each sequence iteration yields
-    the lxml doc root node for the next successive input
-    lines that comprise a document in the input file.
-
-Return null if:
-
-(1) no line left in input file, or
-(2) the next line does not begin with the <root_item_tag>
-
-Buffer input lines into a string and keep reading until:
-case: an end of file,
-   in which case return null
-case: an </root_item_tag> is found
-   in which case
-   - parse the input lines buffer into an lxml doc,
-   - yield the root node of the lxml doc
-
-'''
-def generator_doc_root_nodes(
-    input_file_name=None,
-    root_item_tag=None,
-    log_file=None,
-    verbosity=0):
-
-    me = 'generator_doc_root_nodes'
-    seq = 'sequence_doc_root_nodes'
-    node = None
-    lines = ''
-
-    with open(input_file_name,mode="r") as input_file:
-        line = input_file.readline()
-        if verbosity > 0:
-            print(f"{me}: Got first input line='{line}'")
-        start_str =f"<{root_item_tag}"
-        if not line.startswith(sw):
-            if verbosity > 0:
-                print(
-                  f"{me}:Error: line  '{line}' does not startwith '{start_str}'")
-            return None
-        lines += line
-        end_str =f"</{root_item_tag}"
-        for line in input_file:
-            if verbosity > 1:
-                print(f"{seq}: Got input line='{line}'")
-            lines += line
-            if line.startswith(end_str):
-                #Parse the lines buffer as xml and return the item node
-                if verbosity > 1:
-                    print(f"{seq}: Made all lines='{lines}'")
-                node_root = etree.fromstring(str.encode(lines))
-                yield node_root
-
-        #if we got here this is premature end of file
-        # should never happen with automated inputs, just print it if it does
-        print( f"{me}: premature end of input file {input_file}, lines={lines}")
-        return None
-    # end with open
-    # normal end of file
-    return None
-# } end def generator_doc_root_nodes
+# } end def sequence_doc_root_nodes
 
 
 '''
@@ -633,7 +664,6 @@ def xml_doc_rdb2(
     od_relation=None,
     output_folder=None,
     doc_rel_name=None,
-    doc_root=None, # IGNORE - we create our own in this modified method
     doc_root_xpath=None,
     d_node_params=None,
     od_rel_datacolumns=None,
@@ -656,7 +686,7 @@ def xml_doc_rdb2(
       'd_xml_params','od_rel_datacolumns', 'doc_rel_name','doc_root_xpath',
       'od_relation'
       ]
-    require_arg_name(locals(), arg_names=need_args)
+    require_args_by_me_dlocals_names(me,locals(),names=need_args)
     msg = f"{me}:Starting..."
     log_messages.append(msg)
 
@@ -694,13 +724,12 @@ def xml_doc_rdb2(
 
     # Prepare internal doc_root node to also impart some run or batch-related
     # data settings for the output data
-    input_root_node = doc_root_node
-    d_nsmap = dict(input_node_root.nsmap)
+    d_nsmap = dict(input_root_node.nsmap)
     d_namespaces = {key:value
         for key,value in d_nsmap.items() if key is not None}
     # We must create a separate doc root for every doc input root node
     doc_root = etree.Element("doc")
-    doc_root.append(input_node_root)
+    doc_root.append(input_root_node)
 
     doc_root.attrib['file_name'] = "no_file_name"
     doc_root.attrib['load_name'] = 'some_load_name'
@@ -743,7 +772,7 @@ for each input xml doc.
 
 '''
 def xml_paths_rdb(
-    sequence_doc_nodes=None,
+    doc_node_set=None,
     doc_root_xpath=None,
     rel_prefix=None,
     doc_rel_name=None,
@@ -756,9 +785,10 @@ def xml_paths_rdb(
     ):
 
     me = "xml_paths_rdb"
-    need_args=[
-      'sequence_doc_nodes'
-      'doc_xroot_path',
+
+    needed_arg_names=[
+      'doc_node_set',
+      'doc_root_xpath',
       'rel_prefix',
       'd_node_params',
       'doc_rel_name',
@@ -766,8 +796,10 @@ def xml_paths_rdb(
       'output_folder',
       'use_db',
       'd_xml_params'
+      'doc_node_set'
       ]
-    require_arg_name(locals(), arg_names=need_args)
+    require_args_by_me_dlocals_names(
+      me=me,dlocals=locals(), names=needed_arg_names)
 
     log_messages = []
     msg = (f"{me}:STARTING...")
@@ -788,7 +820,7 @@ def xml_paths_rdb(
 
     doc_count = 0
     dns = doc_node_set
-    sequence_doc_nodes = dns.generator_doc_nodes
+    sequence_doc_nodes = dns.sequence_doc_nodes()
     max_nodes = dns.max_test_nodes
     progress_batch_size = dns.progress_batch_size
 
@@ -797,10 +829,10 @@ def xml_paths_rdb(
         if (max_nodes > 0) and ( doc_count >= max_nodes):
             if verbosity > 0:
               # This clause used for testing only...
-              msg =  "Max number of {} files processed. Breaking.".format(i)
+              msg = "Max number of {} files processed. Breaking.".format(i)
               log_messages.append(msg)
             break
-        if batch_size > 0  and (doc_count % progress_batch_size == 0):
+        if progress_batch_size > 0  and (doc_count % progress_batch_size == 0):
             progress_report = 1
         else:
             progress_report = 0
@@ -832,7 +864,6 @@ def xml_paths_rdb(
             od_relation=od_relation,
             output_folder=output_folder,
             doc_rel_name=doc_rel_name,
-            doc_root=doc_root,
             doc_root_xpath=doc_root_xpath,
             d_node_params=d_node_params,
             od_rel_datacolumns=od_rel_datacolumns,
@@ -841,15 +872,17 @@ def xml_paths_rdb(
             )
 
         if len(sub_messages) > 0 and False:
-            log_messages.append({'xml_doc_rdb2_return_value:sub_messages})
+            log_messages.append({'xml_doc_rdb2_return_value':sub_messages})
     # end for doc_node in sequence_doc_nodes:
 
-    msg = ("{}:Finished doc count={} input documents"
-        .format(me,doc_count), flush=True)
+    msg = f"{me}:Finished doc count={doc_count} input documents"
     print (msg, flush=True)
-
     log_messages.append(msg)
-    print(msg)
+
+    msg = f"{me}:Creating sql2008 and mysql bulk loading scripts."
+    print (msg, flush=True)
+    log_messages.append(msg)
+
 
     #### CREATE THE RDB INSERT COMMANDS - HERE USING SQL THAT WORKS WITH
     # MSOFT SQL SERVER 2008, maybe 2008+
@@ -858,7 +891,7 @@ def xml_paths_rdb(
     sql_filename = "{}/sql_server_creates.sql".format(output_folder)
     use_setting = 'use [{}];\n'.format(use_db)
 
-    # MYSQL databases
+    # MYSQL(done) and Postgresql(undone) databases
     mysql_filename = "{}/mysql_creates.sql".format(output_folder)
     psql_filename = "{}/psql_creates.sql".format(output_folder)
 
@@ -901,7 +934,7 @@ def xml_paths_rdb(
         for rel_key, d_relinfo in od_relation.items():
             relation = '{}_{}'.format(rel_prefix,rel_key)
 
-            # The tsf_filename is one line of comma-separated field names
+            # The tsf_filename is one line of tab-separated field names
             # which are useful to csv DictReader follow-on processes
             tsf_filename = "{}/{}.tsf".format(output_folder,rel_key)
             tsf_file = open(tsf_filename, mode='w', encoding='utf-8')
@@ -939,9 +972,11 @@ def xml_paths_rdb(
                 #print("Column = {}.{}".format(relation,column))
 
                 if ctype is None:
-                    raise Exception("Table {}, column {} ctype is None".format(relation,column))
+                    raise Exception("Table {}, column {} ctype is None"
+                      .format(relation,column))
                 if column is None:
-                    raise Exception("Table {} has a None column".format(relation))
+                    raise Exception("Table {} has a None column"
+                      .format(relation))
 
                 # HIERARCHICAL KEY COLUMNS - DB VERSIONS
                 if column in key_columns:
@@ -949,7 +984,6 @@ def xml_paths_rdb(
                       print('{}{} integer'.format(sep,column.replace('-','_'))
                           ,file=file)
                 else:
-
                     # DATA COLUMNS - DB VERSIONS
                     data_column_tuples = [
                         (sql_file, 'nvarchar(4555)'),(mysql_file,'text'),
@@ -1108,9 +1142,8 @@ plainly separate the three groups, each which contains sub-parameters for
 its group.
 '''
 def xml2rdb(
-        sequence_doc_nodes=None,
+        doc_node_set=None,
         # input_path_list=None,
-        file_count_first=0, file_count_span=1,
         doc_root_xpath=None,
         folder_output_base=None,
         output_folder_include_secsz=True,
@@ -1119,6 +1152,22 @@ def xml2rdb(
         d_node_params=None, od_rel_datacolumns=None,
         d_params=None,
         d_xml_params=None, verbosity=0):
+
+    required_arg_names = [
+      'doc_node_set',
+      'doc_root_xpath',
+      'rel_prefix',
+      'doc_rel_name',
+      'use_db'
+      'd_node_params'
+      'od_rel_datacolumns'
+      'd_params',
+      'd_xml_params',
+      ]
+
+    me = "xml2rdb"
+    require_args_by_me_dlocals_names(me=me,dlocals=locals(), names=required_arg_names)
+
     me = "xml2rdb"
     utc_now = datetime.datetime.utcnow()
     utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -1170,16 +1219,16 @@ def xml2rdb(
     ################# READ THE INPUT, AND COLLECT AND OUTPUT STATS ################
 
     count_input_file_failures = xml_paths_rdb(
-      sequence_doc_nodes=sequence_doc_nodes,
+      doc_node_set = doc_node_set,
       doc_root_xpath=doc_root_xpath,
       rel_prefix = rel_prefix,
-      doc_rel_name = doc_rel_name,
-      output_folder=output_folder_final,
       d_node_params=d_node_params,
+      doc_rel_name = doc_rel_name,
       od_rel_datacolumns=od_rel_datacolumns,
+      output_folder=output_folder_final,
       use_db=use_db,
-      verbosity=verbosity,
       d_xml_params=d_xml_params,
+      verbosity=verbosity,
     )
     d_log['run_parameters'].update({"count_input_file_failures": count_input_file_failures})
 
@@ -1474,7 +1523,7 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
     doc_node_set = DocNodeSet(input_folders=input_folders,
         input_file_glob=input_path_glob,
         verbosity=1)
-    sequence_doc_nodes = doc_node_set.generator_doc_nodes()
+    sequence_doc_nodes = doc_node_set.sequence_doc_nodes()
 
     # OPTIONAL - If a study specified multiple input folders and input_path_glob,
     # then honor them when constructing the input_path_list
@@ -1515,8 +1564,9 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
 
     # RUN the analysis and collect stats
     #using xml2rdb2 now.
+    d_xml_params = {'attribute_text':'text'}
     log_filename, pretty_log = xml2rdb(
-        sequence_doc_nodes = sequence_doc_nodes,
+        doc_node_set=doc_node_set,
         # input_path_list=input_path_list,
         folder_output_base=folder_output_base,
         output_folder_include_secsz=output_folder_include_secsz,
