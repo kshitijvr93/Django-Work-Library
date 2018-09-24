@@ -123,9 +123,9 @@ def sequence_doc_root_nodes_by_filename(
 
     seq = 'sequence_doc_root_nodes_by_filename'
     node = None
-    lines = ''
 
     with open(filename,mode="r") as input_file:
+        lines = ''
         line = input_file.readline()
         if verbosity > 0:
             print(f"{me}: Got first input line='{line}'")
@@ -146,6 +146,7 @@ def sequence_doc_root_nodes_by_filename(
                 if verbosity > 1:
                     print(f"{seq}: Made all lines='{lines}'")
                 node_root = etree.fromstring(str.encode(lines))
+                lines = ''
                 yield node_root
 
         #if we got here this is premature end of file
@@ -163,7 +164,7 @@ processed.
 '''
 class DocNodeSet():
     def __init__(self, input_folders=None, input_file_glob=None,
-        progress_batch_size=1000,
+        progress_batch_size=200,
         doc_root_tag="Thesis",
         attribute_text = 'text',
         attribute_innerhtml = '',
@@ -397,7 +398,7 @@ def node_visit_output(
 
     me = 'node_visit_output()'
     verbose = 0
-    if verbosity > 0:
+    if verbosity > 1:
         msg = ("{}:START: verbosity={},node.tag={}, node_index={}"
                .format(me, verbosity, node.tag, node_index))
         print(msg)
@@ -496,7 +497,7 @@ def node_visit_output(
                     column_value = (node.attrib[attr_name].replace('\t',' ')
                       .replace('\n',' ').replace('\r','').strip())
 
-            if verbosity> 0:
+            if verbosity> 2:
                 print("{}:setting d_row for column_name={} to value={}"
                     .format(me,column_name,column_value))
             d_row[column_name] = column_value
@@ -1497,7 +1498,7 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
         # input_path_glob will be one if its  init params...
         # Eg, for a reader of independent item files in a hierarchy
         input_path_glob = 'xis_subjects_parsed.xml'
-        input_path_glob = 'xis_subjects_small.xml'
+        #input_path_glob = 'xis_subjects_small.xml'
         # NOTE: Tod0, depending on oher init params of ItemReader, may also add the
         # FolderSet as optional init param,
 

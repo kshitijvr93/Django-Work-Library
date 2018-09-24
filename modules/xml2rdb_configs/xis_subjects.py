@@ -169,8 +169,8 @@ def sql_mining_params():
                 'column_constant':{
                     'source_tag': 'TOPIC',
                     'marc': '653',
-                    'indcator1': ' ',
-                    'indicator2': '7',
+                    'ind1': ' ',
+                    'ind2': '7',
                     'keep': 'y',
                 },
             },
@@ -183,8 +183,8 @@ def sql_mining_params():
                 'column_constant':{
                     'source_tag': 'GEO',
                     'marc': '651',
-                    'indcator1': ' ',
-                    'indicator2': '7',
+                    'ind1': ' ',
+                    'ind2': '7',
                     'keep': 'y',
                 },
             },
@@ -197,12 +197,11 @@ def sql_mining_params():
                 'column_constant':{
                     'source_tag': 'OLDKW',
                     'marc': '650',
-                    'indcator1': ' ',
-                    'indicator2': '4',
+                    'ind1': ' ',
+                    'ind2': '4',
                     'keep': 'n',
                 },
             },
-
             # FLORIDIANS KEYWORDS
             "./FLORIDIANS/I" : {
                 'multiple':1,
@@ -211,12 +210,11 @@ def sql_mining_params():
                 'column_constant':{
                     'source_tag': 'FLORIDIANS',
                     'marc': '600',
-                    'indcator1': ' ',
-                    'indicator2': '7',
+                    'ind1': ' ',
+                    'ind2': '7',
                     'keep': 'y',
                 },
             },
-
             # OLDLCSH KEYWORDS
             "./OLDLCSH/I" : {
                 'multiple':1,
@@ -225,9 +223,9 @@ def sql_mining_params():
                 'column_constant':{
                     'source_tag': 'OLDLCSH',
                     'marc': '600',
-                    'indcator1': ' ',
-                    'indicator2': '7',
-                    'keep': 'y',
+                    'ind1': ' ',
+                    'ind2': '7',
+                    'keep': 'n',
                 },
             },
 
