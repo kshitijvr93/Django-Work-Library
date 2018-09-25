@@ -4,8 +4,7 @@
 
 '''
 Program xml2rdb inputs xml docs from saved xml files (for example from the
-Elsevier Publisher's
-full-text api).
+Elsevier Publisher's full-text api).
 Each input xml file has xml-coded information pertaining to a single xml
 document.
 '''
@@ -78,7 +77,7 @@ def require_args_by_me_dlocals_names(me=None,dlocals=None, names=None):
     for k,v in dlocals.items():
       if k not in names:
           continue
-      if not v:
+      if v is None:
         raise ValueError(
           f"Error: {me}: required arg '{k}' is not set.")
     # end for k,v
@@ -124,7 +123,7 @@ def sequence_doc_root_nodes_by_filename(
     seq = 'sequence_doc_root_nodes_by_filename'
     node = None
 
-    with open(filename,mode="r") as input_file:
+    with open(filename, mode="r") as input_file:
         lines = ''
         line = input_file.readline()
         if verbosity > 0:
@@ -142,18 +141,13 @@ def sequence_doc_root_nodes_by_filename(
                 print(f"{seq}: Got input line='{line}'")
             lines += line
             if line.startswith(end_str):
-                #Parse the lines buffer as xml and return the item node
+                #Parse the lines buffer as xml and yield the item node
                 if verbosity > 1:
                     print(f"{seq}: Made all lines='{lines}'")
                 node_root = etree.fromstring(str.encode(lines))
                 lines = ''
                 yield node_root
-
-        #if we got here this is premature end of file
-        # should never happen with automated inputs, just print it if it does
-        print( f"{me}: premature end of input file {input_file}, lines={lines}")
-        return None
-    # end with open
+        #end of lines in this file
     # normal end of file
     return None
 '''
@@ -164,7 +158,7 @@ processed.
 '''
 class DocNodeSet():
     def __init__(self, input_folders=None, input_file_glob=None,
-        progress_batch_size=200,
+        progress_batch_size=1000,
         doc_root_tag="Thesis",
         attribute_text = 'text',
         attribute_innerhtml = '',
@@ -175,8 +169,6 @@ class DocNodeSet():
         self.input_glob = input_glob
         self.input_path_list = []
         self.doc_root_tag = doc_root_tag
-        # Maybe remove later -- next is not really central info
-        self.max_test_nodes = 0
         for input_folder in input_folders:
             self.input_path_list += list(
               Path(input_folder).glob(input_file_glob))
@@ -200,23 +192,31 @@ class DocNodeSet():
     Also, internally uses the glob.iglob generator instead of glob.globe so the
     entire input path list need not be generated first and stored in memory.
 
-    max_test_nodes: if non-zero, generated sequence will end after max_test_nodes
+    max_doc_count: if non-zero, generated sequence will end after max_doc_count
 
     TODO: provide optional report of failed file reads and parses..
     See older version of xml2rdb code for prototype, messages to report.
 
-    #todo: in sequence method, SKIP duplicate path names that
-    #might result due to multiple input folders
+    todo: in sequence method, SKIP duplicate path names that
+    might result due to multiple input folders
 
     '''
-    def sequence_doc_nodes(self, max_text_nodes=0):
+    def sequence_doc_nodes(self, min_doc_count=0, max_doc_count=0 ):
         for path_count,path in enumerate(self.input_path_list):
           # Full absolute path of input file name is:
           input_file_name = "{}/{}".format(path.parents[0], path.name)
           sequence_doc_root_nodes = sequence_doc_root_nodes_by_filename(
             root_item_tag=self.doc_root_tag, filename=input_file_name
             )
+
+          # Scan every doc_node
+          doc_count = 0
           for doc_root_node in sequence_doc_root_nodes:
+              doc_count += 1
+              if doc_count < min_doc_count and min_doc_count > 0:
+                  continue
+              if doc_count > max_doc_count and max_doc_count > 0:
+                  return None
               yield doc_root_node
           # end for
         #end for path_count, path
@@ -277,7 +277,6 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
 
     me='get_writable_db_file'
 
-
     if (od_relation is None or db_name is None
         or output_folder is None or od_parent_index is None
         or od_rel_datacolumns is None):
@@ -320,6 +319,7 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
 
         filename = '{}/{}.txt'.format(output_folder,db_name)
         print('{}: opening output {}'.format(me, filename))
+        od_rel_info['db_filename'] = filename
         od_rel_info['db_file'] = open(filename, mode='w'
             , encoding=output_encoding, errors=errors)
 
@@ -346,11 +346,13 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
         pkey_columns +="{}{}".format(sep, db_name)
         od_rel_info['pkey_columns'] = pkey_columns
 
-        # For datacolumns, set the SQL datatypes. Set all to nvarchar(MAX), which seems OK for now.
-        # Could also encode data types into user inputs for convenience by adding fields to the input
+        # For datacolumns, set the SQL datatypes. Set all to nvarchar(MAX),
+        # which seems OK for now.
+        # Could also encode data types into user inputs for convenience by
+        # adding fields to the input
         # structure od_rel_datacolumns but may not be needed.
-        # This is because fter xml2rdb is run, the end user can use standard SQL to change
-        # datatypes for columns within a database.
+        # This is because fter xml2rdb is run, the end user can use standard
+        # SQL to change datatypes for columns within a database.
 
         od_datacolumn_default = od_rel_datacolumns[db_name]
 
@@ -366,7 +368,8 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
         #print("{}:Dict for attribute_column already found for db_name={}".format(me,db_name))
         pass
     # For the given db_name, return the writable file to the caller
-    return od_rel_info['db_file']
+    # return od_rel_info['db_file']
+    return od_rel_info
 
 #end def get_writable_db_file
 '''
@@ -394,44 +397,43 @@ dictionary, d_row, to return to the parent node for its use.
 def node_visit_output(
     node=None, node_index=None, d_namespaces=None,
     d_node_params=None, od_rel_datacolumns=None, od_parent_index=None,
-    od_relation=None, output_folder=None,d_xml_params=None,verbosity=0):
+    od_relation=None, output_folder=None,d_xml_params=None,
+    verbosity=0):
 
     me = 'node_visit_output()'
-    verbose = 0
+    need_args=[
+      'd_namespaces',
+      'd_node_params',
+      'd_xml_params',
+      'od_rel_datacolumns',
+      'od_parent_index',
+      'od_relation',
+      'output_folder',
+      'node',
+      'node_index',
+    ]
+    require_args_by_me_dlocals_names(me,locals(),names=need_args)
+
     if verbosity > 1:
-        msg = ("{}:START: verbosity={},node.tag={}, node_index={}"
-               .format(me, verbosity, node.tag, node_index))
+        msg = (
+          "{}:START: node.tag={}, node_index={},parent_index={}"
+          .format(me, verbosity, node.tag, node_index, repr(od_parent_index)))
         print(msg)
+
     log_messages = []
 
-    if (node is None
-        or node_index is None or d_namespaces is None or od_parent_index is None
-        or od_relation is None or output_folder is None
-        or od_rel_datacolumns is None or d_xml_params is None):
-        msg = (
-          '''{}:BAD arg(s) within:od_parent_index={},\nnode={},
-          \noutput_folder={}, \nd_namespaces={}, \nod_relation={}'''
-          .format(me,repr(od_parent_index),repr(node)
-          ,repr(output_folder), repr(d_namespaces), repr(od_relation))
-        )
-        msg += "\n" + ("node_index={}".format(repr(node_index)))
-        raise RuntimeError(msg)
     attribute_text = d_xml_params.get('attribute_text','text')
     attribute_innerhtml = d_xml_params.get('attribute_innerhtml',
         'attribute_innerhtml')
-    # if 'multiple' not in d_node_params:
-    #    raise RuntimeError("{}: multiple keyword missing for node.tag={}"
-    #            .format(me,node.tag))
-    # pass along the parent index - we will append our index below only if
-    # multiple is 1
-    od_child_parent_index = od_parent_index
 
+    od_child_parent_index = od_parent_index
     multiple = d_node_params.get('multiple', 0)
-    if multiple is None:
-        msg = ("{}:Node tag={}, index={},node multiple is None."
-               .format(me,node.tag,node_index))
-        raise Exception()
-    if verbose > 0 and multiple == 0 and node_index > 1:
+    # if multiple is None:
+    #    msg = ("{}:Node tag={}, index={},node multiple is None."
+    #          .format(me,node.tag,node_index))
+    #  raise Exception()
+
+    if verbosity > 0 and multiple == 0 and node_index > 1:
         # Solution: in d_node_params, change multiple =0, provide a db_name,
         # and also update
         # od_rel_datacolumns to include this db_name as a table if it does
@@ -590,16 +592,20 @@ def node_visit_output(
     if multiple == 1:
         # For multiple == 1 nodes, we write an output line to the database
         # relation/table named by this node's 'db_name' value.
-        db_file = get_writable_db_file(od_relation=od_relation,
+        od_rel_info = get_writable_db_file(od_relation=od_relation,
             od_rel_datacolumns=od_rel_datacolumns,
             db_name=db_name, output_folder=output_folder,
             od_parent_index=od_parent_index)
+
+        db_file = od_rel_info['db_file']
+        db_filename = od_rel_info['db_filename']
 
         sep = ''
         db_line = ''
         #First, ouput parent indexes
         for parent_index in od_parent_index.values():
             db_line += ("{}{}".format(sep,parent_index))
+            #msg = (f"Writing line to ")
             sep = '\t'
         # Now output this node's index
         # It identifies a row for this node.tag in this relation among all
@@ -614,8 +620,7 @@ def node_visit_output(
         # For each field in d_row, put its value into od_column_values
         #
         od_column_default = od_rel_datacolumns[db_name]
-
-        for i,(key,value) in enumerate(od_column_default.items()):
+        for i, (key,value) in enumerate(od_column_default.items()):
             # Note: this 'picks' the needed column values from d_row, rather
             # than scan the d_row and try to test that each is an
             # od_column_default key, by design.
@@ -630,6 +635,8 @@ def node_visit_output(
             db_line += ("\t{}".format(str(value).replace('\t',' ')))
 
         #Output a row in the db file
+        msg = (f"{me}:Printing line '{db_line}'' to db_filename = '{db_filename}'")
+        print(msg, flush=True)
         print('{}'.format(db_line), file=db_file)
 
         ############################################################
@@ -640,36 +647,23 @@ def node_visit_output(
 
     msg = ("{}:FINISHED node.tag={}, node_index={}, returning d_row={}"
            .format(me, node.tag, node_index,repr(d_row)))
+    print(msg,flush=True)
     #print(msg)
     return d_row
-# def end node_visit_output
-# } end def sequence_doc_root_nodes
+    # } end def node_visit_output
 
+    '''
+    Method xml_doc_rdb2:
+    From given xml doc(eg, from a arg of input_root_node, for example an Elsevier
+    full text retrieval apifile),
+    convert the xml doc for output to relational data and output to relational
+    tab-separated-value (tsv) files.
+    Excel and other apps allow the '.txt' filename extension for
+    tab-separated-value files.
 
-'''
-Method xml_doc_rdb2:
-From given xml doc(eg, from a arg of input_root_node, for example an Elsevier
-full text retrieval apifile),
-convert the xml doc for output to relational data and output to relational
-tab-separated-value (tsv) files.
-Excel and other apps allow the '.txt' filename extension for
-tab-separated-value files.
-
-20180923 TODO: make sure the parent caller's input root node generator
-increments doc_count variable properly, returns what it needs for next call
-to this ...
-'''
-def xml_doc_rdb2(
-    input_root_node=None,
-    doc_count=None,
-    od_relation=None,
-    output_folder=None,
-    doc_rel_name=None,
-    doc_root_xpath=None,
-    d_node_params=None,
-    od_rel_datacolumns=None,
-    d_root_node_params=None,
-    d_xml_params=None,
+    20180923 TODO: make sure the parent caller's input root node generator
+    increments doc_count variable properly, returns what it needs for next call
+    to this ...
     # todo?:
     #   We also will add a naturally useful row offset integer paramemter:
     #   If user intends to append extant data tables with the rows in the output data,
@@ -679,82 +673,97 @@ def xml_doc_rdb2(
     #   will be also suitable to be appended to their respective DB tables. The user is responsible for
     #   creating the SQL to do this, at this point.
     load_name=None, # A name to apply to this load group-segment of outputted  rows.
-    verbosity=0,):
+    '''
+def xml_doc_rdb2(
+    doc_count=None,
+    input_root_node=None,
+    od_relation=None,
+    output_folder=None,
+    doc_rel_name=None,
+    doc_root_xpath=None,
+    d_node_params=None,
+    od_rel_datacolumns=None,
+    d_root_node_params=None,
+    d_xml_params=None,
+    load_name=None,
+    verbosity=0):
 
     me = 'xml_doc_rdb2'
-    log_messages = []
     need_args=['input_root_node', 'doc_count','output_folder', 'd_node_params',
-      'd_xml_params','od_rel_datacolumns', 'doc_rel_name','doc_root_xpath',
-      'od_relation'
-      ]
+    'd_xml_params','od_rel_datacolumns', 'doc_rel_name','doc_root_xpath',
+    'od_relation'
+    ]
     require_args_by_me_dlocals_names(me,locals(),names=need_args)
+    log_messages = []
     msg = f"{me}:Starting..."
-    log_messages.append(msg)
+    if verbosity > 1:
+        print(msg, flush=True)
+    #log_messages.append(msg)
 
     # Review this check...?
     if load_name is not None:
         msg = (
-          f"{me}:Warning: User must add column names 'load' and 'file_name' to "
-          "the root table\n"
-          "to enable their values to be output in the output data")
+        f"{me}:Warning: User must add column names 'load' and 'file_name' to "
+        "the root table\n"
+        "to enable their values to be output in the output data")
         print(msg)
-        log_messages.append(msg)
+        #log_messages.append(msg)
     else:
         load_name = ""
 
-    # document root params
-    # Note... may want to add check that NO rows with this load_name exist
-    # in the main doc table before allowing any proessing, creating any new
-    # rows in this set of outputs for that table; because passing this
-    # validation is required for the main is the purpose of
-    # supporting the load names.
-    d_root_params = {
+        # document root params
+        # Note... may want to add check that NO rows with this load_name exist
+        # in the main doc table before allowing any proessing, creating any new
+        # rows in this set of outputs for that table; because passing this
+        # validation is required for the main is the purpose of
+        # supporting the load names.
+        d_root_params = {
         'db_name': doc_rel_name, 'multiple':1,
         'attrib_column': {
-            'file_name':'file_name',
-            'load': load_name,
+        'file_name':'file_name',
+        'load': load_name,
         },
         'child_xpaths':{doc_root_xpath:d_node_params}
-    }
+        }
 
-    if verbosity > 1:
-        msg = ("{}: Using db_name='{}', doc_count='{}'"
-          .format(me, doc_rel_name , doc_count))
-        log_messages.append(msg)
-        print(msg)
+        if verbosity > 2:
+            msg = ("{}: Using db_name='{}', doc_count='{}'"
+            .format(me, doc_rel_name , doc_count))
+            #log_messages.append(msg)
+            print(msg)
 
-    # Prepare internal doc_root node to also impart some run or batch-related
-    # data settings for the output data
-    d_nsmap = dict(input_root_node.nsmap)
-    d_namespaces = {key:value
-        for key,value in d_nsmap.items() if key is not None}
-    # We must create a separate doc root for every doc input root node
-    doc_root = etree.Element("doc")
-    doc_root.append(input_root_node)
+            # Prepare internal doc_root node to also impart some run or batch-related
+            # data settings for the output data
+            d_nsmap = dict(input_root_node.nsmap)
+            d_namespaces = {key:value
+            for key,value in d_nsmap.items() if key is not None}
+            # We must create a separate doc root for every doc input root node
+            doc_root = etree.Element("doc")
+            doc_root.append(input_root_node)
 
-    doc_root.attrib['file_name'] = "no_file_name"
-    doc_root.attrib['load_name'] = 'some_load_name'
+            doc_root.attrib['file_name'] = "no_file_name"
+            doc_root.attrib['load_name'] = 'some_load_name'
 
-    od_parent_index = OrderedDict()
+            od_parent_index = OrderedDict()
 
-    # In this scheme, the root node always has multiple = 1
-    # that is, it may have multiple occurences, specifically,
-    # over the set of potentially multiple input xml documents.
-    # Also, this program requires that this augmented doc_root
-    # be included in the relational output files.
-    multiple = 1
-    d_row = node_visit_output(
-          od_relation=od_relation
-         ,d_namespaces=d_namespaces
-         ,d_node_params=d_root_params
-         ,od_rel_datacolumns=od_rel_datacolumns
-         ,output_folder=output_folder
-         ,od_parent_index=od_parent_index
-         ,node_index=doc_count
-         ,node=doc_root
-         ,d_xml_params=d_xml_params
-         ,verbosity=verbosity
-         )
+            # In this scheme, the root node always has multiple = 1
+            # that is, it may have multiple occurences, specifically,
+            # over the set of potentially multiple input xml documents.
+            # Also, this program requires that this augmented doc_root
+            # be included in the relational output files.
+            multiple = 1
+            d_row = node_visit_output(
+            od_relation=od_relation,
+            d_namespaces=d_namespaces,
+            d_node_params=d_root_params,
+            od_rel_datacolumns=od_rel_datacolumns,
+            output_folder=output_folder,
+            od_parent_index=od_parent_index,
+            node_index=doc_count,
+            node=doc_root,
+            d_xml_params=d_xml_params,
+            verbosity=verbosity,
+         ),
 
     # end for input_root node in seq_doc_root_nodes
     return log_messages
@@ -819,21 +828,21 @@ def xml_paths_rdb(
     # value being file_count_first. So in the for loop, add i to file_count_first to
     # get the file_count among the input_path_list.
 
-    doc_count = 0
     dns = doc_node_set
-    sequence_doc_nodes = dns.sequence_doc_nodes()
-    max_nodes = dns.max_test_nodes
+    sequence_doc_nodes = dns.sequence_doc_nodes(min_doc_count=0,
+        max_doc_count=0)
     progress_batch_size = dns.progress_batch_size
+    import sys
 
+    processed_count = 0
     for doc_node in sequence_doc_nodes:
-        doc_count += 1
-        if (max_nodes > 0) and ( doc_count >= max_nodes):
-            if verbosity > 0:
-              # This clause used for testing only...
-              msg = "Max number of {} files processed. Breaking.".format(i)
-              log_messages.append(msg)
-            break
-        if progress_batch_size > 0  and (doc_count % progress_batch_size == 0):
+        processed_count += 1
+        if verbosity > 2:
+            msg = f"{me}:doc_count={doc_count}"
+            print(msg, flush=True)
+
+        if ( progress_batch_size > 0
+          and (processed_count % progress_batch_size == 0)):
             progress_report = 1
         else:
             progress_report = 0
@@ -841,26 +850,23 @@ def xml_paths_rdb(
         if (progress_report):
             utc_now = datetime.datetime.utcnow()
             utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+            lc = len(doc_node.getchildren())
             msg = (
-              "{}: At {}, processed through input document count = {}."
-                   .format(me,utc_secs_z, file_count))
-            print(msg, flush=True)
+              "{}: At {}, processed through input document count = {}, "
+              "which doc has {} children."
+             .format(me,utc_secs_z, doc_count,lc))
+            # Do NOT flush else user will think file writes should be done
+            # by now, but they may take a minute or more to complete.
+            print(msg)
             #log_messages.append(msg)
-            # Flush all the output files in od_relation
-            for relation, d_info in od_relation.items():
-                file = d_info.get('db_file', None)
-                if file is not None:
-                    file.flush()
-            #end for relation
+
         #end if progress_report
 
-        ############################0
-
-        if verbosity > 0:
-            print(f"{me}:Using doc count {doc_count}, call xml_doc_rdb2:")
+        if verbosity > 1:
+            print(f"{me}:Using doc_count {doc_count}, call xml_doc_rdb2:")
 
         sub_messages = xml_doc_rdb2(
-            doc_count=doc_count,
+            doc_count=processed_count,
             input_root_node=doc_node,
             od_relation=od_relation,
             output_folder=output_folder,
@@ -870,23 +876,34 @@ def xml_paths_rdb(
             od_rel_datacolumns=od_rel_datacolumns,
             verbosity=verbosity,
             d_xml_params=d_xml_params,
-            )
+    )
 
-        if len(sub_messages) > 0 and False:
-            log_messages.append({'xml_doc_rdb2_return_value':sub_messages})
+        #if len(sub_messages) > 0 and False:
+        #    log_messages.append({'xml_doc_rdb2_return_value':sub_messages})
     # end for doc_node in sequence_doc_nodes:
 
-    msg = f"{me}:Finished doc count={doc_count} input documents"
+    msg = (f"{me}:PROCESSED process_count={processed_count} input documents,"
+        f"verbosity={verbosity}")
     print (msg, flush=True)
-    log_messages.append(msg)
+    #log_messages.append(msg)
 
     msg = f"{me}:Creating sql2008 and mysql bulk loading scripts."
     print (msg, flush=True)
-    log_messages.append(msg)
+    #log_messages.append(msg)
 
 
     #### CREATE THE RDB INSERT COMMANDS - HERE USING SQL THAT WORKS WITH
     # MSOFT SQL SERVER 2008, maybe 2008+
+    ############################0
+    # Flush all the output files in od_relation
+    for relation, d_info in od_relation.items():
+        file = d_info.get('db_file', None)
+        if file is not None:
+            file.flush()
+    #end for relation
+
+    msg = f"{me}:Finished processed count={processed_count} input documents"
+    print (msg, flush=True)
 
     # For MSSQL or SQL SERVER databases
     sql_filename = "{}/sql_server_creates.sql".format(output_folder)
@@ -1080,14 +1097,17 @@ def xml_paths_rdb(
             # we did NOT create a primary key for them, here we
             # add a unique index on the composite
             # hierarchical columns for fast queries
+            '''
             print("CREATE UNIQUE INDEX ux1_{} ON {}({});"
                   .format(relation,relation,d_relinfo['pkey_columns']),
                   file=mysql_file)
+            '''
 
             print(
                 "ALTER TABLE {} ADD sn "
                 "INT PRIMARY KEY NOT NULL AUTO_INCREMENT;"
                 .format(relation), file=mysql_file)
+
 
             print("CREATE UNIQUE INDEX ux_{}_sn on {}(sn);"
                   .format(relation,relation), file=mysql_file)
@@ -1594,5 +1614,6 @@ sys.stdout.flush()
 rel_prefix = 'e2018'
 rel_prefix = 'x2018'
 
-run(rel_prefix=rel_prefix, verbosity=2)
-print("Done!")
+run(rel_prefix=rel_prefix, verbosity=1)
+
+print("Done!",flush=True)
