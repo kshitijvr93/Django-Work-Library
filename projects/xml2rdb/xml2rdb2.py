@@ -838,7 +838,7 @@ def xml_paths_rdb(
     for doc_node in sequence_doc_nodes:
         processed_count += 1
         if verbosity > 2:
-            msg = f"{me}:doc_count={doc_count}"
+            msg = f"{me}:count={processed_count}"
             print(msg, flush=True)
 
         if ( progress_batch_size > 0
@@ -854,7 +854,7 @@ def xml_paths_rdb(
             msg = (
               "{}: At {}, processed through input document count = {}, "
               "which doc has {} children."
-             .format(me,utc_secs_z, doc_count,lc))
+             .format(me,utc_secs_z, processed_count,lc))
             # Do NOT flush else user will think file writes should be done
             # by now, but they may take a minute or more to complete.
             print(msg)
@@ -863,7 +863,7 @@ def xml_paths_rdb(
         #end if progress_report
 
         if verbosity > 1:
-            print(f"{me}:Using doc_count {doc_count}, call xml_doc_rdb2:")
+            print(f"{me}:Using processed count {processed_count}, call xml_doc_rdb2:")
 
         sub_messages = xml_doc_rdb2(
             doc_count=processed_count,
@@ -1614,6 +1614,7 @@ sys.stdout.flush()
 rel_prefix = 'e2018'
 rel_prefix = 'x2018'
 
+print("***************################")
 run(rel_prefix=rel_prefix, verbosity=1)
 
 print("Done!",flush=True)
