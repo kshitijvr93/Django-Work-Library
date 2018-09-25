@@ -1521,7 +1521,7 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
         # to contol the item READER -
         # input_path_glob will be one if its  init params...
         # Eg, for a reader of independent item files in a hierarchy
-        input_path_glob = 'xis_subjects_parsed.xml'
+        input_path_glob = 'xis_subjects_parsed_20180925.xml'
         #input_path_glob = 'xis_subjects_small.xml'
         # NOTE: Tod0, depending on oher init params of ItemReader, may also add the
         # FolderSet as optional init param,
