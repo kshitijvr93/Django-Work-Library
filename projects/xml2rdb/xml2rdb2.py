@@ -62,12 +62,15 @@ from lxml.etree import tostring
 '''
 
 '''
-Typical call: Caller will usually provide arg1 as its locals() dict to
-check for provision of its required arguments by its own caller.
+require_args_by_me_locals_names():
+
+Typical call: Caller will provide 'me' string of calling routine arg1,
+in arg2 put itts locals() dict, arg3 is list of names or its required arguments.
+
 Where a function requires argument names 'd_oai' and 'output_folder'
 one of its first code lines would be:
 
-      require_args_by_me_locals_names(locals=locals(),
+      require_args_by_me_locals_names(me, locals=locals(),
         names=['d_oai', 'output_folder'])
 '''
 def require_args_by_me_dlocals_names(me=None,dlocals=None, names=None):
@@ -221,24 +224,27 @@ class DocNodeSet():
           # end for
         #end for path_count, path
         return None
+
 #end class DocNodeSet
 
 '''
 Method new_od_relation
 
 Given arg od_rel_datacolumns, use its keys of relation names
-to initialize a new odict od_relation with entries of the same key name,
-and values of values of new od_rel_info dicts.
+(but ignore od_relation values for now),
+to initialize a new odict od_relation with entries of the same key name
+and initialize its values to new od_rel_info dicts.
 
 Return the new dict od_relation
 '''
-def new_od_relation(od_rel_datacolumns, verbosity=1):
+def new_od_relation(od_rel_datacolumns, verbosity=0):
+
     od_relation = OrderedDict()
+    me='new_od_relation'
     if verbosity:
-        print("Creating relation with datacolumns:")
+        print(f"{me}:Creating relation with datacolumns:")
     for i,key in enumerate(od_rel_datacolumns.keys()):
-        od_rel_info = OrderedDict()
-        od_relation[key] = od_rel_info
+        od_relation[key] = OrderedDict()
         print("Table {}, name={}".format(i+1,key))
     return od_relation
 
@@ -247,7 +253,7 @@ Method get_writable_db_file:
 
 This method is designed to be called while the mining map nodes are being
 visited from node_visit_output(), so that the od_parent_index dictionary is
-properly populated with the parent relaton name values that assign the
+properly populated with the parent relation name values that assign the
 composite primary key column names of the given db_name in the mining map's
 hierarchy.
 
@@ -534,7 +540,7 @@ def node_visit_output(
             #print("{} seeking xpath={} with node_params={}"
             #  .format(me,repr(xpath),repr(d_child_node_params)))
             children = node.findall(xpath, d_namespaces )
-            if (verbosity > 0):
+            if (verbosity > 1):
                 print("{}:for xpath={} found {} children"
                   .format(me,xpath,len(children)))
             # TODO:Future: may add a new argument for caller-object that
@@ -635,8 +641,9 @@ def node_visit_output(
             db_line += ("\t{}".format(str(value).replace('\t',' ')))
 
         #Output a row in the db file
-        msg = (f"{me}:Printing line '{db_line}'' to db_filename = '{db_filename}'")
-        print(msg, flush=True)
+        if verbosity > 1:
+          msg = (f"{me}:Printing line '{db_line}'' to db_filename = '{db_filename}'")
+          print(msg, flush=True)
         print('{}'.format(db_line), file=db_file)
 
         ############################################################
@@ -645,15 +652,16 @@ def node_visit_output(
         d_row = None
     # end if multiple == 1
 
-    msg = ("{}:FINISHED node.tag={}, node_index={}, returning d_row={}"
-           .format(me, node.tag, node_index,repr(d_row)))
-    print(msg,flush=True)
-    #print(msg)
+    if verbosity > 1:
+      msg = ("{}:{}:FINISHED node.tag={}, node_index={}, returning d_row={}"
+           .format(me, verbosity,node.tag, node_index,repr(d_row)))
+      print(msg,flush=True)
+
     return d_row
     # } end def node_visit_output
 
     '''
-    Method xml_doc_rdb2:
+    Method xml2rdb_doc:
     From given xml doc(eg, from a arg of input_root_node, for example an Elsevier
     full text retrieval apifile),
     convert the xml doc for output to relational data and output to relational
@@ -674,7 +682,7 @@ def node_visit_output(
     #   creating the SQL to do this, at this point.
     load_name=None, # A name to apply to this load group-segment of outputted  rows.
     '''
-def xml_doc_rdb2(
+def xml2rdb_doc1(
     doc_count=None,
     input_root_node=None,
     od_relation=None,
@@ -686,9 +694,10 @@ def xml_doc_rdb2(
     d_root_node_params=None,
     d_xml_params=None,
     load_name=None,
+    doc_verbosity=0,
     verbosity=0):
 
-    me = 'xml_doc_rdb2'
+    me = 'xml2rdb_doc1'
     need_args=['input_root_node', 'doc_count','output_folder', 'd_node_params',
     'd_xml_params','od_rel_datacolumns', 'doc_rel_name','doc_root_xpath',
     'od_relation'
@@ -732,178 +741,69 @@ def xml_doc_rdb2(
             #log_messages.append(msg)
             print(msg)
 
-            # Prepare internal doc_root node to also impart some run or batch-related
-            # data settings for the output data
-            d_nsmap = dict(input_root_node.nsmap)
-            d_namespaces = {key:value
-            for key,value in d_nsmap.items() if key is not None}
-            # We must create a separate doc root for every doc input root node
-            doc_root = etree.Element("doc")
-            doc_root.append(input_root_node)
+        # Prepare internal doc_root node to also impart some run or batch-related
+        # data settings for the output data
+        d_nsmap = dict(input_root_node.nsmap)
+        d_namespaces = {key:value
+        for key,value in d_nsmap.items() if key is not None}
+        # We must create a separate doc root for every doc input root node
+        doc_root = etree.Element("doc")
+        doc_root.append(input_root_node)
 
-            doc_root.attrib['file_name'] = "no_file_name"
-            doc_root.attrib['load_name'] = 'some_load_name'
+        doc_root.attrib['file_name'] = "no_file_name"
+        doc_root.attrib['load_name'] = 'some_load_name'
 
-            od_parent_index = OrderedDict()
+        od_parent_index = OrderedDict()
 
-            # In this scheme, the root node always has multiple = 1
-            # that is, it may have multiple occurences, specifically,
-            # over the set of potentially multiple input xml documents.
-            # Also, this program requires that this augmented doc_root
-            # be included in the relational output files.
-            multiple = 1
-            d_row = node_visit_output(
-            od_relation=od_relation,
-            d_namespaces=d_namespaces,
-            d_node_params=d_root_params,
-            od_rel_datacolumns=od_rel_datacolumns,
-            output_folder=output_folder,
-            od_parent_index=od_parent_index,
-            node_index=doc_count,
-            node=doc_root,
-            d_xml_params=d_xml_params,
-            verbosity=verbosity,
-         ),
+        # In this scheme, the root node always has multiple = 1
+        # that is, it may have multiple occurences, specifically,
+        # over the set of potentially multiple input xml documents.
+        # Also, this program requires that this augmented doc_root
+        # be included in the relational output files.
+        multiple = 1
+        d_row = node_visit_output(
+        od_relation=od_relation,
+        d_namespaces=d_namespaces,
+        d_node_params=d_root_params,
+        od_rel_datacolumns=od_rel_datacolumns,
+        output_folder=output_folder,
+        od_parent_index=od_parent_index,
+        node_index=doc_count,
+        node=doc_root,
+        d_xml_params=d_xml_params,
+        verbosity=verbosity + doc_verbosity,
+     ),
 
     # end for input_root node in seq_doc_root_nodes
     return log_messages
-# end def xml_doc_rdb2:
+# end def xml2rdb_doc1:
 
-'''
-<summary> Method xml_paths_rdb():
+def write_sql_bulk_insert_scripts(
+  od_relation=None, output_folder=None, use_db=None,
+  od_rel_datacolumns=None,
+  verbosity=0
+  ):
+    me = 'write_sql_bulk_insert_scripts'
 
-Loop through all the input xml files in a slice of the input_path_list,
-and call xml_doc_rdb to create relational database table output rows
-for each input xml doc.
-
-    , doc_root_xpath=None #xml tag that is used as document root
-    , rel_prefix=None  # Prefix string for all relatinship names
-//summary>
-
-'''
-def xml_paths_rdb(
-    doc_node_set=None,
-    doc_root_xpath=None,
-    rel_prefix=None,
-    doc_rel_name=None,
-    d_node_params=None,
-    od_rel_datacolumns=None,
-    output_folder=None,
-    use_db=None,
-    verbosity=0,
-    d_xml_params=None,
-    ):
-
-    me = "xml_paths_rdb"
-
-    needed_arg_names=[
-      'doc_node_set',
-      'doc_root_xpath',
-      'rel_prefix',
-      'd_node_params',
-      'doc_rel_name',
-      'od_rel_datacolumns',
-      'output_folder',
-      'use_db',
-      'd_xml_params'
-      'doc_node_set'
-      ]
-    require_args_by_me_dlocals_names(
-      me=me,dlocals=locals(), names=needed_arg_names)
-
-    log_messages = []
-    msg = (f"{me}:STARTING...")
-    if (verbosity > 0):
-        print(msg)
-
-    max_input_files = 0
-    count_input_file_failures = 0
-
-    # Dictionary with output relation name key and value is dict with row keys,
-    # values may be types later
-    od_relation = new_od_relation(od_rel_datacolumns)
-    row_index = 0
-
-    # Caller has already sliced input_path_list with first 'real file count'
-    # value being file_count_first. So in the for loop, add i to file_count_first to
-    # get the file_count among the input_path_list.
-
-    dns = doc_node_set
-    sequence_doc_nodes = dns.sequence_doc_nodes(min_doc_count=0,
-        max_doc_count=0)
-    progress_batch_size = dns.progress_batch_size
-    import sys
-
-    processed_count = 0
-    for doc_node in sequence_doc_nodes:
-        processed_count += 1
-        if verbosity > 2:
-            msg = f"{me}:count={processed_count}"
-            print(msg, flush=True)
-
-        if ( progress_batch_size > 0
-          and (processed_count % progress_batch_size == 0)):
-            progress_report = 1
-        else:
-            progress_report = 0
-
-        if (progress_report):
-            utc_now = datetime.datetime.utcnow()
-            utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-            lc = len(doc_node.getchildren())
-            msg = (
-              "{}: At {}, processed through input document count = {}, "
-              "which doc has {} children."
-             .format(me,utc_secs_z, processed_count,lc))
-            # Do NOT flush else user will think file writes should be done
-            # by now, but they may take a minute or more to complete.
-            print(msg)
-            #log_messages.append(msg)
-
-        #end if progress_report
-
-        if verbosity > 1:
-            print(f"{me}:Using processed count {processed_count}, call xml_doc_rdb2:")
-
-        sub_messages = xml_doc_rdb2(
-            doc_count=processed_count,
-            input_root_node=doc_node,
-            od_relation=od_relation,
-            output_folder=output_folder,
-            doc_rel_name=doc_rel_name,
-            doc_root_xpath=doc_root_xpath,
-            d_node_params=d_node_params,
-            od_rel_datacolumns=od_rel_datacolumns,
-            verbosity=verbosity,
-            d_xml_params=d_xml_params,
-    )
-
-        #if len(sub_messages) > 0 and False:
-        #    log_messages.append({'xml_doc_rdb2_return_value':sub_messages})
-    # end for doc_node in sequence_doc_nodes:
-
-    msg = (f"{me}:PROCESSED process_count={processed_count} input documents,"
-        f"verbosity={verbosity}")
+    msg = f"{me}:Creating bulk insertion SQL scripts."
     print (msg, flush=True)
-    #log_messages.append(msg)
 
-    msg = f"{me}:Creating sql2008 and mysql bulk loading scripts."
-    print (msg, flush=True)
-    #log_messages.append(msg)
-
-
-    #### CREATE THE RDB INSERT COMMANDS - HERE USING SQL THAT WORKS WITH
+    #### Write sql bulk insert scripts
+    # Versions for:
     # MSOFT SQL SERVER 2008, maybe 2008+
+    # also MySQL
+    # and in progress-- adding postgresql too
     ############################0
-    # Flush all the output files in od_relation
+
+    # Flush all the output files corresponding to all relations
     for relation, d_info in od_relation.items():
         file = d_info.get('db_file', None)
+        msg = f"{me}:Relation {relation}, flushing file {file}."
+        print (msg, flush=True)
+
         if file is not None:
             file.flush()
     #end for relation
-
-    msg = f"{me}:Finished processed count={processed_count} input documents"
-    print (msg, flush=True)
 
     # For MSSQL or SQL SERVER databases
     sql_filename = "{}/sql_server_creates.sql".format(output_folder)
@@ -981,9 +881,9 @@ def xml_paths_rdb(
 
             key_columns = d_relinfo['pkey_columns'].split(',')
 
-            #print("Got key_columns={}".format(repr(key_columns)))
+            # print("Got key_columns={}".format(repr(key_columns)))
 
-            for i,(column, ctype) in enumerate(d_column_type.items()):
+            for i, (column, ctype) in enumerate(d_column_type.items()):
                 #print("Column index {}".format(i))
                 import sys
                 sys.stdout.flush()
@@ -1097,11 +997,10 @@ def xml_paths_rdb(
             # we did NOT create a primary key for them, here we
             # add a unique index on the composite
             # hierarchical columns for fast queries
-            '''
+
             print("CREATE UNIQUE INDEX ux1_{} ON {}({});"
                   .format(relation,relation,d_relinfo['pkey_columns']),
                   file=mysql_file)
-            '''
 
             print(
                 "ALTER TABLE {} ADD sn "
@@ -1132,8 +1031,113 @@ def xml_paths_rdb(
             file.flush()
             file.close()
 
+# end def write_sql_bulk_insert_scripts()
+
+'''
+<summary> Method xml2rdb_docs():
+
+Loop through all the input documents in a slice of the input_path_list,
+and call xml2rdb_docto create relational database table output rows
+for each input xml doc.
+
+    , doc_root_xpath=None #xml tag that is used as document root
+    , rel_prefix=None  # Prefix string for all relatinship names
+
+Finally, call write_sql_bulk_insert_scripts().
+</summary>
+
+'''
+
+def xml2rdb_docs(
+    d_node_params=None, d_xml_params=None, doc_node_set=None,
+    doc_rel_name=None, doc_root_xpath=None, od_rel_datacolumns=None,
+    output_folder=None, rel_prefix=None, use_db=None,
+    verbosity=0,
+    ):
+    me = "xml2rdb_docs"
+    needed_arg_names=[
+      'd_node_params', 'd_xml_params' 'doc_node_set',
+      'doc_rel_name', 'doc_root_xpath', 'od_rel_datacolumns',
+      'output_folder', 'rel_prefix', 'use_db', ]
+    require_args_by_me_dlocals_names(
+      me=me,dlocals=locals(), names=needed_arg_names)
+
+    log_messages = []
+    msg = (f"{me}:STARTING doc_rel_name={doc_rel_name}")
+    if (verbosity > 0):
+        print(msg)
+
+    # od_relation is dictionary with output relation name key and value is
+    # dict with row keys, initial values are OrdereDicts to be set later.
+    od_relation = new_od_relation(od_rel_datacolumns)
+    counted_doc_parse_failures = 0
+
+    # DocNodeSet.sequence_doc_nodes is generator
+    dns = doc_node_set
+    sequence_doc_nodes = dns.sequence_doc_nodes(min_doc_count=0,
+        max_doc_count=0)
+    progress_batch_size = dns.progress_batch_size
+    import sys
+
+    processed_count = 0
+    for doc_node in sequence_doc_nodes:
+        processed_count += 1
+        if verbosity > 2:
+            msg = f"{me}:count={processed_count}"
+            print(msg, flush=True)
+
+        if ( progress_batch_size > 0 \
+          and (processed_count % progress_batch_size == 0)):
+            progress_report = 1
+        else:
+            progress_report = 0
+
+        if (progress_report):
+            utc_now = datetime.datetime.utcnow()
+            utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+            lc = len(doc_node.getchildren())
+            msg = (
+              "{}: At {}, processed through input document count = {}, "
+              "which doc has {} children."
+             .format(me,utc_secs_z, processed_count,lc))
+            # Do NOT flush else user will think file writes should be done
+            # by now, but they may take a minute or more to complete.
+            print(msg)
+
+        if verbosity > 1 or progress_report > 0:
+            print(f"{me}: For doc {processed_count}, calling xml2rdb_doc1:")
+
+        sub_messages = xml2rdb_doc1(
+            doc_count=processed_count,
+            input_root_node=doc_node,
+            od_relation=od_relation,
+            output_folder=output_folder,
+            doc_rel_name=doc_rel_name,
+            doc_root_xpath=doc_root_xpath,
+            d_node_params=d_node_params,
+            od_rel_datacolumns=od_rel_datacolumns,
+            verbosity=verbosity,
+            doc_verbosity=progress_report * 5,
+            d_xml_params=d_xml_params,
+    )
+
+        #if len(sub_messages) > 0 and False:
+        #    log_messages.append({'xml2rdb_doc1_return_value':sub_messages})
+    # end for doc_node in sequence_doc_nodes:
+
+    msg = (f"{me}:Parsed document {processed_count} documents,"
+        f"verbosity={verbosity}")
+    print (msg, flush=True)
+    #log_messages.append(msg)
+
+    write_sql_bulk_insert_scripts(od_relation=od_relation,
+      od_rel_datacolumns=od_rel_datacolumns,
+      output_folder=output_folder,
+      use_db=use_db,
+      )
+
     return count_input_file_failures
-# end def xml_paths_rdb
+# end def xml2rdb_docs
 
 # RUN PARAMS AND RUN
 import datetime
@@ -1239,7 +1243,7 @@ def xml2rdb(
 
     ################# READ THE INPUT, AND COLLECT AND OUTPUT STATS ################
 
-    count_input_file_failures = xml_paths_rdb(
+    count_input_file_failures = xml2rdb_docs(
       doc_node_set = doc_node_set,
       doc_root_xpath=doc_root_xpath,
       rel_prefix = rel_prefix,
@@ -1536,7 +1540,7 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
 
     # DocNodeSet is(will be) an object that identifies the full set of  individual
     # input doc nodes.
-    # Its method generator_next() a genertor/reader returns the sequene of
+    # Its method generator_next() a generator/reader returns the sequene of
     # all document nodes in the input, in the form of lxml document nodes.
     # Successive calls to the generator yield eturns the root doc node of the
     # document in the input set of document nodes.
