@@ -153,13 +153,23 @@ def generator_new_xis_items(
                         l = len(terms)
                         if verbosity > 1:
                             print(f"Found node of {xp} found {terms} terms.")
+                        n_terms = 0
                         for term in terms:
-                            #Create child elts 'I' for items of terms
-                            child_element = etree.Element("I")
-                            child_element.text = term
-                            # Add the item
-                            node.append(child_element)
+                            if len(term) > 0:
+                              #Create child elts 'I' for items of terms
+                              child_element = etree.Element("I")
+                              child_element.text = term
+                              n_terms += 1
+                              # Add the item
+                              node.append(child_element)
+                            # only added term if it has a len
                         # created child item for each term
+                        if n_terms == 0:
+                            # This was a dud node with no terms.Delete it.
+                            # Since we used relative xpath, must get the
+                            # parent, as it may not be root node.
+                            node.getparent().remove(node)
+
                     # created required child elements for this node instance
                 # created required child elements for this parse tag
 
@@ -185,7 +195,7 @@ def generator_new_xis_items(
 
 def run():
     ifn = r'C:\rvp\data\xis\export_subjects\input.txt'
-    ofn =  r'C:\rvp\data\xis\export_subjects\xis_subjects_parsed.xml'
+    ofn =  r'C:\rvp\data\xis\export_subjects\xis_subjects_parsed_20180925.xml'
     lfn =  r'C:\rvp\data\xis\export_subjects\log.txt'
 
     n_items = 0
