@@ -1530,7 +1530,7 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
         # etc
         # For document/item - the relation name to hold on instance
 
-        doc_rel_name = 'bibvid'
+        doc_rel_name = 'thesis'
         doc_root_xpath = 'Thesis'
         # Get SQL TABLE PARAMS (od_rel_datacolumns) and MINING MAP PARAMS
         od_rel_datacolumns, d_node_params = config.sql_mining_params()

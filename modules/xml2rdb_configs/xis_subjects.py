@@ -67,20 +67,19 @@ def sql_mining_params():
 
     od_rel_datacolumns = OrderedDict([
         # Main parent for xis_subject data
-        ('bibvid', OrderedDict([ #
-            ('bibvid',''),    # ./UFDC id
-            ('thesis_n',''),
+        ('thesis', OrderedDict([ #
+            ('uf_bibvid',''),    # ./UFDC id
             ('title',''),    # ./UFDC id
-            ('author_fname',''),
-            ('author_lname',''),
+            ('au_fname',''),
+            ('au_lname',''),
             ('pub_d',''),    # ./UFDC id
             ('add_ymd',''),    # ./common:orcid-identifier/common:path
             ('add_initials',''),    # ./common:orcid-identifier/common:path
             ('change_ymd',''),
             ('change_initials',''),    # ./common:orcid-identifier/common:path
         ])),
-        ('term', OrderedDict([ #
-            ('source_tag',''),
+        ('subject', OrderedDict([ #
+            ('xtag',''),
             ('term',''),
             ('keep','y'),
             ('marc','653'),
@@ -132,10 +131,9 @@ def sql_mining_params():
         # The db_name of this root node is given in a runtime parameter, so
         # db_name is not given for this node.
         'multiple':0,
-        'attrib_column':{'n':'thesis_n_zfill7'},
         'child_xpaths' : {
             "./ID" : {
-                'attrib_column':{'text':'bibvid'},
+                'attrib_column':{'text':'uf_bibvid'},
             },
             "./ADD/D" : {
                 'attrib_column':{'text':'add_ymd'},
@@ -153,7 +151,7 @@ def sql_mining_params():
                 'attrib_column':{'text':'au_fname'},
             },
             "./AU/LNAME" : {
-                'attrib_column':{'text':'au_Lname'},
+                'attrib_column':{'text':'au_lname'},
             },
             "./TI" : {
                 'attrib_column':{'text':'title'},
@@ -161,13 +159,14 @@ def sql_mining_params():
             "./DPUB" : {
                 'attrib_column':{'text':'pub_year'},
             },
+
             # TOPIC KEYWORDS
             "./TOPIC/I" : {
                 'multiple':1,
-                'db_name':'term',
+                'db_name':'subject',
                 'attrib_column':{'text':'term'},
                 'column_constant':{
-                    'source_tag': 'TOPIC',
+                    'xtag': 'TOPIC',
                     'marc': '653',
                     'ind1': ' ',
                     'ind2': '7',
@@ -178,10 +177,10 @@ def sql_mining_params():
             # GEO KEYWORDS
             "./GEO/I" : {
                 'multiple':1,
-                'db_name':'term',
+                'db_name':'subject',
                 'attrib_column':{'text':'term'},
                 'column_constant':{
-                    'source_tag': 'GEO',
+                    'xtag': 'GEO',
                     'marc': '651',
                     'ind1': ' ',
                     'ind2': '7',
@@ -189,13 +188,13 @@ def sql_mining_params():
                 },
             },
 
-            # GEO KEYWORDS
+            # OLD UF KEYWORDS
             "./OLDKW/I" : {
                 'multiple':1,
-                'db_name':'term',
+                'db_name':'subject',
                 'attrib_column':{'text':'term'},
                 'column_constant':{
-                    'source_tag': 'OLDKW',
+                    'xtag': 'OLDKW',
                     'marc': '650',
                     'ind1': ' ',
                     'ind2': '4',
@@ -205,10 +204,10 @@ def sql_mining_params():
             # FLORIDIANS KEYWORDS
             "./FLORIDIANS/I" : {
                 'multiple':1,
-                'db_name':'term',
+                'db_name':'subject',
                 'attrib_column':{'text':'term'},
                 'column_constant':{
-                    'source_tag': 'FLORIDIANS',
+                    'xtag': 'FLORIDIANS',
                     'marc': '600',
                     'ind1': ' ',
                     'ind2': '7',
@@ -218,21 +217,20 @@ def sql_mining_params():
             # OLDLCSH KEYWORDS
             "./OLDLCSH/I" : {
                 'multiple':1,
-                'db_name':'term',
+                'db_name':'subject',
                 'attrib_column':{'text':'term'},
                 'column_constant':{
-                    'source_tag': 'OLDLCSH',
+                    'xtag': 'OLDLCSH',
                     'marc': '600',
                     'ind1': ' ',
                     'ind2': '7',
                     'keep': 'n',
                 },
             },
-
         },
     } # end d_node_params1
 
-    # Interpose a new 'message' tag to support multiple crossref xml response formats:
+    # Interpose a new 'messagextag' tag to support multiple crossref xml response formats:
     # see programs crafatxml and crawdxml for example, that produce these formats
     d_node_params2 = {
         'child_xpaths':{'.//message' : d_node_params1}
