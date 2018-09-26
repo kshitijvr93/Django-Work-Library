@@ -6,6 +6,8 @@ from .models import (
     TermEval,
     TermSuggestion,
     ThesTree,
+    X2018Subject,
+    X2018Thesis,
 
     #Thesaurus,
     )
@@ -76,7 +78,7 @@ class BibvidTermInline(
 # end class RelatedTermInline
 
 #Modeled after snow's admin.py class AttributeInline
-class TermEvalInline(
+class TermEvalInline0(
     #MinValidatedInlineMixIn, SnowNestedStackedInline):
     MinValidatedInlineMixIn, admin.TabularInline):
     model = TermEval
@@ -189,4 +191,6 @@ class TermSuggestionAdmin(admin.ModelAdmin):
 #end class TermSuggestionAdmin
 
 admin.site.register(TermSuggestion, TermSuggestionAdmin)
+admin.site.register(X2018Thesis, admin.ModelAdmin)
+admin.site.register(X2018Subject, admin.ModelAdmin)
 # } Admin code

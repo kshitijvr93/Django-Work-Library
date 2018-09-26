@@ -86,10 +86,19 @@ def sequence_doc_root_nodes_by_filename(
     # normal end of file
     return None
 '''
-DocNodeSet instantiates a description of documents to use as input.
-Its method sequence_doc_nodes creates a generator of a sequence
-of lxml document root nodes, where each is to an input document to be
+DocNodeSet defines a set local file-stored xml documents to
+read as input data.
+Its method sequence_doc_nodes returns a generator of a sequence
+of lxml document root nodes, where each is to an input xml document to be
 processed.
+
+CONSIDER: new feature 'ignore_outer'
+Design Alternative A: implement ignore_root_tag (to ignore in case an xml file
+has multiple sequential docs, all enclosed by one outer tag to ignore)
+Design Alt B: maybe change doc_root_tag to doc_root_xpath, however this would
+require the entire file to be read into memory. Maybe easier to pre-edit
+or preprocess inputs files to discard such outer tags in some cases?
+
 '''
 class DocNodeSet():
     def __init__(self, input_folders=None, input_file_glob=None,

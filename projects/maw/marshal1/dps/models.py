@@ -336,3 +336,42 @@ class TermEval(models.Model):
           db_table = 'something'
     '''
 #end class TermEval
+
+# 20180926 - adding inspected tables, unmanaged, based on xml2rdb2 outputted
+# tables from config xis_subjets.py.
+# CAUTION: Reruns of that xml2rdb2 config, and its sql creates script will
+# drop and repopulate these tables.
+class X2018Subject(models.Model):
+    thesis = models.IntegerField(blank=True, null=True)
+    subject = models.IntegerField(blank=True, null=True)
+    xtag = models.CharField(max_length=16, blank=True, null=True)
+    term = models.TextField(blank=True, null=True)
+    keep = models.TextField(blank=True, null=True)
+    marc = models.TextField(blank=True, null=True)
+    ind1 = models.TextField(blank=True, null=True)
+    ind2 = models.TextField(blank=True, null=True)
+    sn = models.AutoField(primary_key=True)
+
+    class Meta:
+        managed = False
+        db_table = 'x2018_subject'
+        unique_together = (('thesis', 'subject', 'xtag'),)
+
+
+class X2018Thesis(models.Model):
+    thesis = models.IntegerField(unique=True, blank=True, null=True)
+    uf_bibvid = models.TextField(blank=True, null=True)
+    title = models.TextField(blank=True, null=True)
+    au_fname = models.TextField(blank=True, null=True)
+    au_lname = models.TextField(blank=True, null=True)
+    pub_year = models.TextField(blank=True, null=True)
+    add_ymd = models.TextField(blank=True, null=True)
+    add_initials = models.TextField(blank=True, null=True)
+    change_ymd = models.TextField(blank=True, null=True)
+    change_initials = models.TextField(blank=True, null=True)
+    sn = models.AutoField(primary_key=True)
+
+    class Meta:
+        managed = False
+        db_table = 'x2018_thesis'
+        verbose_name_plural='x2018 theses'
