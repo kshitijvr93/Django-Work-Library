@@ -72,7 +72,7 @@ def sql_mining_params():
             ('title',''),    # ./UFDC id
             ('au_fname',''),
             ('au_lname',''),
-            ('pub_d',''),    # ./UFDC id
+            ('pub_year',''),    # ./UFDC id
             ('add_ymd',''),    # ./common:orcid-identifier/common:path
             ('add_initials',''),    # ./common:orcid-identifier/common:path
             ('change_ymd',''),

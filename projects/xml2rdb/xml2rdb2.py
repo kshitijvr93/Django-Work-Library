@@ -32,6 +32,7 @@ import hashlib
 
 from lxml import etree
 from lxml.etree import tostring
+from etl import (DocNodeSet, require_args_by_me_dlocals_names)
 
 '''
     Note: I also envision a revision of this program to do an initial
@@ -53,7 +54,6 @@ from lxml.etree import tostring
 
     It will infer names for tables and columns from the xml tags and attribute
     names as well.
-
     However the user configuration will remain useful mainly to simplify and
     target creation of SQL data to simplify and abbreviate the outputted SQL
     database.
@@ -61,171 +61,7 @@ from lxml.etree import tostring
     selected sub-analyses of the entire pool of xml data.
 '''
 
-'''
-require_args_by_me_locals_names():
 
-Typical call: Caller will provide 'me' string of calling routine arg1,
-in arg2 put itts locals() dict, arg3 is list of names or its required arguments.
-
-Where a function requires argument names 'd_oai' and 'output_folder'
-one of its first code lines would be:
-
-      require_args_by_me_locals_names(me, locals=locals(),
-        names=['d_oai', 'output_folder'])
-'''
-def require_args_by_me_dlocals_names(me=None,dlocals=None, names=None):
-    if me is None or dlocals is None or names is None:
-        raise(ValueError,f"Key argument me, dlocals, or names is missing")
-    required_args = [ v for k, v in dlocals.items() if k in names]
-    for k,v in dlocals.items():
-      if k not in names:
-          continue
-      if v is None:
-        raise ValueError(
-          f"Error: {me}: required arg '{k}' is not set.")
-    # end for k,v
-#end def require_args_by_me_dlocals_names
-
-# { def generate_doc_root_nodes
-'''
-def sequence_doc_root_nodes(
-   input_file_name=None, root_item_tag=None
-    log_file=None, verbosity=0):
-
-Generate a generator/sequence,
-given an input file name, and string root_item_tag that defines the tag
-for a doc_root_node in the file. Each sequence iteration yields
-    the lxml doc root node for the next successive input
-    lines that comprise a document in the input file.
-
-Return null if:
-
-(1) no line left in input file, or
-(2) the next line does not begin with the <root_item_tag>
-
-Buffer input lines into a string and keep reading until:
-case: an end of file,
-   in which case return null
-case: an </root_item_tag> is found
-   in which case
-   - parse the input lines buffer into an lxml doc,
-   - yield the root node of the lxml doc
-
-'''
-def sequence_doc_root_nodes_by_filename(
-    filename=None,
-    root_item_tag=None,
-    log_file=None,
-    verbosity=0):
-
-    me = 'sequence_doc_root_nodes'
-    required_args = ['filename', 'root_item_tag']
-    require_args_by_me_dlocals_names(
-      me=me,dlocals=locals(), names=required_args)
-
-    seq = 'sequence_doc_root_nodes_by_filename'
-    node = None
-
-    with open(filename, mode="r") as input_file:
-        lines = ''
-        line = input_file.readline()
-        if verbosity > 0:
-            print(f"{me}: Got first input line='{line}'")
-        start_str =f"<{root_item_tag}"
-        if not line.startswith(start_str):
-            if verbosity > 0:
-                print(
-                  f"{me}:Error: line  '{line}' does not startwith '{start_str}'")
-            return None
-        lines += line
-        end_str =f"</{root_item_tag}"
-        for line in input_file:
-            if verbosity > 1:
-                print(f"{seq}: Got input line='{line}'")
-            lines += line
-            if line.startswith(end_str):
-                #Parse the lines buffer as xml and yield the item node
-                if verbosity > 1:
-                    print(f"{seq}: Made all lines='{lines}'")
-                node_root = etree.fromstring(str.encode(lines))
-                lines = ''
-                yield node_root
-        #end of lines in this file
-    # normal end of file
-    return None
-'''
-DocNodeSet instantiates a description of documents to use as input.
-Its method sequence_doc_nodes creates a generator of a sequence
-of lxml document root nodes, where each is to an input document to be
-processed.
-'''
-class DocNodeSet():
-    def __init__(self, input_folders=None, input_file_glob=None,
-        progress_batch_size=1000,
-        doc_root_tag="Thesis",
-        attribute_text = 'text',
-        attribute_innerhtml = '',
-        input_glob = '**/*.xml',
-        verbosity=0):
-
-        self.input_folders = input_folders
-        self.input_glob = input_glob
-        self.input_path_list = []
-        self.doc_root_tag = doc_root_tag
-        for input_folder in input_folders:
-            self.input_path_list += list(
-              Path(input_folder).glob(input_file_glob))
-
-        #todo: in sequence method, SKIP duplicate path names that
-        #might result due to multiple input folders
-
-        self.progress_batch_size = progress_batch_size
-        # Upon parsing, converting input xml to rdb, use this as the
-        # 'pseudo attribute name' for the text content of any doc node
-        self.attribute_text = attribute_text
-
-        # Similar, but for innerhtml of a doc node? output? maybe dicard this.
-        self.attribute_innerhtml = attribute_innerhtml
-    #end def __init__
-
-    '''
-    method: sequence_doc_nodes
-    create and return a generator for a sequence of doc_nodes
-
-    Also, internally uses the glob.iglob generator instead of glob.globe so the
-    entire input path list need not be generated first and stored in memory.
-
-    max_doc_count: if non-zero, generated sequence will end after max_doc_count
-
-    TODO: provide optional report of failed file reads and parses..
-    See older version of xml2rdb code for prototype, messages to report.
-
-    todo: in sequence method, SKIP duplicate path names that
-    might result due to multiple input folders
-
-    '''
-    def sequence_doc_nodes(self, min_doc_count=0, max_doc_count=0 ):
-        for path_count,path in enumerate(self.input_path_list):
-          # Full absolute path of input file name is:
-          input_file_name = "{}/{}".format(path.parents[0], path.name)
-          sequence_doc_root_nodes = sequence_doc_root_nodes_by_filename(
-            root_item_tag=self.doc_root_tag, filename=input_file_name
-            )
-
-          # Scan every doc_node
-          doc_count = 0
-          for doc_root_node in sequence_doc_root_nodes:
-              doc_count += 1
-              if doc_count < min_doc_count and min_doc_count > 0:
-                  continue
-              if doc_count > max_doc_count and max_doc_count > 0:
-                  return None
-              yield doc_root_node
-          # end for
-        #end for path_count, path
-        return None
-
-#end class DocNodeSet
 
 '''
 Method new_od_relation
@@ -292,8 +128,8 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
       print("\n\n===========================\n"
         "{}:NOTICE: For dbname={},writing output data with encoding='{}'"
         .format(me,db_name,repr(output_encoding)))
-      print( "May need utf-8 encoding for XML outputs or may need latin-1 encoding"
-             " for SQL SERVER 2008!'")
+      print( "May need utf-8 encoding for XML outputs or may need latin-1"
+             " encoding for SQL SERVER 2008!'")
 
     # NOTE: method new_od_relation must be called before this one to create
     # all od_relations in same order as od_rel_datacolumns.
@@ -348,7 +184,8 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
 
         # Column data type for this db_name node index is also an integer count.
         od_column[db_name] = 'integer'
-        # ... and also a primary key column called by the name of the db_name itself
+        # ... and also a primary key column called by the name of the
+        # db_name itself
         pkey_columns +="{}{}".format(sep, db_name)
         od_rel_info['pkey_columns'] = pkey_columns
 
@@ -366,12 +203,15 @@ def get_writable_db_file(od_relation=None, od_rel_datacolumns=None,
         if len(od_datacolumn_default) > 0:
             for column_name in od_datacolumn_default.keys():
                 if column_name is None:
-                    raise Exception("Relation '{}' has a null row key.".format(db_name))
-                print("{}:Relation={},adding column_name={}".format(me,db_name,column_name))
+                    raise Exception("Relation '{}' has a null row key."
+                      .format(db_name))
+                print("{}:Relation={},adding column_name={}"
+                      .format(me,db_name,column_name))
                 od_column[column_name] = 'nvarchar(MAX)'
     # end storing misc mining info for a newly encounterd relation in the input
     else:
-        #print("{}:Dict for attribute_column already found for db_name={}".format(me,db_name))
+        # print("{}:Dict for attribute_column already found for
+        # db_name={}".format(me,db_name))
         pass
     # For the given db_name, return the writable file to the caller
     # return od_rel_info['db_file']
@@ -463,8 +303,8 @@ def node_visit_output(
     # commonly alowed in rdbs in column names).
     d_attr_column = d_node_params.get('attrib_column', None)
     if d_attr_column is not None:
-        # We have some node attributes destined for output to relational columns,
-        # so set them up in d_row key-value pairs.
+        # We have some node attributes destined for output to relational
+        # columns, so set them up in d_row key-value pairs.
         if not isinstance(d_attr_column, dict):
             # detect some sorts of errors/typos in the d_node_params parsing
             # configuration
@@ -642,7 +482,8 @@ def node_visit_output(
 
         #Output a row in the db file
         if verbosity > 1:
-          msg = (f"{me}:Printing line '{db_line}'' to db_filename = '{db_filename}'")
+          msg = (
+            f"{me}:Printing line '{db_line}' to db_filename = '{db_filename}'")
           print(msg, flush=True)
         print('{}'.format(db_line), file=db_file)
 
@@ -662,8 +503,8 @@ def node_visit_output(
 
     '''
     Method xml2rdb_doc:
-    From given xml doc(eg, from a arg of input_root_node, for example an Elsevier
-    full text retrieval apifile),
+    From given xml doc(eg, from a arg of input_root_node, for example an
+    Elsevier full text retrieval apifile),
     convert the xml doc for output to relational data and output to relational
     tab-separated-value (tsv) files.
     Excel and other apps allow the '.txt' filename extension for
@@ -672,14 +513,15 @@ def node_visit_output(
     20180923 TODO: make sure the parent caller's input root node generator
     increments doc_count variable properly, returns what it needs for next call
     to this ...
-    # todo?:
-    #   We also will add a naturally useful row offset integer paramemter:
-    #   If user intends to append extant data tables with the rows in the output data,
-    #   USER IS RESPONSIBLE to set row offset to beyond the highest
-    #   offset in the root table to which to append these rows.
-    #   With a proper offset row integer, all outputted tables data files
-    #   will be also suitable to be appended to their respective DB tables. The user is responsible for
-    #   creating the SQL to do this, at this point.
+
+    TODOS:
+       We also will add a naturally useful row offset integer paramemter:
+       If user intends to append extant data tables with the rows in the output
+       data, USER IS RESPONSIBLE to set row offset to beyond the highest
+       offset in the root table to which to append these rows.
+       With a proper offset row integer, all outputted tables data files
+       will be also suitable to be appended to their respective DB tables.
+       The user is responsible for creating the SQL to do this, at this point.
     load_name=None, # A name to apply to this load group-segment of outputted  rows.
     '''
 def xml2rdb_doc1(
@@ -741,8 +583,8 @@ def xml2rdb_doc1(
             #log_messages.append(msg)
             print(msg)
 
-        # Prepare internal doc_root node to also impart some run or batch-related
-        # data settings for the output data
+        # Prepare internal doc_root node to also impart some run or
+        # batch-related data settings for the output data
         d_nsmap = dict(input_root_node.nsmap)
         d_namespaces = {key:value
         for key,value in d_nsmap.items() if key is not None}
@@ -857,11 +699,10 @@ def write_sql_bulk_insert_scripts(
             tsf_filename = "{}/{}.tsf".format(output_folder,rel_key)
             tsf_file = open(tsf_filename, mode='w', encoding='utf-8')
 
-            #print("{}: Table {}, od_relation has key={}, value of d_relinfo with its keys={}"
-            #      .format(me, relation, rel_key, repr(d_relinfo.keys())))
             if 'attrib_column' not in d_relinfo:
-                print("{}: WARNING: Table {} has keys={}, but no values for it in current "
-                    "file were found.".format(me,relation,repr(d_relinfo.keys())))
+                print("{}: WARNING: Table {} has rel keys={}, but no values "
+                    "for it in current file were found."
+                    .format(me,relation,repr(d_relinfo.keys())))
                 continue
 
             # CREATE SYNTAX FOR COLUMNS
@@ -957,7 +798,8 @@ def write_sql_bulk_insert_scripts(
 
             # Bulk insert processing for MSSQL
             print("\nBULK INSERT {}".format(relation), file=sql_file)
-            print("FROM '{}{}.txt'".format(output_folder,rel_key), file=sql_file)
+            print("FROM '{}{}.txt'"
+              .format(output_folder,rel_key), file=sql_file)
             # NOTE: this failed: ROWTERMINATOR = '\\n'
             # Next works fine -- else may get bulk insert error # 4866
             print("WITH (FIELDTERMINATOR ='\\t', ROWTERMINATOR = '0x0A');\n",
@@ -965,22 +807,25 @@ def write_sql_bulk_insert_scripts(
 
             # Bulk insert processing for MySQL
             #Per SO posts for MYSL need "LOCAL" to read network drives
-            print("\nLOAD DATA LOCAL INFILE '{}{}.txt'".format(output_folder, rel_key),
-               file=mysql_file)
+            print("\nLOAD DATA LOCAL INFILE '{}{}.txt'"
+              .format(output_folder, rel_key), file=mysql_file)
             print("INTO TABLE {}".format(relation), file=mysql_file)
-            print("CHARACTER SET latin1 FIELDS TERMINATED BY '\\t'", file=mysql_file)
+            print("CHARACTER SET latin1 FIELDS TERMINATED BY '\\t'",
+              file=mysql_file)
             # MySQL chokes on hex notation REQUIRED by mssql, so
             # here use '\\n'
             print("LINES TERMINATED BY '\\n';", file=mysql_file)
 
             #BULK INSERT PROCESSING FOR psql
 
-            #copy tmpt1 from '/home/robert/tmpf.txt' ( FORMAT CSV, DELIMITER(E'\t') );
+            #copy tmpt1 from '/home/robert/tmpf.txt'
+            #( FORMAT CSV, DELIMITER(E'\t') );
             print("\nCOPY {} FROM '{}{}.txt'"
                .format(relation, output_folder, rel_key), file=psql_file)
             print("( FORMAT CSV, DELIMITER(E'\\t') );", file=psql_file)
 
-            # print("CHARACTER SET latin1 FIELDS TERMINATED BY '\\t'", file=mysql_file)
+            # print("CHARACTER SET latin1 FIELDS TERMINATED BY '\\t'",
+            # file=mysql_file)
 
             # END TABLE BULK INSERTS/LOADING ROW STATEMENTS IN EACH DB
 
@@ -1006,7 +851,6 @@ def write_sql_bulk_insert_scripts(
                 "ALTER TABLE {} ADD sn "
                 "INT PRIMARY KEY NOT NULL AUTO_INCREMENT;"
                 .format(relation), file=mysql_file)
-
 
             print("CREATE UNIQUE INDEX ux_{}_sn on {}(sn);"
                   .format(relation,relation), file=mysql_file)
@@ -1191,7 +1035,8 @@ def xml2rdb(
       ]
 
     me = "xml2rdb"
-    require_args_by_me_dlocals_names(me=me,dlocals=locals(), names=required_arg_names)
+    require_args_by_me_dlocals_names(me=me,dlocals=locals(),
+      names=required_arg_names)
 
     me = "xml2rdb"
     utc_now = datetime.datetime.utcnow()
@@ -1255,7 +1100,8 @@ def xml2rdb(
       d_xml_params=d_xml_params,
       verbosity=verbosity,
     )
-    d_log['run_parameters'].update({"count_input_file_failures": count_input_file_failures})
+    d_log['run_parameters'].update(
+      {"count_input_file_failures": count_input_file_failures})
 
     # Put d_log, logfile dict info, into xml tree,  and then OUTPUT logfile info
     # as an xml tree.
@@ -1321,7 +1167,8 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
             data_relative_folder='data/elsevier/')
 
     d_xml_params = {}
-    # Part of a deprecation... now only marcxml uses this and passes it to xml2rdb,
+    # Part of a deprecation... now only marcxml uses this and passes it to
+    # xml2rdb,
     # So value of None is signal to interpret arguments an 'older' way.
     folder_output_base = None
     output_folder_include_secsz = False
@@ -1351,7 +1198,8 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
             , data_relative_folder='xml2rdb/{}/'.format(rel_prefix))
 
 
-        # doc_rel_name must match highest level table dbname in sql_mining_params od_rel_datacolumns
+        # doc_rel_name must match highest level table dbname in
+        # sql_mining_params od_rel_datacolumns
         doc_rel_name = 'cross_doi'
         doc_root_xpath = './response/message'
 
@@ -1388,7 +1236,8 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
             , windows='U:/data/'
             , data_relative_folder='outputs/xml2rdb/{}/'.format(rel_prefix))
 
-        doc_rel_name = 'cross_doi' # must match highest level table dbname in od_rel_datacolumns, set below.
+        doc_rel_name = 'cross_doi' # must match highest level table dbname in
+        # od_rel_datacolumns, set below.
         #Next doc_root_xpath is set by the harvester crafdtxml so see its code.
         doc_root_xpath = './crossref-api-filter-date-UF/message'
 
@@ -1407,22 +1256,26 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
         # This is where the precursor program marc2xml leaves its marcxml data
         # for ccila UCRiverside # items
         in_folder_name = etl.data_folder(linux='/home/robert/git/',
-            windows='C:/rvp/data/', data_relative_folder='outputs/marcxml/UCRiverside/')
+            windows='C:/rvp/data/',
+            data_relative_folder='outputs/marcxml/UCRiverside/')
 
-        #windows='c:/users/podengo/git/outputs/marcxml/', data_relative_folder='UCRiverside')
+        # windows='c:/users/podengo/git/outputs/marcxml/',
+        # data_relative_folder='UCRiverside')
         folder_output_base = etl.data_folder(linux='/home/robert/git/'
             , windows='C:/rvp/data/'
             , data_relative_folder=(
               'outputs/xml2rdb/{}/'.format(study)))
 
-        print("study {}, using folder_output_base={}".format(study,folder_output_base))
+        print("study {}, using folder_output_base={}"
+            .format(study,folder_output_base))
 
         input_folder = in_folder_name
         input_folders = []
         input_folders.append(input_folder)
         input_path_glob = '**/marc*.xml'
 
-        doc_rel_name = 'record' # must match highest level table dbname in od_rel_datacolumns
+        # doc_rel_name must be highest level table dbname in od_rel_datacolumns
+        doc_rel_name = 'record'
         doc_root_xpath = ".//{*}record"
 
         input_path_list = list(Path(input_folder).glob(input_path_glob))
@@ -1444,7 +1297,8 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
         input_path_glob = '**/orcid_*.xml'
 
         xxin_folder_name = etl.data_folder(linux='/home/robert/git/',
-            windows='C:/rvp/data/', data_relative_folder='outputs/marcxml/UCRiverside/')
+            windows='C:/rvp/data/',
+            data_relative_folder='outputs/marcxml/UCRiverside/')
 
         output_folder_include_secsz = False
 
@@ -1510,12 +1364,13 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
         # r'C:\rvp\data\xis\export_subjects\xis_subjects_parsed.xml'
 
 
-        # { 20180922 todo:  implement a separate object called FolderSet to contain these params:
-        # ERROR? need double backslash for last backlach even with r' type of string?
+        # Need double backslash for last backlach even
+        # with r' type of string. It seems the \' being interpreted
+        # as a literal ' rather than the end of the r' string.
+        # but ending with \\' works ok.
         input_folder = r'c:\rvp\data\xis\export_subjects\\'
         print(f" *****  Using input_folder = '{input_folder}'")
         input_folders = [input_folder]
-        # } todo:  implement a separate object called FolderSet to contain these params:
 
         # { todo: create ITEM object
         # to contol the item READER -
@@ -1523,11 +1378,11 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
         # Eg, for a reader of independent item files in a hierarchy
         input_path_glob = 'xis_subjects_parsed_20180925.xml'
         #input_path_glob = 'xis_subjects_small.xml'
-        # NOTE: Tod0, depending on oher init params of ItemReader, may also add the
-        # FolderSet as optional init param,
+        # NOTE: Tod0, depending on oher init params of ItemReader, may also add
+        # the FolderSet as optional init param,
 
-        # Todo - create a new object ItemParser and initialize with doc_root_xpath,
-        # etc
+        # Todo - create a new object ItemParser and initialize with
+        # doc_root_xpath, etc
         # For document/item - the relation name to hold on instance
 
         doc_rel_name = 'thesis'
@@ -1538,8 +1393,8 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
     else:
          raise ValueError("Unknown rel_prefix = '{}'. Exit.".format(rel_prefix))
 
-    # DocNodeSet is(will be) an object that identifies the full set of  individual
-    # input doc nodes.
+    # DocNodeSet is(will be) an object that identifies the full set of
+    # individual input doc nodes.
     # Its method generator_next() a generator/reader returns the sequene of
     # all document nodes in the input, in the form of lxml document nodes.
     # Successive calls to the generator yield eturns the root doc node of the
@@ -1558,7 +1413,8 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
         for input_folder in input_folders:
             print("{}:Study {}:Using input_folder='{}'\n"
                 .format(me,study,input_folder))
-            input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
+            input_path_list.extend(
+              list(Path(input_folder).glob(input_path_glob)))
 
     # If input_folders not defined in a study, define it by putting the single
     # input folder into this list
@@ -1616,6 +1472,7 @@ print("Starting!",flush=True)
 sys.stdout.flush()
 
 rel_prefix = 'e2018'
+# 201808=925 or so -- working with x2018
 rel_prefix = 'x2018'
 
 print("***************################")

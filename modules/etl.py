@@ -17,6 +17,173 @@ from pathlib import Path
 import shutil
 import stat
 
+
+
+'''
+def sequence_doc_root_nodes(
+   input_file_name=None, root_item_tag=None
+    log_file=None, verbosity=0):
+
+Generate a generator/sequence,
+given an input file name, and string root_item_tag that defines the tag
+for a doc_root_node in the file. Each sequence iteration yields
+    the lxml doc root node for the next successive input
+    lines that comprise a document in the input file.
+
+Return null if:
+
+(1) no line left in input file, or
+(2) the next line does not begin with the <root_item_tag>
+
+Buffer input lines into a string and keep reading until:
+case: an end of file,
+   in which case return null
+case: an </root_item_tag> is found
+   in which case
+   - parse the input lines buffer into an lxml doc,
+   - yield the root node of the lxml doc
+
+'''
+def sequence_doc_root_nodes_by_filename(
+    filename=None,
+    root_item_tag=None,
+    log_file=None,
+    verbosity=0):
+
+    me = 'sequence_doc_root_nodes'
+    required_args = ['filename', 'root_item_tag']
+    require_args_by_me_dlocals_names(
+      me=me,dlocals=locals(), names=required_args)
+
+    seq = 'sequence_doc_root_nodes_by_filename'
+    node = None
+
+    with open(filename, mode="r") as input_file:
+        lines = ''
+        line = input_file.readline()
+        if verbosity > 0:
+            print(f"{me}: Got first input line='{line}'")
+        start_str =f"<{root_item_tag}"
+        if not line.startswith(start_str):
+            if verbosity > 0:
+                print(
+                  f"{me}:Error: line  '{line}' does not startwith '{start_str}'")
+            return None
+        lines += line
+        end_str =f"</{root_item_tag}"
+        for line in input_file:
+            if verbosity > 1:
+                print(f"{seq}: Got input line='{line}'")
+            lines += line
+            if line.startswith(end_str):
+                #Parse the lines buffer as xml and yield the item node
+                if verbosity > 1:
+                    print(f"{seq}: Made all lines='{lines}'")
+                node_root = etree.fromstring(str.encode(lines))
+                lines = ''
+                yield node_root
+        #end of lines in this file
+    # normal end of file
+    return None
+'''
+DocNodeSet instantiates a description of documents to use as input.
+Its method sequence_doc_nodes creates a generator of a sequence
+of lxml document root nodes, where each is to an input document to be
+processed.
+'''
+class DocNodeSet():
+    def __init__(self, input_folders=None, input_file_glob=None,
+        progress_batch_size=1000,
+        doc_root_tag="Thesis",
+        attribute_text = 'text',
+        attribute_innerhtml = '',
+        input_glob = '**/*.xml',
+        verbosity=0):
+
+        self.input_folders = input_folders
+        self.input_glob = input_glob
+        self.input_path_list = []
+        self.doc_root_tag = doc_root_tag
+        for input_folder in input_folders:
+            self.input_path_list += list(
+              Path(input_folder).glob(input_file_glob))
+
+        #todo: in sequence method, SKIP duplicate path names that
+        #might result due to multiple input folders
+
+        self.progress_batch_size = progress_batch_size
+        # Upon parsing, converting input xml to rdb, use this as the
+        # 'pseudo attribute name' for the text content of any doc node
+        self.attribute_text = attribute_text
+
+        # Similar, but for innerhtml of a doc node? output? maybe dicard this.
+        self.attribute_innerhtml = attribute_innerhtml
+    #end def __init__
+
+    '''
+    method: sequence_doc_nodes
+    create and return a generator for a sequence of doc_nodes
+
+    Also, internally uses the glob.iglob generator instead of glob.globe so the
+    entire input path list need not be generated first and stored in memory.
+
+    max_doc_count: if non-zero, generated sequence will end after max_doc_count
+
+    TODO: provide optional report of failed file reads and parses..
+    See older version of xml2rdb code for prototype, messages to report.
+
+    todo: in sequence method, SKIP duplicate path names that
+    might result due to multiple input folders
+
+    '''
+    def sequence_doc_nodes(self, min_doc_count=0, max_doc_count=0 ):
+        for path_count,path in enumerate(self.input_path_list):
+          # Full absolute path of input file name is:
+          input_file_name = "{}/{}".format(path.parents[0], path.name)
+          sequence_doc_root_nodes = sequence_doc_root_nodes_by_filename(
+            root_item_tag=self.doc_root_tag, filename=input_file_name
+            )
+
+          # Scan every doc_node
+          doc_count = 0
+          for doc_root_node in sequence_doc_root_nodes:
+              doc_count += 1
+              if doc_count < min_doc_count and min_doc_count > 0:
+                  continue
+              if doc_count > max_doc_count and max_doc_count > 0:
+                  return None
+              yield doc_root_node
+          # end for
+        #end for path_count, path
+        return None
+
+#end class DocNodeSet
+
+'''
+require_args_by_me_locals_names():
+
+Typical call: Caller will provide 'me' string of calling routine arg1,
+in arg2 put itts locals() dict, arg3 is list of names or its required arguments.
+
+Where a function requires argument names 'd_oai' and 'output_folder'
+one of its first code lines would be:
+
+      require_args_by_me_locals_names(me, locals=locals(),
+        names=['d_oai', 'output_folder'])
+'''
+def require_args_by_me_dlocals_names(me=None,dlocals=None, names=None):
+    if me is None or dlocals is None or names is None:
+        raise(ValueError,f"Key argument me, dlocals, or names is missing")
+    required_args = [ v for k, v in dlocals.items() if k in names]
+    for k,v in dlocals.items():
+      if k not in names:
+          continue
+      if v is None:
+        raise ValueError(
+          f"Error: {me}: required arg '{k}' is not set.")
+    # end for k,v
+#end def require_args_by_me_dlocals_names
+
 '''
 Method require_d_local_names
 Sample call:
