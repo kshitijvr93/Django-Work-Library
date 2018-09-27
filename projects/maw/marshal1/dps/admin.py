@@ -1,4 +1,6 @@
+#
 from django.contrib import admin
+
 from .models import (
     Bibvid,
     BibvidTerm,
@@ -12,7 +14,7 @@ from .models import (
     #Thesaurus,
     )
 
-from django.forms import TextInput, Textarea
+from django.forms import ModelForm, TextInput, Textarea
 from django.db import models
 from maw_utils import ExportCvsMixin
 from nested_inline.admin import NestedStackedInline, NestedModelAdmin
@@ -190,32 +192,56 @@ class TermSuggestionAdmin(admin.ModelAdmin):
 
 #end class TermSuggestionAdmin
 
+# Thesis and Subject Admin
+class X2018SubjectForm(ModelForm):
+    model = X2018Subject
+    class Meta:
+        model = X2018Subject
+        fields = ['thesis', 'subject', 'term', 'keep',
+          'marc', 'ind1', 'ind2' ]
+        widgets = {
+            'sn' : TextInput(attrs={'cols':10, 'rows':1}),
+            'thesis' : TextInput(attrs={'size':8, 'rows':1}),
+            'subject' : TextInput(attrs={'size':4, 'rows':1}),
+            'term' : TextInput(attrs={'size':40, 'rows':1}),
+            'keep' : TextInput(attrs={'size':1, 'rows':1}),
+            'marc' : TextInput(attrs={'size':3, 'rows':1}),
+            'ind1' : TextInput(attrs={'size':1, 'rows':1}),
+            'ind2' : TextInput(attrs={'size':1, 'rows':1}),
+        }
+
+
 class ThesisAdmin(admin.ModelAdmin):
     list_display = ['thesis','subject','xtag', 'term', 'keep',
         'marc','ind1', 'ind2']
     list_display_links = list_display[0:3]
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
-          attrs={'size':'80'})},
+          attrs={'size':'40'})},
         models.TextField: { 'widget': Textarea(
-          attrs={'rows':1, 'cols':'80'})},
+          attrs={'rows':1, 'cols':'40'})},
     }
 
 class SubjectAdmin(admin.ModelAdmin):
+
+    form = X2018SubjectForm
+    search_fields =['term']
+    list_filter = ['xtag', 'keep', 'marc']
     list_display = ['thesis','subject','xtag', 'term', 'keep',
         'marc','ind1', 'ind2']
     list_display_links = list_display[0:3]
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
-          attrs={'size':'80'})},
+          attrs={'size':'40'})},
         models.TextField: { 'widget': Textarea(
-          attrs={'rows':1, 'cols':'80'})},
+          attrs={'rows':1, 'cols':'40'})},
     }
+
 
 
 #end class SubjectAdmin
 
 admin.site.register(TermSuggestion, TermSuggestionAdmin)
 admin.site.register(X2018Thesis, admin.ModelAdmin)
-admin.site.register(X2018Subject, admin.ModelAdmin)
+admin.site.register(X2018Subject, SubjectAdmin)
 # } Admin code

@@ -1,6 +1,8 @@
 import uuid
+
 from django.db import models
 #from django_enumfield import enum
+from django.forms import ModelForm, Textarea
 
 #other useful model imports at times (see django docs, tutorials):
 import datetime
@@ -348,11 +350,11 @@ class X2018Subject(models.Model):
     thesis = models.IntegerField(blank=True, null=True)
     subject = models.IntegerField(blank=True, null=True)
     xtag = models.CharField(max_length=16, blank=True, null=True)
-    term = models.CharField(max_length=16, blank=True, null=True)
+    term = models.CharField(max_length=40, blank=True, null=True)
     keep = models.CharField(max_length=16, blank=True, null=True)
     marc = models.CharField(max_length=16, blank=True, null=True)
-    ind1 = models.CharField(max_length=16, blank=True, null=True)
-    ind2 = models.CharField(max_length=16, blank=True, null=True)
+    ind1 = models.CharField(max_length=1, blank=True, null=True)
+    ind2 = models.CharField(max_length=1, blank=True, null=True)
 
     def __str__(self):
         return(f"{self.thesis}.{self.subject}.{self.xtag}")
@@ -361,7 +363,24 @@ class X2018Subject(models.Model):
         managed = False
         db_table = 'x2018_subject'
         unique_together = (('thesis', 'subject', 'xtag'),)
+        #widgets to override
+#end class X2018Subject
 
+class zzX2018SubjectForm(ModelForm):
+    model = X2018Subject
+    class Meta:
+        model = X2018Subject
+        fields = ['keep']
+        widgets = {
+            'sn' : Textarea(attrs={'cols':12, 'rows':1}),
+            'thesis' : Textarea(attrs={'cols':12, 'rows':1}),
+            'subject' : Textarea(attrs={'cols':4, 'rows':1}),
+            'term' : Textarea(attrs={'cols':40, 'rows':1}),
+            'keep' : Textarea(attrs={'cols':12, 'rows':1}),
+            'marc' : Textarea(attrs={'cols':3, 'rows':1}),
+            'ind1' : Textarea(attrs={'cols':12, 'rows':1}),
+            'ind2' : Textarea(attrs={'cols':12, 'rows':1}),
+        }
 
 class X2018Thesis(models.Model):
     #orig:thesis = models.IntegerField(unique=True, blank=True, null=True)
@@ -369,8 +388,8 @@ class X2018Thesis(models.Model):
     thesis = models.IntegerField(unique=True)
     uf_bibvid = models.CharField(max_length=16, blank=True, null=True)
     title = models.TextField(blank=True, null=True)
-    au_fname = models.CharField(max_length=16, blank=True, null=True)
-    au_lname = models.CharField(max_length=16, blank=True, null=True)
+    au_fname = models.CharField(max_length=40, blank=True, null=True)
+    au_lname = models.CharField(max_length=40, blank=True, null=True)
     pub_year = models.CharField(max_length=16,blank=True, null=True)
     add_ymd = models.CharField(max_length=16,blank=True, null=True)
     add_initials = models.CharField(max_length=16,blank=True, null=True)
