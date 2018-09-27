@@ -86,6 +86,11 @@ def sql_mining_params():
             ('ind1',' '),
             ('ind2','7'),
         ])),
+    ])
+
+# end -------------od_rel_columns for xis subject terms relations
+
+    '''
         ('topic', OrderedDict([ #
             ('term',''),
             ('keep','y'),
@@ -123,9 +128,7 @@ def sql_mining_params():
             ('ind1',' '),
             ('ind2','7'),
         ])),
-    ])
-
-# end -------------od_rel_columns for xis subject terms relations
+    '''
 
     d_node_params1 = {
         # The db_name of this root node is given in a runtime parameter, so

@@ -145,7 +145,13 @@ class DocNodeSet():
     might result due to multiple input folders
 
     '''
-    def sequence_doc_nodes(self, min_doc_count=0, max_doc_count=0 ):
+    def sequence_doc_nodes(self, min_doc_count=0, max_doc_count=0,
+        verbosity=0 ):
+        if verbosity > 0:
+            me = 'DocNodeSet.sequence_doc_nodes'
+            msg = (f"{me}: counts min={min_doc_count}, max={max_doc_count}")
+            print(msg)
+
         for path_count,path in enumerate(self.input_path_list):
           # Full absolute path of input file name is:
           input_file_name = "{}/{}".format(path.parents[0], path.name)
@@ -153,7 +159,7 @@ class DocNodeSet():
             root_item_tag=self.doc_root_tag, filename=input_file_name
             )
 
-          # Scan every doc_node
+          # Scan every doc_node except some if min or max counts are given
           doc_count = 0
           for doc_root_node in sequence_doc_root_nodes:
               doc_count += 1

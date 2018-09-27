@@ -918,8 +918,11 @@ def xml2rdb_docs(
 
     # DocNodeSet.sequence_doc_nodes is generator
     dns = doc_node_set
-    sequence_doc_nodes = dns.sequence_doc_nodes(min_doc_count=0,
-        max_doc_count=0)
+    sequence_doc_nodes = dns.sequence_doc_nodes(
+        # min_doc_count=0, max_doc_count=0,
+        min_doc_count=1, max_doc_count=100,
+        verbosity=1
+        )
     progress_batch_size = dns.progress_batch_size
     import sys
 
@@ -980,7 +983,7 @@ def xml2rdb_docs(
       use_db=use_db,
       )
 
-    return count_input_file_failures
+    return processed_count
 # end def xml2rdb_docs
 
 # RUN PARAMS AND RUN
@@ -1368,7 +1371,7 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
         # with r' type of string. It seems the \' being interpreted
         # as a literal ' rather than the end of the r' string.
         # but ending with \\' works ok.
-        input_folder = r'c:\rvp\data\xis\export_subjects\\'
+        input_folder = r'c:\rvp\data\xis\export_subjects'
         print(f" *****  Using input_folder = '{input_folder}'")
         input_folders = [input_folder]
 
@@ -1402,12 +1405,14 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
 
     doc_node_set = DocNodeSet(input_folders=input_folders,
         input_file_glob=input_path_glob,
-        verbosity=1)
-    sequence_doc_nodes = doc_node_set.sequence_doc_nodes()
+        verbosity=1
+    )
 
     # OPTIONAL - If a study specified multiple input folders and input_path_glob,
     # then honor them when constructing the input_path_list
+    n_input_folders = 0
     if (input_folders is not None and input_path_glob is not None):
+        n_input_folders += 1
         # compose input_path_list over multiple input_folders
         input_path_list = []
         for input_folder in input_folders:
@@ -1415,6 +1420,10 @@ def run(study=None,rel_prefix='e2018_', verbosity=0):
                 .format(me,study,input_folder))
             input_path_list.extend(
               list(Path(input_folder).glob(input_path_glob)))
+    lf = len(input_folders)
+    lp = len(input_path_list)
+    msg = (f"{me}Among {lf} input folders, glob={input_path_glob},"
+        f"found {lp} input files")
 
     # If input_folders not defined in a study, define it by putting the single
     # input folder into this list
