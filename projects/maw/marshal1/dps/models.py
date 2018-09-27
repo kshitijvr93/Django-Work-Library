@@ -366,21 +366,6 @@ class X2018Subject(models.Model):
         #widgets to override
 #end class X2018Subject
 
-class zzX2018SubjectForm(ModelForm):
-    model = X2018Subject
-    class Meta:
-        model = X2018Subject
-        fields = ['keep']
-        widgets = {
-            'sn' : Textarea(attrs={'cols':12, 'rows':1}),
-            'thesis' : Textarea(attrs={'cols':12, 'rows':1}),
-            'subject' : Textarea(attrs={'cols':4, 'rows':1}),
-            'term' : Textarea(attrs={'cols':40, 'rows':1}),
-            'keep' : Textarea(attrs={'cols':12, 'rows':1}),
-            'marc' : Textarea(attrs={'cols':3, 'rows':1}),
-            'ind1' : Textarea(attrs={'cols':12, 'rows':1}),
-            'ind2' : Textarea(attrs={'cols':12, 'rows':1}),
-        }
 
 class X2018Thesis(models.Model):
     #orig:thesis = models.IntegerField(unique=True, blank=True, null=True)

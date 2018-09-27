@@ -189,12 +189,34 @@ class TermSuggestionAdmin(admin.ModelAdmin):
     inlines = [TermEvalInline, ]
     def get_sortable_by():
         return []
-
 #end class TermSuggestionAdmin
 
 # Thesis and Subject Admin
+class X2018ThesisForm(ModelForm):
+    model = X2018Thesis
+
+    class Meta:
+        model = X2018Thesis
+        fields = ['thesis','uf_bibvid','title', 'au_fname', 'au_lname',
+          'pub_year', ]
+        widgets = {
+            'thesis' : TextInput(attrs={'size':8, 'rows':1}),
+            'uf_bibvid' : TextInput(attrs={'cols':10, 'rows':1}),
+            'title' : Textarea(attrs={'cols':40, 'rows':1}),
+            'au_fname' : TextInput(attrs={'size':40, 'rows':1}),
+            'au_lname' : TextInput(attrs={'size':40, 'rows':1}),
+            'pub_year' : TextInput(attrs={'size':10, 'rows':1}),
+            'add_initials' : TextInput(attrs={'size':4, 'rows':1}),
+            'add_ymd' : TextInput(attrs={'size':10, 'rows':1}),
+            'change_initials' : TextInput(attrs={'size':4, 'rows':1}),
+            'change_ymd' : TextInput(attrs={'size':10, 'rows':1}),
+
+        }
+#end class X2018ThesisForm
+
 class X2018SubjectForm(ModelForm):
     model = X2018Subject
+
     class Meta:
         model = X2018Subject
         fields = ['thesis', 'subject', 'term', 'keep',
@@ -209,18 +231,23 @@ class X2018SubjectForm(ModelForm):
             'ind1' : TextInput(attrs={'size':1, 'rows':1}),
             'ind2' : TextInput(attrs={'size':1, 'rows':1}),
         }
-
+#end class X2018SubjectForm
 
 class ThesisAdmin(admin.ModelAdmin):
-    list_display = ['thesis','subject','xtag', 'term', 'keep',
-        'marc','ind1', 'ind2']
+    form = X2018ThesisForm
+
+    search_fields =['uf_bibvid','thesis', 'title','au_fname','au_lname']
+    list_display = ['thesis','uf_bibvid','title', 'au_fname', 'au_lname',
+        ]
     list_display_links = list_display[0:3]
+
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
           attrs={'size':'40'})},
         models.TextField: { 'widget': Textarea(
           attrs={'rows':1, 'cols':'40'})},
     }
+#end class ThesisAdmin
 
 class SubjectAdmin(admin.ModelAdmin):
 
@@ -236,12 +263,9 @@ class SubjectAdmin(admin.ModelAdmin):
         models.TextField: { 'widget': Textarea(
           attrs={'rows':1, 'cols':'40'})},
     }
-
-
-
 #end class SubjectAdmin
 
 admin.site.register(TermSuggestion, TermSuggestionAdmin)
-admin.site.register(X2018Thesis, admin.ModelAdmin)
+admin.site.register(X2018Thesis, ThesisAdmin)
 admin.site.register(X2018Subject, SubjectAdmin)
 # } Admin code
