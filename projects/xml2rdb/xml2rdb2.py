@@ -856,6 +856,7 @@ def write_sql_bulk_insert_scripts(
                   .format(relation,relation), file=mysql_file)
 
             # ADD SN FOR DB POSTGRES SQL
+
             print("ALTER TABLE {} ADD sn SERIAL PRIMARY KEY;"
                   .format(relation), file=psql_file)
 

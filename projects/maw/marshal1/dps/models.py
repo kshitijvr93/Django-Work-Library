@@ -342,15 +342,20 @@ class TermEval(models.Model):
 # CAUTION: Reruns of that xml2rdb2 config, and its sql creates script will
 # drop and repopulate these tables.
 class X2018Subject(models.Model):
+    # Must declar thesis as primary_key to suppress auto 'id'
+    # field that django creates
+    sn = models.IntegerField(primary_key=True)
     thesis = models.IntegerField(blank=True, null=True)
     subject = models.IntegerField(blank=True, null=True)
     xtag = models.CharField(max_length=16, blank=True, null=True)
-    term = models.TextField(blank=True, null=True)
-    keep = models.TextField(blank=True, null=True)
-    marc = models.TextField(blank=True, null=True)
-    ind1 = models.TextField(blank=True, null=True)
-    ind2 = models.TextField(blank=True, null=True)
-    sn = models.AutoField(primary_key=True)
+    term = models.CharField(max_length=16, blank=True, null=True)
+    keep = models.CharField(max_length=16, blank=True, null=True)
+    marc = models.CharField(max_length=16, blank=True, null=True)
+    ind1 = models.CharField(max_length=16, blank=True, null=True)
+    ind2 = models.CharField(max_length=16, blank=True, null=True)
+
+    def __str__(self):
+        return(f"{self.thesis}.{self.subject}.{self.xtag}")
 
     class Meta:
         managed = False
@@ -359,17 +364,21 @@ class X2018Subject(models.Model):
 
 
 class X2018Thesis(models.Model):
-    thesis = models.IntegerField(unique=True, blank=True, null=True)
-    uf_bibvid = models.TextField(blank=True, null=True)
+    #orig:thesis = models.IntegerField(unique=True, blank=True, null=True)
+    sn = models.IntegerField(primary_key=True)
+    thesis = models.IntegerField(unique=True)
+    uf_bibvid = models.CharField(max_length=16, blank=True, null=True)
     title = models.TextField(blank=True, null=True)
-    au_fname = models.TextField(blank=True, null=True)
-    au_lname = models.TextField(blank=True, null=True)
-    pub_year = models.TextField(blank=True, null=True)
-    add_ymd = models.TextField(blank=True, null=True)
-    add_initials = models.TextField(blank=True, null=True)
-    change_ymd = models.TextField(blank=True, null=True)
-    change_initials = models.TextField(blank=True, null=True)
-    sn = models.AutoField(primary_key=True)
+    au_fname = models.CharField(max_length=16, blank=True, null=True)
+    au_lname = models.CharField(max_length=16, blank=True, null=True)
+    pub_year = models.CharField(max_length=16,blank=True, null=True)
+    add_ymd = models.CharField(max_length=16,blank=True, null=True)
+    add_initials = models.CharField(max_length=16,blank=True, null=True)
+    change_ymd = models.CharField(max_length=16,blank=True, null=True)
+    change_initials = models.CharField(max_length=16,blank=True, null=True)
+
+    def __str__(self):
+        return(self.uf_bibvid)
 
     class Meta:
         managed = False

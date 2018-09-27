@@ -190,6 +190,31 @@ class TermSuggestionAdmin(admin.ModelAdmin):
 
 #end class TermSuggestionAdmin
 
+class ThesisAdmin(admin.ModelAdmin):
+    list_display = ['thesis','subject','xtag', 'term', 'keep',
+        'marc','ind1', 'ind2']
+    list_display_links = list_display[0:3]
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'80'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'80'})},
+    }
+
+class SubjectAdmin(admin.ModelAdmin):
+    list_display = ['thesis','subject','xtag', 'term', 'keep',
+        'marc','ind1', 'ind2']
+    list_display_links = list_display[0:3]
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'80'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'80'})},
+    }
+
+
+#end class SubjectAdmin
+
 admin.site.register(TermSuggestion, TermSuggestionAdmin)
 admin.site.register(X2018Thesis, admin.ModelAdmin)
 admin.site.register(X2018Subject, admin.ModelAdmin)
