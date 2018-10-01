@@ -14,8 +14,10 @@ from .models import (
     #Thesaurus,
     )
 
-from django.forms import ModelForm, TextInput, Textarea
+
+from django.forms import ModelForm, TextInput, Textarea, BaseInlineFormSet
 from django.db import models
+
 from maw_utils import ExportCvsMixin
 from nested_inline.admin import NestedStackedInline, NestedModelAdmin
 from django_mptt_admin.admin import DjangoMpttAdmin
@@ -252,15 +254,21 @@ subject inlne form so 'keep' has size 1, term has size 40, etc custom
 sizes per each field, marc has 3, etc.
 from django.forms import inlineformset_factory
 See also: https://docs.djangoproject.com/en/2.0/topics/forms/modelforms/#specifying-widgets-to-use-in-the-form-with-widgets
+Also: https://stackoverflow.com/questions/9945844/django-change-a-fields-widget-in-subclass-of-baseinlineformset#9946248
 
-from django.forms import BaseInlineFormset
+'''
 
-class CustomInlineFormSet(BaseInlineFormSet):
+#class CustomInlineFormSet(BaseInlineFormSet):
+#    pass
 
-SubjectInlineFormSet=inlineformset_factory(X2018Thesis, X2018Subject,
- fields=['keep'])
+#SubjectInlineFormSet=inlineformset_factory(X2018Thesis, X2018Subject,
+# fields=['keep'])
 
-class SubjectFormSet(SubjectInlineFormSet):
+'''
+NOTE: django 2.0 docs say import BaseInlineFormset from models, incorrect,
+but 2.1 docs say import form forms, which is correct (done above).
+'''
+class SubjectFormSet(BaseInlineFormSet):
     def add_fields(self, form, index):
         #super (ReferenceForm, self).add_fields(form,index)
         form.fields['keep'] = forms.charField(
@@ -276,7 +284,6 @@ class SubjectFormSet(SubjectInlineFormSet):
             'ind1' : TextInput(attrs={'size':1, 'rows':1}),
             'ind2' : TextInput(attrs={'size':1, 'rows':1}),
         }
-'''
 
 class ThesisAdmin(admin.ModelAdmin):
     form = X2018ThesisForm
@@ -292,6 +299,7 @@ class ThesisAdmin(admin.ModelAdmin):
         models.TextField: { 'widget': Textarea(
           attrs={'rows':1, 'cols':'40'})},
     }
+    ordering = ['thesis']
 #end class ThesisAdmin
 class SubjectAdmin(admin.ModelAdmin):
 
@@ -307,6 +315,7 @@ class SubjectAdmin(admin.ModelAdmin):
         models.TextField: { 'widget': Textarea(
           attrs={'rows':1, 'cols':'40'})},
     }
+    ordering = ['thesis','xtag','subject']
 #end class SubjectAdmin
 
 admin.site.register(TermSuggestion, TermSuggestionAdmin)

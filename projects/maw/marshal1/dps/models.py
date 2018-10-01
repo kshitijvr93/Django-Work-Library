@@ -10,6 +10,9 @@ from django.utils import timezone
 from maw_utils import SpaceTextField, SpaceCharField, PlusIntegerField
 from mptt.models import MPTTModel, TreeForeignKey
 
+#suppoort per field custom widget sizes for admin and inline admin
+from django import forms
+
 '''
 NOTE: rather than have a separate file router.py to host HathiRouter, I just
 put it here. Also see settings.py should include this python import dot-path
@@ -389,4 +392,5 @@ class X2018Subject(models.Model):
         db_table = 'x2018_subject'
         unique_together = (('thesis', 'subject', 'xtag'),)
         #widgets to override
+        #widgets = {'keep': forms.TextInput(attrs={'size':'1'})}
 #end class X2018Subject
