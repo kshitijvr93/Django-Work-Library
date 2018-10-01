@@ -232,18 +232,54 @@ class X2018SubjectForm(ModelForm):
             'ind2' : TextInput(attrs={'size':1, 'rows':1}),
         }
 #end class X2018SubjectForm
-
 class SubjectInline(admin.TabularInline):
     model = X2018Subject
+    #formset = SubjectFormSet
     show_change_link = True
     extra = 0
     fields = ('xtag','term','keep','marc',
         'ind1', 'ind2')
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'20'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'40'})},
+    }
 
+'''
+Review later: attempt to support different field sizes within the
+subject inlne form so 'keep' has size 1, term has size 40, etc custom
+sizes per each field, marc has 3, etc.
+from django.forms import inlineformset_factory
+See also: https://docs.djangoproject.com/en/2.0/topics/forms/modelforms/#specifying-widgets-to-use-in-the-form-with-widgets
+
+from django.forms import BaseInlineFormset
+
+class CustomInlineFormSet(BaseInlineFormSet):
+
+SubjectInlineFormSet=inlineformset_factory(X2018Thesis, X2018Subject,
+ fields=['keep'])
+
+class SubjectFormSet(SubjectInlineFormSet):
+    def add_fields(self, form, index):
+        #super (ReferenceForm, self).add_fields(form,index)
+        form.fields['keep'] = forms.charField(
+            widgets=forms.TextInput(attrs={'size':3, 'rows':1})
+        )
+
+    class Meta:
+        xwidgets = {
+            'subject' : TextInput(attrs={'size':4, 'rows':1}),
+            'term' : TextInput(attrs={'size':40, 'rows':1}),
+            'keep' : TextInput(attrs={'size':1, 'rows':1}),
+            'marc' : TextInput(attrs={'size':3, 'rows':1}),
+            'ind1' : TextInput(attrs={'size':1, 'rows':1}),
+            'ind2' : TextInput(attrs={'size':1, 'rows':1}),
+        }
+'''
 
 class ThesisAdmin(admin.ModelAdmin):
     form = X2018ThesisForm
-
     search_fields =['uf_bibvid','thesis', 'title','au_fname','au_lname']
     list_display = ['thesis','uf_bibvid','title', 'au_fname', 'au_lname',
         ]
@@ -252,7 +288,7 @@ class ThesisAdmin(admin.ModelAdmin):
 
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
-          attrs={'size':'40'})},
+          attrs={'size':'20'})},
         models.TextField: { 'widget': Textarea(
           attrs={'rows':1, 'cols':'40'})},
     }
@@ -267,7 +303,7 @@ class SubjectAdmin(admin.ModelAdmin):
     list_display_links = list_display[0:3]
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
-          attrs={'size':'40'})},
+          attrs={'size':'20'})},
         models.TextField: { 'widget': Textarea(
           attrs={'rows':1, 'cols':'40'})},
     }
