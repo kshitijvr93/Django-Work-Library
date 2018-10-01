@@ -233,6 +233,14 @@ class X2018SubjectForm(ModelForm):
         }
 #end class X2018SubjectForm
 
+class SubjectInline(admin.TabularInline):
+    model = X2018Subject
+    show_change_link = True
+    extra = 0
+    fields = ('xtag','term','keep','marc',
+        'ind1', 'ind2')
+
+
 class ThesisAdmin(admin.ModelAdmin):
     form = X2018ThesisForm
 
@@ -240,6 +248,7 @@ class ThesisAdmin(admin.ModelAdmin):
     list_display = ['thesis','uf_bibvid','title', 'au_fname', 'au_lname',
         ]
     list_display_links = list_display[0:3]
+    inlines = [SubjectInline]
 
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
@@ -248,7 +257,6 @@ class ThesisAdmin(admin.ModelAdmin):
           attrs={'rows':1, 'cols':'40'})},
     }
 #end class ThesisAdmin
-
 class SubjectAdmin(admin.ModelAdmin):
 
     form = X2018SubjectForm

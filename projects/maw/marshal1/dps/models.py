@@ -343,29 +343,6 @@ class TermEval(models.Model):
 # tables from config xis_subjets.py.
 # CAUTION: Reruns of that xml2rdb2 config, and its sql creates script will
 # drop and repopulate these tables.
-class X2018Subject(models.Model):
-    # Must declar thesis as primary_key to suppress auto 'id'
-    # field that django creates
-    sn = models.IntegerField(primary_key=True)
-    thesis = models.IntegerField(blank=True, null=True)
-    subject = models.IntegerField(blank=True, null=True)
-    xtag = models.CharField(max_length=16, blank=True, null=True)
-    term = models.CharField(max_length=40, blank=True, null=True)
-    keep = models.CharField(max_length=16, blank=True, null=True)
-    marc = models.CharField(max_length=16, blank=True, null=True)
-    ind1 = models.CharField(max_length=1, blank=True, null=True)
-    ind2 = models.CharField(max_length=1, blank=True, null=True)
-
-    def __str__(self):
-        return(f"{self.thesis}.{self.subject}.{self.xtag}")
-
-    class Meta:
-        managed = False
-        db_table = 'x2018_subject'
-        unique_together = (('thesis', 'subject', 'xtag'),)
-        #widgets to override
-#end class X2018Subject
-
 
 class X2018Thesis(models.Model):
     #orig:thesis = models.IntegerField(unique=True, blank=True, null=True)
@@ -388,3 +365,28 @@ class X2018Thesis(models.Model):
         managed = False
         db_table = 'x2018_thesis'
         verbose_name_plural='x2018 theses'
+
+class X2018Subject(models.Model):
+    # Must declar thesis as primary_key to suppress auto 'id'
+    # field that django creates
+    sn = models.IntegerField(primary_key=True)
+    thesis = models.ForeignKey(X2018Thesis,
+      on_delete=models.CASCADE, db_index=True,
+      db_column='thesis', blank=True, null=True)
+    subject = models.IntegerField(blank=True, null=True)
+    xtag = models.CharField(max_length=16, blank=True, null=True)
+    term = models.CharField(max_length=40, blank=True, null=True)
+    keep = models.CharField(max_length=16, blank=True, null=True)
+    marc = models.CharField(max_length=16, blank=True, null=True)
+    ind1 = models.CharField(max_length=1, blank=True, null=True)
+    ind2 = models.CharField(max_length=1, blank=True, null=True)
+
+    def __str__(self):
+        return(f"{self.thesis}.{self.subject}.{self.xtag}")
+
+    class Meta:
+        managed = False
+        db_table = 'x2018_subject'
+        unique_together = (('thesis', 'subject', 'xtag'),)
+        #widgets to override
+#end class X2018Subject
