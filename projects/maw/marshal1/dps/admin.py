@@ -1,5 +1,6 @@
 #
 from django.contrib import admin
+import sys
 
 from .models import (
     Bibvid,
@@ -223,7 +224,7 @@ class X2018SubjectForm(ModelForm):
         model = X2018Subject
         fields = ['thesis', 'subject', 'term', 'keep',
           'marc', 'ind1', 'ind2' ]
-        widgets = {
+        xwidgets = {
             'sn' : TextInput(attrs={'cols':10, 'rows':1}),
             'thesis' : TextInput(attrs={'size':8, 'rows':1}),
             'subject' : TextInput(attrs={'size':4, 'rows':1}),
@@ -241,12 +242,39 @@ class SubjectInline(admin.TabularInline):
     extra = 0
     fields = ('xtag','term','keep','marc',
         'ind1', 'ind2')
+    # These can/do control inline form field sizes.
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
           attrs={'size':'20'})},
         models.TextField: { 'widget': Textarea(
           attrs={'rows':1, 'cols':'40'})},
     }
+
+    ''' 20181001 - rvp: just tried this on a lark, and this method is also
+    apparently working somewhat for inline fields. The term field has too
+    much empty space after it on the form though.
+    '''
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        me = 'SubjectAdmin:formfield_for_dbfield'
+        # Set form to upload form to use for adding..  .
+        #form_field = super(FileModelAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+        form_field = super().formfield_for_dbfield(db_field, **kwargs)
+        #dict of field widget attributes
+        dw = form_field.widget.attrs
+        fname= db_field.name
+        # Dict of TextInput fields needing overrides
+        d_input_size = {
+          'term': 40, 'xtag': 8, 'keep':1, 'ind1':1, 'ind2':1, 'marc':3, }
+
+        if fname in d_input_size or fname == 'term':
+            size = d_input_size[fname]
+            dw['size'] = str(size)
+            dw['class'] = 'special'
+        else:
+            pass
+
+        return form_field
+    # end def formfield_for_dbfield
 
 '''
 Review later: attempt to support different field sizes within the
@@ -272,7 +300,7 @@ class SubjectFormSet(BaseInlineFormSet):
     def add_fields(self, form, index):
         #super (ReferenceForm, self).add_fields(form,index)
         form.fields['keep'] = forms.charField(
-            widgets=forms.TextInput(attrs={'size':3, 'rows':1})
+            widgets=forms.TextInput(attrs={'size':30, 'rows':1})
         )
 
     class Meta:
@@ -301,14 +329,16 @@ class ThesisAdmin(admin.ModelAdmin):
     }
     ordering = ['thesis']
 #end class ThesisAdmin
-class SubjectAdmin(admin.ModelAdmin):
 
+
+class SubjectAdmin(admin.ModelAdmin):
     form = X2018SubjectForm
     search_fields =['term']
     list_filter = ['xtag', 'keep', 'marc']
     list_display = ['thesis','subject','xtag', 'term', 'keep',
         'marc','ind1', 'ind2']
     list_display_links = list_display[0:3]
+
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
           attrs={'size':'20'})},
@@ -316,9 +346,44 @@ class SubjectAdmin(admin.ModelAdmin):
           attrs={'rows':1, 'cols':'40'})},
     }
     ordering = ['thesis','xtag','subject']
-#end class SubjectAdmin
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        me = 'SubjectAdmin:formfield_for_dbfield'
+        # Set form to upload form to use for adding..  .
+        #form_field = super(FileModelAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+        form_field = super().formfield_for_dbfield(db_field, **kwargs)
+        #dict of field widget attributes
+        dw = form_field.widget.attrs
+        fname= db_field.name
+        # Dict of TextInput fields needing overrides
+        d_input_size = {
+          # 'term': 20, changed to SpaceTextField due to long inputs
+          'xtag': 8,
+          'keep':1,
+          'ind1':1,
+          'ind2':1,
+          'marc':3,
+          #'thesis':20,
+          #'subject':20,
+          }
+
+        msg = f"{me}: field name is {fname}"
+        print(msg, file=sys.stdout)
+        if fname in d_input_size or fname == 'term':
+            size = d_input_size[fname]
+            dw['size'] = str(size)
+            dw['class'] = 'special'
+        else:
+            pass
+
+        return form_field
+    # end def formfield_for_dbfield
+     #Note: if this is needed also for TextAreas or another field type, adjust
+     #the pattarn used above for TextInput type fields
+# end class SubjectAdmin
 
 admin.site.register(TermSuggestion, TermSuggestionAdmin)
 admin.site.register(X2018Thesis, ThesisAdmin)
-admin.site.register(X2018Subject, SubjectAdmin)
+# Maybe retire this SubjectAdmin permanently, as the Thesis inlines work OK.
+# admin.site.register(X2018Subject, SubjectAdmin)
 # } Admin code

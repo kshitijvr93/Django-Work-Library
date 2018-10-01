@@ -32,7 +32,7 @@ class DpsRouter:
     app_label = 'dps'
 
     # Main settings.py file will set up a DATABASES[app_db] dictionary to
-    # specify this app's database connection.
+    # specify this app's database connectiom.
     app_db = 'dps_connection'
 
     '''
@@ -377,20 +377,24 @@ class X2018Subject(models.Model):
       on_delete=models.CASCADE, db_index=True,
       db_column='thesis', blank=True, null=True)
     subject = models.IntegerField(blank=True, null=True)
-    xtag = models.CharField(max_length=16, blank=True, null=True)
-    term = models.CharField(max_length=40, blank=True, null=True)
-    keep = models.CharField(max_length=16, blank=True, null=True)
-    marc = models.CharField(max_length=16, blank=True, null=True)
+    xtag = models.CharField(max_length=8, blank=True, null=True)
+    term = SpaceCharField(max_length=100, blank=True, null=True)
+    keep = models.CharField(max_length=1, blank=True, null=True)
+    marc = models.CharField(max_length=3, blank=True, null=True)
     ind1 = models.CharField(max_length=1, blank=True, null=True)
     ind2 = models.CharField(max_length=1, blank=True, null=True)
 
     def __str__(self):
-        return(f"{self.thesis}.{self.subject}.{self.xtag}")
+        # return(f"{self.thesis}.{self.subject}.{self.xtag}")
+        # Only viewing these as inlines, and need no label there
+        # return empty string. 'None' triggers an error.
+        return ''
 
     class Meta:
         managed = False
         db_table = 'x2018_subject'
         unique_together = (('thesis', 'subject', 'xtag'),)
+
         #widgets to override
         #widgets = {'keep': forms.TextInput(attrs={'size':'1'})}
 #end class X2018Subject
