@@ -38,6 +38,7 @@ urlpatterns = [
     #path('cuba_libro/', include('cuba_libro.urls')),
     #path('cuba_libro/', TemplateView.as_view(template_name='home.html')),
     path('cuba_libro/', include('cuba_libro.urls')),
+    path('dps/', include('dps.urls')),
     path('elsevier/', include('hathitrust.urls')),
     path('hathitrust/', include('hathitrust.urls')),
     path('ifas_citations/', include('hathitrust.urls')),

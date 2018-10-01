@@ -250,6 +250,9 @@ class SubjectInline(admin.TabularInline):
           attrs={'rows':1, 'cols':'40'})},
     }
 
+    def has_delete_permission(self, request, obj=None):
+        return False
+
     ''' 20181001 - rvp: just tried this on a lark, and this method is also
     apparently working somewhat for inline fields. The term field has too
     much empty space after it on the form though.
