@@ -85,6 +85,11 @@ def sql_mining_params():
             ('marc','653'),
             ('ind1',' '),
             ('ind2','7'),
+            # Add these fields because this table ends up used in a Django app
+            # that also populates these fields for some rows that it merges
+            # into this relation, or maybe might do...
+            ('matches',''),
+            ('xtag',''),
         ])),
     ])
 
@@ -116,14 +121,14 @@ def sql_mining_params():
         ])),
         ('geo', OrderedDict([ #
             ('term',''),    # ./UFDC id
-            ('keep','y'),
+            ('keep','n'),
             ('marc','651'),
             ('ind1',' '),
             ('ind2','7'),
         ])),
         ('floridians', OrderedDict([ #
             ('term',''),    # ./UFDC id
-            ('keep','y'),
+            ('keep','n'),
             ('marc','600'),
             ('ind1',' '),
             ('ind2','7'),
@@ -226,7 +231,9 @@ def sql_mining_params():
                     'xtag': 'OLDLCSH',
                     'marc': '600',
                     'ind1': ' ',
-                    'ind2': '7',
+                    # 20181002 Angie Soto said this category IS current lcsh
+                    # but juast an old application, so use ind2 of 0, not 7.
+                    'ind2': '0',
                     'keep': 'n',
                 },
             },

@@ -138,13 +138,18 @@ def out_mets(request):
         # Create d_ns - dictionary of namespace key or abbreviation name to
         # namespace 'long name' values.
         d_namespace = { key:value
-          for key,value in dict(node_root_input.nsmap).items()
+          for key,value in dict(node_root.nsmap).items()
           if key is not None}
 
-        l = len(node_root)
-        out_html += f"<li>Note: mets_filename={mets_filename}, len={l}</li>"
-        out_html += '</ol>'
+        # find all subject topics
+        find_xpath = './/{*}subject'
+        found_nodes = node_root.findall(find_xpath, namespaces=d_namespace)
+        for node in found_nodes:
 
+            pass
+        l = len(found_nodes)
+        out_html += f"<li>Note: mets_filename={mets_filename}, topics len={l}</li>"
+        out_html += '</ol>'
 
     #end for thesis or bibvid
 
