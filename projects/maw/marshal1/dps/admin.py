@@ -242,6 +242,7 @@ class SubjectInline(admin.TabularInline):
     extra = 0
     fields = ('xtag','term','keep','marc',
         'ind1', 'ind2')
+    ordering = [ 'term', '-keep']
     # These can/do control inline form field sizes.
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
@@ -372,7 +373,7 @@ class SubjectAdmin(admin.ModelAdmin):
 
         msg = f"{me}: field name is {fname}"
         print(msg, file=sys.stdout)
-        if fname in d_input_size or fname == 'term':
+        if fname in d_input_size:
             size = d_input_size[fname]
             dw['size'] = str(size)
             dw['class'] = 'special'
@@ -388,5 +389,5 @@ class SubjectAdmin(admin.ModelAdmin):
 admin.site.register(TermSuggestion, TermSuggestionAdmin)
 admin.site.register(X2018Thesis, ThesisAdmin)
 # Maybe retire this SubjectAdmin permanently, as the Thesis inlines work OK.
-# admin.site.register(X2018Subject, SubjectAdmin)
+admin.site.register(X2018Subject, SubjectAdmin)
 # } Admin code

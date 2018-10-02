@@ -244,6 +244,7 @@ sys.stdout.flush()
 # TODO: create a production psql database  named dps
 if dps_env == 'test': # Experiment later with this one
     DPS_UFDC_FOLDER = maw_settings.DPS_UFDC_FOLDER
+    print(f"settings.py {DPS_UFDC_FOLDER}")
     DATABASES.update({'dps_connection' : {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'dps',
