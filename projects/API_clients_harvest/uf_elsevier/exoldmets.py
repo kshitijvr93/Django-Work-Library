@@ -1364,7 +1364,7 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
     text_bytes = b''
 
     for xpath in ['.//ce:title', './/prism:teaser', './/dc:description',
-        './/ce:abstract', './/xocs:srctitle', './/dc:title'
+        './/ce:abstract', './/xocs:srctitle', './/dc:title', './/{*}body'
         ]:
         node_text = node_root_input.find(xpath, namespaces=d_ns)
         if node_text is not None:
