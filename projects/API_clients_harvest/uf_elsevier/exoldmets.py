@@ -1362,7 +1362,11 @@ def article_xml_to_mets_file(source=None, xslt_format_str=None,
     #OUTPUT a .txt file of test_bytes, the FULL-TEXT to be indexed by SOLR but
     #intentionally not read-accessible via the mets file, per agreement with Elsevier
     text_bytes = b''
-
+    # url: concatenate all text... tips
+    #https://stackoverflow.com/questions/24262505/lxml-xpath-how-to-get-concatenated-text-from-node
+    #Review: do that with .//{*}body and concat all <p> text
+    #todo: just use tostring as in:
+    #https://stackoverflow.com/questions/4770191/lxml-etree-element-text-doesnt-return-the-entire-text-from-an-element
     for xpath in ['.//ce:title', './/prism:teaser', './/dc:description',
         './/ce:abstract', './/xocs:srctitle', './/dc:title', './/{*}body'
         ]:
