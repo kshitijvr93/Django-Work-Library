@@ -379,6 +379,8 @@ class X2018Subject(models.Model):
     subject = models.IntegerField(blank=True, null=True)
     xtag = models.CharField(max_length=8, blank=True, null=True)
     term = SpaceCharField(max_length=100, blank=True, null=True)
+    matches = models.IntegerField(blank=True, null=True)
+    stag = models.CharField(max_length=8, blank=True, null=True)
     keep = models.CharField(max_length=1, blank=True, null=True)
     marc = models.CharField(max_length=3, blank=True, null=True)
     ind1 = models.CharField(max_length=1, blank=True, null=True)

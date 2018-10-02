@@ -222,7 +222,7 @@ class X2018SubjectForm(ModelForm):
 
     class Meta:
         model = X2018Subject
-        fields = ['thesis', 'subject', 'term', 'keep',
+        fields = ['thesis', 'subject', 'term', 'matches','stag','keep',
           'marc', 'ind1', 'ind2' ]
         xwidgets = {
             'sn' : TextInput(attrs={'cols':10, 'rows':1}),
@@ -240,7 +240,7 @@ class SubjectInline(admin.TabularInline):
     #formset = SubjectFormSet
     show_change_link = True
     extra = 0
-    fields = ('xtag','term','keep','marc',
+    fields = ('xtag','term','matches','stag','keep','marc',
         'ind1', 'ind2')
     ordering = [ 'term', '-keep']
     # These can/do control inline form field sizes.
@@ -339,7 +339,7 @@ class SubjectAdmin(admin.ModelAdmin):
     form = X2018SubjectForm
     search_fields =['term','thesis__uf_bibvid']
     list_filter = ['xtag', 'keep', 'marc']
-    list_display = ['thesis','subject','xtag', 'term', 'keep',
+    list_display = ['thesis','subject','xtag', 'term', 'matches','stag','keep',
         'marc','ind1', 'ind2']
     list_display_links = list_display[0:3]
 
@@ -359,6 +359,7 @@ class SubjectAdmin(admin.ModelAdmin):
         #dict of field widget attributes
         dw = form_field.widget.attrs
         fname= db_field.name
+
         # Dict of TextInput fields needing overrides
         d_input_size = {
           # 'term': 20, changed to SpaceTextField due to long inputs
