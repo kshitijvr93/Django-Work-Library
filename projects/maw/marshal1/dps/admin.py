@@ -337,7 +337,7 @@ class ThesisAdmin(admin.ModelAdmin):
 
 class SubjectAdmin(admin.ModelAdmin):
     form = X2018SubjectForm
-    search_fields =['term']
+    search_fields =['term','thesis__uf_bibvid']
     list_filter = ['xtag', 'keep', 'marc']
     list_display = ['thesis','subject','xtag', 'term', 'keep',
         'marc','ind1', 'ind2']
