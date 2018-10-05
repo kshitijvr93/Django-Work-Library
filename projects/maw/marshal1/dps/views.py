@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 
 from .models import Bibvid, X2018Thesis, X2018Subject
 from lxml import etree
+import etl
 ########################### IMPORT
 # NB; WARNING - canNOT use parens to make an import multiline in python
 # yet. Must use bakslash.
@@ -103,6 +104,22 @@ def get_tree_and_root_from_filename(filename=None, log_file=sys.stdout,
     # end with open
     return tree, tree.getroot()
 #end def get_root_from_parsed_file
+
+def remove_subject_nodes_by_node_root(node_root=None):
+    pass
+
+def new_node_by_subject(subject=None):
+    # Create child node to append for this parent
+    node_subject = etree.Element('subject')
+    # Source authority for this row's term
+    source = subject.source
+    if len(source) > 0:
+        node_subject.attrib['authority'] = source
+    node_topic = etree.Element('topic')
+    node_topic.text = subject.term
+    node_subject.append(node_topic)
+    return node_subject
+
 '''
 Method out_mets()
 '''
@@ -122,6 +139,7 @@ def out_mets(request):
             break;
         bibvid = thesis.uf_bibvid
         out_html += f"<li>{bibvid}</li><ol>"
+
         # Get the subjects
         n_subject = 0
         for subject in X2018Subject.objects.filter(thesis=thesis, keep='y'):
@@ -141,21 +159,39 @@ def out_mets(request):
           for key,value in dict(node_root.nsmap).items()
           if key is not None}
 
-        # find all subject topics
+        # From core doctree, remove all subject nodes
         find_xpath = './/{*}subject'
         found_nodes = node_root.findall(find_xpath, namespaces=d_namespace)
+        par=None
         for node in found_nodes:
+           par = node.getparent()
+           par.remove(node)
+            # could add check here for same parent, but sample data looks good
+            #
+        # Removed subject nodes
 
-            pass
+        ptag = 'None' if par is None else par.tag
         l = len(found_nodes)
-        out_html += f"<li>Note: mets_filename={mets_filename}, topics len={l}</li>"
+        out_html += (
+          f"<li>Note: mets_filename={mets_filename}, partag={par.tag} "
+          f"subjects count={l}</li>")
         out_html += '</ol>'
 
+        # Find and insert new subject nodes X2018_Subject
+        n_subject = 0
+        subjects = ''
+        for subject in X2018Subject.objects.filter(thesis=thesis, keep='y'):
+            # create a new lxml sub-tree for this subject
+            subject_node = new_node_by_subject(subject=subject)
+
+            subject_str = etree.tostring(subject_node,encoding='unicode')
+            subjects += '\n' + etl.escape_xml_text(subject_str)
+            par.append(subject_node)
+            #
+        out_html += f"{subjects}"
+
     #end for thesis or bibvid
-
-
     out_html += f"</ol><p>Found {n_thesis} bibvids, {n_bad} bad ones.</p>"
     print(out_html)
     return HttpResponse(out_html)
-
 # end def out_mets

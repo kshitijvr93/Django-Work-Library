@@ -162,8 +162,8 @@ def file_add_or_replace_xml(input_file_name=None,
     if node_root_input is None:
         return -1
 
-    # Create d_ns - dictionary of namespace key or abbreviation name to
-    # namespace 'long name' values.
+    # Create d_namespace - dictionary of namespace key or abbreviation
+    # name to namespace 'long name' values.
     d_namespace = { key:value
       for key,value in dict(node_root_input.nsmap).items()
       if key is not None}
@@ -195,7 +195,7 @@ def file_add_or_replace_xml(input_file_name=None,
     # Check for extant child - default behavior is to NOT insert child if
     # same type of node already exists
 
-    # if element tag name has a :, th namespace must exist in original xml
+    # if element tag name has a :, the namespace must exist in original xml
     # todo: provide parameter to specify new namespace(s) too.
     if child_tag_namespace is not None:
         # put tag name in lxml-prescribed format.

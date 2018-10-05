@@ -177,8 +177,7 @@ class BibvidAdmin(admin.ModelAdmin):
     inlines = [BibvidTermInline, ]
     pass
 #end class BibvidAdmin()
-
-admin.site.register(Bibvid, BibvidAdmin)
+#  `admin.site.register(Bibvid, BibvidAdmin)
 # } Admin for model Bibvid}
 
 # { Admin code
@@ -222,7 +221,7 @@ class X2018SubjectForm(ModelForm):
 
     class Meta:
         model = X2018Subject
-        fields = ['thesis', 'subject', 'term', 'matches','stag','keep',
+        fields = ['thesis', 'subject', 'term', 'matches','source','keep',
           'marc', 'ind1', 'ind2' ]
         xwidgets = {
             'sn' : TextInput(attrs={'cols':10, 'rows':1}),
@@ -240,7 +239,7 @@ class SubjectInline(admin.TabularInline):
     #formset = SubjectFormSet
     show_change_link = True
     extra = 0
-    fields = ('xtag','term','matches','stag','keep','marc',
+    fields = ('xtag','term','keep','matches','source','marc',
         'ind1', 'ind2')
     ordering = [ 'term', '-keep']
     # These can/do control inline form field sizes.
@@ -268,7 +267,8 @@ class SubjectInline(admin.TabularInline):
         fname= db_field.name
         # Dict of TextInput fields needing overrides
         d_input_size = {
-          'term': 40, 'xtag': 8, 'keep':1, 'ind1':1, 'ind2':1, 'marc':3, }
+          'term': 40, 'xtag': 8, 'keep':1, 'source':12,
+          'ind1':1, 'ind2':1, 'marc':3, }
 
         if fname in d_input_size or fname == 'term':
             size = d_input_size[fname]
@@ -339,8 +339,8 @@ class SubjectAdmin(admin.ModelAdmin):
     form = X2018SubjectForm
     search_fields =['term','thesis__uf_bibvid']
     list_filter = ['xtag', 'keep', 'marc']
-    list_display = ['thesis','subject','xtag', 'term', 'matches','stag','keep',
-        'marc','ind1', 'ind2']
+    list_display = ['thesis','subject','xtag', 'term', 'keep',
+        'matches','source', 'marc','ind1', 'ind2']
     list_display_links = list_display[0:3]
 
     formfield_overrides = {
@@ -364,6 +364,7 @@ class SubjectAdmin(admin.ModelAdmin):
         d_input_size = {
           # 'term': 20, changed to SpaceTextField due to long inputs
           'xtag': 8,
+          'source': 12,
           'keep':1,
           'ind1':1,
           'ind2':1,
@@ -387,7 +388,7 @@ class SubjectAdmin(admin.ModelAdmin):
      #the pattarn used above for TextInput type fields
 # end class SubjectAdmin
 
-admin.site.register(TermSuggestion, TermSuggestionAdmin)
+#admin.site.register(TermSuggestion, TermSuggestionAdmin)
 admin.site.register(X2018Thesis, ThesisAdmin)
 # Maybe retire this SubjectAdmin permanently, as the Thesis inlines work OK.
 admin.site.register(X2018Subject, SubjectAdmin)

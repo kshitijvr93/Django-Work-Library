@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'social_django',
     'ckeditor',
     'ckeditor_uploader',
+    'import_export',
     # Apps under UF source control
     'cuba_libro.apps.CubaLibroConfig',
     'hathitrust.apps.HathitrustConfig',
@@ -82,12 +83,17 @@ INSTALLED_APPS = [
     'dps.apps.DpsConfig',
 ]
 
+#{ Settings for app import_export
+# https://django-import-export.readthedocs.io/en/latest/installation.html
+IMPORT_EXPORT_PERMISSION_CODE='add'
+#} Settings for app import_export
+
 # Avoid using AUTH_USER_MODEL, rather use get_user_model(), see
 # https://wsvincent.com/django-referencing-the-user-model/
 # AUTH_USER_MODEL = 'users.CustomUser'
 
 STATIC_URL = '/static/'
-#STATIC_ROOT = maw_settings.STATIC_ROOT
+STATIC_ROOT = maw_settings.STATIC_ROOT
 #Set up some static file management.
 #See https://docs.djangoproject.com/en/2.1/intro/tutorial06/
 #See https://docs.djangoproject.com/en/2.1/ref/settings/
