@@ -1,0 +1,26 @@
+Metadata-Version: 2.0
+Name: django-mptt-admin
+Version: 0.5.0
+Summary: Django-mptt-admin provides a nice Django Admin interface for Mptt models
+Home-page: https://github.com/mbraak/django-mptt-admin
+Author: Marco Braak
+Author-email: mbraak@ridethepony.nl
+License: Apache License, Version 2.0
+Description-Content-Type: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Framework :: Django
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Requires-Dist: django-mptt
+Requires-Dist: six
+
+Django-mptt-admin provides a nice Django Admin interface for django-mptt models. Please see https://github.com/mbraak/django-mptt-admin
+
+
