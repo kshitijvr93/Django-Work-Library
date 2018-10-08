@@ -121,6 +121,56 @@ class Bibvid(models.Model):
 
 #end class bibvid
 
+class BatchSet(models.Model):
+    '''
+    Model BatchSet stores information about a set of BatchItem rows
+    that were created via a spreadsheet import operation.
+    Fields include an identifier, the person who created the import,
+    the date-time of the import.
+    Consider to include a count of items imported.
+    Do not allow users to delete rows. The import operations themselves are
+    historical data desired for UFDC management.
+    '''
+    id = models.AutoField(primary_key=True)
+    # batch_datetime is time the batch was created/imported
+    import_datetime = models.DateTimeField('Term search DateTime (UTC)',
+        null=False, auto_now=True, editable=False)
+    import_user= SpaceCharField(verbose_name='Importing user', max_length=255,
+        unique=False, blank=False, null=False, default='name',
+        help_text= ("User who imported this batch" )
+        , editable=False)
+    import_filename = SpaceCharField(verbose_name='Importing user', max_length=255,
+        unique=False, blank=False, null=False, default='some_spreadsheet_name',
+        help_text= ("Spreadsheet imported into this batch set of batchitems" )
+        , editable=False)
+    pass
+
+class BatchItem(models.Model):
+    '''
+    Model BatchItem simply stores a UFDC Bib_vid identifier and
+    a foreign key to a batch set.
+    '''
+    # try removing this - maybe it 'spooks' admin impots to be explicit?
+    # nope.
+    id = models.AutoField(primary_key=True)
+
+    bib = SpaceCharField(verbose_name='Bibliographic ID', max_length=10,
+        unique=False, blank=False, null=False, default='',
+        help_text= ("Enter alphabetic characters followed by digit characters"
+          " for a total of 10 characters."),
+        )
+
+    vid = SpaceCharField(verbose_name='Volume ID', max_length=10,
+        unique=False, blank=False, null=False, default='',
+        help_text= ("Five digit characters with zeroes on the left. "),
+        )
+
+    def __str__(self):
+        return str(f"{self.bib.upper()}_{self.vid}")
+
+
+# end class BatchItem
+
 class ThesTree(MPTTModel):
     '''
     A master thesauri tree including all a tree for each thesaurus with terms

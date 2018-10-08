@@ -6,6 +6,8 @@ __pycache__/*
 *.swo
 *.pyc
 *.out
+*.venv
+*.vscode
 ~*
 #Ignore any directory named media_root - special syntax
 media_root/

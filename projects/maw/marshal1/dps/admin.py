@@ -1,8 +1,15 @@
 #
 from django.contrib import admin
+
+#import_export docs: https://django-import-export.readthedocs.io/en/latest/
+from import_export import resources
+from import_export import fields
+from import_export.admin import ImportExportModelAdmin
 import sys
 
 from .models import (
+    BatchItem,
+    BatchSet,
     Bibvid,
     BibvidTerm,
     RelatedTerm,
@@ -23,6 +30,27 @@ from maw_utils import ExportCvsMixin
 from nested_inline.admin import NestedStackedInline, NestedModelAdmin
 from django_mptt_admin.admin import DjangoMpttAdmin
 
+import csv
+from django.http import HttpResponse
+
+class BatchItemResource(resources.ModelResource):
+    '''
+    '''
+    class meta:
+        model = BatchItem
+        exclude = ( 'id',)
+        fields = ( 'bib', 'vid',)
+        report_skipped = True
+
+#end class
+
+class BatchItemAdmin(ImportExportModelAdmin):
+    # resource_class = BatchItemResource
+    pass
+admin.site.register(BatchItem, BatchItemAdmin)
+# end class BatchAdmin
+
+
 '''
 TODO: move to common module - used also in other MAW apps
 Nice solution to validate minimum populated inline (foreign
@@ -38,8 +66,6 @@ class MinValidatedInlineMixIn:
             validate_min=self.validate_min, *args, **kwargs)
 # end class MinValidatedInlineMixIn
 
-import csv
-from django.http import HttpResponse
 
 #Modeled after snow's admin.py class AttributeInline
 class RelatedTermInline(
@@ -108,6 +134,7 @@ class TermEvalInline(
     def get_filters(self, obj):
         return((''))
 # end class TermEvalInline
+
 
 # { Admin for model ThesTree
 # NB: Must stick to django 2.0.7 or visit to this model
