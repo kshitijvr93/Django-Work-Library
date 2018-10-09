@@ -85,7 +85,8 @@ INSTALLED_APPS = [
 
 #{ Settings for app import_export
 # https://django-import-export.readthedocs.io/en/latest/installation.html
-IMPORT_EXPORT_PERMISSION_CODE='add'
+IMPORT_EXPORT_PERMISSION_CODE = 'add'
+IMPORT_EXPORT_USE_TRANSACTIONS = True
 #} Settings for app import_export
 
 # Avoid using AUTH_USER_MODEL, rather use get_user_model(), see

@@ -22,7 +22,6 @@ from .models import (
     #Thesaurus,
     )
 
-
 from django.forms import ModelForm, TextInput, Textarea, BaseInlineFormSet
 from django.db import models
 
@@ -36,17 +35,36 @@ from django.http import HttpResponse
 class BatchItemResource(resources.ModelResource):
     '''
     '''
-    class meta:
+    def before_import(self,dataset, using_transactions, dry_run, **kwargs):
+        self.my_id = 0
+
+    def before_import_row(self,row,**kwargs):
+        self.my_id += 1
+        row['id'] = self.my_id
+        print(f"row='{row}'")
+
+    class Meta:
         model = BatchItem
-        exclude = ( 'id',)
-        fields = ( 'bib', 'vid',)
+        # exclude = ( 'id',)
+        # If use more than 1 import_id_fields field, import fails with error
+        # import_id_fields = ( 'bib', 'vid',)
+        fields = [ 'bib', 'vid','id',]
         report_skipped = True
 
 #end class
 
 class BatchItemAdmin(ImportExportModelAdmin):
-    # resource_class = BatchItemResource
-    pass
+    # note: commenting this has shown no bad effects but leaving
+    # uncommented to match some docs
+    resource_class = BatchItemResource
+
+    list_display = ['batch_set','bib','vid']
+    list_display_links = ['batch_set', 'bib','vid']
+    class Meta:
+        ordering = ['batch_set','bib','vid']
+
+#end class BatchItemAdmin
+
 admin.site.register(BatchItem, BatchItemAdmin)
 # end class BatchAdmin
 

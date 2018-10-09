@@ -147,12 +147,30 @@ class BatchSet(models.Model):
 
 class BatchItem(models.Model):
     '''
-    Model BatchItem simply stores a UFDC Bib_vid identifier and
+    Model BatchItem stores a UFDC Bib_vid identifier and
     a foreign key to a batch set.
     '''
     # try removing this - maybe it 'spooks' admin impots to be explicit?
     # nope.
     id = models.AutoField(primary_key=True)
+
+    batch_set = models.ForeignKey('BatchSet', blank=True, null=True,
+      db_index=True,
+      help_text="Imported BatchSet of which this row is a member.",
+      on_delete=models.CASCADE,)
+
+    # Note: delete of 1 effectively allows delete of this item before
+    # importing the same item again -- so that would be effectively an UPDATE
+    # for such item.
+    # TODO: once a batchSet is used with any maw process, should set
+    # delete=0 for all items in that batchset. This will freeze the
+    # items of the batchset for historical reports. IE, no future import
+    # for this batch set may be made, if dup insert errors on import
+    # prevent it).
+    delete =models.IntegerField(verbose_name='Delete on next import of this item?',
+        unique=False, blank=False, null=False, default=1,
+        help_text= ("1 (delete on next import of this item) or 0 (do not)" ),
+        )
 
     bib = SpaceCharField(verbose_name='Bibliographic ID', max_length=10,
         unique=False, blank=False, null=False, default='',
@@ -167,6 +185,8 @@ class BatchItem(models.Model):
 
     def __str__(self):
         return str(f"{self.bib.upper()}_{self.vid}")
+    class Meta:
+        unique_together = ["batch_set", "bib","vid"]
 
 
 # end class BatchItem
