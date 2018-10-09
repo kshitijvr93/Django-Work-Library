@@ -7,7 +7,8 @@ django-server-launching OS user's file $MY_SECRETS_FOLDER/maw_settings.py
 """
 
 import os, sys, os.path
-MY_SECRETS_FOLDER = os.environ['MY_SECRETS_FOLDER']
+MY_SECRETS_FOLDER = 'C:\\Users\\kshit\\MY_SECRETS_FOLDER'
+#MY_SECRETS_FOLDER = os.environ['MY_SECRETS_FOLDER']
 sys.path.append(os.path.abspath(MY_SECRETS_FOLDER))
 print ("Using MY_SECRETS_FOLDER='{}'".format(MY_SECRETS_FOLDER))
 
