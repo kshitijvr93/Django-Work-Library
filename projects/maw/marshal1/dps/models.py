@@ -83,7 +83,7 @@ class Bibvid(models.Model):
     exists. Maybe it will also get extra data from sobek, if extant.
 
     Fields to consider:
-      bib, vid, bibvid(with underbar separator)
+      bibid, vid, bibvid(with underbar separator)
       resource_subpath
       counts of various file types, pdf, jpeg, etc.
       total file count, including mets, etc in main folder
@@ -133,18 +133,44 @@ class BatchSet(models.Model):
     '''
     id = models.AutoField(primary_key=True)
     # batch_datetime is time the batch was created/imported
-    import_datetime = models.DateTimeField('Term search DateTime (UTC)',
+    name = SpaceCharField(verbose_name='Optional Unique Batch Name',
+        max_length=255, unique=False, blank=False, null=False, default='',
+        db_index=True, help_text= ("Up to 255 characters." ), editable=True)
+    notes = SpaceTextField(
+        verbose_name='Notes about the imported batch of bib-vids.',
+        max_length=255, unique=False, blank=True, null=True, default='',
+        help_text='Optional Notes about the imported batch of bib-vids.',
+        editable=True)
+    import_datetime = models.DateTimeField('BatchSet Importing DateTime (UTC)',
         null=False, auto_now=True, editable=False)
     import_user= SpaceCharField(verbose_name='Importing user', max_length=255,
         unique=False, blank=False, null=False, default='name',
-        help_text= ("User who imported this batch" )
-        , editable=False)
-    import_filename = SpaceCharField(verbose_name='Importing user', max_length=255,
-        unique=False, blank=False, null=False, default='some_spreadsheet_name',
-        help_text= ("Spreadsheet imported into this batch set of batchitems" )
-        , editable=False)
-    pass
+        help_text= ("User who imported this batch" ),
+        editable=False)
+    import_filename = models.FileField(verbose_name='Import File',
+        max_length=255, unique=False, blank=False, null=False,
+        help_text= ("File containing a single spreadsheet to import "
+           "saved as tab-separated text file" ),
+        editable=True)
+    bibid_field = SpaceCharField(verbose_name='BibID Field Name',
+        max_length=255, unique=False, blank=False, null=False, default='BibID',
+        help_text= ("BibID Spreadshet Field Name" ), editable=True)
+    vid_field = SpaceCharField(verbose_name='Volume ID Field Name',
+        max_length=255, unique=False, blank=True, null=False, default='VID',
+        help_text= ("Spreadsheet Field name for Volume ID (VID). "
+            "If empty, value 00001 will be set for the database VID value." ),
+        editable=True)
+    item_count =models.IntegerField(
+        verbose_name='Item Count',
+        unique=False, blank=False, null=False, default=0,
+        help_text= ("Count of import bibvid items from the spreadsheet." ),
+        )
 
+    def  save(self, *args, **kwargs):
+
+        print(f"*** url={repr(self.import_filename.url)}")
+        super(BatchSet, self).save(*args, **kwargs)
+# end class BathSet
 class BatchItem(models.Model):
     '''
     Model BatchItem stores a UFDC Bib_vid identifier and
@@ -167,12 +193,13 @@ class BatchItem(models.Model):
     # items of the batchset for historical reports. IE, no future import
     # for this batch set may be made, if dup insert errors on import
     # prevent it).
-    delete =models.IntegerField(verbose_name='Delete on next import of this item?',
+    delete =models.IntegerField(
+        verbose_name='Delete on next import of this item?',
         unique=False, blank=False, null=False, default=1,
         help_text= ("1 (delete on next import of this item) or 0 (do not)" ),
         )
 
-    bib = SpaceCharField(verbose_name='Bibliographic ID', max_length=10,
+    bibid = SpaceCharField(verbose_name='Bibliographic ID', max_length=10,
         unique=False, blank=False, null=False, default='',
         help_text= ("Enter alphabetic characters followed by digit characters"
           " for a total of 10 characters."),
@@ -184,9 +211,9 @@ class BatchItem(models.Model):
         )
 
     def __str__(self):
-        return str(f"{self.bib.upper()}_{self.vid}")
+        return str(f"{self.bibid.upper()}_{self.vid}")
     class Meta:
-        unique_together = ["batch_set", "bib","vid"]
+        unique_together = ["batch_set", "bibid","vid"]
 
 
 # end class BatchItem
@@ -337,8 +364,8 @@ class TermSuggestion(models.Model):
     # formulation (just jp2, just txt files used, maybe count of files etc)
     # (*) also the mets file is parsed if any, and metsterm rows are populated
 
-    note = SpaceTextField(max_length=2550, null=True, default='note', blank=True,
-      editable=True,)
+    note = SpaceTextField(max_length=2550, null=True, default='note',
+      blank=True, editable=True,)
     # Some value to consider adding here:
     # N  of pages, N of files of various types
     # time sent/received of api request/response
@@ -350,8 +377,8 @@ class TermSuggestion(models.Model):
     #and a retrieval for each individual page... etc.. and on and on
 
     #Note on how the text content was extracted from the bibvid
-    text_content_note = SpaceTextField(max_length=2550, null=True, default='note2',
-      blank=True, editable=True,)
+    text_content_note = SpaceTextField(max_length=2550, null=True,
+      default='note2', blank=True, editable=True,)
 
     # The optional filename in which is saved the content extracted from
     # this bibvid# and sent to Access Innovations that it used along with

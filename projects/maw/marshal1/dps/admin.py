@@ -18,7 +18,6 @@ from .models import (
     ThesTree,
     X2018Subject,
     X2018Thesis,
-
     #Thesaurus,
     )
 
@@ -36,37 +35,88 @@ class BatchItemResource(resources.ModelResource):
     '''
     '''
     def before_import(self,dataset, using_transactions, dry_run, **kwargs):
+        '''
+        Consider: Here, create a new row in BatchSet with just the
+        current datetime - (maybe a filename from this dataset too and the
+        request user, if avalable ?)
+        Use the created BatchSet id as a field here.
+        Also, from another table, or maybe a method to create on model
+        BatchItem, get the max BatchItem id and set it heree, instead of
+        using 0.
+        '''
+        batchset_obj = BatchSet()
+        batchset_obj.save()
         self.my_id = 0
+        self.has_vid=False
+        # (1) all ss_column names are lowercases,
+        # (2) and the first that matches a l_bibid is used as the source
+        #     for db bibid column
+        # (2) and the first that matches a l_vid item is used as the source
+        #     for db bid column: If no ss_column matches, then we will
+        # always assign vad a value of '00001' for every row.
+        #
+        l_bibid = [ "bibid", "BibID", "bib","bib_id" }
+        l_vid = [ "vid", "volumeid","volume_id"]
+        if self.has_vid==False:
+            row['vid'] = '00001'
+            exclude = ['vid']
+        #todo set self.db_ss{} dict with key bibid to the name of one of
+        # the ss columns,
+        # and set dict with key vid to one of the ss columns or None
+
+        # temp setups for testing a ssheet with column BibID and no vid column
+        self.db_ss = { 'bibid': 'BibID', 'vid':'00001'}
 
     def before_import_row(self,row,**kwargs):
         self.my_id += 1
         row['id'] = self.my_id
-        print(f"row='{row}'")
+        # todo: use the self.db_ss here 
+        for dbfield,ssfield in db_ss.items():
+            row[dbfield] = row[ssfield]
+        # print(f"row='{row}'")
 
     class Meta:
         model = BatchItem
         # exclude = ( 'id',)
         # If use more than 1 import_id_fields field, import fails with error
-        # import_id_fields = ( 'bib', 'vid',)
-        fields = [ 'bib', 'vid','id',]
+        # import_id_fields = ( 'bibid'', 'vid',)
+        fields = [ 'bibid', 'vid','id',]
         report_skipped = True
 
-#end class
+# end class BatchItemResource
+
+class BatchSetAdmin(admin.ModelAdmin):
+    list_display = ["name", "import_datetime","import_user", "import_filename"]
+    list_display_links = ["import_datetime","import_user", "import_filename"]
+    search_fields = ["-import_datetime","import_user", "import_filename",
+      "name" ]
+    fields = [ "name", "notes",
+      "import_filename", "bibid_field", "vid_field", "item_count" ]
+    readonly_fields = ["import_datetime", "import_user"]
+
+    list_filter = ['import_filename','import_datetime']
+
+    class Meta:
+        ordering = ['import_datetime','import_user','import_filename']
+
+#end class BatchSetAdmin
+admin.site.register(BatchSet, BatchSetAdmin)
 
 class BatchItemAdmin(ImportExportModelAdmin):
     # note: commenting this has shown no bad effects but leaving
     # uncommented to match some docs
     resource_class = BatchItemResource
 
-    list_display = ['batch_set','bib','vid']
-    list_display_links = ['batch_set', 'bib','vid']
+    list_display = ['batch_set','bibid','vid']
+    list_display_links = ['batch_set', 'bibid','vid']
+
+    fields = ['bibid','vid']
     class Meta:
-        ordering = ['batch_set','bib','vid']
+        ordering = ['batch_set','bibid','vid']
 
 #end class BatchItemAdmin
 
 admin.site.register(BatchItem, BatchItemAdmin)
-# end class BatchAdmin
 
 
 '''
