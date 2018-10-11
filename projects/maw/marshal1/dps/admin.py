@@ -31,9 +31,59 @@ from django_mptt_admin.admin import DjangoMpttAdmin
 import csv
 from django.http import HttpResponse
 
+def get_candidate_by_candidates_matches(
+    l_candidates=None, l_matches=None,verbosity=0):
+    '''
+    Given a list of candidate strings and 'match' strings:
+    For each candidate string, convert it to lower case and seek the
+    first match among the match strings.
+    If no match is found, return None.
+    If a match is found, return the original candidate string (before
+    lower-casing)
+    NOTE: it is caller's responsibilty to ensure that all strings in l_match
+    are already lower-cased.
+
+    This is used to find the best candidate spreadsheet field name that
+    should be used to extract an expected database value.
+    '''
+    for cand in l_candidates:
+        if cand.lower() in l_matches:
+            return cand
+    return None
+
 class BatchItemResource(resources.ModelResource):
-    '''
-    '''
+    def __init__(self):
+        '''
+        '''
+        # user and ss_file_name are set in before_import()
+        self.my_id = 0
+        self.user = None
+        self.ss_file_name = None
+
+        # bibid_ssfield and vid_ssfield are set in the first call to
+        # before_import_row()
+        self.bibid_ssfield = None
+        self.vid_ssfield = None
+
+        # List of potential spreadsheet fieldnames
+        self.d_dbcol_matches = {
+            'bibvid': [ 'bibvid', 'bib_vid', 'uf_bibvid',
+            'uf_bib_vid',
+            ],
+            'bibid': [ 'bib','bibid', 'bib_id', 'bibliographic_id',
+            'bibliographicid', 'uf_bib',
+            ],
+
+            'vid': [ 'vid','vol_id','volid','volume_id','volumeid',
+            ]
+        }
+
+        super().__init__()
+    # end __init__
+
+    # Fieldnames in spreadsheet to use for bibid and vid
+    bibid_ssfield = None
+    vid_ssfield = None
     def before_import(self,dataset, using_transactions, dry_run, **kwargs):
         '''
         Consider: Here, create a new row in BatchSet with just the
@@ -47,33 +97,48 @@ class BatchItemResource(resources.ModelResource):
         batchset_obj = BatchSet()
         batchset_obj.save()
         self.my_id = 0
-        self.has_vid=False
-        # (1) all ss_column names are lowercases,
-        # (2) and the first that matches a l_bibid is used as the source
-        #     for db bibid column
-        # (2) and the first that matches a l_vid item is used as the source
-        #     for db bid column: If no ss_column matches, then we will
-        # always assign vad a value of '00001' for every row.
-        #
-        l_bibid = [ "bibid", "BibID", "bib","bib_id" }
-        l_vid = [ "vid", "volumeid","volume_id"]
-        if self.has_vid==False:
-            row['vid'] = '00001'
-            exclude = ['vid']
-        #todo set self.db_ss{} dict with key bibid to the name of one of
+
+        self.user = kwargs['user']
+        self.ss_file_name = kwargs['file_name']
+        #print(
+        #  f"username={self.user.get_username()}, file_name={self.file_name}")
+        # Consider: set self.db_ss{} dict with key bibid to the name of one of
         # the ss columns,
         # and set dict with key vid to one of the ss columns or None
 
         # temp setups for testing a ssheet with column BibID and no vid column
-        self.db_ss = { 'bibid': 'BibID', 'vid':'00001'}
+        print(f"kwargs='{kwargs}',headers={dataset.headers}")
+    # end def before_import()
 
-    def before_import_row(self,row,**kwargs):
+    def before_import_row(self, row, **kwargs):
+        print(f"before_import_row: row='{row}'")
+        sys.stdout.flush()
+        if self.bibid_ssfield is None:
+            # This is the first call to get a spreadsheet row, and the first
+            # access to the 'row' object during an import.
+            # Now seek matches in spreadsheet column names for db columns
+            # First, seek ss field to use for 'bibid' db column
+            self.ss_bibfield = get_candidate_by_candidates_matches(
+                l_candidates = row.keys(),
+                l_matches = self.d_dbcol_matches['bibid'] )
+            if self.ss_bibfield is None:
+               # todo? Add a nicer error message or error handling.
+                msg = (f"Could not find a bibfield in this spreadsheet")
+                raise ValueError(msg)
+
+            self.ss_vidfield = get_candidate_by_candidates_matches(
+                l_candidates = row.keys(),
+                l_matches = self.d_dbcol_matches['vid'])
+
+        # todo: Create random uuid hash value for id value
         self.my_id += 1
         row['id'] = self.my_id
-        # todo: use the self.db_ss here 
-        for dbfield,ssfield in db_ss.items():
-            row[dbfield] = row[ssfield]
-        # print(f"row='{row}'")
+
+        row['bibid'] = row[self.ss_bibfield]
+
+        vid = self.ss_vidfield
+        row['vid' ] = '00001' if vid is None or len(vid) == 0 else row[vid]
+
 
     class Meta:
         model = BatchItem

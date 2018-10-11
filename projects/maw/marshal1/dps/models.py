@@ -168,7 +168,7 @@ class BatchSet(models.Model):
 
     def  save(self, *args, **kwargs):
 
-        print(f"*** url={repr(self.import_filename.url)}")
+        #print(f"*** url={repr(self.import_filename.url)}")
         super(BatchSet, self).save(*args, **kwargs)
 # end class BathSet
 class BatchItem(models.Model):
