@@ -151,7 +151,6 @@ class BatchItemResource(resources.ModelResource):
         row['uuid'] = my_uuid
         # Quirky bug of django import-export, must set id in row
         # though not in the table BatchItem
-        row['id'] = self.row_count
         row['batch_set'] = self.batch_set.id
         row['row_count'] = self.row_count
 
@@ -173,7 +172,9 @@ class BatchItemResource(resources.ModelResource):
         model = BatchItem
         # Note import-export expects id field so must EXCLUDE it here
         # else it complains because BathSet uses uuid, not id
-        fields = [ 'id', 'uuid', 'batch_set', 'row_count', 'bibid', 'vid',]
+        import_id_fields = ['uuid',]
+        exclude = ['id',]
+        fields = [ 'uuid', 'batch_set', 'row_count', 'bibid', 'vid',]
         report_skipped = True
 
 # end class BatchItemResource
