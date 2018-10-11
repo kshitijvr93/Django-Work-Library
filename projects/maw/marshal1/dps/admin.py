@@ -165,9 +165,8 @@ class BatchItemResource(resources.ModelResource):
         dry_run, **kwargs):
 
         if dry_run == False:
-            #self.batch_set.item_count = self.row_count
-            #self.batch_set.save()
-            pass
+            self.batch_set.item_count = self.row_count
+            self.batch_set.save()
     # end def after_import
 
     class Meta:

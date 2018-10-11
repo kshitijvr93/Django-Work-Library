@@ -188,7 +188,7 @@ class BatchItem(models.Model):
 
     # Adding this to quell django import-export complaints about lack
     # of id field
-    id = models.IntegerField(default=0)
+    id = models.AutoField(primary_key=True)
 
     row_count = models.IntegerField(default=0)
 
