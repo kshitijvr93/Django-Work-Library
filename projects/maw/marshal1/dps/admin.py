@@ -30,6 +30,7 @@ from django_mptt_admin.admin import DjangoMpttAdmin
 
 import csv
 from django.http import HttpResponse
+import uuid
 
 def get_candidate_by_candidates_matches(
     l_candidates=None, l_matches=None,verbosity=0):
@@ -43,7 +44,7 @@ def get_candidate_by_candidates_matches(
     NOTE: it is caller's responsibilty to ensure that all strings in l_match
     are already lower-cased.
 
-    This is used to find the best candidate spreadsheet field name that
+    This is used to find the best candidate import file field name that
     should be used to extract an expected database value.
     '''
     for cand in l_candidates:
@@ -57,7 +58,7 @@ class BatchItemResource(resources.ModelResource):
         '''
         # user and import_filename are set in before_import()
         self.my_id = 0
-        self.item_count = 0
+        self.row_count = 0
         self.user = None
         self.import_filename = None
         self.import_username = None
@@ -69,7 +70,7 @@ class BatchItemResource(resources.ModelResource):
         self.bibid_import_field = None
         self.vid_import_field = None
 
-        # List of potential spreadsheet fieldnames
+        # List of potential import file  fieldnames
         self.d_dbcol_matches = {
             'bibvid': [ 'bibvid', 'bib_vid', 'uf_bibvid',
             'uf_bib_vid',
@@ -109,7 +110,7 @@ class BatchItemResource(resources.ModelResource):
         # the ss columns,
         # and set dict with key vid to one of the ss columns or None
 
-        # temp setups for testing a ssheet with column BibID and no vid column
+        # temp setups for testing a import file  with column BibID and no vid column
         print(f"kwargs='{kwargs}',headers={dataset.headers}")
         sys.stdout.flush()
     # end def before_import()
@@ -118,9 +119,9 @@ class BatchItemResource(resources.ModelResource):
         print(f"before_import_row: row='{row}'")
         sys.stdout.flush()
         if self.bibid_import_field is None:
-            # This is the first call to get a spreadsheet row, and the first
+            # This is the first call to get a import file  row, and the first
             # access to the 'row' object during an import.
-            # Now seek matches in spreadsheet column names for db columns
+            # Now seek matches in import file  column names for db columns
             # First, seek ss field to use for 'bibid' db column
             self.import_bibfield = get_candidate_by_candidates_matches(
                 l_candidates = row.keys(),
@@ -128,7 +129,7 @@ class BatchItemResource(resources.ModelResource):
 
             if self.import_bibfield is None:
                # todo? Add a nicer error message or error handling.
-                msg = (f"Could not find a bibfield in this spreadsheet")
+                msg = (f"Could not find a bibfield in this import file")
                 raise ValueError(msg)
             self.batch_set.bibid_field = self.import_bibfield
 
@@ -136,17 +137,23 @@ class BatchItemResource(resources.ModelResource):
                 l_candidates = row.keys(),
                 l_matches = self.d_dbcol_matches['vid'])
             self.batch_set.vid_field = self.import_vidfield
+            # Save this now to define the primary key batch_set.id for use
+            # below as a'batch_set'  foreignkey value for batchItems
+            self.batch_set.save()
         # end if bibidimprt field is None (First import row)
 
-        # todo: Create random uuid hash value for id value
         self.my_id += 1
-        self.item_count += 1
+        self.row_count += 1
 
-        # Row key-pairs will be stored in a new BatchItem row in the db.
-        row['id'] = self.my_id
+        # Row key-values are stored as column values in aBatchItem
+        # These row keys must also appear in Meta.fields list
+        my_uuid = uuid.uuid4()
+        row['uuid'] = my_uuid
+        # Quirky bug of django import-export, must set id in row
+        # though not in the table BatchItem
+        row['id'] = self.row_count
         row['batch_set'] = self.batch_set.id
-        row['import_filename'] = self.batch_set.import_filename
-        row['import_username'] = self.batch_set.import_username
+        row['row_count'] = self.row_count
 
         row['bibid'] = row[self.import_bibfield]
 
@@ -158,35 +165,33 @@ class BatchItemResource(resources.ModelResource):
         dry_run, **kwargs):
 
         if dry_run == False:
-            self.batch_set.item_count = self.item_count
-            self.batch_set.save()
+            #self.batch_set.item_count = self.row_count
+            #self.batch_set.save()
+            pass
     # end def after_import
-
 
     class Meta:
         model = BatchItem
-        # exclude = ( 'id',)
-        # If use more than 1 import_id_fields field, import fails with error
-        # import_id_fields = ( 'bibid'', 'vid',)
-        fields = [ 'batch_set', 'import_filename', 'import_username',
-            'bibid', 'vid','id',]
+        # Note import-export expects id field so must EXCLUDE it here
+        # else it complains because BathSet uses uuid, not id
+        fields = [ 'id', 'uuid', 'batch_set', 'row_count', 'bibid', 'vid',]
         report_skipped = True
 
 # end class BatchItemResource
 
 class BatchSetAdmin(admin.ModelAdmin):
-    list_display = ["import_username", "import_datetime","name",
+    list_display = ["id", "import_datetime","import_username","name",
       "import_filename", ]
-    list_display_links = ["name", "import_datetime","import_username",
+    list_display_links = ["id", "import_datetime","import_username",
       "import_filename"]
-    search_fields = ["name", "notes", "import_datetime","import_username",
+    search_fields = ["id", "name", "notes", "import_datetime","import_username",
       "import_filename", ]
-    fields = ["name", "notes", "import_datetime", "import_filename",
-      "import_username", "bibid_field", "vid_field", "item_count" ]
-    readonly_fields = ["import_datetime", "import_username",
-      "import_filename", "bibid_field" , "vid_field", "item_count"]
+    fields = ["id", "name", "notes", "import_datetime", "import_filename",
+      "import_username", "bibid_field", "vid_field", "item_count", ]
+    readonly_fields = ["id", "import_datetime", "import_username",
+      "import_filename", "bibid_field" , "vid_field", "item_count",]
 
-    list_filter = ['import_username','import_filename','import_datetime']
+    list_filter = ['import_username','import_datetime','import_filename',]
 
     class Meta:
         ordering = ['-import_datetime','import_username','import_filename']
@@ -199,12 +204,14 @@ class BatchItemAdmin(ImportExportModelAdmin):
     # uncommented to match some docs
     resource_class = BatchItemResource
 
-    list_display = ['batch_set','bibid','vid']
-    list_display_links = ['batch_set', 'bibid','vid']
+    list_display = ['batch_set','row_count','bibid','vid']
+    list_display_links = ['row_count','bibid','vid']
 
-    fields = ['bibid','vid']
-    class Meta:
-        ordering = ['batch_set','bibid','vid']
+    search_fields = ['batch_set__name', 'bibid','vid']
+    fields = ['batch_set', 'row_count','bibid','vid']
+    readonly_fields = ['batch_set','row_count',]
+    ordering = ['-batch_set', 'row_count']
+
 
 #end class BatchItemAdmin
 

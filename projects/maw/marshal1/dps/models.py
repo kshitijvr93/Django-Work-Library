@@ -155,10 +155,10 @@ class BatchSet(models.Model):
     import_filename = SpaceCharField(verbose_name='Imported File Name',
         max_length=255, unique=False, blank=False, null=False, default='',
         db_index=True, help_text= ("Up to 255 characters." ), editable=True)
-    bibid_field = SpaceCharField(verbose_name='BibID Field Name',
+    bibid_field = SpaceCharField(verbose_name='BibID import field',
         max_length=255, unique=False, blank=False, null=False, default='BibID',
         help_text= ("Import file's BibID Field Name" ), editable=True)
-    vid_field = SpaceCharField(verbose_name='Volume ID Field Name',
+    vid_field = SpaceCharField(verbose_name='Volume ID import field',
         max_length=255, unique=False, blank=True, null=False, default='VID',
         help_text= ("Import file's field name for Volume ID (VID). "
             "If empty, value 00001 will be set for the VID value." ),
@@ -171,9 +171,10 @@ class BatchSet(models.Model):
 
 
     def __str__(self):
-        return str(self.id)
+        return f"{self.import_datetime} - {self.import_username}"
 
 # end class BatchSet
+
 class BatchItem(models.Model):
     '''
     Model BatchItem stores a UFDC Bib_vid identifier and
@@ -181,7 +182,15 @@ class BatchItem(models.Model):
     '''
     # try removing this - maybe it 'spooks' admin impots to be explicit?
     # nope.
-    id = models.AutoField(primary_key=True)
+
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4,
+      editable=False)
+
+    # Adding this to quell django import-export complaints about lack
+    # of id field
+    id = models.IntegerField(default=0)
+
+    row_count = models.IntegerField(default=0)
 
     batch_set = models.ForeignKey('BatchSet', blank=True, null=True,
       db_index=True,
@@ -218,6 +227,7 @@ class BatchItem(models.Model):
 
     class Meta:
         unique_together = ["batch_set", "bibid","vid"]
+        #order_with_respect_to = 'batch_set'
 
 
 # end class BatchItem
@@ -471,7 +481,7 @@ class X2018Thesis(models.Model):
         verbose_name_plural='x2018 theses'
 
 class X2018Subject(models.Model):
-    # Must declar thesis as primary_key to suppress auto 'id'
+    # Must declare thesis as primary_key to suppress auto 'id'
     # field that django creates
     sn = models.IntegerField(primary_key=True)
     thesis = models.ForeignKey(X2018Thesis,
