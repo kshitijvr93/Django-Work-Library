@@ -55,15 +55,19 @@ class BatchItemResource(resources.ModelResource):
     def __init__(self):
         '''
         '''
-        # user and ss_file_name are set in before_import()
+        # user and import_filename are set in before_import()
         self.my_id = 0
+        self.item_count = 0
         self.user = None
-        self.ss_file_name = None
+        self.import_filename = None
+        self.import_username = None
 
-        # bibid_ssfield and vid_ssfield are set in the first call to
+        # bibid_import_field and vid_import_field are set in the first call to
         # before_import_row()
-        self.bibid_ssfield = None
-        self.vid_ssfield = None
+        self.bibid_import_field = None
+        self.vid_import_field = None
+        self.bibid_import_field = None
+        self.vid_import_field = None
 
         # List of potential spreadsheet fieldnames
         self.d_dbcol_matches = {
@@ -81,9 +85,7 @@ class BatchItemResource(resources.ModelResource):
         super().__init__()
     # end __init__
 
-    # Fieldnames in spreadsheet to use for bibid and vid
-    bibid_ssfield = None
-    vid_ssfield = None
+
     def before_import(self,dataset, using_transactions, dry_run, **kwargs):
         '''
         Consider: Here, create a new row in BatchSet with just the
@@ -94,12 +96,13 @@ class BatchItemResource(resources.ModelResource):
         BatchItem, get the max BatchItem id and set it heree, instead of
         using 0.
         '''
-        batchset_obj = BatchSet()
-        batchset_obj.save()
-        self.my_id = 0
+        self.batch_set = BatchSet()
 
-        self.user = kwargs['user']
-        self.ss_file_name = kwargs['file_name']
+        user = kwargs['user']
+        self.batch_set.import_username = user.username
+        self.import_filename = kwargs['file_name']
+        self.batch_set.import_filename = kwargs['file_name']
+
         #print(
         #  f"username={self.user.get_username()}, file_name={self.file_name}")
         # Consider: set self.db_ss{} dict with key bibid to the name of one of
@@ -108,36 +111,56 @@ class BatchItemResource(resources.ModelResource):
 
         # temp setups for testing a ssheet with column BibID and no vid column
         print(f"kwargs='{kwargs}',headers={dataset.headers}")
+        sys.stdout.flush()
     # end def before_import()
 
     def before_import_row(self, row, **kwargs):
         print(f"before_import_row: row='{row}'")
         sys.stdout.flush()
-        if self.bibid_ssfield is None:
+        if self.bibid_import_field is None:
             # This is the first call to get a spreadsheet row, and the first
             # access to the 'row' object during an import.
             # Now seek matches in spreadsheet column names for db columns
             # First, seek ss field to use for 'bibid' db column
-            self.ss_bibfield = get_candidate_by_candidates_matches(
+            self.import_bibfield = get_candidate_by_candidates_matches(
                 l_candidates = row.keys(),
                 l_matches = self.d_dbcol_matches['bibid'] )
-            if self.ss_bibfield is None:
+
+            if self.import_bibfield is None:
                # todo? Add a nicer error message or error handling.
                 msg = (f"Could not find a bibfield in this spreadsheet")
                 raise ValueError(msg)
+            self.batch_set.bibid_field = self.import_bibfield
 
-            self.ss_vidfield = get_candidate_by_candidates_matches(
+            self.import_vidfield = get_candidate_by_candidates_matches(
                 l_candidates = row.keys(),
                 l_matches = self.d_dbcol_matches['vid'])
+            self.batch_set.vid_field = self.import_vidfield
+        # end if bibidimprt field is None (First import row)
 
         # todo: Create random uuid hash value for id value
         self.my_id += 1
+        self.item_count += 1
+
+        # Row key-pairs will be stored in a new BatchItem row in the db.
         row['id'] = self.my_id
+        row['batch_set'] = self.batch_set.id
+        row['import_filename'] = self.batch_set.import_filename
+        row['import_username'] = self.batch_set.import_username
 
-        row['bibid'] = row[self.ss_bibfield]
+        row['bibid'] = row[self.import_bibfield]
 
-        vid = self.ss_vidfield
+        vid = self.import_vidfield
         row['vid' ] = '00001' if vid is None or len(vid) == 0 else row[vid]
+    # end before_import_row()
+
+    def after_import(self, dataset, result, using_transactions,
+        dry_run, **kwargs):
+
+        if dry_run == False:
+            self.batch_set.item_count = self.item_count
+            self.batch_set.save()
+    # end def after_import
 
 
     class Meta:
@@ -145,24 +168,28 @@ class BatchItemResource(resources.ModelResource):
         # exclude = ( 'id',)
         # If use more than 1 import_id_fields field, import fails with error
         # import_id_fields = ( 'bibid'', 'vid',)
-        fields = [ 'bibid', 'vid','id',]
+        fields = [ 'batch_set', 'import_filename', 'import_username',
+            'bibid', 'vid','id',]
         report_skipped = True
 
 # end class BatchItemResource
 
 class BatchSetAdmin(admin.ModelAdmin):
-    list_display = ["name", "import_datetime","import_user", "import_filename"]
-    list_display_links = ["import_datetime","import_user", "import_filename"]
-    search_fields = ["-import_datetime","import_user", "import_filename",
-      "name" ]
-    fields = [ "name", "notes",
-      "import_filename", "bibid_field", "vid_field", "item_count" ]
-    readonly_fields = ["import_datetime", "import_user"]
+    list_display = ["import_username", "import_datetime","name",
+      "import_filename", ]
+    list_display_links = ["name", "import_datetime","import_username",
+      "import_filename"]
+    search_fields = ["name", "notes", "import_datetime","import_username",
+      "import_filename", ]
+    fields = ["name", "notes", "import_datetime", "import_filename",
+      "import_username", "bibid_field", "vid_field", "item_count" ]
+    readonly_fields = ["import_datetime", "import_username",
+      "import_filename", "bibid_field" , "vid_field", "item_count"]
 
-    list_filter = ['import_filename','import_datetime']
+    list_filter = ['import_username','import_filename','import_datetime']
 
     class Meta:
-        ordering = ['import_datetime','import_user','import_filename']
+        ordering = ['-import_datetime','import_username','import_filename']
 
 #end class BatchSetAdmin
 admin.site.register(BatchSet, BatchSetAdmin)

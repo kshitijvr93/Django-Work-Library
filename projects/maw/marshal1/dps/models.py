@@ -13,6 +13,9 @@ from mptt.models import MPTTModel, TreeForeignKey
 #suppoort per field custom widget sizes for admin and inline admin
 from django import forms
 
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
 '''
 NOTE: rather than have a separate file router.py to host HathiRouter, I just
 put it here. Also see settings.py should include this python import dot-path
@@ -115,7 +118,6 @@ class Bibvid(models.Model):
       editable=True,
       )
 
-
     def __str__(self):
         return str(self.bibvid)
 
@@ -125,15 +127,17 @@ class BatchSet(models.Model):
     '''
     Model BatchSet stores information about a set of BatchItem rows
     that were created via a spreadsheet import operation.
-    Fields include an identifier, the person who created the import,
-    the date-time of the import.
+    Fields include an identifier, the username of the user who created the
+    import, the date-time of the import.
     Consider to include a count of items imported.
-    Do not allow users to delete rows. The import operations themselves are
-    historical data desired for UFDC management.
+
+    TODO: Do not allow users to delete rows. The import operations themselves
+    are historical data desired for UFDC management.
     '''
+
     id = models.AutoField(primary_key=True)
     # batch_datetime is time the batch was created/imported
-    name = SpaceCharField(verbose_name='Optional Unique Batch Name',
+    name = SpaceCharField(verbose_name='Your Unique Batch Name',
         max_length=255, unique=False, blank=False, null=False, default='',
         db_index=True, help_text= ("Up to 255 characters." ), editable=True)
     notes = SpaceTextField(
@@ -141,36 +145,35 @@ class BatchSet(models.Model):
         max_length=255, unique=False, blank=True, null=True, default='',
         help_text='Optional Notes about the imported batch of bib-vids.',
         editable=True)
-    import_datetime = models.DateTimeField('BatchSet Importing DateTime (UTC)',
+    import_datetime = models.DateTimeField('Importing DateTime (UTC)',
         null=False, auto_now=True, editable=False)
-    import_user= SpaceCharField(verbose_name='Importing user', max_length=255,
-        unique=False, blank=False, null=False, default='name',
-        help_text= ("User who imported this batch" ),
-        editable=False)
-    import_filename = models.FileField(verbose_name='Import File',
-        max_length=255, unique=False, blank=False, null=False,
-        help_text= ("File containing a single spreadsheet to import "
-           "saved as tab-separated text file" ),
-        editable=True)
+    import_username = SpaceCharField(
+        verbose_name='User who did the import.',
+        max_length=255, unique=False, blank=False, null=False, default='',
+        db_index=True, help_text= ("Up to 255 characters." ), editable=True)
+
+    import_filename = SpaceCharField(verbose_name='Imported File Name',
+        max_length=255, unique=False, blank=False, null=False, default='',
+        db_index=True, help_text= ("Up to 255 characters." ), editable=True)
     bibid_field = SpaceCharField(verbose_name='BibID Field Name',
         max_length=255, unique=False, blank=False, null=False, default='BibID',
-        help_text= ("BibID Spreadshet Field Name" ), editable=True)
+        help_text= ("Import file's BibID Field Name" ), editable=True)
     vid_field = SpaceCharField(verbose_name='Volume ID Field Name',
         max_length=255, unique=False, blank=True, null=False, default='VID',
-        help_text= ("Spreadsheet Field name for Volume ID (VID). "
-            "If empty, value 00001 will be set for the database VID value." ),
+        help_text= ("Import file's field name for Volume ID (VID). "
+            "If empty, value 00001 will be set for the VID value." ),
         editable=True)
     item_count =models.IntegerField(
         verbose_name='Item Count',
         unique=False, blank=False, null=False, default=0,
-        help_text= ("Count of import bibvid items from the spreadsheet." ),
+        help_text= ("Count of import bibvid items from the import." ),
         )
 
-    def  save(self, *args, **kwargs):
 
-        #print(f"*** url={repr(self.import_filename.url)}")
-        super(BatchSet, self).save(*args, **kwargs)
-# end class BathSet
+    def __str__(self):
+        return str(self.id)
+
+# end class BatchSet
 class BatchItem(models.Model):
     '''
     Model BatchItem stores a UFDC Bib_vid identifier and
@@ -212,6 +215,7 @@ class BatchItem(models.Model):
 
     def __str__(self):
         return str(f"{self.bibid.upper()}_{self.vid}")
+
     class Meta:
         unique_together = ["batch_set", "bibid","vid"]
 
