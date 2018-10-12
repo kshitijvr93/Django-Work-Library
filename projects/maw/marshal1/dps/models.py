@@ -165,6 +165,7 @@ class BatchSet(models.Model):
         editable=True)
     item_count =models.IntegerField(
         verbose_name='Item Count',
+        db_index=True,
         unique=False, blank=False, null=False, default=0,
         help_text= ("Count of import bibvid items from the import." ),
         )

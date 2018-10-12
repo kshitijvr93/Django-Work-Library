@@ -69,6 +69,10 @@ class BatchItemResource(resources.ModelResource):
         self.vid_import_field = None
         self.bibid_import_field = None
         self.vid_import_field = None
+        # Use this to prevent multiple saves during before_import_row() for
+        # dry_run True and dryrun False becaue var dry_run is not
+        # accessible during before_import_row()
+        self.batch_set_save_count = 0
 
         # List of potential import file  fieldnames
         self.d_dbcol_matches = {
@@ -87,7 +91,7 @@ class BatchItemResource(resources.ModelResource):
     # end __init__
 
 
-    def before_import(self,dataset, using_transactions, dry_run, **kwargs):
+    def before_import(self,dataset, using_transactions, dry_run=False, **kwargs):
         '''
         Consider: Here, create a new row in BatchSet with just the
         current datetime - (maybe a filename from this dataset too and the
@@ -111,6 +115,7 @@ class BatchItemResource(resources.ModelResource):
         # and set dict with key vid to one of the ss columns or None
 
         # temp setups for testing a import file  with column BibID and no vid column
+        kwargs['dry_run'] = True
         print(f"kwargs='{kwargs}',headers={dataset.headers}")
         sys.stdout.flush()
     # end def before_import()
@@ -143,7 +148,12 @@ class BatchItemResource(resources.ModelResource):
             #vid_val = '00001' if vid is None or len(vid) == 0 else row[vf]
             vid_val = '00001' if vid is None else row[vid]
             self.batch_set.vid = vid_val
-            self.batch_set.save()
+            if self.batch_set_save_count == 0:
+                self.batch_set.save()
+                bsid = self.batch_set.id
+                print(f"save0: saved batch_set_id={bsid}")
+            self.batch_set_save_count += 1
+            self.batch_set_id = self.batch_set.id
         # end if bibidimprt field is None (First import row)
 
         self.my_id += 1
@@ -168,9 +178,19 @@ class BatchItemResource(resources.ModelResource):
     def after_import(self, dataset, result, using_transactions,
         dry_run, **kwargs):
 
+        print(f"after_import:dry_run={dry_run}")
         if dry_run == False:
             self.batch_set.item_count = self.row_count
             self.batch_set.save()
+            bsid = self.batch_set.id
+            print(f"save0: saved batch_set_id={bsid}")
+            print(f"dry_run False: save bsid={bsid}")
+            sys.stdout.flush()
+            # Klunky - dry_run True causes data inserts in before_import_row
+            # so have to delete those because cannot access dry_run value
+            # in before_import_row() and thus avoid those 'saves'
+            #
+        type(self.batch_set).objects.filter(item_count=0).delete()
     # end def after_import
 
     class Meta:
@@ -181,16 +201,17 @@ class BatchItemResource(resources.ModelResource):
         exclude = ['id',]
         fields = [ 'uuid', 'batch_set', 'row_count', 'bibid', 'vid',]
         report_skipped = True
+        dry_run = False
 
 # end class BatchItemResource
 
 class BatchSetAdmin(admin.ModelAdmin):
     list_display = ["id", "import_datetime","import_username","name",
-      "import_filename", ]
-    list_display_links = ["id", "import_datetime","import_username",
-      "import_filename"]
+      "import_filename", 'item_count']
+    list_display_links = ["id", "import_datetime","import_username","name",
+      "import_filename", 'item_count']
     search_fields = ["id", "name", "notes", "import_datetime","import_username",
-      "import_filename", ]
+      "import_filename", "item_count" ]
     fields = ["id", "name", "notes", "import_datetime", "import_filename",
       "import_username", "bibid", "vid", "item_count", ]
     readonly_fields = ["id", "import_datetime", "import_username",
