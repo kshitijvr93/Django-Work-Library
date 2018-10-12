@@ -137,12 +137,12 @@ class BatchSet(models.Model):
 
     id = models.AutoField(primary_key=True)
     # batch_datetime is time the batch was created/imported
-    name = SpaceCharField(verbose_name='Your Unique Batch Name',
-        max_length=255, unique=False, blank=False, null=False, default='',
+    name = SpaceCharField(verbose_name='Custom Unique Batch Name',
+        max_length=255, unique=False, blank=True, null=True, default='',
         db_index=True, help_text= ("Up to 255 characters." ), editable=True)
     notes = SpaceTextField(
         verbose_name='Notes about the imported batch of bib-vids.',
-        max_length=255, unique=False, blank=True, null=True, default='',
+        max_length=3000, unique=False, blank=True, null=True, default='',
         help_text='Optional Notes about the imported batch of bib-vids.',
         editable=True)
     import_datetime = models.DateTimeField('Importing DateTime (UTC)',
@@ -155,11 +155,16 @@ class BatchSet(models.Model):
     import_filename = SpaceCharField(verbose_name='Imported File Name',
         max_length=255, unique=False, blank=False, null=False, default='',
         db_index=True, help_text= ("Up to 255 characters." ), editable=True)
-    bibid = SpaceCharField(verbose_name='BibID import field',
+    import_bibfield = SpaceCharField(
+        verbose_name='Import field with BibID',
         max_length=255, unique=False, blank=False, null=False, default='BibID',
         help_text= ("Import file's BibID Field Name" ), editable=True)
-    vid = SpaceCharField(verbose_name='Volume ID import field',
-        max_length=255, unique=False, blank=True, null=False, default='VID',
+    # Individual process executions  may query the use whether to interpret
+    # devfault vid 00001 as to mean all vids found under UFDC resoures for the
+    # bib or the literal one  and only 00001 vid.
+    import_vidfield = SpaceCharField(
+        verbose_name='Import field with VID',
+        max_length=255, unique=False, blank=True, null=True, default='VID',
         help_text= ("Import file's field name for Volume ID (VID). "
             "If empty, value 00001 will be set for the VID value." ),
         editable=True)
@@ -172,7 +177,8 @@ class BatchSet(models.Model):
 
 
     def __str__(self):
-        return f"{self.import_datetime} - {self.import_username}"
+        return (
+          f"ID {self.id}, {self.item_count} items from {self.import_filename}")
 
 # end class BatchSet
 
