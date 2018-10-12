@@ -155,10 +155,10 @@ class BatchSet(models.Model):
     import_filename = SpaceCharField(verbose_name='Imported File Name',
         max_length=255, unique=False, blank=False, null=False, default='',
         db_index=True, help_text= ("Up to 255 characters." ), editable=True)
-    bibid_field = SpaceCharField(verbose_name='BibID import field',
+    bibid = SpaceCharField(verbose_name='BibID import field',
         max_length=255, unique=False, blank=False, null=False, default='BibID',
         help_text= ("Import file's BibID Field Name" ), editable=True)
-    vid_field = SpaceCharField(verbose_name='Volume ID import field',
+    vid = SpaceCharField(verbose_name='Volume ID import field',
         max_length=255, unique=False, blank=True, null=False, default='VID',
         help_text= ("Import file's field name for Volume ID (VID). "
             "If empty, value 00001 will be set for the VID value." ),

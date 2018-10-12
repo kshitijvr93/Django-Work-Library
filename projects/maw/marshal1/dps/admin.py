@@ -116,7 +116,7 @@ class BatchItemResource(resources.ModelResource):
     # end def before_import()
 
     def before_import_row(self, row, **kwargs):
-        print(f"before_import_row: row='{row}'")
+        #print(f"before_import_row: row='{row}'")
         sys.stdout.flush()
         if self.bibid_import_field is None:
             # This is the first call to get a import file  row, and the first
@@ -131,14 +131,18 @@ class BatchItemResource(resources.ModelResource):
                # todo? Add a nicer error message or error handling.
                 msg = (f"Could not find a bibfield in this import file")
                 raise ValueError(msg)
-            self.batch_set.bibid_field = self.import_bibfield
+            self.batch_set.bibid = self.import_bibfield
 
             self.import_vidfield = get_candidate_by_candidates_matches(
                 l_candidates = row.keys(),
                 l_matches = self.d_dbcol_matches['vid'])
-            self.batch_set.vid_field = self.import_vidfield
             # Save this now to define the primary key batch_set.id for use
             # below as a'batch_set'  foreignkey value for batchItems
+            vid = self.import_vidfield
+            # Use default vid if no vid column found in import file
+            #vid_val = '00001' if vid is None or len(vid) == 0 else row[vf]
+            vid_val = '00001' if vid is None else row[vid]
+            self.batch_set.vid = vid_val
             self.batch_set.save()
         # end if bibidimprt field is None (First import row)
 
@@ -157,7 +161,8 @@ class BatchItemResource(resources.ModelResource):
         row['bibid'] = row[self.import_bibfield]
 
         vid = self.import_vidfield
-        row['vid' ] = '00001' if vid is None or len(vid) == 0 else row[vid]
+        #row['vid' ] = '00001' if vid is None or len(vid) == 0 else row[vid]
+        row['vid' ] = '00001' if vid is None else row[vid]
     # end before_import_row()
 
     def after_import(self, dataset, result, using_transactions,
@@ -187,9 +192,9 @@ class BatchSetAdmin(admin.ModelAdmin):
     search_fields = ["id", "name", "notes", "import_datetime","import_username",
       "import_filename", ]
     fields = ["id", "name", "notes", "import_datetime", "import_filename",
-      "import_username", "bibid_field", "vid_field", "item_count", ]
+      "import_username", "bibid", "vid", "item_count", ]
     readonly_fields = ["id", "import_datetime", "import_username",
-      "import_filename", "bibid_field" , "vid_field", "item_count",]
+      "import_filename", "bibid" , "vid", "item_count",]
 
     list_filter = ['import_username','import_datetime','import_filename',]
 
