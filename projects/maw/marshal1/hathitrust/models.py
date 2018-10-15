@@ -468,11 +468,183 @@ class UploadFile(models.Model):
         return "UploadFile"
 
 # end class UploadFile
+from pathlib import Path
+from natsort import natsorted
+from shutil import copy2, make_archive, move
+
+def line(s=''):
+    return '\n</br>' + s
+def resource_path_by_bib_vid(bib_vid=None):
+    if not bib_vid:
+        raise ValueError(f'Bad bib_vid={bib_vid}')
+    parts = bib_vid.split('_')
+    count = len(parts)
+    if count != 2:
+        raise ValueError(f'Bad count of parts for bib_vid={bib_vid}')
+    if len(parts[0]) != 10:
+        raise ValueError(f'Bib is not 8 characters in bib_vid={bib_vid}')
+    if len(parts[1]) != 5:
+        raise ValueError(f'Vid is not 5 characters in bib_vid={bib_vid}')
+    path = ''
+    sep = ''
+    for i in range(0,10,2):
+        path = path + sep + parts[0][i:i+2]
+        sep = os.sep
+    path += sep
+    path += parts[1]
+    return path
+
+import hashlib
+def md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+import os
+import datetime
+def modification_utc_str_by_filename(filename):
+    t = os.path.getmtime(filename)
+    d = datetime.datetime.fromtimestamp(t)
+    du = datetime.datetime.utcfromtimestamp(t)
+    tz = du - d
+    utc_str = du.strftime("%Y-%m-%dT%H:%M:%SZ")
+    d_str = d.strftime("%Y-%m-%dT%H:%M:%S")
+    return d_str, tz, utc_str
+
+def make_jp2_package(resources=None, bib=None, vid=None,log_file=None):
+    me = 'make_jp2_package'
+    bib_vid = f"{bib}_{vid}"
+
+    msg = ( f'<h3>{me}: processing {bib_vid}</h3>')
+    print(msg, file=log_file)
+    log_file.flush()
+
+    in_dir = resources + os.sep + resource_path_by_bib_vid(bib_vid)
+    # msg += line(f'INPUT dir={in_dir}')
+
+    # output dir for bib
+    out_dir_bib = os.path.join(resources,'maw_work','hathitrust',bib_vid)
+    # output dir for files
+    out_dir_files = os.path.join(out_dir_bib,'files')
+
+    # make the files output directory if not exists
+    os.makedirs(out_dir_files, exist_ok=True)
+
+    # We will output md5 info to this file in the bib dir.
+    # After it is completed we will move it to the files dir.
+    out_name_md5 = out_dir_bib + os.sep + 'checksum.md5'
+    capture_date = ''
+
+    with open(out_name_md5, mode='w') as out_file_md5:
+        #Find all jp2 files in the input dir, in sorted order
+        # NOTE: each file will be copied to a renamed output file, per
+        # Hathitrust file naming requirements
+        # First get the paths for all files in input directory;
+        # hathi_image_tuples = [('*.tif*','.tif'), ('*.jp2','.jp2') ]
+        # 20180806 - Now we only do jp2 images.
+        hathi_image_tuples = [('*.jp2','.jp2') ]
+        for tuple in hathi_image_tuples:
+            # Copy image files of this glob
+            glob = tuple[0]
+            ext = tuple[1]
+            paths = list(Path(in_dir).glob(glob))
+            n_paths = len(paths)
+            msg += line(f'Processing {n_paths} files with extension {ext}.')
+
+            # Sort the paths
+            sorted_paths = natsorted(paths)
+            #Copy each file to one with the HathiTrust-preferred name
+            for i, in_path in enumerate(sorted_paths, 1):
+                in_name = str(in_path)
+
+                if i == 1:
+                    dstr, tz, utcstr = modification_utc_str_by_filename(in_path)
+                    msg += line(f'\nGot dstr={dstr}\n')
+                    msg += line(f'\nGot tz={tz}\n')
+                    # str_tz : Lop of the 'seconds' part of the tz
+                    str_tz = str(tz)
+                    index_last_colon = str_tz.rfind(':')
+                    if index_last_colon > 0:
+                        str_tz = str_tz[0:index_last_colon]
+
+                    msg += line(f'\nGot utcstr={utcstr}\n')
+                    capture_date = f'{dstr}-{str_tz}'
+                    msg += line(f'\nGot capture_date={capture_date}\n')
+
+                out_base = str(i).zfill(8)
+                out_base_ext = out_base + ext
+                out_name = out_dir_files + os.sep + out_base_ext
+
+                in_base = in_name.split('.')[0]
+                msg += line()
+                msg += line( f'{i}: Copying in_name ={in_name} '
+                    f'to output_name={out_name}')
+
+                copy2(in_name, out_name)
+
+                # Write checksum.md5 file line for this file in  package
+                md5sum = md5(in_name)
+                msg += line( f"{i}: {in_name} md5sum='{md5sum}'")
+                out_file_md5.write(f'{md5sum} {out_base_ext}\n')
+
+                #for ext_t in ['.pro','.txt']:
+                # Copy txt files only now
+                for ext_t in ['.txt',]:
+                    try:
+                        in_name = in_base + ext_t
+                        out_base_ext = out_base + ext_t
+                        out_name = out_dir_files + os.sep + out_base_ext
+                        msg += line( f'{i}: Copying in_name ={in_name}, '
+                            f'to output_name={out_name}')
+                        copy2(in_name, out_name)
+
+                        # Write checksum.md5 file line for this package file.
+                        md5sum = md5(in_name)
+                        msg += line( f"{i}: {in_name} md5sum='{md5sum}'")
+                        out_file_md5.write(f'{md5sum} {out_base_ext}\n')
+
+                    except ValueError:
+                        msg = ('value!')
+                        print(f"ERROR:{msg}",file=log_file)
+                        log_file.fush()
+                        raise ValueError('value!')
+                # end
+            #end
+        #end for hathi_image_tuples
+        # output required HathiTrust meta.yml file
+        yaml_base_name = 'meta.yml'
+        yaml_file_name = out_dir_files + os.sep + yaml_base_name
+        with open(yaml_file_name, mode='w') as yaml_file:
+            yaml_file.write(f"capture_date:{capture_date}")
+
+        md5sum = md5(yaml_file_name)
+        msg += line( f"YAML FILE: {yaml_file_name} md5sum='{md5sum}'")
+        out_file_md5.write(f'{md5sum} {yaml_base_name}\n')
+    #with open --- checksum.md5 as out_file_md5
+
+    # TODO:move the checksum.md5 file from the bib dir to the files dir
+    out_renamed_md5 = out_dir_files + os.sep + 'checksum.md5'
+    move(out_name_md5, out_renamed_md5)
+
+    # Create zip archive
+    out_base_archive_file = out_dir_bib + os.sep +  bib_vid
+    make_archive(out_base_archive_file, 'zip', out_dir_files)
+    msg += line( f'Made archive file {out_base_archive_file}.zip for '
+                 f'directory {out_dir_files}')
+    msg += line('')
+    msg += line(f'{me}: Done.')
+    print(msg, file=log_file)
+    log_file.flush()
+    return
+
+#end def testone}}}
 
 def make_jp2_packages(obj):
     '''
     Given a batch_set_id fkey into db table dps_batch_set,
-    for each bibvid item in the batch, generate  a jp2-style Hathitrust
+    for each bibvid item in the batch, generate a jp2-style Hathitrust
     package under the UFDC maw_work directory.
 
     This is usually called via multiprocess in the background to
@@ -504,10 +676,17 @@ def make_jp2_packages(obj):
     os.makedirs(out_dir_logs, exist_ok=True)
 
     log_filename = os.path.join(out_dir_logs,'tmp_output_log.txt')
+    batch_items = BatchItem.objects.filter(batch_set=obj.batch_set_id)
+    item_count = len(batch_items)
     with open(log_filename,'w') as log_file:
         print(f"{me}: Starting with jp2_batch_set={obj.id}, "
-          f"batch_set_id={obj.batch_set_id}",
+          f"batch_set_id={obj.batch_set} "
+          f"bibvid count={item_count} ",
           file=log_file)
+
+        for count, batch_item in enumerate(batch_items, start=1):
+            make_jp2_package(resources=resources, bib=batch_item.bibid,
+                vid=batch_item.vid, log_file=log_file)
         # insert more code here
         print(f"{me}: Done", file=log_file)
     #end while... log_file
@@ -571,7 +750,7 @@ class Jp2Batch(models.Model):
         # process. Later: Maybe save the pid too?
         #process = Process(target=make_jp2_packages, args=(self,))
         thread = threading.Thread(target=make_jp2_packages, args=(self,))
-        thread.daemon = False
+        thread.daemon = True
         #process.start()
         thread.start()
         print(f"{me}: started thread.")
