@@ -54,6 +54,14 @@ ALLOWED_HOSTS = maw_settings.DJANGO_ALLOWED_HOSTS
 print(f"USING: ALLOWED_HOSTS={ALLOWED_HOSTS}")
 sys.stdout.flush()
 
+# {https://stackoverflow.com/questions/34114427/django-upgrading-to-1-9-error-appregistrynotready-apps-arent-loaded-yet
+# may fix apps not ready yet when using multiprocessing
+# must add AFTER import maw_settings
+#import django
+#django.setup()
+#}
+
+
 # Application definition
 INSTALLED_APPS = [
     #'maw_home.apps.MawHomeConfig',
@@ -69,19 +77,43 @@ INSTALLED_APPS = [
     # 'nested_admin', # Not: use this xor nested_inline
     'nested_inline', # Note: use this xor nested_admin
     'social_django',
+    # 'channels',
     'ckeditor',
     'ckeditor_uploader',
     'import_export',
+    'mptt',
     # Apps under UF source control
+    'dps.apps.DpsConfig',
     'cuba_libro.apps.CubaLibroConfig',
+    # Hathtitrust has fkey to dps, so dps precedes above..
     'hathitrust.apps.HathitrustConfig',
     'lcroyster.apps.LcroysterConfig',
-    'mptt',
     'profile.apps.ProfileConfig',
     'snow.apps.SnowConfig',
     'submit.apps.SubmitConfig',
-    'dps.apps.DpsConfig',
 ]
+
+if DEBUG == False:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': maw_settings.CACHES_DEFAULT_LOCATION,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.clilent.DefaultClient',
+            }
+        },
+    }
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "asgi_redis.RedisChannelLayer",
+        "CONFIG": {
+            # Change next line to a maw_setting soon..
+            "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379')],
+        },
+        "ROUTING": "chat.routing.channel_routing",
+    },
+}
 
 #{ Settings for app import_export
 # https://django-import-export.readthedocs.io/en/latest/installation.html
@@ -349,7 +381,7 @@ if hathitrust_env == 'test':
             'TIME_ZONE': None,
         },
     }) # hathitrust_env = 'test'
-elif hathitrust_env == 'local':
+elif hathitrust_env == 'xlocal':
     DATABASES.update({
         'hathitrust_connection': {
             'ENGINE': 'django.db.backends.mysql',
@@ -362,7 +394,7 @@ elif hathitrust_env == 'local':
     }) # END ENV LOCAL DATABASES
 else:
     msg = ( f"Bad maw_settings.HATHITRUST_ENV name='{hathitrust_env}'. "
-      "Not found in ['local','test']" )
+      "Not found in ['xlocal','test']" )
     raise ValueError(msg)
 # END Checks for hathitrust_env
 

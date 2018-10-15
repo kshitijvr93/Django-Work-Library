@@ -1,8 +1,13 @@
 from django.contrib import admin
-from .models import Item, File, Yaml, PrintScanYaml, DigitalBornYaml
+from .models import (
+    Item, Jp2Batch,
+    File, Yaml, PrintScanYaml, DigitalBornYaml)
+import os, sys
+
 from .views import FormUploadFile
 from django.db import models
 from django.forms import TextInput, Textarea
+from django import forms
 
 class HathiModelAdmin(admin.ModelAdmin):
     # Using should be a settings.py DATABASES key, a 'connection' name,
@@ -54,8 +59,8 @@ class HathiModelAdmin(admin.ModelAdmin):
         action_to_delete = 'delete_selected'
         if action_to_delete in actions:
             del actions[action_to_delete]
-
 #end class HathiModelAdmin
+
 
 class FileInline(admin.TabularInline):
     model = File
@@ -75,8 +80,9 @@ class ItemModelAdmin(HathiModelAdmin):
     inlines = (FileInline,)
 
 
+class Jp2BatchAdmin(HathiModelAdmin):
+    list_display = ('id','batch_set','create_datetime')
 
-from django import forms
 
 class FileModelAdmin(HathiModelAdmin):
   #{{{ custom field widget settings
@@ -141,6 +147,7 @@ class FileModelAdmin(HathiModelAdmin):
   # end classes Media, Meta
 # end class FileModelAdmin
 
+admin.site.register(Jp2Batch, Jp2BatchAdmin)
 admin.site.register(File, FileModelAdmin)
 admin.site.register(Item, ItemModelAdmin)
 admin.site.register(Yaml, admin.ModelAdmin)

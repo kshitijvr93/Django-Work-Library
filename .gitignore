@@ -9,5 +9,6 @@ __pycache__/*
 *.venv
 *.vscode
 ~*
+tmpdir/
 #Ignore any directory named media_root - special syntax
 media_root/

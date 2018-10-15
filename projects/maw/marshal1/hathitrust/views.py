@@ -7,6 +7,9 @@ from .models import Item, File, UploadFile
 
 from django.forms import TextInput, Textarea
 from django.conf import settings
+from multiprocessing import Process
+import os, sys
+from time import sleep
 
 # meta_yaml - initial test yaml file
 meta_yaml_example = '''# This is an example meta.yml file that provides additional metadata used for
@@ -443,6 +446,15 @@ def testone(request):
     return HttpResponse(msg)
 
 #end def testone}}}
+
+def gen_batch_packages(request):
+    '''
+
+    '''
+
+    pass
+# end def gen_batch_packages()
+
 def upload_success(request, file_id):
 
     template_file= 'hathitrust/upload_success.html'

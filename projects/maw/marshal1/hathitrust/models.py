@@ -1,5 +1,5 @@
 import uuid
-import os
+import os, sys
 from django.db import models
 #from django_enumfield import enum
 
@@ -7,6 +7,18 @@ from django.db import models
 import datetime
 from django.utils import timezone
 from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
+
+from dps.models import BatchSet, BatchItem
+#from django.apps import apps
+#BatchSet = apps.get_model('dps','BatchSet')
+#BatchItem = apps.get_model('dps','BatchSet')
+
+import threading
+import maw_settings
+from time import sleep
+
+#BatchSet = apps.get_model('dps','BatchSet')
+#BatchItem = apps.get_model('dps','BatchSet')
 
 '''
 NOTE: rather than have a separate file router.py to host HathiRouter, I just
@@ -456,3 +468,122 @@ class UploadFile(models.Model):
         return "UploadFile"
 
 # end class UploadFile
+
+def make_jp2_packages(obj):
+    '''
+    Given a batch_set_id fkey into db table dps_batch_set,
+    for each bibvid item in the batch, generate  a jp2-style Hathitrust
+    package under the UFDC maw_work directory.
+
+    This is usually called via multiprocess in the background to
+    generate Hathitrust jp2 packages. It is developed to support a call from
+    a save() or add method for new row to be added to model
+    hathitrust_jp2_batch.
+
+    This process may require up to a second per bibvid jp2 page image to
+    execute.
+    So if a single bibvid has 500 pages, it can take 10 minutes.
+    So small batches of 10 or fewer bib_vids are highly reommended until a
+    regulator/feeder process/feature is implemented.
+
+    Later: Also provide caller jp2_batch_id as an argument, so
+    this method can update the row for it along with misc result info.
+
+    '''
+    me = 'make_jp2_packages'
+
+    ufdc = maw_settings.HATHITRUST_UFDC
+    # input dir
+    resources = os.path.join(ufdc,'resources')
+    # msg += line(f'INPUT dir={in_dir}')
+
+    # output dir for bib
+    # out_dir_bib = os.path.join(resources,'maw_work','hathitrust',bib_vid)
+    out_dir_logs = os.path.join(resources,'maw_work','hathitrust','logs')
+
+    os.makedirs(out_dir_logs, exist_ok=True)
+
+    log_filename = os.path.join(out_dir_logs,'tmp_output_log.txt')
+    with open(log_filename,'w') as log_file:
+        print(f"{me}: Starting with jp2_batch_set={obj.id}, "
+          f"batch_set_id={obj.batch_set_id}",
+          file=log_file)
+        # insert more code here
+        print(f"{me}: Done", file=log_file)
+    #end while... log_file
+    # do not do an obj.save() as that is recursive
+
+# end def make_jp2_packages()
+
+class Jp2Batch(models.Model):
+    '''
+    Each row represents a run of the Hathitrust jp2_batch package generator,
+    make_jp2_packages()
+
+    Very simple relation that represents the running of a batch job to create
+    HathiTrust packages for a set of bib_vids.
+
+    The web user:
+    (1) uses admin to add a row to table hathitrust_jp2_batch ,
+    (2) sets a batch_set id for the row, and
+    (3) when the user save this row, the batch job to create Hathitrust packages
+    for the bib_vid in the package is launched.
+    To see that the batch job is completed, the user can either:
+    (1) check the log file in the output folder for proof that
+        the batch job is running or completed, assuming the user has permission
+        to check the output folder
+    (2) refresh the view of the jp2batch row to see if the result
+        field is completed. It may be convenient for the user to save a
+        memorable value in the notes field upon initial saving so it can be sought
+        later to re-check the row.
+
+    '''
+
+    id = models.AutoField(primary_key=True)
+
+    batch_set = models.ForeignKey(BatchSet, blank=False, null=False,
+      db_index=True,
+      help_text="BatchSet for which to generate Hathitrust JP2 Packages",
+      on_delete=models.CASCADE,)
+
+    create_datetime = models.DateTimeField('Importing DateTime (UTC)',
+        null=False, auto_now=True, editable=False)
+
+    process_id = models.IntegerField(default=0, null=True,
+      help_text='Webserver job process id, if available.')
+
+    notes = SpaceTextField(max_length=2550, null=True, default='note',
+      blank=True, help_text= ("General notes about this batch job run"),
+      editable=True,
+      )
+    # Todo: batch job updates the end_datetime and result fields
+    end_datetime = models.DateTimeField('Importing DateTime (UTC)',
+        null=True,  editable=False)
+    result = SpaceTextField(max_length=2550, null=True, default='note',
+      blank=True, help_text= (
+        "This result value may be set when the packages batch is completed. "),
+      editable=True,
+      )
+
+    def save(self,*args,**kwargs):
+        me = "jp2_batch.save()"
+
+        # process. Later: Maybe save the pid too?
+        #process = Process(target=make_jp2_packages, args=(self,))
+        thread = threading.Thread(target=make_jp2_packages, args=(self,))
+        thread.daemon = False
+        #process.start()
+        thread.start()
+        print(f"{me}: started thread.")
+        sys.stdout.flush()
+        super().save(*args, **kwargs)
+
+    # end def save()
+
+
+    class Meta:
+        verbose_name_plural='Jp2Batches'
+
+    pass
+
+#end class jp2batch

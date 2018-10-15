@@ -175,10 +175,9 @@ class BatchSet(models.Model):
         help_text= ("Count of import bibvid items from the import." ),
         )
 
-
     def __str__(self):
         return (
-          f"ID {self.id}, {self.item_count} items from {self.import_filename}")
+          f"{self.id}, {self.item_count} items from {self.import_filename}")
 
 # end class BatchSet
 
