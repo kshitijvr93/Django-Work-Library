@@ -708,8 +708,9 @@ def make_jp2_packages(obj):
             bib_vid = f"{batch_item.bibid}_{batch_item.vid}"
             utc_now = datetime.datetime.utcnow()
             str_now = secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
-            msg = (f"Processing bibvid {bib_vid}, item {count} of {item_count}"
-                f" at {str_now}"
+            msg = (
+              f"Processed {jp2_total} images. Processing bibvid {bib_vid},"
+              f" item {count} of {item_count} bibvids at {str_now}"
             )
             obj.status = msg
             obj.save()
@@ -768,7 +769,7 @@ class Jp2Batch(models.Model):
       on_delete=models.CASCADE,)
 
     create_datetime = models.DateTimeField('Run Start DateTime (UTC)',
-        null=False, auto_now_add=True, editable=False)
+        null=True, editable=False)
 
     process_id = models.IntegerField(default=0, null=True,
       help_text='Webserver job process id, if available.')
@@ -799,10 +800,12 @@ class Jp2Batch(models.Model):
             thread.start()
             print(f"{me}: started thread.")
             sys.stdout.flush()
-            self.status = "Started processing..."
+            utc_now = datetime.datetime.utcnow()
+            self.create_datetime = utc_now
+            str_now = secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
+            self.status = f"Started processing at {str_now}"
 
         super().save(*args, **kwargs)
-
     # end def save()
 
 
