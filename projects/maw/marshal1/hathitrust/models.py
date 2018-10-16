@@ -473,7 +473,7 @@ from natsort import natsorted
 from shutil import copy2, make_archive, move
 
 def line(s=''):
-    return '\n</br>' + s
+    return '\n>' + s
 def resource_path_by_bib_vid(bib_vid=None):
     if not bib_vid:
         raise ValueError(f'Bad bib_vid={bib_vid}')
@@ -513,19 +513,15 @@ def modification_utc_str_by_filename(filename):
     d_str = d.strftime("%Y-%m-%dT%H:%M:%S")
     return d_str, tz, utc_str
 
-def make_jp2_package(resources=None, bib=None, vid=None,log_file=None):
+def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
+    vid=None,log_file=None, verbosity=0):
     me = 'make_jp2_package'
     bib_vid = f"{bib}_{vid}"
 
-    msg = ( f'<h3>{me}: processing {bib_vid}</h3>')
+    msg = ( f'\n{me}: PROCESSING {bib_vid}:\n')
     print(msg, file=log_file)
     log_file.flush()
 
-    in_dir = resources + os.sep + resource_path_by_bib_vid(bib_vid)
-    # msg += line(f'INPUT dir={in_dir}')
-
-    # output dir for bib
-    out_dir_bib = os.path.join(resources,'maw_work','hathitrust',bib_vid)
     # output dir for files
     out_dir_files = os.path.join(out_dir_bib,'files')
 
@@ -553,34 +549,42 @@ def make_jp2_package(resources=None, bib=None, vid=None,log_file=None):
             n_paths = len(paths)
             msg += line(f'Processing {n_paths} files with extension {ext}.')
 
-            # Sort the paths
+            # Sort the paths for this glob
             sorted_paths = natsorted(paths)
             #Copy each file to one with the HathiTrust-preferred name
             for i, in_path in enumerate(sorted_paths, 1):
                 in_name = str(in_path)
 
+                if verbosity > 1:
+                  msg += line(
+                      f'{me}: processing file {i} PACKAGE FOR '
+                      f'bib_vid {bib_vid}.\n')
+                print(msg, file=log_file)
+                log_file.flush()
+
                 if i == 1:
                     dstr, tz, utcstr = modification_utc_str_by_filename(in_path)
-                    msg += line(f'\nGot dstr={dstr}\n')
-                    msg += line(f'\nGot tz={tz}\n')
                     # str_tz : Lop of the 'seconds' part of the tz
                     str_tz = str(tz)
                     index_last_colon = str_tz.rfind(':')
                     if index_last_colon > 0:
                         str_tz = str_tz[0:index_last_colon]
 
-                    msg += line(f'\nGot utcstr={utcstr}\n')
                     capture_date = f'{dstr}-{str_tz}'
-                    msg += line(f'\nGot capture_date={capture_date}\n')
+                    if verbosity > 1:
+                      msg += line(f'\nGot dstr={dstr}\n')
+                      msg += line(f'\nGot tz={tz}\n')
+                      msg += line(f'\nGot utcstr={utcstr}\n')
+                      msg += line(f'\nGot capture_date={capture_date}\n')
 
                 out_base = str(i).zfill(8)
                 out_base_ext = out_base + ext
                 out_name = out_dir_files + os.sep + out_base_ext
 
                 in_base = in_name.split('.')[0]
-                msg += line()
-                msg += line( f'{i}: Copying in_name ={in_name} '
-                    f'to output_name={out_name}')
+                #msg += line()
+                #msg += line( f'{i}: Copying in_name ={in_name} '
+                #    f'to output_name={out_name}')
 
                 copy2(in_name, out_name)
 
@@ -592,17 +596,19 @@ def make_jp2_package(resources=None, bib=None, vid=None,log_file=None):
                 #for ext_t in ['.pro','.txt']:
                 # Copy txt files only now
                 for ext_t in ['.txt',]:
+                    # seek similar file name ending .txt
                     try:
                         in_name = in_base + ext_t
                         out_base_ext = out_base + ext_t
                         out_name = out_dir_files + os.sep + out_base_ext
-                        msg += line( f'{i}: Copying in_name ={in_name}, '
-                            f'to output_name={out_name}')
+                        #msg += line( f'{i}: Copying in_name ={in_name}, '
+                        #    f'to output_name={out_name}')
                         copy2(in_name, out_name)
 
                         # Write checksum.md5 file line for this package file.
                         md5sum = md5(in_name)
-                        msg += line( f"{i}: {in_name} md5sum='{md5sum}'")
+                        if verbosity > 1:
+                          msg += line( f"{i}: {in_name} md5sum='{md5sum}'")
                         out_file_md5.write(f'{md5sum} {out_base_ext}\n')
 
                     except ValueError:
@@ -610,9 +616,10 @@ def make_jp2_package(resources=None, bib=None, vid=None,log_file=None):
                         print(f"ERROR:{msg}",file=log_file)
                         log_file.fush()
                         raise ValueError('value!')
-                # end
-            #end
+                # end for ext- in .txt
+            #end for file path for this glob type
         #end for hathi_image_tuples
+
         # output required HathiTrust meta.yml file
         yaml_base_name = 'meta.yml'
         yaml_file_name = out_dir_files + os.sep + yaml_base_name
@@ -634,12 +641,12 @@ def make_jp2_package(resources=None, bib=None, vid=None,log_file=None):
     msg += line( f'Made archive file {out_base_archive_file}.zip for '
                  f'directory {out_dir_files}')
     msg += line('')
-    msg += line(f'{me}: Done.')
+    msg += line(f'{me}: FINISHED PACKAGE FOR bib_vid {bib_vid}.\n')
     print(msg, file=log_file)
     log_file.flush()
     return
 
-#end def testone}}}
+#end def make_jp2_package
 
 def make_jp2_packages(obj):
     '''
@@ -659,23 +666,31 @@ def make_jp2_packages(obj):
     regulator/feeder process/feature is implemented.
 
     Later: Also provide caller jp2_batch_id as an argument, so
-    this method can update the row for it along with misc result info.
+    this method can update the row for it along with misc status info.
+
+    Consider: add sub_batch_size argument .. ?
 
     '''
     me = 'make_jp2_packages'
+    print(f"{me}: Making jp2 packages for batch_set {obj.batch_set}")
+    sys.stdout.flush()
 
     ufdc = maw_settings.HATHITRUST_UFDC
     # input dir
     resources = os.path.join(ufdc,'resources')
     # msg += line(f'INPUT dir={in_dir}')
 
-    # output dir for bib
+    # make output dirs
     # out_dir_bib = os.path.join(resources,'maw_work','hathitrust',bib_vid)
-    out_dir_logs = os.path.join(resources,'maw_work','hathitrust','logs')
+    out_dir_batch = os.path.join(resources,'maw_work','hathitrust','batch',
+        str(obj.id))
+    os.makedirs(out_dir_batch, exist_ok=True)
+    log_filename = os.path.join(out_dir_batch,'log.txt')
 
-    os.makedirs(out_dir_logs, exist_ok=True)
+    print(f"{me}: Making jp2 packages for batch_set {obj.batch_set}"
+        f" in {out_dir_batch}.")
+    sys.stdout.flush()
 
-    log_filename = os.path.join(out_dir_logs,'tmp_output_log.txt')
     batch_items = BatchItem.objects.filter(batch_set=obj.batch_set_id)
     item_count = len(batch_items)
     with open(log_filename,'w') as log_file:
@@ -683,14 +698,26 @@ def make_jp2_packages(obj):
           f"batch_set_id={obj.batch_set} "
           f"bibvid count={item_count} ",
           file=log_file)
-
+        log_file.flush()
+        item_count = len(batch_items)
         for count, batch_item in enumerate(batch_items, start=1):
-            make_jp2_package(resources=resources, bib=batch_item.bibid,
-                vid=batch_item.vid, log_file=log_file)
-        # insert more code here
-        print(f"{me}: Done", file=log_file)
-    #end while... log_file
-    # do not do an obj.save() as that is recursive
+            bib_vid = f"{batch_item.bibid}_{batch_item.vid}"
+            msg = f"Processing bibvid {bib_vid}, item {count} of {item_count}"
+            obj.status = msg
+            obj.save()
+            in_dir = resources + os.sep + resource_path_by_bib_vid(bib_vid)
+
+            out_dir_bib = os.path.join(out_dir_batch, bib_vid)
+            os.makedirs(out_dir_bib, exist_ok=True)
+
+            make_jp2_package(in_dir=in_dir, out_dir_bib=out_dir_bib,
+                bib=batch_item.bibid, vid=batch_item.vid, log_file=log_file)
+        # end for bach_item in batch_items
+    #end with... log_file
+    # By design, we MUST set status to non-Null, else will get into recursive loop.
+    obj.status = ( f"All {item_count} packages in this batch {obj.id} "
+      f"are complete. See bib_vid output folders under {out_dir_batch}.")
+    obj.save()
 
 # end def make_jp2_packages()
 
@@ -711,7 +738,7 @@ class Jp2Batch(models.Model):
     (1) check the log file in the output folder for proof that
         the batch job is running or completed, assuming the user has permission
         to check the output folder
-    (2) refresh the view of the jp2batch row to see if the result
+    (2) refresh the view of the jp2batch row to see if the status
         field is completed. It may be convenient for the user to save a
         memorable value in the notes field upon initial saving so it can be sought
         later to re-check the row.
@@ -735,26 +762,30 @@ class Jp2Batch(models.Model):
       blank=True, help_text= ("General notes about this batch job run"),
       editable=True,
       )
-    # Todo: batch job updates the end_datetime and result fields
+    # Todo: batch job updates the end_datetime and status fields
     end_datetime = models.DateTimeField('Importing DateTime (UTC)',
         null=True,  editable=False)
-    result = SpaceTextField(max_length=2550, null=True, default='note',
+    status = SpaceTextField(max_length=2550, null=True, default='',
       blank=True, help_text= (
-        "This result value may be set when the packages batch is completed. "),
+        "Save empty status to create packages. Check for status updates "
+        "as packages are being built."),
       editable=True,
       )
 
     def save(self,*args,**kwargs):
         me = "jp2_batch.save()"
 
-        # process. Later: Maybe save the pid too?
-        #process = Process(target=make_jp2_packages, args=(self,))
-        thread = threading.Thread(target=make_jp2_packages, args=(self,))
-        thread.daemon = True
-        #process.start()
-        thread.start()
-        print(f"{me}: started thread.")
-        sys.stdout.flush()
+        if self.status is None or len(self.status) == 0:
+            # Only start this thread if status is not set
+            #
+            thread = threading.Thread(target=make_jp2_packages, args=(self,))
+            thread.daemon = False
+            #process.start()
+            thread.start()
+            print(f"{me}: started thread.")
+            sys.stdout.flush()
+            self.status = "Started processing..."
+
         super().save(*args, **kwargs)
 
     # end def save()
@@ -762,7 +793,5 @@ class Jp2Batch(models.Model):
 
     class Meta:
         verbose_name_plural='Jp2Batches'
-
-    pass
 
 #end class jp2batch

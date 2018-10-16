@@ -81,7 +81,9 @@ class ItemModelAdmin(HathiModelAdmin):
 
 
 class Jp2BatchAdmin(HathiModelAdmin):
-    list_display = ('id','batch_set','create_datetime')
+    list_display = ('id','batch_set','status','create_datetime')
+    fields = ('id', 'batch_set', 'notes','status','create_datetime')
+    readonly_fields = ('id','batch_set','create_datetime')
 
 
 class FileModelAdmin(HathiModelAdmin):
