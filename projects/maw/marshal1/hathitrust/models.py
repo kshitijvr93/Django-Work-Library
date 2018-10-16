@@ -1,6 +1,7 @@
 import uuid
 import os, sys
 from django.db import models
+from django.utils import timezone
 import datetime
 #from django_enumfield import enum
 
@@ -706,7 +707,8 @@ def make_jp2_packages(obj):
         item_count = len(batch_items)
         for count, batch_item in enumerate(batch_items, start=1):
             bib_vid = f"{batch_item.bibid}_{batch_item.vid}"
-            utc_now = datetime.datetime.utcnow()
+            #utc_now = datetime.datetime.utcnow()
+            utc_now = timezone.now()
             str_now = secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
             msg = (
               f"Processed {jp2_total} images. Processing bibvid {bib_vid},"
@@ -725,7 +727,8 @@ def make_jp2_packages(obj):
         # end for bach_item in batch_items
     #end with... log_file
     # By design, we MUST set status to non-Null, else will get into recursive loop.
-    utc_now = datetime.datetime.utcnow()
+    #utc_now = datetime.datetime.utcnow()
+    utc_now = timezone.now()
     str_now =  utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
     obj.end_datetime = utc_now
 
@@ -791,6 +794,8 @@ class Jp2Batch(models.Model):
     def save(self,*args,**kwargs):
         me = "jp2_batch.save()"
 
+        super().save(*args, **kwargs)
+
         if self.status is None or len(self.status) == 0:
             # Only start this thread if status is not set
             #
@@ -800,12 +805,13 @@ class Jp2Batch(models.Model):
             thread.start()
             print(f"{me}: started thread.")
             sys.stdout.flush()
-            utc_now = datetime.datetime.utcnow()
+            #utc_now = datetime.datetime.utcnow()
+            utc_now = timezone.now()
             self.create_datetime = utc_now
             str_now = secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
             self.status = f"Started processing at {str_now}"
 
-        super().save(*args, **kwargs)
+        # super().save(*args, **kwargs)
     # end def save()
 
 
