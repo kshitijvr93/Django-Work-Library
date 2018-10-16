@@ -82,8 +82,8 @@ class ItemModelAdmin(HathiModelAdmin):
 
 class Jp2BatchAdmin(HathiModelAdmin):
     list_display = ('id','batch_set','status','create_datetime')
-    fields = ('id', 'batch_set', 'notes','status','create_datetime')
-    readonly_fields = ('id','batch_set','create_datetime')
+    fields = ('batch_set', 'notes','status','create_datetime')
+    readonly_fields = ('create_datetime',)
 
 
 class FileModelAdmin(HathiModelAdmin):
@@ -150,11 +150,11 @@ class FileModelAdmin(HathiModelAdmin):
 # end class FileModelAdmin
 
 admin.site.register(Jp2Batch, Jp2BatchAdmin)
-admin.site.register(File, FileModelAdmin)
-admin.site.register(Item, ItemModelAdmin)
-admin.site.register(Yaml, admin.ModelAdmin)
-admin.site.register(PrintScanYaml, admin.ModelAdmin)
-admin.site.register(DigitalBornYaml, admin.ModelAdmin)
+#admin.site.register(File, FileModelAdmin)
+#admin.site.register(Item, ItemModelAdmin)
+#admin.site.register(Yaml, admin.ModelAdmin)
+#admin.site.register(PrintScanYaml, admin.ModelAdmin)
+#admin.site.register(DigitalBornYaml, admin.ModelAdmin)
 
 
 #admin.site.register(Upload, HathiModelAdmin)

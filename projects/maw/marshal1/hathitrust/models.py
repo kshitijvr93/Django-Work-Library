@@ -1,6 +1,7 @@
 import uuid
 import os, sys
 from django.db import models
+import datetime
 #from django_enumfield import enum
 
 #other useful model imports at times (see django docs, tutorials):
@@ -516,6 +517,7 @@ def modification_utc_str_by_filename(filename):
 def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
     vid=None,log_file=None, verbosity=0):
     me = 'make_jp2_package'
+    jp2_count = 0
     bib_vid = f"{bib}_{vid}"
 
     msg = ( f'\n{me}: PROCESSING {bib_vid}:\n')
@@ -554,6 +556,7 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
             #Copy each file to one with the HathiTrust-preferred name
             for i, in_path in enumerate(sorted_paths, 1):
                 in_name = str(in_path)
+                jp2_count += 1
 
                 if verbosity > 1:
                   msg += line(
@@ -644,7 +647,7 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
     msg += line(f'{me}: FINISHED PACKAGE FOR bib_vid {bib_vid}.\n')
     print(msg, file=log_file)
     log_file.flush()
-    return
+    return jp2_count
 
 #end def make_jp2_package
 
@@ -672,6 +675,7 @@ def make_jp2_packages(obj):
 
     '''
     me = 'make_jp2_packages'
+    jp2_total = 0
     print(f"{me}: Making jp2 packages for batch_set {obj.batch_set}")
     sys.stdout.flush()
 
@@ -702,7 +706,11 @@ def make_jp2_packages(obj):
         item_count = len(batch_items)
         for count, batch_item in enumerate(batch_items, start=1):
             bib_vid = f"{batch_item.bibid}_{batch_item.vid}"
-            msg = f"Processing bibvid {bib_vid}, item {count} of {item_count}"
+            utc_now = datetime.datetime.utcnow()
+            str_now = secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
+            msg = (f"Processing bibvid {bib_vid}, item {count} of {item_count}"
+                f" at {str_now}"
+            )
             obj.status = msg
             obj.save()
             in_dir = resources + os.sep + resource_path_by_bib_vid(bib_vid)
@@ -710,13 +718,20 @@ def make_jp2_packages(obj):
             out_dir_bib = os.path.join(out_dir_batch, bib_vid)
             os.makedirs(out_dir_bib, exist_ok=True)
 
-            make_jp2_package(in_dir=in_dir, out_dir_bib=out_dir_bib,
+            jp2_count = make_jp2_package(in_dir=in_dir, out_dir_bib=out_dir_bib,
                 bib=batch_item.bibid, vid=batch_item.vid, log_file=log_file)
+            jp2_total += jp2_count
         # end for bach_item in batch_items
     #end with... log_file
     # By design, we MUST set status to non-Null, else will get into recursive loop.
-    obj.status = ( f"All {item_count} packages in this batch {obj.id} "
-      f"are complete. See bib_vid output folders under {out_dir_batch}.")
+    utc_now = datetime.datetime.utcnow()
+    str_now =  utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
+    obj.end_datetime = utc_now
+
+    obj.status = (
+      f"{jp2_total} jp2 images in {item_count} packages in this batch {obj.id} "
+      f"are complete at {str_now}. See bib_vid output folders under "
+      f"{out_dir_batch}.")
     obj.save()
 
 # end def make_jp2_packages()
@@ -752,8 +767,8 @@ class Jp2Batch(models.Model):
       help_text="BatchSet for which to generate Hathitrust JP2 Packages",
       on_delete=models.CASCADE,)
 
-    create_datetime = models.DateTimeField('Importing DateTime (UTC)',
-        null=False, auto_now=True, editable=False)
+    create_datetime = models.DateTimeField('Run Start DateTime (UTC)',
+        null=False, auto_now_add=True, editable=False)
 
     process_id = models.IntegerField(default=0, null=True,
       help_text='Webserver job process id, if available.')

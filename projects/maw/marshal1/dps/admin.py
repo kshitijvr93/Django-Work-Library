@@ -251,7 +251,7 @@ class BatchItemAdmin(ImportExportModelAdmin):
     list_display = ['batch_set','row_count','bibid','vid']
     list_display_links = ['row_count','bibid','vid']
 
-    search_fields = ['batch_set__name', 'bibid','vid']
+    search_fields = ['batch_set__id','batch_set__name', 'bibid','vid']
     fields = ['batch_set', 'row_count','bibid','vid']
     readonly_fields = ['batch_set','row_count',]
     ordering = ['-batch_set', 'row_count']
