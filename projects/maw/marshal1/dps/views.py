@@ -88,6 +88,7 @@ def mets_docroot_by_bibvid(bibvid=None, verbosity=0):
         pass
     return kp_folder
 #end def
+
 def get_tree_and_root_from_filename(filename=None, log_file=sys.stdout,
     verbosity=None):
     me = 'get_root_from_parsed_file_bytes'
@@ -126,72 +127,77 @@ Method out_mets()
 def out_mets(request):
 
     out_html = '<ol>'
+    out_file = 'c:\\rvp\\outmets.xml'
+    out_xml = ''
     max_bibvids = 5
     od_bibvid = OrderedDict()
     # Retrieve the bibvid items from table Thesis.
     # Report and Skip any duplicate items.
     n_thesis = 0
     n_bad = 0
-    for thesis in X2018Thesis.objects.all():
-    #for thesis in Bibvid.objects.all():
-        n_thesis += 1
-        if n_thesis > max_bibvids:
-            break;
-        bibvid = thesis.uf_bibvid
-        out_html += f"<li>{bibvid}</li><ol>"
+    with open(out_file,'w') as ofile:
+        for thesis in X2018Thesis.objects.all():
+        #for thesis in Bibvid.objects.all():
+            n_thesis += 1
+            if n_thesis > max_bibvids:
+                break;
+            bibvid = thesis.uf_bibvid
+            out_html += f"<li>{bibvid}</li><ol>"
 
-        # Get the subjects
-        n_subject = 0
-        for subject in X2018Subject.objects.filter(thesis=thesis, keep='y'):
-            n_subject += 1
-            out_html += f"<li>{subject.term}</li>"
-            pass
+            # Get the subjects
+            n_subject = 0
+            for subject in X2018Subject.objects.filter(thesis=thesis, keep='y'):
+                n_subject += 1
+                out_html += f"<li>{subject.term}</li>"
+                pass
 
-        mets_filename = mets_filename_by_bibvid(bibvid=bibvid, verbosity=1)
-        tree, node_root = get_tree_and_root_from_filename(
-            filename=mets_filename)
-        if node_root is None:
-            n_bad += 1
-            continue
-        # Create d_ns - dictionary of namespace key or abbreviation name to
-        # namespace 'long name' values.
-        d_namespace = { key:value
-          for key,value in dict(node_root.nsmap).items()
-          if key is not None}
+            mets_filename = mets_filename_by_bibvid(bibvid=bibvid, verbosity=1)
+            tree, node_root = get_tree_and_root_from_filename(
+                filename=mets_filename)
+            if node_root is None:
+                n_bad += 1
+                continue
+            # Create d_ns - dictionary of namespace key or abbreviation name to
+            # namespace 'long name' values.
+            d_namespace = { key:value
+              for key,value in dict(node_root.nsmap).items()
+              if key is not None}
 
-        # From core doctree, remove all subject nodes
-        find_xpath = './/{*}subject'
-        found_nodes = node_root.findall(find_xpath, namespaces=d_namespace)
-        par=None
-        for node in found_nodes:
-           par = node.getparent()
-           par.remove(node)
-            # could add check here for same parent, but sample data looks good
-            #
-        # Removed subject nodes
+            # From core doctree, remove all subject nodes
+            find_xpath = './/{*}subject'
+            found_nodes = node_root.findall(find_xpath, namespaces=d_namespace)
+            par=None
+            for node in found_nodes:
+               par = node.getparent()
+               par.remove(node)
+                # could add check here for same parent, but sample data looks good
+                #
+            # Removed subject nodes
 
-        ptag = 'None' if par is None else par.tag
-        l = len(found_nodes)
-        out_html += (
-          f"<li>Note: mets_filename={mets_filename}, partag={par.tag} "
-          f"subjects count={l}</li>")
-        out_html += '</ol>'
+            ptag = 'None' if par is None else par.tag
+            l = len(found_nodes)
+            out_html += (
+              f"<li>Note: mets_filename={mets_filename}, partag={par.tag} "
+              f"subjects count={l}</li>")
+            out_html += '</ol>'
 
-        # Find and insert new subject nodes X2018_Subject
-        n_subject = 0
-        subjects = ''
-        for subject in X2018Subject.objects.filter(thesis=thesis, keep='y'):
-            # create a new lxml sub-tree for this subject
-            subject_node = new_node_by_subject(subject=subject)
+            # Find and insert new subject nodes X2018_Subject
+            n_subject = 0
+            subjects = ''
+            for subject in X2018Subject.objects.filter(thesis=thesis, keep='y'):
+                # create a new lxml sub-tree for this subject
+                subject_node = new_node_by_subject(subject=subject)
 
-            subject_str = etree.tostring(subject_node,encoding='unicode')
-            subjects += '\n' + etl.escape_xml_text(subject_str)
-            par.append(subject_node)
-            #
-        out_html += f"{subjects}"
-
-    #end for thesis or bibvid
-    out_html += f"</ol><p>Found {n_thesis} bibvids, {n_bad} bad ones.</p>"
-    print(out_html)
+                subject_str = etree.tostring(subject_node,encoding='unicode')
+                #subjects += '\n' + etl.escape_xml_text(subject_str)
+                subjects += '\n' + subject_str
+                par.append(subject_node)
+                #
+            out_html += f"<pre><code>{subjects}</code></pre>"
+        #end for thesis or bibvid
+        out_html += f"</ol><p>Found {n_thesis} bibvids, {n_bad} bad ones.</p>"
+        out_xml = etree.tostring(par, encoding='unicode');
+        print(out_xml,file=ofile)
+    # with open ... ofile
     return HttpResponse(out_html)
 # end def out_mets
