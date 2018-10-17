@@ -18,6 +18,8 @@ from dps.models import BatchSet, BatchItem
 import threading
 import maw_settings
 from time import sleep
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 #BatchSet = apps.get_model('dps','BatchSet')
 #BatchItem = apps.get_model('dps','BatchSet')
@@ -645,7 +647,7 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
     msg += line( f'Made archive file {out_base_archive_file}.zip for '
                  f'directory {out_dir_files}')
     msg += line('')
-    msg += line(f'{me}: FINISHED PACKAGE FOR bib_vid {bib_vid}.\n')
+    msg += line(f'{me}: Finished package FOR bib_vid {bib_vid}.\n')
     print(msg, file=log_file)
     log_file.flush()
     return jp2_count
@@ -661,7 +663,7 @@ def make_jp2_packages(obj):
     This is usually called via multiprocess in the background to
     generate Hathitrust jp2 packages. It is developed to support a call from
     a save() or add method for new row to be added to model
-    hathitrust_jp2_batch.
+    hathitrust_jp2_job.
 
     This process may require up to a second per bibvid jp2 page image to
     execute.
@@ -669,7 +671,7 @@ def make_jp2_packages(obj):
     So small batches of 10 or fewer bib_vids are highly reommended until a
     regulator/feeder process/feature is implemented.
 
-    Later: Also provide caller jp2_batch_id as an argument, so
+    Later: Also provide caller jp2_job_id as an argument, so
     this method can update the row for it along with misc status info.
 
     Consider: add sub_batch_size argument .. ?
@@ -699,7 +701,7 @@ def make_jp2_packages(obj):
     batch_items = BatchItem.objects.filter(batch_set=obj.batch_set_id)
     item_count = len(batch_items)
     with open(log_filename,'w') as log_file:
-        print(f"{me}: Starting with jp2_batch_set={obj.id}, "
+        print(f"{me}: Starting with jp2_job_set={obj.id}, "
           f"batch_set_id={obj.batch_set} "
           f"bibvid count={item_count} ",
           file=log_file)
@@ -714,6 +716,8 @@ def make_jp2_packages(obj):
               f"Processed {jp2_total} images. Processing bibvid {bib_vid},"
               f" item {count} of {item_count} bibvids at {str_now}"
             )
+            obj.jp2_images_processed = jp2_total
+            obj.packages_created = item_count
             obj.status = msg
             obj.save()
             in_dir = resources + os.sep + resource_path_by_bib_vid(bib_vid)
@@ -725,31 +729,32 @@ def make_jp2_packages(obj):
                 bib=batch_item.bibid, vid=batch_item.vid, log_file=log_file)
             jp2_total += jp2_count
         # end for bach_item in batch_items
-    #end with... log_file
-    # By design, we MUST set status to non-Null, else will get into recursive loop.
-    #utc_now = datetime.datetime.utcnow()
+    # end with... log_file
+    # By design, we MUST set status to non-Null, else will get into recursive
+    # loop. #utc_now = datetime.datetime.utcnow()
     utc_now = timezone.now()
-    str_now =  utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
+    str_now =  utc_now.strftime("%Y-%m-%d %H:%M:%SZ")
     obj.end_datetime = utc_now
-
+    obj.jp2_images_processed = jp2_total
+    obj.packages_created = item_count
     obj.status = (
-      f"{jp2_total} jp2 images in {item_count} packages in this batch {obj.id} "
+      f"Finished:  {jp2_total} jp2 images in {item_count} packages in this batch {obj.id} "
       f"are complete at {str_now}. See bib_vid output folders under "
       f"{out_dir_batch}.")
     obj.save()
 
 # end def make_jp2_packages()
 
-class Jp2Batch(models.Model):
+class Jp2Job(models.Model):
     '''
-    Each row represents a run of the Hathitrust jp2_batch package generator,
+    Each row represents a run of the Hathitrust jp2_job package generator,
     make_jp2_packages()
 
     Very simple relation that represents the running of a batch job to create
     HathiTrust packages for a set of bib_vids.
 
     The web user:
-    (1) uses admin to add a row to table hathitrust_jp2_batch ,
+    (1) uses admin to add a row to table hathitrust_jp2_job ,
     (2) sets a batch_set id for the row, and
     (3) when the user save this row, the batch job to create Hathitrust packages
     for the bib_vid in the package is launched.
@@ -771,34 +776,56 @@ class Jp2Batch(models.Model):
       help_text="BatchSet for which to generate Hathitrust JP2 Packages",
       on_delete=models.CASCADE,)
 
+
     create_datetime = models.DateTimeField('Run Start DateTime (UTC)',
         null=True, editable=False)
 
-    process_id = models.IntegerField(default=0, null=True,
-      help_text='Webserver job process id, if available.')
+    #consider to populate user value later.. middleware seems best approach
+    # https://stackoverflow.com/questions/862522/django-populate-user-id-when-saving-a-model
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+      db_index=True, blank=True, null=True)
+
+    packages_created = models.IntegerField(default=0, null=True,
+      help_text='Number of bib_vid packages created by this job.')
+
+    jp2_images_processed = models.IntegerField(default=0, null=True,
+      help_text='Number of jp2 images packaged by this job.')
+
+    '''
+    jp2_images_per_minute = models.IntegerField(default=0, null=True,
+      help_text='Approximate number of jp2 images packaged per minute so far '
+          f'for this batch.')
+
+    run_seconds = models.IntegerField(default=0, null=True,
+      help_text='Approximate number of jp2 images packaged per minute so far '
+          f'for this batch.')
+    '''
 
     notes = SpaceTextField(max_length=2550, null=True, default='note',
       blank=True, help_text= ("General notes about this batch job run"),
       editable=True,
       )
     # Todo: batch job updates the end_datetime and status fields
-    end_datetime = models.DateTimeField('Importing DateTime (UTC)',
+    end_datetime = models.DateTimeField('End DateTime (UTC)',
         null=True,  editable=False)
-    status = SpaceTextField(max_length=2550, null=True, default='',
+    status = SpaceTextField('Run Status',max_length=2550, null=True, default='',
       blank=True, help_text= (
-        "Save empty status to create packages. Check for status updates "
+        "Status of ongoing or completed run. Check for status updates "
         "as packages are being built."),
       editable=True,
       )
 
     def save(self,*args,**kwargs):
-        me = "jp2_batch.save()"
+        me = "jp2_job.save()"
 
         super().save(*args, **kwargs)
-
+        #if self.status is None or len(self.status) == 0:
         if self.status is None or len(self.status) == 0:
             # Only start this thread if status is not set
-            #
+            # Note: we super-saved before this clause becaue
+            # the thread uses/needs the autoassigne jp2batch.id value
+            # Note: may prevent row deletions later to preserve history,
+            # to support graphs of work history, etc.
             thread = threading.Thread(target=make_jp2_packages, args=(self,))
             thread.daemon = False
             #process.start()
@@ -810,12 +837,14 @@ class Jp2Batch(models.Model):
             self.create_datetime = utc_now
             str_now = secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
             self.status = f"Started processing at {str_now}"
+            # Save again so starting status appears immediately
+            super().save(*args, **kwargs)
 
         # super().save(*args, **kwargs)
     # end def save()
 
 
     class Meta:
-        verbose_name_plural='Jp2Batches'
+        verbose_name_plural='Jp2Jobs'
 
 #end class jp2batch

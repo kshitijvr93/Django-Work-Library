@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    Item, Jp2Batch,
+    Item, Jp2Job,
     File, Yaml, PrintScanYaml, DigitalBornYaml)
 import os, sys
 
@@ -80,10 +80,24 @@ class ItemModelAdmin(HathiModelAdmin):
     inlines = (FileInline,)
 
 
-class Jp2BatchAdmin(HathiModelAdmin):
-    list_display = ('id','batch_set','status','create_datetime')
-    fields = ('batch_set', 'notes','status','create_datetime')
-    readonly_fields = ('create_datetime',)
+class Jp2JobAdmin(HathiModelAdmin):
+    # Consider -- add user field in the future
+    list_display = ('id', 'batch_set', 'status',
+       'create_datetime', 'end_datetime')
+    fields = ('batch_set', 'notes','status','packages_created',
+      'jp2_images_processed', 'create_datetime', 'end_datetime',)
+    readonly_fields = ('status','packages_created',
+      'jp2_images_processed', 'create_datetime','end_datetime',)
+
+
+    def get_readonly_fields(self, request, obj=None):
+        '''
+        Allow some field value changes on inital add, but
+        after initial insert, add them to readonly_fields.
+        '''
+        if obj: # editing an existing object
+            return self.readonly_fields + ('batch_set', )
+        return self.readonly_fields
 
 
 class FileModelAdmin(HathiModelAdmin):
@@ -149,7 +163,7 @@ class FileModelAdmin(HathiModelAdmin):
   # end classes Media, Meta
 # end class FileModelAdmin
 
-admin.site.register(Jp2Batch, Jp2BatchAdmin)
+admin.site.register(Jp2Job, Jp2JobAdmin)
 #admin.site.register(File, FileModelAdmin)
 #admin.site.register(Item, ItemModelAdmin)
 #admin.site.register(Yaml, admin.ModelAdmin)

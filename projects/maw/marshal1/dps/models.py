@@ -148,7 +148,7 @@ class BatchSet(models.Model):
     import_datetime = models.DateTimeField('Importing DateTime (UTC)',
         null=False, auto_now=True, editable=False)
     import_username = SpaceCharField(
-        verbose_name='User who did the import.',
+        verbose_name='User who did the import',
         max_length=255, unique=False, blank=False, null=False, default='',
         db_index=True, help_text= ("Up to 255 characters." ), editable=True)
 
