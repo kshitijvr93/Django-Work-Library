@@ -523,7 +523,7 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
     jp2_count = 0
     bib_vid = f"{bib}_{vid}"
 
-    msg = ( f'\n{me}: PROCESSING {bib_vid}:\n')
+    msg = ( f'{me}: PROCESSING {bib_vid}:')
     print(msg, file=log_file)
     log_file.flush()
 
@@ -564,7 +564,7 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
                 if verbosity > 1:
                   msg += line(
                       f'{me}: processing file {i} PACKAGE FOR '
-                      f'bib_vid {bib_vid}.\n')
+                      f'bib_vid {bib_vid}.')
                 print(msg, file=log_file)
                 log_file.flush()
 

@@ -298,6 +298,19 @@ if dps_env == 'test': # Experiment later with this one
         #    },
         },
     })
+elif dps_env == 'local': # Experiment later with this one
+    DPS_UFDC_FOLDER = maw_settings.DPS_UFDC_FOLDER
+    print(f"settings.py {DPS_UFDC_FOLDER}")
+    DATABASES.update({'dps_connection' : {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'dps',
+        'USER': maw_settings.LOCAL_PSQL_USER,
+        'PASSWORD': maw_settings.LOCAL_PSQL_PASSWORD,
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
+        'TIME_ZONE': None,
+        },
+    })
 else:
     #Future: if var django_database_dict_dps exists, do:
     # DATABASES.update({'dps_connection': django_database_dict_dps})
@@ -381,15 +394,16 @@ if hathitrust_env == 'test':
             'TIME_ZONE': None,
         },
     }) # hathitrust_env = 'test'
-elif hathitrust_env == 'xlocal':
+elif hathitrust_env == 'local':
     DATABASES.update({
         'hathitrust_connection': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'maw1_db',
-            'USER': maw_settings.LOCAL_MYSQL_USER,
-            'PASSWORD': maw_settings.LOCAL_MYSQL_PASSWORD,
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'dps',
+            'USER': maw_settings.LOCAL_PSQL_USER,
+            'PASSWORD': maw_settings.LOCAL_PSQL_PASSWORD,
             'HOST': '127.0.0.1',
-            'PORT': '3306',
+            'PORT': '5432',
+            'TIME_ZONE': None,
         },
     }) # END ENV LOCAL DATABASES
 else:

@@ -234,8 +234,6 @@ class BatchItem(models.Model):
     class Meta:
         unique_together = ["batch_set", "bibid","vid"]
         #order_with_respect_to = 'batch_set'
-
-
 # end class BatchItem
 
 class ThesTree(MPTTModel):
@@ -270,6 +268,9 @@ class ThesTree(MPTTModel):
 
     def __str__(self):
         return str(self.name)
+
+    class MPTTMeta:
+        order_by = ['name']
 # end class ThesTree(MPTTModel)
 
 class RelatedTerm(models.Model):

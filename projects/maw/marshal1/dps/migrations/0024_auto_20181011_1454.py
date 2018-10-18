@@ -11,14 +11,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='batchitem',
-            name='id',
-            field=models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False),
-        ),
         migrations.AlterField(
             model_name='batchitem',
             name='id0',
             field=models.IntegerField(db_index=True),
+        ),
+        migrations.AddField(
+            model_name='batchitem',
+            name='id',
+            field=models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False),
         ),
     ]
