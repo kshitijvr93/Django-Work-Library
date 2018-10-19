@@ -216,31 +216,48 @@ admin.site.register(Institution, InstitutionAdmin)
 # queries are done before migration, so comment out the Item.objects.values_list
 # line until migration is applied...
 #class ItemListForm(forms.ModelForm):
-class ItemListForm():
+class ItemListForm(forms.ModelForm):
     '''
     This is the "Select" or admin "List" form for Cuba Libro object 'Item'
     It is created to substitute entirely for the default Item form used by
-    the admin List or Select item page to allow/provide a dropdown widget filter
-    instead of a lengthy filter that displays all options at once.
-    See: https://stackoverflow.com/questions/21497044/filter-a-field-in-a-dropdown-lit-in-django-admin#21497167
+    the admin List or Select item page.
 
     '''
+    pass
+
     class Meta:
-        model = 'Item'
+        model = Item
         fields = '__all__'
 
-    # This caused problem continue later after have model Institution working
-    # see https://stackoverflow.com/questions/29310117/django-programming-error-1146-table-doesnt-exist#29310275
-    # institutions = (Item.objects.values_list('institution', flat=True).
-    #   order_by('institution').distinct() )
 
-    choice_list = []
-    #for institution in institutions:
-    #    choice_list.append(institution)
-    INSTITUTION_CHOICES = choice_list
+    def __init__(self):
+        '''
+        This is  to allow/provide a dropdown widget filter
+        instead of a lengthy filter display that displays all options
+        at once.
+        See: https://stackoverflow.com/questions/21497044/filter-a-field-in-a-dropdown-lit-in-django-admin#21497167
 
-    institution2 = (forms.ChoiceField(widget=forms.Select,
-        choices=INSTITUTION_CHOICES))
+        However, this code is here in __init__() instead of main class def,
+        because putting it there it causes a pernicious bug.
+        The fatal bug only appears when doing an initial migration from the code
+        base because the class is defined at startup, and if it does any database
+        queries in the main class def body, and the queried table is not there
+        in the db yet (like for a new developer starting the project), all
+        management commands fail and abort, (and you must run with option -v3 to
+        also see the error detail) with error saying table
+        cuba_libro_institution does not exist, because in those conditions it
+        would not exist yet.
+        See https://stackoverflow.com/questions/29310117/django-programming-error-1146-table-doesnt-exist#29310275
+        '''
+        choice_list = []
+        for institution in institutions:
+            choice_list.append(institution)
+        INSTITUTION_CHOICES = choice_list
+       # institution2 = (forms.ChoiceField(widget=forms.Select,
+       #     choices=INSTITUTION_ChOicES
+
+        super().__init__()
+# end class ItemListForm
 
 
 class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
