@@ -7,7 +7,7 @@ from django.forms import ModelForm, Textarea
 #other useful model imports at times (see django docs, tutorials):
 import datetime
 from django.utils import timezone
-from maw_utils import SpaceTextField, SpaceCharField, PlusIntegerField
+from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
 from mptt.models import MPTTModel, TreeForeignKey
 
 #suppoort per field custom widget sizes for admin and inline admin

@@ -37,7 +37,9 @@ urlpatterns = [
     #account project setting later to go to home
     #path('cuba_libro/', include('cuba_libro.urls')),
     #path('cuba_libro/', TemplateView.as_view(template_name='home.html')),
-    path('cuba_libro/', include('cuba_libro.urls')),
+
+    #20181019 comment out to avoid temp table doesnt exist issue
+    # path('cuba_libro/', include('cuba_libro.urls')),
     path('dps/', include('dps.urls')),
     path('elsevier/', include('hathitrust.urls')),
     path('hathitrust/', include('hathitrust.urls')),

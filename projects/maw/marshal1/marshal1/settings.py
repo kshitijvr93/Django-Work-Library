@@ -17,12 +17,12 @@ import maw_settings
 
 #print("Got maw_settings.MODULES_FOLDER={}"
 #  .format(maw_settings.MODULES_FOLDER))
-#sys.stdout.flush()
+##sys.stdout.flush()
 
 sys.path.append(maw_settings.MODULES_FOLDER)
 print (f'Using MODULES_FOLDER={maw_settings.MODULES_FOLDER},'
        f' sys.path={sys.path}')
-sys.stdout.flush()
+#sys.stdout.flush()
 
 # Some MAW extract,translate, load utilities, some others too.
 #import etl
@@ -52,7 +52,7 @@ SECRET_KEY = maw_settings.DJANGO_SECRET_KEY
 DEBUG = maw_settings.DJANGO_DEBUG
 ALLOWED_HOSTS = maw_settings.DJANGO_ALLOWED_HOSTS
 print(f"USING: ALLOWED_HOSTS={ALLOWED_HOSTS}")
-sys.stdout.flush()
+#sys.stdout.flush()
 
 # {https://stackoverflow.com/questions/34114427/django-upgrading-to-1-9-error-appregistrynotready-apps-arent-loaded-yet
 # may fix apps not ready yet when using multiprocessing
@@ -277,13 +277,14 @@ except AttributeError:
     dps_env = ''
 
 print(f"USING: maw_settings.DPS_ENV={dps_env}")
-sys.stdout.flush()
 
 #20180829 - standardize on postgresql for dps database needs
 # TODO: create a production psql database  named dps
+DPS_UFDC_FOLDER = maw_settings.DPS_UFDC_FOLDER
+print(f"settings.py: DPS_UFDC_FOLDER={DPS_UFDC_FOLDER}")
+#sys.stdout.flush()
+
 if dps_env == 'test': # Experiment later with this one
-    DPS_UFDC_FOLDER = maw_settings.DPS_UFDC_FOLDER
-    print(f"settings.py {DPS_UFDC_FOLDER}")
     DATABASES.update({'dps_connection' : {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'dps',
@@ -299,8 +300,6 @@ if dps_env == 'test': # Experiment later with this one
         },
     })
 elif dps_env == 'local': # Experiment later with this one
-    DPS_UFDC_FOLDER = maw_settings.DPS_UFDC_FOLDER
-    print(f"settings.py {DPS_UFDC_FOLDER}")
     DATABASES.update({'dps_connection' : {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'dps',

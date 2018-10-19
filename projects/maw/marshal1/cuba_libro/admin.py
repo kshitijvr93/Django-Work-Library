@@ -212,7 +212,11 @@ class InstitutionAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 
 admin.site.register(Institution, InstitutionAdmin)
 
-class ItemListForm(forms.ModelForm):
+# see https://stackoverflow.com/questions/29310117/django-programming-error-1146-table-doesnt-exist#29310275
+# queries are done before migration, so comment out the Item.objects.values_list
+# line until migration is applied...
+#class ItemListForm(forms.ModelForm):
+class ItemListForm():
     '''
     This is the "Select" or admin "List" form for Cuba Libro object 'Item'
     It is created to substitute entirely for the default Item form used by
@@ -222,16 +226,17 @@ class ItemListForm(forms.ModelForm):
 
     '''
     class Meta:
-        model = Item
+        model = 'Item'
         fields = '__all__'
 
-    # continue later after have model Institution working
-    institutions = (Item.objects.values_list('institution', flat=True).
-        order_by('institution').distinct() )
+    # This caused problem continue later after have model Institution working
+    # see https://stackoverflow.com/questions/29310117/django-programming-error-1146-table-doesnt-exist#29310275
+    # institutions = (Item.objects.values_list('institution', flat=True).
+    #   order_by('institution').distinct() )
 
     choice_list = []
-    for institution in institutions:
-        choice_list.append(institution)
+    #for institution in institutions:
+    #    choice_list.append(institution)
     INSTITUTION_CHOICES = choice_list
 
     institution2 = (forms.ChoiceField(widget=forms.Select,
@@ -240,7 +245,8 @@ class ItemListForm(forms.ModelForm):
 
 class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
     # custom form defined above
-    form = ItemListForm
+    # comment out to cure migration woes 20181019
+    # form = ItemListForm
 
     # admin change list display fields to search
     # CHANGE LIST VIEW
