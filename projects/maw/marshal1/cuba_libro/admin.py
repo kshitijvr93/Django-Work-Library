@@ -242,11 +242,12 @@ class ItemListForm(forms.ModelForm):
         The fatal bug only appears when doing an initial migration from the code
         base because the class is defined at startup, and if it does any database
         queries in the main class def body, and the queried table is not there
-        in the db yet (like for a new developer starting the project), all
-        management commands fail and abort, (and you must run with option -v3 to
-        also see the error detail) with error saying table
-        cuba_libro_institution does not exist, because in those conditions it
-        would not exist yet.
+        in the db yet (like for a new developer starting the project or for a
+        new MAW deployment), all
+        management commands fail and abort. Also you must run with option -v3 to
+        also see the error detail with error leading to the code that fails
+        because table cuba_libro_institution does not exist.
+        Because in those conditions it would not exist yet.
         See https://stackoverflow.com/questions/29310117/django-programming-error-1146-table-doesnt-exist#29310275
         '''
         choice_list = []

@@ -17,16 +17,16 @@ import maw_settings
 
 #print("Got maw_settings.MODULES_FOLDER={}"
 #  .format(maw_settings.MODULES_FOLDER))
-##sys.stdout.flush()
+sys.stdout.flush()
 
 sys.path.append(maw_settings.MODULES_FOLDER)
 print (f'Using MODULES_FOLDER={maw_settings.MODULES_FOLDER},'
        f' sys.path={sys.path}')
-#sys.stdout.flush()
+sys.stdout.flush()
 
 # Some MAW extract,translate, load utilities, some others too.
 #import etl
-#print("Using sys.path={}".format(repr(sys.path)))
+print("Using sys.path={}".format(repr(sys.path)))
 
 
 ########## ORIGINAL DJANGO SETTINGS #############
