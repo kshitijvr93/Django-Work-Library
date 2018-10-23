@@ -220,7 +220,7 @@ admin.site.register(Institution, InstitutionAdmin)
 # so comment out the Item.objects.values_list
 # line until migration is applied...
 #class ItemListForm(forms.ModelForm):
-class ItemListForm(forms.ModelForm):
+class ItemListForm():
     '''
     This is the "Select" or admin "List" form for Cuba Libro object 'Item'
     It is created to substitute entirely for the default Item form used by
@@ -269,12 +269,7 @@ class ItemListForm(forms.ModelForm):
 
 
 class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
-    # custom form defined above
-    # comment out to cure migration woes 20181019
-    #form = ItemListForm
 
-    # admin change list display fields to search
-    # CHANGE LIST VIEW
     search_fields = ['id','accession_number'
         ,'reference_type', 'language'
         ,'authors_primary', 'title_primary'
@@ -297,7 +292,7 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
          'holding',
          'pub_year_span',
          'agent',
-         'institution',
+         # 'institution',
          'status',
          ]
 
@@ -306,9 +301,8 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
     list_display_links = [list_display[0]]
 
     list_filter = [
-        ('institution', RelatedDropdownFilter),
+        ('agent', RelatedDropdownFilter),
         'holding',
-        'agent',
         'status',
         # 'reference_type'
         #,'language', 'place_of_publication',
@@ -332,7 +326,6 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
                  # user actions on 'change list' admin page
                  # and also need not be displayed here.
                  'agent':'mgmt_ro',
-                 'institution':'mgmt',
                  'status':'mgmt',
                  'status_notes':'mgmt',
                  'authors_primary':'ed',
