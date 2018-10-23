@@ -84,9 +84,9 @@ class Jp2JobAdmin(HathiModelAdmin):
     # Consider -- add user field in the future
     list_display = ('id', 'batch_set', 'status',
        'create_datetime', 'end_datetime')
-    fields = ('batch_set', 'notes','status','packages_created',
+    fields = ('id','batch_set', 'notes','status','packages_created',
       'jp2_images_processed', 'create_datetime', 'end_datetime',)
-    readonly_fields = ('status','packages_created',
+    readonly_fields = ('id','status','packages_created',
       'jp2_images_processed', 'create_datetime','end_datetime',)
 
 

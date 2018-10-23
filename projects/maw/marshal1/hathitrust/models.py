@@ -601,6 +601,7 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
 
                 #for ext_t in ['.pro','.txt']:
                 # Copy txt files only now
+                text_files_found = True
                 for ext_t in ['.txt',]:
                     # seek similar file name ending .txt
                     try:
@@ -617,20 +618,21 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
                           msg += line( f"{i}: {in_name} md5sum='{md5sum}'")
                         out_file_md5.write(f'{md5sum} {out_base_ext}\n')
 
-                    except ValueError:
-                        msg = ('value!')
+                    except FileNotFoundError:
+                        msg = (f'File {in_name} not found. '
+                          f'SKIPPING this bib_vid {bib_vid}')
                         print(f"ERROR:{msg}",file=log_file)
-                        log_file.fush()
-                        raise ValueError('value!')
+                        log_file.flush()
+                        return jp2_count
                 # end for ext- in .txt
-            #end for file path for this glob type
+            #end for i, path in glob type (jp2)
         #end for hathi_image_tuples
 
         # output required HathiTrust meta.yml file
         yaml_base_name = 'meta.yml'
         yaml_file_name = out_dir_files + os.sep + yaml_base_name
         with open(yaml_file_name, mode='w') as yaml_file:
-            yaml_file.write(f"capture_date:{capture_date}")
+          yaml_file.write(f"capture_date:{capture_date}")
 
         md5sum = md5(yaml_file_name)
         msg += line( f"YAML FILE: {yaml_file_name} md5sum='{md5sum}'")
@@ -648,6 +650,7 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
                  f'directory {out_dir_files}')
     msg += line('')
     msg += line(f'{me}: Finished package FOR bib_vid {bib_vid}.\n')
+
     print(msg, file=log_file)
     log_file.flush()
     return jp2_count

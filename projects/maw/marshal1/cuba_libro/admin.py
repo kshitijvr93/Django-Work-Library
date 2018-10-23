@@ -11,6 +11,9 @@ https://books.agiliq.com/projects/django-admin-cookbook/en/latest/export.html
 '''
 import csv
 from django.http import HttpResponse
+from django_admin_listfilter_dropdown.filters import (
+    RelatedDropdownFilter,
+)
 
 class ExportCvsMixin:
     def export_as_csv(self, request, queryset):
@@ -213,7 +216,8 @@ class InstitutionAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 admin.site.register(Institution, InstitutionAdmin)
 
 # see https://stackoverflow.com/questions/29310117/django-programming-error-1146-table-doesnt-exist#29310275
-# queries are done before migration, so comment out the Item.objects.values_list
+# queries are done before migration,
+# so comment out the Item.objects.values_list
 # line until migration is applied...
 #class ItemListForm(forms.ModelForm):
 class ItemListForm(forms.ModelForm):
@@ -223,12 +227,13 @@ class ItemListForm(forms.ModelForm):
     the admin List or Select item page.
 
     '''
-    pass
+    choice_list = []
+    CHOICES = choice_list
+    institution = None
 
     class Meta:
         model = Item
         fields = '__all__'
-
 
     def __init__(self):
         '''
@@ -250,13 +255,15 @@ class ItemListForm(forms.ModelForm):
         Because in those conditions it would not exist yet.
         See https://stackoverflow.com/questions/29310117/django-programming-error-1146-table-doesnt-exist#29310275
         '''
-        choice_list = []
-        for institution in institutions:
-            choice_list.append(institution)
-        INSTITUTION_CHOICES = choice_list
-       # institution2 = (forms.ChoiceField(widget=forms.Select,
-       #     choices=INSTITUTION_ChOicES
+        institutions = (Institution.objects.
+          values_list('name', flat=true).order_by('name').distinct() )
 
+        for institution in institutions:
+            self.choice_list.append(institution)
+        self.choice_list.append('gatorworld')
+        self.CHOICES = self.choice_list
+        self.institution = (forms.ChoiceField(widget=forms.Select,
+            choices=INSTITUTION_CHOICES))
         super().__init__()
 # end class ItemListForm
 
@@ -264,7 +271,7 @@ class ItemListForm(forms.ModelForm):
 class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
     # custom form defined above
     # comment out to cure migration woes 20181019
-    # form = ItemListForm
+    #form = ItemListForm
 
     # admin change list display fields to search
     # CHANGE LIST VIEW
@@ -299,7 +306,7 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
     list_display_links = [list_display[0]]
 
     list_filter = [
-        'institution',
+        ('institution', RelatedDropdownFilter),
         'holding',
         'agent',
         'status',
