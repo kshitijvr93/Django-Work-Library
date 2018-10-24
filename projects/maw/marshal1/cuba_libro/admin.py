@@ -86,45 +86,58 @@ import sys
 '''
 Get and return this request's user's profile.agent field
 '''
-def get_agent(username=None, verbosity=0):
-        me = 'get_agent'
-        #user = User.objects.get(username=username)
-        #print(f'get_agent "{user}"...', file=sys.stdout)
-        try:
-            profile = Profile.objects.get(username=username)
-        except Exception as e:
-          # print(f'user "{user}" not in cuba_libro.', file=sys.stdout)
-          # generate nice message if not found
-          # for now, return None
-          print(f'{me}:e={e}. Did not find {username} in Profile.username',
-            file=sys.stdout)
-          return None
-
-        if profile is None:
-            profile_username = 'None'
-            agent = None
-            raise ValueError(f'Bad username={username}')
-        else:
-            profile_username = profile.username
-            agent = profile.agent
-
-        if verbosity > 0:
-          print(f'{me}:Found {profile_username} in Profile.username',
-            file=sys.stdout)
-        if verbosity > 0:
-            agent_name = 'None' if profile is None else agent.name
-            if verbosity > 0:
-              print(f'{me}:Found {username} in Profile.username with '
-                f'institution/agent.name={agent_name}', )
-        #print(f'RETURN profile.agent "{agent}"', file=sys.stdout)
-        #sys.stdout.flush()
-        return agent
-
 from django.contrib import messages
+def get_agent(username=None, verbosity=0):
+    me = 'get_agent'
+    #user = User.objects.get(username=username)
+    #print(f'get_agent "{user}"...', file=sys.stdout)
+    try:
+        profile = Profile.objects.get(username=username)
+    except Exception as e:
+        msg = (f'{me}:e={e}. Did not find {username} in Profile.username')
+        messages.error(request, msg)
+        return None
+
+    if profile is None:
+        profile_username = 'None'
+        agent = None
+        # for now, return None - because we cannot use a fkey to
+        # another db, so allow for human naming errors
+        # Just write msg to stdout now ....
+        # later:generate nice message if not found
+        print(msg, file=sys.stdout)
+        msg = (f'{me}:e={e}. Did not find {username} in Profile.username')
+        messages.error(request, msg)
+        return None
+    else:
+        profile_username = profile.username
+        agent = profile.agent
+
+    if verbosity > 0:
+      print(f'{me}:Found {profile_username} in Profile.username',
+        file=sys.stdout)
+    if verbosity > 0:
+        agent_name = 'None' if profile is None else agent.name
+        if verbosity > 0:
+          print(f'{me}:Found {username} in Profile.username with '
+            f'institution/agent.name={agent_name}', )
+    #print(f'RETURN profile.agent "{agent}"', file=sys.stdout)
+    #sys.stdout.flush()
+    return agent
+
 def claim_by_agent(modeladmin, request, queryset):
     me = 'claim_by_agent'
     username = request.user
     print(f"{me}: username is {username}", file=sys.stdout)
+    '''
+    try:
+        profile = Profile.objects.get(username=username)
+    except Exception as e:
+      msg = (f'{me}:e={e}. Did not find {username} in Profile.username')
+      messages.warning(request, msg)
+      return None
+    '''
+
     agent = get_agent(username, verbosity=1)
     n_checked = len(queryset)
     items = queryset.filter(agent__exact=None)
@@ -132,7 +145,6 @@ def claim_by_agent(modeladmin, request, queryset):
     #  UPDATE the items
     items.update(agent=agent)
     n_not_claimed = n_checked - n_claimed
-
 
     if n_claimed > 0:
         msg = (f"Of your {n_checked} checked items, you just now "
@@ -152,7 +164,16 @@ claim_by_agent.short_description = "Claim by my institution "
 #end
 
 def unclaim_by_agent(modeladmin, request, queryset):
-    agent = get_agent(request)
+    username = request.user
+    '''
+    try:
+        profile = Profile.objects.get(username=username)
+    except Exception as e:
+      print(f'{me}:e={e}. Did not find {username} in Profile.username',
+        file=sys.stdout)
+      return None
+    '''
+    agent = get_agent(username, verbosity=1)
     n_checked = len(queryset)
     items = queryset.filter(agent=agent)
     n_unclaimed = len(items)
