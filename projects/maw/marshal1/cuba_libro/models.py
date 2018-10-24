@@ -1,6 +1,9 @@
 import uuid
 from django.db import models
 #from django_enumfield import enum
+from django.contrib.auth import get_user_model
+User = get_user_model()
+#from django.contrib.auth.models import User
 
 #other useful model imports at times (see django docs, tutorials):
 import datetime
@@ -63,8 +66,8 @@ class Cuba_LibroRouter:
 
 #end class
 
-# Create your models here.
-#
+#  Define models here.
+
 class Institution(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField('Institution name',
@@ -75,12 +78,56 @@ class Institution(models.Model):
         default="", editable=True,
         help_text="Short Institution name with a maximum of 20 characters."
        )
+    link_url = models.URLField( 'Link_URL', blank=True, null=True)
     notes = SpaceTextField(null=True,  default='',
         blank=True,editable=True)
 
     def __str__(self):
         return str(self.name20)
 
+
+# NB: keep this code as a reminder that admin does NOT
+# honor the user Foreign key - known issue that Django 2.1
+# or lower does not support fkey to another db.
+# so using separate app "Profile" now with model cuba_libro
+# Whomever adds a row to this table must manually verify that the
+# username value for a row matches an auth_user username, which matches
+# the request.user value, which is a username
+
+class Profile(models.Model):
+    id = models.AutoField(primary_key=True)
+    # Note: Django gives hint that OneToOne field usually is
+    # better than a unique ForeignKey, as we use here for field
+    # 'user', but in the case of models in app 'profile',, we
+    # anticipate many such models in this 'profile' app to have
+    # this type of relationship with the User table, where
+    # same field names would collide, if using a OneToOne field,
+    # so this way seems better.
+    #user = models.ForeignKey(User)
+    username = models.CharField(max_length=255, unique=True, null=False,
+      help_text="username of MAW user who is authorized to use the Cuba Libro Datbase.")
+
+    # Field name should probably be agency, maybe later.
+    '''
+    agent = models.ForeignKey('Institution', on_delete=models.CASCADE,
+      blank=True, null=True,
+      db_index=True,
+      help_text="Institution that this user is affiliated with."
+      )
+    '''
+    agent = models.ForeignKey('Institution', on_delete=models.CASCADE,
+      null=False,
+      help_text="Institution that this user is affiliated with."
+      )
+
+    note = SpaceTextField(blank=False, null=False,
+        default="Some note here.",
+        help_text="Optional note." )
+
+    def __str__(self):
+            return '{}'.format(self.username)
+
+# end class Profile
 
 class Item(models.Model):
 

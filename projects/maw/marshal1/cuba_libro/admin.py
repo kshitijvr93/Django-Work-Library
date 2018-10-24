@@ -1,9 +1,12 @@
 from django.contrib import admin
-from .models import Institution, Item
+from .models import (Institution, Item, Profile, )
 from django import forms
 from django.forms import TextInput, Textarea
 from django.db import models
 from collections import OrderedDict
+from django.contrib.auth import get_user_model
+#User = get_user_model()
+from django.contrib.auth.models import User
 
 '''
 Nice ExportCvsMixin class presented and covered, on 20180402 by:
@@ -12,7 +15,7 @@ https://books.agiliq.com/projects/django-admin-cookbook/en/latest/export.html
 import csv
 from django.http import HttpResponse
 from django_admin_listfilter_dropdown.filters import (
-    RelatedDropdownFilter,
+    RelatedDropdownFilter, DropdownFilter,
 )
 
 class ExportCvsMixin:
@@ -77,34 +80,54 @@ class CubaLibroModelAdmin(admin.ModelAdmin):
             using=self.using, **kwargs)
     # end def formfield_for_manytomany
 #end class CubaLibroModelAdmin
-from django.contrib.auth.models import User, Group
-from profile.models import CubaLibro
 
 import sys
 
 '''
-Get the profile_CubaLibro.agent field
-object of the current request's user and return it.
+Get and return this request's user's profile.agent field
 '''
-def get_agent(request):
-        user = User.objects.get(username=request.user)
+def get_agent(username=None, verbosity=0):
+        me = 'get_agent'
+        #user = User.objects.get(username=username)
         #print(f'get_agent "{user}"...', file=sys.stdout)
         try:
-            agent = CubaLibro.objects.get(user=user).agent
-           # print(f'profile_cuba_libro.agent "{agent}"', file=sys.stdout)
-        except:
-           # print(f'user "{user}" not in cuba_libro.', file=sys.stdout)
-            return ""
-        #print(f'RETURN profile_cuba_libro.agent "{agent}"', file=sys.stdout)
+            profile = Profile.objects.get(username=username)
+        except Exception as e:
+          # print(f'user "{user}" not in cuba_libro.', file=sys.stdout)
+          # generate nice message if not found
+          # for now, return None
+          print(f'{me}:e={e}. Did not find {username} in Profile.username',
+            file=sys.stdout)
+          return None
+
+        if profile is None:
+            profile_username = 'None'
+            agent = None
+            raise ValueError(f'Bad username={username}')
+        else:
+            profile_username = profile.username
+            agent = profile.agent
+
+        if verbosity > 0:
+          print(f'{me}:Found {profile_username} in Profile.username',
+            file=sys.stdout)
+        if verbosity > 0:
+            agent_name = 'None' if profile is None else agent.name
+            if verbosity > 0:
+              print(f'{me}:Found {username} in Profile.username with '
+                f'institution/agent.name={agent_name}', )
+        #print(f'RETURN profile.agent "{agent}"', file=sys.stdout)
         #sys.stdout.flush()
         return agent
 
 from django.contrib import messages
 def claim_by_agent(modeladmin, request, queryset):
-    agent = get_agent(request)
-    # print(f"claim: got user's agent={agent}", file=f)
+    me = 'claim_by_agent'
+    username = request.user
+    print(f"{me}: username is {username}", file=sys.stdout)
+    agent = get_agent(username, verbosity=1)
     n_checked = len(queryset)
-    items = queryset.filter(agent__exact='-')
+    items = queryset.filter(agent__exact=None)
     n_claimed = len(items)
     #  UPDATE the items
     items.update(agent=agent)
@@ -133,7 +156,7 @@ def unclaim_by_agent(modeladmin, request, queryset):
     n_checked = len(queryset)
     items = queryset.filter(agent=agent)
     n_unclaimed = len(items)
-    items.update(agent='-')
+    items.update(agent=None)
     n_not_unclaimed = n_checked - n_unclaimed
 
     if n_unclaimed > 0:
@@ -215,58 +238,15 @@ class InstitutionAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 
 admin.site.register(Institution, InstitutionAdmin)
 
-# see https://stackoverflow.com/questions/29310117/django-programming-error-1146-table-doesnt-exist#29310275
-# queries are done before migration,
-# so comment out the Item.objects.values_list
-# line until migration is applied...
-#class ItemListForm(forms.ModelForm):
-class ItemListForm():
-    '''
-    This is the "Select" or admin "List" form for Cuba Libro object 'Item'
-    It is created to substitute entirely for the default Item form used by
-    the admin List or Select item page.
 
-    '''
-    choice_list = []
-    CHOICES = choice_list
-    institution = None
-
-    class Meta:
-        model = Item
-        fields = '__all__'
-
-    def __init__(self):
-        '''
-        This is  to allow/provide a dropdown widget filter
-        instead of a lengthy filter display that displays all options
-        at once.
-        See: https://stackoverflow.com/questions/21497044/filter-a-field-in-a-dropdown-lit-in-django-admin#21497167
-
-        However, this code is here in __init__() instead of main class def,
-        because putting it there it causes a pernicious bug.
-        The fatal bug only appears when doing an initial migration from the code
-        base because the class is defined at startup, and if it does any database
-        queries in the main class def body, and the queried table is not there
-        in the db yet (like for a new developer starting the project or for a
-        new MAW deployment), all
-        management commands fail and abort. Also you must run with option -v3 to
-        also see the error detail with error leading to the code that fails
-        because table cuba_libro_institution does not exist.
-        Because in those conditions it would not exist yet.
-        See https://stackoverflow.com/questions/29310117/django-programming-error-1146-table-doesnt-exist#29310275
-        '''
-        institutions = (Institution.objects.
-          values_list('name', flat=true).order_by('name').distinct() )
-
-        for institution in institutions:
-            self.choice_list.append(institution)
-        self.choice_list.append('gatorworld')
-        self.CHOICES = self.choice_list
-        self.institution = (forms.ChoiceField(widget=forms.Select,
-            choices=INSTITUTION_CHOICES))
-        super().__init__()
-# end class ItemListForm
-
+class ProfileAdmin(CubaLibroModelAdmin):
+    list_display = ['id','username','agent',]
+    # Note
+    pass
+# NB: Django 2.1 does NOT support foreign key to other db, so
+# Here we just use username to match auth_user, but there cannot be
+# a foreign key to auth_user to achieve automatic value validations.
+admin.site.register(Profile, ProfileAdmin)
 
 class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 
@@ -302,8 +282,8 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 
     list_filter = [
         ('agent', RelatedDropdownFilter),
-        'holding',
-        'status',
+        ('holding', DropdownFilter),
+        ('status', DropdownFilter),
         # 'reference_type'
         #,'language', 'place_of_publication',
         ]
