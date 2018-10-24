@@ -37,10 +37,6 @@ This is a Python 3.6 program.
 
 This program is based on ealdxml.py (Elsevier Api Load Date to Xml)
 
-It is based on eatxml (Elsevier Api To Xml), but here revised to query for
-original load date rather than pub year, and also revised to create an
-output directory for every single day queried for a load date.
-
 '''
 from lxml import etree
 # Note: Official Python 3.5 docs use different library, ElementTree ET
@@ -853,18 +849,24 @@ def runold():
     # where secsz start is found in the out_filename file.
 
     '''
-        # TODO:
-        # The code can require that the output_base_dir is a git repo, because that is the plan.
-        # We can add code to invoke an OS-level command
-        # "git commit -ma? 'secz_start={secz_start}'.format(secsz_start)" command near the end
-        # of this program, before exiting.
-        # Then we can manually query the git log to get the git commit hash value for any secz_start,
-        # or list all the secz_start commits, etc.
-        # Then with the git hash value we can issue git commands to see what exactly changed in the
-        # output_base_dir as a result of any run of this code, identified by secsz_start.
-        # A reporting program can be written to do that work, of course.
-        # This way we can track changes in the
-        # API results, as they evolve or get broken or enhanced by outside providers.
+        TODO:
+        The code can require that the output_base_dir is a git repo, because
+        that is the plan.
+
+        We can add code to invoke an OS-level command
+        "git commit -ma? 'secz_start={secz_start}'.format(secsz_start)" command
+        near the end of this program, before exiting.
+
+        Then we can manually query the git log to get the git commit hash value
+        for any secz_start, or list all the secz_start commits, etc.
+
+        Then with the git hash value we can issue git commands to see what
+        exactly changed in the output_base_dir as a result of any run of this
+        code, identified by secsz_start.
+
+        A reporting program can be written to do that work, of course.
+        This way we can track changes in the API results, as they evolve or get
+        broken or get enhanced by outside providers.
     '''
     print("Done")
 
@@ -874,8 +876,12 @@ def run():
     import html
     doc = ocrspace_text
     doc = etl.escape_xml_text(tesseract_text)
+
+    # Get the 'floridathes' terms
     project = 'floridathes'
     r = get_suggested_terms_data_harmony_api_result(project=project, doc=doc)
+
+    # Get the 'floridathes' terms
     project = 'geothesFlorida'
     r = get_suggested_terms_data_harmony_api_result(project=project, doc=doc)
 

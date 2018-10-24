@@ -11,6 +11,9 @@ https://books.agiliq.com/projects/django-admin-cookbook/en/latest/export.html
 '''
 import csv
 from django.http import HttpResponse
+from django_admin_listfilter_dropdown.filters import (
+    RelatedDropdownFilter,
+)
 
 class ExportCvsMixin:
     def export_as_csv(self, request, queryset):
@@ -212,38 +215,61 @@ class InstitutionAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 
 admin.site.register(Institution, InstitutionAdmin)
 
-class ItemListForm(forms.ModelForm):
+# see https://stackoverflow.com/questions/29310117/django-programming-error-1146-table-doesnt-exist#29310275
+# queries are done before migration,
+# so comment out the Item.objects.values_list
+# line until migration is applied...
+#class ItemListForm(forms.ModelForm):
+class ItemListForm():
     '''
     This is the "Select" or admin "List" form for Cuba Libro object 'Item'
     It is created to substitute entirely for the default Item form used by
-    the admin List or Select item page to allow/provide a dropdown widget filter
-    instead of a lengthy filter that displays all options at once.
-    See: https://stackoverflow.com/questions/21497044/filter-a-field-in-a-dropdown-lit-in-django-admin#21497167
+    the admin List or Select item page.
 
     '''
+    choice_list = []
+    CHOICES = choice_list
+    institution = None
+
     class Meta:
         model = Item
         fields = '__all__'
 
-    # continue later after have model Institution working
-    institutions = (Item.objects.values_list('institution', flat=True).
-        order_by('institution').distinct() )
+    def __init__(self):
+        '''
+        This is  to allow/provide a dropdown widget filter
+        instead of a lengthy filter display that displays all options
+        at once.
+        See: https://stackoverflow.com/questions/21497044/filter-a-field-in-a-dropdown-lit-in-django-admin#21497167
 
-    choice_list = []
-    for institution in institutions:
-        choice_list.append(institution)
-    INSTITUTION_CHOICES = choice_list
+        However, this code is here in __init__() instead of main class def,
+        because putting it there it causes a pernicious bug.
+        The fatal bug only appears when doing an initial migration from the code
+        base because the class is defined at startup, and if it does any database
+        queries in the main class def body, and the queried table is not there
+        in the db yet (like for a new developer starting the project or for a
+        new MAW deployment), all
+        management commands fail and abort. Also you must run with option -v3 to
+        also see the error detail with error leading to the code that fails
+        because table cuba_libro_institution does not exist.
+        Because in those conditions it would not exist yet.
+        See https://stackoverflow.com/questions/29310117/django-programming-error-1146-table-doesnt-exist#29310275
+        '''
+        institutions = (Institution.objects.
+          values_list('name', flat=true).order_by('name').distinct() )
 
-    institution2 = (forms.ChoiceField(widget=forms.Select,
-        choices=INSTITUTION_CHOICES))
+        for institution in institutions:
+            self.choice_list.append(institution)
+        self.choice_list.append('gatorworld')
+        self.CHOICES = self.choice_list
+        self.institution = (forms.ChoiceField(widget=forms.Select,
+            choices=INSTITUTION_CHOICES))
+        super().__init__()
+# end class ItemListForm
 
 
 class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
-    # custom form defined above
-    form = ItemListForm
 
-    # admin change list display fields to search
-    # CHANGE LIST VIEW
     search_fields = ['id','accession_number'
         ,'reference_type', 'language'
         ,'authors_primary', 'title_primary'
@@ -266,7 +292,7 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
          'holding',
          'pub_year_span',
          'agent',
-         'institution',
+         # 'institution',
          'status',
          ]
 
@@ -275,9 +301,8 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
     list_display_links = [list_display[0]]
 
     list_filter = [
-        'institution',
+        ('agent', RelatedDropdownFilter),
         'holding',
-        'agent',
         'status',
         # 'reference_type'
         #,'language', 'place_of_publication',
@@ -301,7 +326,6 @@ class ItemAdmin(CubaLibroModelAdmin, ExportCvsMixin):
                  # user actions on 'change list' admin page
                  # and also need not be displayed here.
                  'agent':'mgmt_ro',
-                 'institution':'mgmt',
                  'status':'mgmt',
                  'status_notes':'mgmt',
                  'authors_primary':'ed',

@@ -65,15 +65,6 @@ class Cuba_LibroRouter:
 
 # Create your models here.
 #
-# NB: we accept the django default of prefixing each real
-# db table name with the app_name, hence the model names
-# below do not start with hathi or hathitrust.
-# class HathiItemState(enum.Enum):
-#       HAS_FOLDER = 0
-#       FOLDER_LOADED = 1
-#       FILES_EXAMINED = 2
-#       FILES_NEED_CHANGES = 3
-#       YAML_CREATED = 4
 class Institution(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField('Institution name',
@@ -107,26 +98,17 @@ class Item(models.Model):
         max_length=255, unique=True,
         default="Enter accession number here", editable=True)
 
-    # Add to these PARTNER_CHOICES as we learn of more partners.
-    # NOTE: Partner choices should have same spelled-out names on
-    # right as HOLDING choices
-    PARTNER_CHOICES = (
-        ( '-','-'),
-        ( 'DUKE', 'Duke University'),
-        ( 'FIU', 'Florida International'),
-        ( 'HVD','Harvard'),
-        ( 'NYP', 'New York Public'),
-        ( 'UF' ,'University of Florida'),
-        ( 'UMI' ,'University of Miami'),
-        ( 'UNC','U of North Carolina'),
-    )
 
-    agent = models.CharField('Claimed',
-        null=False, blank=True,
-        default='-', max_length=50, choices=PARTNER_CHOICES,
-        help_text="Partner who claimed this item via an 'Action:' on the "
-           "parent 'Items' web page.")
-    institution = models.ForeignKey('Institution', on_delete=models.CASCADE,
+    '''
+    charagent = models.CharField('Institution', max_length=255,
+      blank=True, null=True,
+      db_index=True,
+      help_text="Institution that claimed this item via an 'Action:' on the "
+           "parent 'Items' web page."
+      )
+    '''
+
+    agent = models.ForeignKey('Institution', on_delete=models.CASCADE,
       blank=True, null=True,
       db_index=True,
       help_text="Institution that claimed this item via an 'Action:' on the "

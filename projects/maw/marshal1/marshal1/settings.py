@@ -18,7 +18,7 @@ import maw_settings
 
 #print("Got maw_settings.MODULES_FOLDER={}"
 #  .format(maw_settings.MODULES_FOLDER))
-#sys.stdout.flush()
+sys.stdout.flush()
 
 sys.path.append(maw_settings.MODULES_FOLDER)
 print (f'Using MODULES_FOLDER={maw_settings.MODULES_FOLDER},'
@@ -27,7 +27,7 @@ sys.stdout.flush()
 
 # Some MAW extract,translate, load utilities, some others too.
 #import etl
-#print("Using sys.path={}".format(repr(sys.path)))
+print("Using sys.path={}".format(repr(sys.path)))
 
 
 ########## ORIGINAL DJANGO SETTINGS #############
@@ -53,7 +53,15 @@ SECRET_KEY = maw_settings.DJANGO_SECRET_KEY
 DEBUG = maw_settings.DJANGO_DEBUG
 ALLOWED_HOSTS = maw_settings.DJANGO_ALLOWED_HOSTS
 print(f"USING: ALLOWED_HOSTS={ALLOWED_HOSTS}")
-sys.stdout.flush()
+#sys.stdout.flush()
+
+# {https://stackoverflow.com/questions/34114427/django-upgrading-to-1-9-error-appregistrynotready-apps-arent-loaded-yet
+# may fix apps not ready yet when using multiprocessing
+# must add AFTER import maw_settings
+#import django
+#django.setup()
+#}
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -67,26 +75,52 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_json_widget',
     'django_mptt_admin',
+    'django_admin_listfilter_dropdown',
     # 'nested_admin', # Not: use this xor nested_inline
     'nested_inline', # Note: use this xor nested_admin
     'social_django',
+    # 'channels',
     'ckeditor',
     'ckeditor_uploader',
     'import_export',
+    'mptt',
     # Apps under UF source control
+    'dps.apps.DpsConfig',
     'cuba_libro.apps.CubaLibroConfig',
+    # Hathtitrust has fkey to dps, so dps precedes above..
     'hathitrust.apps.HathitrustConfig',
     'lcroyster.apps.LcroysterConfig',
-    'mptt',
     'profile.apps.ProfileConfig',
     'snow.apps.SnowConfig',
     'submit.apps.SubmitConfig',
-    'dps.apps.DpsConfig',
 ]
+
+if DEBUG == False:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': maw_settings.CACHES_DEFAULT_LOCATION,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.clilent.DefaultClient',
+            }
+        },
+    }
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "asgi_redis.RedisChannelLayer",
+        "CONFIG": {
+            # Change next line to a maw_setting soon..
+            "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379')],
+        },
+        "ROUTING": "chat.routing.channel_routing",
+    },
+}
 
 #{ Settings for app import_export
 # https://django-import-export.readthedocs.io/en/latest/installation.html
-IMPORT_EXPORT_PERMISSION_CODE='add'
+IMPORT_EXPORT_PERMISSION_CODE = 'add'
+IMPORT_EXPORT_USE_TRANSACTIONS = True
 #} Settings for app import_export
 
 # Avoid using AUTH_USER_MODEL, rather use get_user_model(), see
@@ -245,13 +279,14 @@ except AttributeError:
     dps_env = ''
 
 print(f"USING: maw_settings.DPS_ENV={dps_env}")
-sys.stdout.flush()
 
 #20180829 - standardize on postgresql for dps database needs
 # TODO: create a production psql database  named dps
+DPS_UFDC_FOLDER = maw_settings.DPS_UFDC_FOLDER
+print(f"settings.py: DPS_UFDC_FOLDER={DPS_UFDC_FOLDER}")
+#sys.stdout.flush()
+
 if dps_env == 'test': # Experiment later with this one
-    DPS_UFDC_FOLDER = maw_settings.DPS_UFDC_FOLDER
-    print(f"settings.py {DPS_UFDC_FOLDER}")
     DATABASES.update({'dps_connection' : {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'dps',
@@ -264,6 +299,17 @@ if dps_env == 'test': # Experiment later with this one
         #    # Heed a warning during manage.py migrate runs
         #    'init_command' : "SET sql_mode='STRICT_ALL_TABLES';",
         #    },
+        },
+    })
+elif dps_env == 'local': # Experiment later with this one
+    DATABASES.update({'dps_connection' : {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'dps',
+        'USER': maw_settings.LOCAL_PSQL_USER,
+        'PASSWORD': maw_settings.LOCAL_PSQL_PASSWORD,
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
+        'TIME_ZONE': None,
         },
     })
 else:
@@ -352,17 +398,18 @@ if hathitrust_env == 'test':
 elif hathitrust_env == 'local':
     DATABASES.update({
         'hathitrust_connection': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'maw1_db',
-            'USER': maw_settings.LOCAL_MYSQL_USER,
-            'PASSWORD': maw_settings.LOCAL_MYSQL_PASSWORD,
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'dps',
+            'USER': maw_settings.LOCAL_PSQL_USER,
+            'PASSWORD': maw_settings.LOCAL_PSQL_PASSWORD,
             'HOST': '127.0.0.1',
-            'PORT': '3306',
+            'PORT': '5432',
+            'TIME_ZONE': None,
         },
     }) # END ENV LOCAL DATABASES
 else:
     msg = ( f"Bad maw_settings.HATHITRUST_ENV name='{hathitrust_env}'. "
-      "Not found in ['local','test']" )
+      "Not found in ['xlocal','test']" )
     raise ValueError(msg)
 # END Checks for hathitrust_env
 

@@ -13,6 +13,6 @@ urlpatterns = [
         name='file_download'),
     re_path(r'^public/(?P<file_id>\d+)/$',view=views.public,
         name='public'),
-    re_path(r'^testone/$',view=views.testone,
-        name='testone'),
+    #re_path(r'^testone/$',view=views.testone,
+    #    name='testone'),
 ]

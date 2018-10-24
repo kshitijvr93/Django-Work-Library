@@ -18,10 +18,8 @@ from .models import (
     ThesTree,
     X2018Subject,
     X2018Thesis,
-
     #Thesaurus,
     )
-
 
 from django.forms import ModelForm, TextInput, Textarea, BaseInlineFormSet
 from django.db import models
@@ -32,23 +30,259 @@ from django_mptt_admin.admin import DjangoMpttAdmin
 
 import csv
 from django.http import HttpResponse
+import uuid
+
+def get_candidate_by_candidates_matches(
+    l_candidates=None, l_matches=None,verbosity=0):
+    '''
+    Given a list of candidate strings and 'match' strings:
+    For each candidate string, convert it to lower case and seek the
+    first match among the match strings.
+    If no match is found, return None.
+    If a match is found, return the original candidate string (before
+    lower-casing)
+    NOTE: it is caller's responsibilty to ensure that all strings in l_match
+    are already lower-cased.
+
+    This is used to find the best candidate import file field name that
+    should be used to extract an expected database value.
+    '''
+    for cand in l_candidates:
+        if cand.lower() in l_matches:
+            return cand
+    return None
 
 class BatchItemResource(resources.ModelResource):
-    '''
-    '''
-    class meta:
-        model = BatchItem
-        exclude = ( 'id',)
-        fields = ( 'bib', 'vid',)
-        report_skipped = True
+    def __init__(self):
+        '''
+        '''
+        # user and import_filename are set in before_import()
+        self.row_count = 0
+        self.user = None
+        self.import_filename = None
+        self.import_username = None
 
-#end class
+        # bibid_import_field and vid_import_field are set in the first call to
+        # before_import_row()
+        self.import_bibfield = None
+        self.import_vidfield = None
+        # Use this to prevent multiple saves during before_import_row() for
+        # dry_run True and dryrun False becaue var dry_run is not
+        # accessible during before_import_row()
+        self.batch_set_save_count = 0
+
+        # List of potential import file  fieldnames
+        self.d_dbcol_matches = {
+            'bibvid': [ 'bibvid', 'bib_vid', 'uf_bibvid',
+            'uf_bib_vid',
+            ],
+            'bibid': [ 'bib','bibid', 'bib_id', 'bibliographic_id',
+            'bibliographicid', 'uf_bib',
+            ],
+
+            'vid': [ 'vid','vol_id','volid','volume_id','volumeid',
+            ]
+        }
+
+        super().__init__()
+    # end __init__
+
+
+    def before_import(self,dataset, using_transactions, dry_run=False, **kwargs):
+        '''
+        Consider: Here, create a new row in BatchSet with just the
+        current datetime - (maybe a filename from this dataset too and the
+        request user, if avalable ?)
+        Use the created BatchSet id as a field here.
+        Also, from another table, or maybe a method to create on model
+        BatchItem, get the max BatchItem id and set it heree, instead of
+        using 0.
+        '''
+        self.batch_set = BatchSet()
+
+        user = kwargs['user']
+        self.batch_set.import_username = user.username
+        self.import_filename = kwargs['file_name']
+        self.batch_set.import_filename = kwargs['file_name']
+
+        #print(
+        #  f"username={self.user.get_username()}, file_name={self.file_name}")
+        # Consider: set self.db_ss{} dict with key bibid to the name of one of
+        # the ss columns,
+        # and set dict with key vid to one of the ss columns or None
+
+        # temp setups for testing a import file  with column BibID and no vid column
+        kwargs['dry_run'] = True
+        print(f"kwargs='{kwargs}',headers={dataset.headers}")
+        sys.stdout.flush()
+    # end def before_import()
+
+    def before_import_row(self, row, **kwargs):
+        #print(f"before_import_row: row='{row}'")
+        sys.stdout.flush()
+        if self.import_bibfield is None:
+            # This is the first call to get a import file  row, and the first
+            # access to the 'row' object during an import.
+            # Now seek matches in import file  column names for db columns
+            # First, seek ss field to use for 'bibid' db column
+            self.import_bibfield = get_candidate_by_candidates_matches(
+                l_candidates = row.keys(),
+                l_matches = self.d_dbcol_matches['bibid'] )
+
+            if self.import_bibfield is None:
+               # todo? Add a nicer error message or error handling.
+                msg = (f"Could not find a bibfield in this import file")
+                raise ValueError(msg)
+            self.batch_set.import_bibfield = self.import_bibfield
+
+            self.import_vidfield = get_candidate_by_candidates_matches(
+                l_candidates = row.keys(),
+                l_matches = self.d_dbcol_matches['vid'])
+            self.batch_set.import_vidfield = self.import_vidfield
+
+            # Save this now to define the primary key batch_set.id for use
+            # below as a'batch_set'  foreignkey value for batchItems
+            # save vid field name used to batch set
+            if self.batch_set_save_count == 0:
+                self.batch_set.save()
+                bsid = self.batch_set.id
+                #print(f"save0: saved batch_set_id={bsid}")
+            self.batch_set_save_count += 1
+            self.batch_set_id = self.batch_set.id
+        # end if self.import_bibfield field is None (First import row)
+
+        self.row_count += 1
+        # Row key-values are stored as column values in aBatchItem
+        # These row keys must also appear in Meta.fields list
+        my_uuid = uuid.uuid4()
+        row['uuid'] = my_uuid
+        # Quirky bug of django import-export, must set id in row
+        # though not in the table BatchItem
+        row['batch_set'] = self.batch_set_id
+        row['row_count'] = self.row_count
+
+        row['bibid'] = row[self.import_bibfield]
+
+        if self.import_vidfield is None:
+            # Use default vid if no vid column found in import file
+            #vid_val = '00001' if vid is None or len(vid) == 0 else row[vf]
+            import_vid_val = '00001'
+        else:
+            import_vid_val = row[self.import_vidfield]
+        row['vid' ] = import_vid_val
+    # end before_import_row()
+
+    def after_import(self, dataset, result, using_transactions,
+        dry_run, **kwargs):
+
+        print(f"after_import:dry_run={dry_run}")
+        if dry_run == False:
+            self.batch_set.item_count = self.row_count
+            self.batch_set.save()
+            bsid = self.batch_set.id
+            print(f"save0: saved batch_set_id={bsid}")
+            print(f"dry_run False: save bsid={bsid}")
+            sys.stdout.flush()
+            # Klunky - dry_run True causes data inserts in before_import_row
+            # so have to delete those because cannot access dry_run value
+            # in before_import_row() and thus avoid those 'saves'
+            #
+        type(self.batch_set).objects.filter(item_count=0).delete()
+    # end def after_import
+
+    class Meta:
+        model = BatchItem
+        # Note import-export expects id field so must EXCLUDE it here
+        # else it complains because BathSet uses uuid, not id
+        import_id_fields = ['uuid',]
+        exclude = ['id',]
+        fields = [ 'uuid', 'batch_set', 'row_count', 'bibid', 'vid',]
+        report_skipped = True
+        dry_run = False
+
+# end class BatchItemResource
+
+class BatchSetAdmin(admin.ModelAdmin):
+    list_display = ["id", "import_datetime","import_username","name",
+      "import_filename", 'item_count']
+    list_display_links = ["id", "import_datetime","import_username","name",
+      "import_filename", 'item_count']
+    search_fields = ["id", "name", "notes", "import_datetime","import_username",
+      "import_filename", "item_count" ]
+    fields = ["id", "name", "notes", "import_datetime", "import_filename",
+      "import_username", "import_bibfield", "import_vidfield", "item_count", ]
+    readonly_fields = ["id", "import_datetime", "import_username",
+      "import_filename", "import_bibfield" , "import_vidfield", "item_count",]
+
+    list_filter = ['import_username','import_datetime','import_filename',]
+
+    def has_add_permission(self, request):
+        # Adding is only done automatically via import-export feature
+        # for file import for  model BatchItem
+        return False
+    '''
+    From the django admin cookbook: method to delete an action from admin,
+    and in this case it is the 'delete_selected' action.
+    Also can allow only certain actions for users in certain groups.
+    '''
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        actions_to_delete = ['delete_selected']
+
+        # change this logic later
+        for action_to_delete in actions_to_delete:
+            if action_to_delete in actions:
+                #print("actions='{}'".format(repr(actions)))
+                del actions[action_to_delete]
+        return actions
+    #end def get_actions
+
+    class Meta:
+        ordering = ['-import_datetime','import_username','import_filename']
+
+#end class BatchSetAdmin
+admin.site.register(BatchSet, BatchSetAdmin)
 
 class BatchItemAdmin(ImportExportModelAdmin):
-    # resource_class = BatchItemResource
-    pass
+    # note: commenting this has shown no bad effects but leaving
+    # uncommented to match some docs
+    resource_class = BatchItemResource
+
+    list_display = ['batch_set','row_count','bibid','vid']
+    list_display_links = ['row_count','bibid','vid']
+
+    search_fields = ['batch_set__id','batch_set__name', 'bibid','vid']
+    fields = ['batch_set', 'row_count','bibid','vid']
+    readonly_fields = ['batch_set','row_count',]
+    ordering = ['-batch_set', 'row_count']
+
+    def has_add_permission(self, request):
+        # Adding is only done automatically via import-export feature
+        # for file import for  model BatchItem
+        return False
+    def has_delete_permission(self, request,obj=None):
+        return False
+    def has_change_permission(self, request,obj=None):
+        return True
+    '''
+    From the django admin cookbook: method to delete an action from admin,
+    and in this case it is the 'delete_selected' action.
+    Also can allow only certain actions for users in certain groups.
+    '''
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        actions_to_delete = ['delete_selected']
+
+        # change this logic later
+        for action_to_delete in actions_to_delete:
+            if action_to_delete in actions:
+                #print("actions='{}'".format(repr(actions)))
+                del actions[action_to_delete]
+        return actions
+    #end def get_actions
+
+#end class BatchItemAdmin
 admin.site.register(BatchItem, BatchItemAdmin)
-# end class BatchAdmin
 
 
 '''

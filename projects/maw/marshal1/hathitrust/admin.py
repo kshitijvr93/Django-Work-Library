@@ -1,8 +1,13 @@
 from django.contrib import admin
-from .models import Item, File, Yaml, PrintScanYaml, DigitalBornYaml
+from .models import (
+    Item, Jp2Job,
+    File, Yaml, PrintScanYaml, DigitalBornYaml)
+import os, sys
+
 from .views import FormUploadFile
 from django.db import models
 from django.forms import TextInput, Textarea
+from django import forms
 
 class HathiModelAdmin(admin.ModelAdmin):
     # Using should be a settings.py DATABASES key, a 'connection' name,
@@ -54,8 +59,8 @@ class HathiModelAdmin(admin.ModelAdmin):
         action_to_delete = 'delete_selected'
         if action_to_delete in actions:
             del actions[action_to_delete]
-
 #end class HathiModelAdmin
+
 
 class FileInline(admin.TabularInline):
     model = File
@@ -75,8 +80,25 @@ class ItemModelAdmin(HathiModelAdmin):
     inlines = (FileInline,)
 
 
+class Jp2JobAdmin(HathiModelAdmin):
+    # Consider -- add user field in the future
+    list_display = ('id', 'batch_set', 'status',
+       'create_datetime', 'end_datetime')
+    fields = ('id','batch_set', 'notes','status','packages_created',
+      'jp2_images_processed', 'create_datetime', 'end_datetime',)
+    readonly_fields = ('id','status','packages_created',
+      'jp2_images_processed', 'create_datetime','end_datetime',)
 
-from django import forms
+
+    def get_readonly_fields(self, request, obj=None):
+        '''
+        Allow some field value changes on inital add, but
+        after initial insert, add them to readonly_fields.
+        '''
+        if obj: # editing an existing object
+            return self.readonly_fields + ('batch_set', )
+        return self.readonly_fields
+
 
 class FileModelAdmin(HathiModelAdmin):
   #{{{ custom field widget settings
@@ -141,11 +163,12 @@ class FileModelAdmin(HathiModelAdmin):
   # end classes Media, Meta
 # end class FileModelAdmin
 
-admin.site.register(File, FileModelAdmin)
-admin.site.register(Item, ItemModelAdmin)
-admin.site.register(Yaml, admin.ModelAdmin)
-admin.site.register(PrintScanYaml, admin.ModelAdmin)
-admin.site.register(DigitalBornYaml, admin.ModelAdmin)
+admin.site.register(Jp2Job, Jp2JobAdmin)
+#admin.site.register(File, FileModelAdmin)
+#admin.site.register(Item, ItemModelAdmin)
+#admin.site.register(Yaml, admin.ModelAdmin)
+#admin.site.register(PrintScanYaml, admin.ModelAdmin)
+#admin.site.register(DigitalBornYaml, admin.ModelAdmin)
 
 
 #admin.site.register(Upload, HathiModelAdmin)

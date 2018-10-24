@@ -7,11 +7,14 @@ from django.forms import ModelForm, Textarea
 #other useful model imports at times (see django docs, tutorials):
 import datetime
 from django.utils import timezone
-from maw_utils import SpaceTextField, SpaceCharField, PlusIntegerField
+from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
 from mptt.models import MPTTModel, TreeForeignKey
 
 #suppoort per field custom widget sizes for admin and inline admin
 from django import forms
+
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 '''
 NOTE: rather than have a separate file router.py to host HathiRouter, I just
@@ -83,7 +86,7 @@ class Bibvid(models.Model):
     exists. Maybe it will also get extra data from sobek, if extant.
 
     Fields to consider:
-      bib, vid, bibvid(with underbar separator)
+      bibid, vid, bibvid(with underbar separator)
       resource_subpath
       counts of various file types, pdf, jpeg, etc.
       total file count, including mets, etc in main folder
@@ -115,7 +118,6 @@ class Bibvid(models.Model):
       editable=True,
       )
 
-
     def __str__(self):
         return str(self.bibvid)
 
@@ -125,36 +127,97 @@ class BatchSet(models.Model):
     '''
     Model BatchSet stores information about a set of BatchItem rows
     that were created via a spreadsheet import operation.
-    Fields include an identifier, the person who created the import,
-    the date-time of the import.
+    Fields include an identifier, the username of the user who created the
+    import, the date-time of the import.
     Consider to include a count of items imported.
-    Do not allow users to delete rows. The import operations themselves are
-    historical data desired for UFDC management.
+
+    TODO: Do not allow users to delete rows. The import operations themselves
+    are historical data desired for UFDC management.
     '''
+
     id = models.AutoField(primary_key=True)
     # batch_datetime is time the batch was created/imported
-    import_datetime = models.DateTimeField('Term search DateTime (UTC)',
+    name = SpaceCharField(verbose_name='Custom Unique Batch Name',
+        max_length=255, unique=False, blank=True, null=True, default='',
+        db_index=True, help_text= ("Up to 255 characters." ), editable=True)
+    notes = SpaceTextField(
+        verbose_name='Notes about the imported batch of bib-vids.',
+        max_length=3000, unique=False, blank=True, null=True, default='',
+        help_text='Optional Notes about the imported batch of bib-vids.',
+        editable=True)
+    import_datetime = models.DateTimeField('Importing DateTime (UTC)',
         null=False, auto_now=True, editable=False)
-    import_user= SpaceCharField(verbose_name='Importing user', max_length=255,
-        unique=False, blank=False, null=False, default='name',
-        help_text= ("User who imported this batch" )
-        , editable=False)
-    import_filename = SpaceCharField(verbose_name='Importing user', max_length=255,
-        unique=False, blank=False, null=False, default='some_spreadsheet_name',
-        help_text= ("Spreadsheet imported into this batch set of batchitems" )
-        , editable=False)
-    pass
+    import_username = SpaceCharField(
+        verbose_name='User who did the import',
+        max_length=255, unique=False, blank=False, null=False, default='',
+        db_index=True, help_text= ("Up to 255 characters." ), editable=True)
+
+    import_filename = SpaceCharField(verbose_name='Imported File Name',
+        max_length=255, unique=False, blank=False, null=False, default='',
+        db_index=True, help_text= ("Up to 255 characters." ), editable=True)
+    import_bibfield = SpaceCharField(
+        verbose_name='Import field with BibID',
+        max_length=255, unique=False, blank=False, null=False, default='BibID',
+        help_text= ("Import file's BibID Field Name" ), editable=True)
+    # Individual process executions  may query the use whether to interpret
+    # devfault vid 00001 as to mean all vids found under UFDC resoures for the
+    # bib or the literal one  and only 00001 vid.
+    import_vidfield = SpaceCharField(
+        verbose_name='Import field with VID',
+        max_length=255, unique=False, blank=True, null=True, default='VID',
+        help_text= ("Import file's field name for Volume ID (VID). "
+            "If empty, value 00001 will be set for the VID value." ),
+        editable=True)
+    item_count =models.IntegerField(
+        verbose_name='Item Count',
+        db_index=True,
+        unique=False, blank=False, null=False, default=0,
+        help_text= ("Count of import bibvid items from the import." ),
+        )
+
+    def __str__(self):
+        return (
+          f"{self.id}, {self.item_count} items from {self.import_filename}")
+
+# end class BatchSet
 
 class BatchItem(models.Model):
     '''
-    Model BatchItem simply stores a UFDC Bib_vid identifier and
+    Model BatchItem stores a UFDC Bib_vid identifier and
     a foreign key to a batch set.
     '''
     # try removing this - maybe it 'spooks' admin impots to be explicit?
     # nope.
-    id = models.AutoField(primary_key=True)
 
-    bib = SpaceCharField(verbose_name='Bibliographic ID', max_length=10,
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4,
+      editable=False)
+
+    # Adding this to quell django import-export complaints about lack
+    # of id field
+    # id0 = models.AutoField(primary_key=True)
+
+    row_count = models.IntegerField(default=0)
+
+    batch_set = models.ForeignKey('BatchSet', blank=True, null=True,
+      db_index=True,
+      help_text="Imported BatchSet of which this row is a member.",
+      on_delete=models.CASCADE,)
+
+    # Note: delete of 1 effectively allows delete of this item before
+    # importing the same item again -- so that would be effectively an UPDATE
+    # for such item.
+    # TODO: once a batchSet is used with any maw process, should set
+    # delete=0 for all items in that batchset. This will freeze the
+    # items of the batchset for historical reports. IE, no future import
+    # for this batch set may be made, if dup insert errors on import
+    # prevent it).
+    delete =models.IntegerField(
+        verbose_name='Delete on next import of this item?',
+        unique=False, blank=False, null=False, default=1,
+        help_text= ("1 (delete on next import of this item) or 0 (do not)" ),
+        )
+
+    bibid = SpaceCharField(verbose_name='Bibliographic ID', max_length=10,
         unique=False, blank=False, null=False, default='',
         help_text= ("Enter alphabetic characters followed by digit characters"
           " for a total of 10 characters."),
@@ -166,9 +229,11 @@ class BatchItem(models.Model):
         )
 
     def __str__(self):
-        return str(f"{self.bib.upper()}_{self.vid}")
+        return str(f"{self.bibid.upper()}_{self.vid}")
 
-
+    class Meta:
+        unique_together = ["batch_set", "bibid","vid"]
+        #order_with_respect_to = 'batch_set'
 # end class BatchItem
 
 class ThesTree(MPTTModel):
@@ -203,6 +268,9 @@ class ThesTree(MPTTModel):
 
     def __str__(self):
         return str(self.name)
+
+    class MPTTMeta:
+        order_by = ['name']
 # end class ThesTree(MPTTModel)
 
 class RelatedTerm(models.Model):
@@ -317,8 +385,8 @@ class TermSuggestion(models.Model):
     # formulation (just jp2, just txt files used, maybe count of files etc)
     # (*) also the mets file is parsed if any, and metsterm rows are populated
 
-    note = SpaceTextField(max_length=2550, null=True, default='note', blank=True,
-      editable=True,)
+    note = SpaceTextField(max_length=2550, null=True, default='note',
+      blank=True, editable=True,)
     # Some value to consider adding here:
     # N  of pages, N of files of various types
     # time sent/received of api request/response
@@ -330,8 +398,8 @@ class TermSuggestion(models.Model):
     #and a retrieval for each individual page... etc.. and on and on
 
     #Note on how the text content was extracted from the bibvid
-    text_content_note = SpaceTextField(max_length=2550, null=True, default='note2',
-      blank=True, editable=True,)
+    text_content_note = SpaceTextField(max_length=2550, null=True,
+      default='note2', blank=True, editable=True,)
 
     # The optional filename in which is saved the content extracted from
     # this bibvid# and sent to Access Innovations that it used along with
@@ -420,7 +488,7 @@ class X2018Thesis(models.Model):
         verbose_name_plural='x2018 theses'
 
 class X2018Subject(models.Model):
-    # Must declar thesis as primary_key to suppress auto 'id'
+    # Must declare thesis as primary_key to suppress auto 'id'
     # field that django creates
     sn = models.IntegerField(primary_key=True)
     thesis = models.ForeignKey(X2018Thesis,
