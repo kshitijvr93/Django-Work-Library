@@ -11,10 +11,9 @@ from django.utils import timezone
 from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
 
 '''
-NOTE: rather than have a separate file router.py to host HathiRouter, I just
+NOTE: rather than have a separate file router.py to host  a db router, I just
 put it here. Also see settings.py should include this python import dot-path
 as one of the listed strings in the list setting for DATABASE_ROUTERS.
-
 '''
 # Maybe move the HathiRouter later, but for now keep here
 #
@@ -66,33 +65,45 @@ class Cuba_LibroRouter:
 
 #end class
 
-#  Define models here.
+#  Start to define models here.
 
 class Institution(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField('Institution name',
         max_length=255, unique=True,
-        default="", editable=True)
+        default='', editable=True)
+    xl = 20
     name20 = models.CharField('Short Name',
-        max_length=20, unique=True,
-        default="", editable=True,
-        help_text="Short Institution name with a maximum of 20 characters."
+        max_length=xl, unique=True,
+        default='', editable=True,
+        help_text=f'Short Institution name with a maximum of {xl} characters.'
        )
     link_url = models.URLField( 'Link_URL', blank=True, null=True)
     notes = SpaceTextField(null=True,  default='',
         blank=True,editable=True)
 
+    # NB: might be need to have oclc_code here permanently,
+    # but some versions of import program might make use of it
+
+    oclc_name = models.CharField('OCLC name',
+        max_length=xl, unique=False, blank=True,
+        default='', editable=True,
+        help_text='Optional Code used by OCLC for this Institution with a '
+          f'maximum of {xl} characters.')
+
     def __str__(self):
         return str(self.name20)
 
 
-# NB: keep this code as a reminder that admin does NOT
-# honor the user Foreign key - known issue that Django 2.1
+# NB: Remember that Django 2.1 admin does NOT
+# honor the user Foreign key to another db.
+# IT is ai known issue that Django 2.1
 # or lower does not support fkey to another db.
-# so using separate app "Profile" now with model cuba_libro
+# So this app "Profile" uses username as a simple char field now.
 # Whomever adds a row to this table must manually verify that the
 # username value for a row matches an auth_user username, which matches
-# the request.user value, which is a username
+# the request.user value, which is a usernama - or we might add
+# a separate validator program to check that
 
 class Profile(models.Model):
     id = models.AutoField(primary_key=True)
@@ -105,7 +116,8 @@ class Profile(models.Model):
     # so this way seems better.
     #user = models.ForeignKey(User)
     username = models.CharField(max_length=255, unique=True, null=False,
-      help_text="username of MAW user who is authorized to use the Cuba Libro Datbase.")
+      help_text="username of MAW user who is authorized to use the Cuba "
+        "Libro Datbase.")
 
     # Field name should probably be agency, maybe later.
     '''
@@ -302,21 +314,36 @@ class Item(models.Model):
         blank=True, editable=True)
 
     # index 40
-    user_1 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_2 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_3 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_4 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_5 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_6 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_7 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_8 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_9 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_10 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_11 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_12 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_13 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_14 = models.TextField(null=True, default='', blank=True, editable=False)
-    user_15 = models.TextField(null=True, default='', blank=True, editable=False)
+    user_1 = models.TextField(null=True, default='', blank=True,
+      editable=False)
+    user_2 = models.TextField(null=True, default='', blank=True,
+      editable=False)
+    user_3 = models.TextField(null=True, default='', blank=True,
+      editable=False)
+    user_4 = models.TextField(null=True, default='', blank=True,
+      editable=False)
+    user_5 = models.TextField(null=True, default='', blank=True,
+      editable=False)
+    user_6 = models.TextField(null=True, default='', blank=True,
+      editable=False)
+    user_7 = models.TextField(null=True, default='', blank=True,
+      editable=False)
+    user_8 = models.TextField(null=True, default='', blank=True,
+      editable=False)
+    user_9 = models.TextField(null=True, default='', blank=True,
+      editable=False)
+    user_10 = models.TextField(null=True, default='', blank=True,
+      editable=False)
+    user_11 = models.TextField(null=True, default='', blank=True,
+      editable=False)
+    user_12 = models.TextField(null=True, default='', blank=True,
+      editable=False)
+    user_13 = models.TextField(null=True, default='', blank=True,
+      editable=False)
+    user_14 = models.TextField(null=True, default='', blank=True,
+      editable=False)
+    user_15 = models.TextField(null=True, default='', blank=True,
+      editable=False)
 
     notes = SpaceTextField(null=True, default='',
         blank=True,editable=True)

@@ -28,7 +28,6 @@ sys.stdout.flush()
 #import etl
 print("Using sys.path={}".format(repr(sys.path)))
 
-
 ########## ORIGINAL DJANGO SETTINGS #############
 """
 For more information on this file, see

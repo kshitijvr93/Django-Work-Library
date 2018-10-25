@@ -201,7 +201,7 @@ class InstitutionAdmin(CubaLibroModelAdmin, ExportCvsMixin):
 
     # admin change list display fields to search
     # CHANGE LIST VIEW
-    search_fields = ['id','name20' ,'name', 'notes']
+    search_fields = ['id','name20' ,'name', 'oclc_name','notes']
 
     #date_hierarchy = 'agent_modify_date'
     actions = [
@@ -214,13 +214,14 @@ class InstitutionAdmin(CubaLibroModelAdmin, ExportCvsMixin):
          # 'accession_number',
          'name20',
          'name',
-         'notes',
+         'oclc_name',
          ]
 
     # EXPLICIT - (but this is also done implicitly, but implies you can
     # one or more link fields, and also need not use than the first)
-    list_display_links = [list_display[0],list_display[1]]
-    fields = list_display
+    # list_display_links = [list_display[0],list_display[1]]
+    list_display_links = list_display
+    fields = list_display + ['link_url','notes']
 
     # Control the admin change list order of displayed rows
     def get_ordering(self, request):
