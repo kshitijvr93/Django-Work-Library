@@ -21,6 +21,9 @@ from time import sleep
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
+import zlib
+import gzip
+
 #BatchSet = apps.get_model('dps','BatchSet')
 #BatchItem = apps.get_model('dps','BatchSet')
 
@@ -748,6 +751,7 @@ def make_jp2_packages(obj):
 
 # end def make_jp2_packages()
 
+# { start class Jp2Job}
 class Jp2Job(models.Model):
     '''
     Each row represents a run of the Hathitrust jp2_job package generator,
@@ -845,9 +849,207 @@ class Jp2Job(models.Model):
 
         # super().save(*args, **kwargs)
     # end def save()
-
-
     class Meta:
         verbose_name_plural='Jp2Jobs'
 
-#end class jp2batch
+# } end class jp2h
+
+
+def make_items_zip(obj, verbosity=1):
+    '''
+    Given a batch_set_id fkey into db table dps_batch_set,
+    for each bibvid item in the batch, generate a jp2-style Hathitrust
+    package under the UFDC maw_work directory.
+
+    This is usually called via thread in the background to
+    generate zip files of sets of resource items.
+    It is developed to support a call from
+    a save() or add method for new row to be added to model
+    hathitrust_items_zip.
+
+    '''
+    me = 'make_items_zip'
+    files_total = 0
+    if verbosity > 0:
+      print(f"{me}: Making items zip file for batch_set {obj.batch_set}")
+      sys.stdout.flush()
+
+    ufdc = maw_settings.HATHITRUST_UFDC
+    # input dir
+    resources = os.path.join(ufdc,'resources')
+    # msg += line(f'INPUT dir={in_dir}')
+
+    # make output dirs
+    # out_dir_bib = os.path.join(resources,'maw_work','hathitrust',bib_vid)
+    out_dir_batch = os.path.join(resources,
+        'maw_work','hathitrust','itemszip', str(obj.id))
+    os.makedirs(out_dir_batch, exist_ok=True)
+    log_filename = os.path.join(out_dir_batch,'log.txt')
+
+    print(f"{me}: Making zip file for batch_set {obj.batch_set}"
+        f" in {out_dir_batch}.")
+    sys.stdout.flush()
+
+    batch_items = BatchItem.objects.filter(batch_set=obj.batch_set_id)
+    item_count = len(batch_items)
+    with open(log_filename,'w') as log_file:
+        if verbosity > 0:
+          print(f"{me}: Starting with ItemsZip id={obj.id}, "
+            f"batch_set_id={obj.batch_set} "
+            f"Items(bibvid) count={item_count} ",
+            file=log_file)
+          log_file.flush()
+
+        item_count = len(batch_items)
+        for count, batch_item in enumerate(batch_items, start=1):
+            bib_vid = f"{batch_item.bibid}_{batch_item.vid}"
+            #utc_now = datetime.datetime.utcnow()
+            utc_now = timezone.now()
+            str_now = secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
+            msg = (
+              f"Processed {files_total} images. Processing bibvid {bib_vid},"
+              f" item {count} of {item_count} bibvids at {str_now}"
+            )
+
+            obj.files_processed = files_total
+            obj.items_zipped = item_count
+            obj.status = msg
+            obj.save()
+
+            resource_path = resource_path_by_bib_vid(bib_vid)
+            in_dir = resources + os.sep + resource_path
+
+            #out_dir_bib = os.path.join(out_dir_batch, bib_vid)
+            #os.makedirs(out_dir_bib, exist_ok=True)
+
+            #TODO implement make_item_copy
+            files_count = make_item_zip(in_dir=in_dir, out_dir_bib=out_dir_bib,
+                bib=batch_item.bibid, vid=batch_item.vid, log_file=log_file)
+
+            files_total += files_count
+        # end for bach_item in batch_items
+    # TODO: Here, now all item copies are made - create the final zip file
+
+    # end with... log_file
+    # By design, we MUST set status to non-Null, else will get into recursive
+    # loop. #utc_now = datetime.datetime.utcnow()
+    utc_now = timezone.now()
+    str_now =  utc_now.strftime("%Y-%m-%d %H:%M:%SZ")
+    obj.end_datetime = utc_now
+    obj.jp2_images_processed = jp2_total
+    obj.packages_created = item_count
+    obj.status = (
+      f"Finished:  {jp2_total} jp2 images in {item_count} packages in "
+      f"this batch {obj.id} "
+      f"are complete at {str_now}. See bib_vid output folders under "
+      f"{out_dir_batch}.")
+    obj.save()
+# } end def ItemsZip
+
+# { start class ZipJob
+class ItemsZip(models.Model):
+    '''
+    Each row represents a run of the Items file zip generator,
+    make_items_zip().
+
+    Very simple relation that represents the running of a batch job to create
+    A zipped package of items (from UFDC resources) suitable for unzipping into
+    a destination resources key-pair folder hierarchy.
+
+    The web user:
+    (1) uses admin to add a row to table hathitrust_job_zip,
+    (2) sets a batch_set id for the row, and
+    (3) when the user saves this row, the batch job to create zip file
+    for the resource items in the batch is launched.
+    To see that the batch job is completed, the user can either:
+    (1) check the log file in the output folder for proof that
+        the batch job is running or completed, assuming the user has permission
+        to check the output folder
+    (2) refresh the view of the hathitrust_job_zip row to see if the status
+        field reports it is finished. It may be convenient for users to save a
+        memorable value in the notes field upon initial saving so it can be
+        sought later to re-check the row.
+
+    '''
+
+    id = models.AutoField(primary_key=True)
+
+    batch_set = models.ForeignKey(BatchSet, blank=False, null=False,
+      db_index=True,
+      help_text="BatchSet for which to generate a zip file of resource items",
+      on_delete=models.CASCADE,)
+
+
+    create_datetime = models.DateTimeField('Run Start DateTime (UTC)',
+        null=True, editable=False)
+
+    #consider to populate user value later.. middleware seems best approach
+    # https://stackoverflow.com/questions/862522/django-populate-user-id-when-saving-a-model
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+      db_index=True, blank=True, null=True)
+
+    items_zipped = models.IntegerField(default=0, null=True,
+      help_text='Number of bib_vid items zipped by this job.')
+
+    files_processed = models.IntegerField(default=0, null=True,
+      help_text='Total number of files zipped by this job.')
+
+    uncompressed_bytes = models.IntegerField(default=0, null=True, help_text=
+      'Total number of uncompressed bytes encodded in this zip file.')
+
+    compressed_bytes = models.IntegerField(default=0, null=True, help_text=
+      'Total number of compressed bytes encodded in this zip file.')
+
+
+    '''
+    jp2_images_per_minute = models.IntegerField(default=0, null=True,
+      help_text='Approximate number of jp2 images packaged per minute so far '
+          f'for this batch.')
+
+    run_seconds = models.IntegerField(default=0, null=True,
+      help_text='Approximate number of jp2 images packaged per minute so far '
+          f'for this batch.')
+    '''
+
+    notes = SpaceTextField(max_length=2550, null=True, default='note',
+      blank=True, help_text= ("General notes about this batch job run"),
+      editable=True,
+      )
+    # Todo: batch job updates the end_datetime and status fields
+    end_datetime = models.DateTimeField('End DateTime (UTC)',
+        null=True,  editable=False)
+    status = SpaceTextField('Run Status',max_length=2550, null=True, default='',
+      blank=True, help_text= (
+        "Status of ongoing or completed run. Check for status updates "
+        "as packages are being built."),
+      editable=True,
+      )
+
+    def save(self,*args,**kwargs):
+        me = "ItemsZip.save()"
+
+        super().save(*args, **kwargs)
+        # if self.status is None or len(self.status) == 0:
+        if self.status is None or len(self.status) == 0:
+            # Only start this thread if status is not set
+            # Note: we super-saved before this clause becaue
+            # the thread uses/needs the autoassigne jp2batch.id value
+            # Note: may prevent row deletions later to preserve history,
+            # to support graphs of work history, etc.
+            thread = threading.Thread(target=make_items_zip, args=(self,))
+            thread.daemon = False
+            #process.start()
+            thread.start()
+            print(f"{me}: started thread.")
+            sys.stdout.flush()
+            #utc_now = datetime.datetime.utcnow()
+            utc_now = timezone.now()
+            self.create_datetime = utc_now
+            str_now = secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
+            self.status = f"Started processing at {str_now}"
+            # Save again so starting status appears immediately
+            super().save(*args, **kwargs)
+
+        # super().save(*args, **kwargs)
+    # end def save()
+# } start class ItemsZip
