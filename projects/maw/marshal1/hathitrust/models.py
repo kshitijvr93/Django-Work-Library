@@ -23,6 +23,8 @@ User = get_user_model()
 
 import zlib
 import gzip
+import tarfile
+from os import listdir
 
 #BatchSet = apps.get_model('dps','BatchSet')
 #BatchItem = apps.get_model('dps','BatchSet')
@@ -161,7 +163,6 @@ class Yaml(models.Model):
         return self.item.bib_vid
 
 
-
 class PrintScanYaml(models.Model):
     id = models.AutoField(primary_key=True)
     yaml = models.ForeignKey('Yaml', on_delete=models.CASCADE,
@@ -240,7 +241,6 @@ class DigitalBornYaml(models.Model):
 
     def __str__(self):
         return self.yaml.item.bib_vid
-
 
 # end class DigitalBornYaml
 
@@ -481,7 +481,17 @@ from shutil import copy2, make_archive, move
 
 def line(s=''):
     return '\n>' + s
-def resource_path_by_bib_vid(bib_vid=None):
+
+'''
+return sub_path without leading / for a bib_vid folder under the
+resources directory:
+
+Note: recent finding is that some 'old' bibs have no vid, so may need to tweak
+this if users want to use thos old bibs at some point.
+Also: other new or non-UF bibs in the future may have a variable number of
+leading characters or total length.
+'''
+def resource_sub_path_by_bib_vid(bib_vid=None):
     if not bib_vid:
         raise ValueError(f'Bad bib_vid={bib_vid}')
     parts = bib_vid.split('_')
@@ -726,7 +736,7 @@ def make_jp2_packages(obj):
             obj.packages_created = item_count
             obj.status = msg
             obj.save()
-            in_dir = resources + os.sep + resource_path_by_bib_vid(bib_vid)
+            in_dir = resources + os.sep + resource_sub_path_by_bib_vid(bib_vid)
 
             out_dir_bib = os.path.join(out_dir_batch, bib_vid)
             os.makedirs(out_dir_bib, exist_ok=True)
@@ -854,22 +864,20 @@ class Jp2Job(models.Model):
 
 # } end class jp2h
 
-
 def make_items_zip(obj, verbosity=1):
     '''
     Given a batch_set_id fkey into db table dps_batch_set,
-    for each bibvid item in the batch, generate a jp2-style Hathitrust
-    package under the UFDC maw_work directory.
+    for each the batchset of items,  generate a tar file of of those complete
+    items.
 
-    This is usually called via thread in the background to
-    generate zip files of sets of resource items.
+    This is usually called via thread in the background.
+
     It is developed to support a call from
     a save() or add method for new row to be added to model
     hathitrust_items_zip.
 
     '''
     me = 'make_items_zip'
-    files_total = 0
     if verbosity > 0:
       print(f"{me}: Making items zip file for batch_set {obj.batch_set}")
       sys.stdout.flush()
@@ -881,18 +889,31 @@ def make_items_zip(obj, verbosity=1):
 
     # make output dirs
     # out_dir_bib = os.path.join(resources,'maw_work','hathitrust',bib_vid)
-    out_dir_batch = os.path.join(resources,
-        'maw_work','hathitrust','itemszip', str(obj.id))
-    os.makedirs(out_dir_batch, exist_ok=True)
-    log_filename = os.path.join(out_dir_batch,'log.txt')
+    out_dir_zip = os.path.join(resources,
+        'maw_work','itemszip', f'job_{str(obj.id)}',)
+
+    os.makedirs(out_dir_zip, exist_ok=True)
+    log_filename = os.path.join(out_dir_zip,'log.txt')
+
+    # Recommendation: This tar file is to be untarred within a parent folder
+    # with last directory named 'resources', to help minimize confusion and
+    # maintain a conceptual relation to the required source input folder
+    tar_filename = os.path.join(out_dir_zip,'resource_items.tar')
 
     print(f"{me}: Making zip file for batch_set {obj.batch_set}"
-        f" in {out_dir_batch}.")
+        f" in {out_dir_zip}.")
     sys.stdout.flush()
 
     batch_items = BatchItem.objects.filter(batch_set=obj.batch_set_id)
     item_count = len(batch_items)
-    with open(log_filename,'w') as log_file:
+    files_total = 0
+    # create and write to tarfile...
+    #import tarfile
+    with (
+        open(log_filename,'w')) as log_file, (
+        tarfile.open(name=tar_filename, mode='w')) as tarfile_out:
+
+        # tar.add(name)
         if verbosity > 0:
           print(f"{me}: Starting with ItemsZip id={obj.id}, "
             f"batch_set_id={obj.batch_set} "
@@ -900,51 +921,74 @@ def make_items_zip(obj, verbosity=1):
             file=log_file)
           log_file.flush()
 
-        item_count = len(batch_items)
-        for count, batch_item in enumerate(batch_items, start=1):
+        items_count = len(batch_items)
+        for item_count, batch_item in enumerate(batch_items, start=1):
             bib_vid = f"{batch_item.bibid}_{batch_item.vid}"
             #utc_now = datetime.datetime.utcnow()
             utc_now = timezone.now()
             str_now = secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
             msg = (
-              f"Processed {files_total} images. Processing bibvid {bib_vid},"
-              f" item {count} of {item_count} bibvids at {str_now}"
+              f"Archived {files_total} files. Archiving bibvid {bib_vid},"
+              f" item {item_count} of {items_count} bibvids at {str_now}"
             )
 
-            obj.files_processed = files_total
-            obj.items_zipped = item_count
+            # UPDATE batchset values at the time of processing
+            # this bib_vid
+            obj.file_count = files_total
+            obj.items_count = item_count
             obj.status = msg
             obj.save()
 
-            resource_path = resource_path_by_bib_vid(bib_vid)
-            in_dir = resources + os.sep + resource_path
+            resource_sub_path = resource_sub_path_by_bib_vid(bib_vid)
+            input_dir = resources + os.sep + resource_sub_path
 
-            #out_dir_bib = os.path.join(out_dir_batch, bib_vid)
-            #os.makedirs(out_dir_bib, exist_ok=True)
+            msg = f'{me}: Tarring files for bib_bid {bib_vid}...'
+            if verbosity > 0:
+                print(msg, file=log_file)
+                log_file.flush()
 
-            #TODO implement make_item_copy
-            files_count = make_item_zip(in_dir=in_dir, out_dir_bib=out_dir_bib,
-                bib=batch_item.bibid, vid=batch_item.vid, log_file=log_file)
+            file_count = 0
+            try:
+                for path in list(Path(input_dir).glob(obj.glob)):
+                    file_count += 1
+                    input_file_name = input_dir + os.sep + path.name
+                    archive_name = ( resource_sub_path + os.sep
+                      + path.name )
+                    msg = (f'Tarring input file name={input_file_name} '
+                      f'to {archive_name}')
+                    print(msg, file=sys.stdout)
+                    print(msg, file=log_file)
+                    log_file.flush()
+                    tarfile_out.add(input_file_name, archive_name)
+                # end for file in in_dir
+            except Exception as ex:
+                # Possible glob syntax error, maybe others?
+                # todo: Create Django user message later..
+                print(f'***** exception={repr(ex)}',file=sys.stdout)
 
-            files_total += files_count
+                raise ValueError(f'Exception={repr(ex)}')
+
+            files_total += file_count
         # end for bach_item in batch_items
-    # TODO: Here, now all item copies are made - create the final zip file
+    # end with open log_file, tarfile_out
 
-    # end with... log_file
+    # Here, now all bibvid items have been visited and files added to tar_file
+    # TODO: simply make a zip file from the tar file and delete the tar_file
+
     # By design, we MUST set status to non-Null, else will get into recursive
     # loop. #utc_now = datetime.datetime.utcnow()
     utc_now = timezone.now()
     str_now =  utc_now.strftime("%Y-%m-%d %H:%M:%SZ")
     obj.end_datetime = utc_now
-    obj.jp2_images_processed = jp2_total
-    obj.packages_created = item_count
+    obj.item_count = item_count
     obj.status = (
-      f"Finished:  {jp2_total} jp2 images in {item_count} packages in "
+      f"Finished:  {files_total} files in {item_count} bib_vids in "
       f"this batch {obj.id} "
-      f"are complete at {str_now}. See bib_vid output folders under "
-      f"{out_dir_batch}.")
+      f"are complete at {str_now}. See output folder "
+      f"{out_dir_zip}.")
     obj.save()
-# } end def ItemsZip
+
+# } end def make_items_zip
 
 # { start class ZipJob
 class ItemsZip(models.Model):
@@ -979,6 +1023,10 @@ class ItemsZip(models.Model):
       help_text="BatchSet for which to generate a zip file of resource items",
       on_delete=models.CASCADE,)
 
+    glob = SpaceCharField(max_length=255,
+      help_text= "Glob file selector (Eg, *.* or *.jp2 or *.mets.xml, etc)",
+      default='*.mets.xml' )
+
 
     create_datetime = models.DateTimeField('Run Start DateTime (UTC)',
         null=True, editable=False)
@@ -988,10 +1036,10 @@ class ItemsZip(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
       db_index=True, blank=True, null=True)
 
-    items_zipped = models.IntegerField(default=0, null=True,
+    item_count = models.IntegerField(default=0, null=True,
       help_text='Number of bib_vid items zipped by this job.')
 
-    files_processed = models.IntegerField(default=0, null=True,
+    file_count = models.IntegerField(default=0, null=True,
       help_text='Total number of files zipped by this job.')
 
     uncompressed_bytes = models.IntegerField(default=0, null=True, help_text=
@@ -999,17 +1047,6 @@ class ItemsZip(models.Model):
 
     compressed_bytes = models.IntegerField(default=0, null=True, help_text=
       'Total number of compressed bytes encodded in this zip file.')
-
-
-    '''
-    jp2_images_per_minute = models.IntegerField(default=0, null=True,
-      help_text='Approximate number of jp2 images packaged per minute so far '
-          f'for this batch.')
-
-    run_seconds = models.IntegerField(default=0, null=True,
-      help_text='Approximate number of jp2 images packaged per minute so far '
-          f'for this batch.')
-    '''
 
     notes = SpaceTextField(max_length=2550, null=True, default='note',
       blank=True, help_text= ("General notes about this batch job run"),
