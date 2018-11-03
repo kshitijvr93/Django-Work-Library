@@ -176,8 +176,7 @@ class BatchSet(models.Model):
         )
 
     def __str__(self):
-        return (
-          f"{self.id}, {self.item_count} items from {self.import_filename}")
+        return ( f"{self.id}")
 
 # end class BatchSet
 
@@ -196,11 +195,11 @@ class BatchItem(models.Model):
     # of id field
     # id0 = models.AutoField(primary_key=True)
 
-    row_count = models.IntegerField(default=0)
+    row_count = models.IntegerField('Item',default=0)
 
     batch_set = models.ForeignKey('BatchSet', blank=True, null=True,
       db_index=True,
-      help_text="Imported BatchSet of which this row is a member.",
+      help_text="BatchSet ID that contains this item.",
       on_delete=models.CASCADE,)
 
     # Note: delete of 1 effectively allows delete of this item before

@@ -693,9 +693,9 @@ def make_jp2_packages(obj):
     obj.jp2_images_processed = jp2_total
     obj.packages_created = item_count
     obj.status = (
-      f"Finished:  {jp2_total} jp2 images in {item_count} packages in this batch {obj.id} "
-      f"are complete at {str_now}. See bib_vid output folders under "
-      f"{out_dir_batch}.")
+      f"Finished:  {jp2_total} jp2 images in {item_count} packages in this"
+      f" batch {obj.id} are complete at {str_now}. "
+      f"See bib_vid output folders under {out_dir_batch}." )
     obj.save()
 class Jp2Job(models.Model):
     '''
@@ -716,8 +716,8 @@ class Jp2Job(models.Model):
         to check the output folder
     (2) refresh the view of the jp2batch row to see if the status
         field is completed. It may be convenient for the user to save a
-        memorable value in the notes field upon initial saving so it can be sought
-        later to re-check the row.
+        memorable value in the notes field upon initial saving so it can be
+        sought later to re-check the row.
 
     '''
 
@@ -725,7 +725,7 @@ class Jp2Job(models.Model):
 
     batch_set = models.ForeignKey(BatchSet, blank=False, null=False,
       db_index=True,
-      help_text="BatchSet for which to generate Hathitrust JP2 Packages",
+      help_text="BatchSet to input to generate Hathitrust JP2 Packages",
       on_delete=models.CASCADE,)
 
 
