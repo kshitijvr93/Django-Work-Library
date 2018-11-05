@@ -169,12 +169,13 @@ def mets_xml_add_or_replace_subjects(input_file_name=None,
     utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
     utc_yyyy_mm_dd = utc_now.strftime("%Y_%m_%d")
 
-    parent_tag_name="mods:mods"
-    parent_xpath = f".//{parent_tag_name}"
+    parent_xpath = f".//mods:mods"
 
     child_tag_namespace = 'mods'
     child_tag_localname = 'subject'
     child_tag_name = f'{child_tag_namespace}:{child_tag_localname}'
+
+    replace_children = True
 
     # Get bib and vid from filename
     dot_parts = input_filename.split('.')
@@ -238,103 +239,78 @@ def mets_xml_add_or_replace_subjects(input_file_name=None,
     # Check for extant child - default behavior is to NOT insert child if
     # same type of node already exists
 
-    # if element tag name has a :, the namespace must exist in original xml
-    # todo: provide parameter to specify new namespace(s) too.
-    if child_tag_namespace is not None:
-        # put tag name in lxml-prescribed format in variable cet_name
-        # see: http://lxml.de/tutorial.html#namespaces
-        try:
-            namespace_ref = d_namespace[child_tag_namespace]
-        except Exception as e:
-            msg = ("Child namespace '{}' not allowed in this file. Skipping"
-                .format(child_tag_namespace))
-            print(msg, file=log_file)
-            return -2
+    mods_namespace = d_namespace['mods']
 
-        # ADDED cet_name (child element tag name) will use same
-        # namespace_ref as child_tag_namespace.
-        # Here it is the http:xxx string for 'mods'
-        # No colon is used in the 'long form' used for cet_name
-        cet_name = f"{{{namespace_ref}}}{child_model_element.tag}"
-        child_tag = f'{child_tag_namespace}:{child_model_element.tag}'
-    else:
-        # No namespace used, so child_tag equals cet_name, just the tag
-        # from the 'model' element
-        cet_name = child_model_element.tag
-        child_tag = cet_name
+    subject_name = f"{{{mods_namespace}}}subject"
+    subject_tag = "mods:subject"
 
-    #child_check_path = './/{}'.format(child_tag)
-    # child_check_path is the xpath to find all child nodes
-    # to be edited
+    topic_name = f"{{{mods_namespace}}}topic"
+    topic_tag = "mods:topic"
 
-    child_check_path = f'{child_tag}'
+    # subject_xpath is the xpath to find all child nodes
+    # to be edited/replaced
+
+    subject_xpath = f'{subject_tag}'
 
     if verbosity > 0:
-        print("Using child_check_path={}"
-          .format(child_check_path),file=log_file)
+        print(f"Using subject_xpath={subject_xpath}", file=log_file)
 
     child_nodes = parent_nodes[0].findall(
-        child_check_path, namespaces=d_namespace)
+        subject_xpath, namespaces=d_namespace)
 
     if child_nodes is not None and len(child_nodes) > 0:
         have_child = True
     else:
         have_child = False
 
-    if replace_children == False and have_child:
-        # Do not replace any target child elements found.
-        # Do not even try to merge in new child elments.
-        # Leave old children in place and skip this file
-        clen = len(child_nodes)
-        if verbosity > 0:
-            msg = ("{}: in {}, found {} extant '{}' child node occurences. "
-              "NOT adding . Skipping file."
-              .format(me, input_file_name,clen,child_check_path))
+    if replace_children == True:
+        # Delete the current but to-be removed obsolete child nodes
+        for obsolete in child_nodes:
+            otag = obsolete.tag
+
+            parent = obsolete.getparent()
+            parent.remove(obsolete)
+
+            msg= f"From parent='{parent}'',removed obsolete='{otag}'"
             print(msg, file=log_file)
-        return -2
-
-    if replace_children == True and have_child:
-        if replace_children == True:
-            # Delete the current but to-be removed obsolete child nodes
-            for obsolete in child_nodes:
-                parent = obsolete.getparent()
-                par0 = parent_nodes[0]
-                otag = obsolete.tag
-                parent.remove(obsolete)
-                print( f"From parent='{parent}'',removed obsolete='{otag}'"
-                    ,file=log_file)
-                msg = (f"From par0 '{par0}' removed otag='{otag}'")
-                print(msg, file=log_file)
-
-    # prepare to add the child element as either new or a replacement
-    # It is OK to add a new child here.
 
     if verbosity > 1:
         msg = ('{}: in {}, found PARENT to receive a new  node'
           .format(me, input_file_name))
         print(msg, file=log_file)
 
-
-    # Create a new child node to append for this parent in the METS tree
-    child_element = etree.Element(cet_name)
-    # for each found suggested term, insert a new mets 'subject' child node
+    # For each found suggested term, append a new mets 'subject' child node
     # stanza
-    for term in suggested_terms:
-        child_element.text = term
-        #Also set attributes for topic terms:
 
-        # So far there is no reason to expect mure than 1 parent, so we
-        # only append the child to this METS file's 'first' and probably
-        # 'the only' eligible parent.
-        parent_nodes[0].append(child_element)
+    for term_count, term in enumerate(suggested_terms, start=1):
+        # Create a new child node to append for this parent in the METS tree
+        # Review of LOC mets mods documentation about subject and topic
+        # elements indicates that # one topic per subject is the usual case.
+        # However, if one has separate values for a geographic country,
+        # region, city, it is normal to put
+        # all 3 geographic terms wihtin one subject element.
+        subject = etree.Element(subject_name)
+        sa = subject.attrib
+        sa['authority'] = 'jstor'
+        # To follow a year 12018 perceived SobekCM convention used in mets
+        # files, now use marc field followed by subject term count as the ID.
+        # Later, might want to include sub-fields for indicators, or for
+        # other bits of info we want to pack into the subject attribute
+        # ID value.
+        sa['ID'] = f'650_{term_count}'
+        parent_nodes[0].append(subject)
+
+        topic = etree.Element(topic_name)
+        topic.text = term
+        subject.append(topic)
+
         if verbosity > 1:
             print("Using etname='{}'".format(cet_name),file=log_file)
             msg = ("appended to parent {} the child {}"
                .format(parent_nodes[0].tag, child_element.tag))
             print(msg, file=log_file)
 
-
-    # Done modifying the in-memory document.
+    # Done modifying the in-memory document tree
     # Now output it in its file.
     # TODO: CHANGE AFTER TESTING
     # output_file_name = "{}.txt".format(input_file_name)
@@ -392,212 +368,6 @@ def mets_xml_add_or_replace_subjects(input_file_name=None,
         doctree.write(output_file, xml_declaration=True, encoding="utf-8")
     return 1
 # end def mets_xml_add_or_replace_subjects
-
-def file_add_or_replace_xml(input_file_name=None,
-    parent_tag_name=None,
-    child_tag_namespace=None,
-    child_model_element=None,
-    log_file=None,
-    replace_children=False,
-    input_encoding='latin-1', errors='ignore',
-    verbosity=0,):
-
-    me = 'file_add_or_replace_xml'
-
-    utc_now = datetime.datetime.utcnow()
-    utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-    utc_yyyy_mm_dd = utc_now.strftime("%Y_%m_%d")
-
-    parent_xpath = f".//{parent_tag_name}"
-
-    if verbosity > 0:
-        msg = ('{}: using input_file={}, parent_xpath={},child_tag_namespace={}'
-          .format(me, input_file_name, parent_xpath,child_tag_namespace))
-        print(msg, file=log_file)
-    # { see https://stackoverflow.com/questions/13590749/reading-unicode-file-data-with-bom-chars-in-python
-    # Jonathan Eunice message of 20180429
-    #
-    doctree, node_root_input = get_tree_and_root_from_file(
-        input_file_name=input_file_name,
-        log_file=log_file,
-        verbosity=verbosity)
-
-    if node_root_input is None:
-        return -1
-
-    # Create d_namespace - dictionary of namespace key or abbreviation
-    # name to namespace 'long name' values.
-    d_namespace = { key:value
-      for key,value in dict(node_root_input.nsmap).items()
-      if key is not None}
-
-    if verbosity > 1:
-        msg='--- {} NAMESPACE KEY VALUES ARE:'.format(me)
-        print(msg, file=log_file)
-        for key,value in d_namespace.items():
-            msg = ("{} : {}".format(key,value))
-            print(msg, file=log_file)
-
-    # Find the parent node(s) if any
-    parent_nodes = node_root_input.findall(
-        parent_xpath, namespaces=d_namespace)
-
-    if parent_nodes is None:
-        if verbosity > 0:
-            msg = ('{}: in {}, found NO parent node occurences. Skipping file.'
-              .format(me, input_file_name))
-            print(msg, file=log_file)
-        return -2
-
-    plen =len(parent_nodes)
-    if verbosity > 0:
-        msg = ('{}: in {}, found {} parent nodes'
-          .format(me, input_file_name, plen))
-        print(msg, file=log_file)
-
-    # Check for extant child - default behavior is to NOT insert child if
-    # same type of node already exists
-
-    # if element tag name has a :, the namespace must exist in original xml
-    # todo: provide parameter to specify new namespace(s) too.
-    if child_tag_namespace is not None:
-        # put tag name in lxml-prescribed format.
-        # see: http://lxml.de/tutorial.html#namespaces
-        try:
-            namespace_ref = d_namespace[child_tag_namespace]
-        except Exception as e:
-            msg = ("Child namespace '{}' not allowed in this file. Skipping"
-                .format(child_tag_namespace))
-            print(msg, file=log_file)
-            return -2
-
-        cet_name = f"{{{namespace_ref}}}{child_model_element.tag}"
-        # .format(namespace_ref, child_model_element.tag)
-        child_tag = f'{child_tag_namespace}:{child_model_element.tag}'
-    else:
-        cet_name = child_model_element.tag
-        child_tag = cet_name
-
-    #child_check_path = './/{}'.format(child_tag)
-    child_check_path = f'{child_tag}'
-
-    if verbosity > 0:
-        print("Using child_check_path={}"
-          .format(child_check_path),file=log_file)
-
-    child_nodes = parent_nodes[0].findall(
-        child_check_path, namespaces=d_namespace)
-
-    if child_nodes is not None and len(child_nodes) > 0:
-        have_child = True
-    else:
-        have_child = False
-
-    if replace_children == False and have_child:
-        # Do not replace any target child elements found.
-        # Leave old children in place and skip this file
-        clen = len(child_nodes)
-        if verbosity > 0:
-            msg = ("{}: in {}, found {} extant '{}' child node occurences. "
-              "NOT adding . Skipping file."
-              .format(me, input_file_name,clen,child_check_path))
-            print(msg, file=log_file)
-        return -2
-
-    if replace_children == True and have_child:
-        if replace_children == True:
-            # Delete these obsolete child nodes
-            for obsolete in child_nodes:
-                parent = obsolete.getparent()
-                par0 = parent_nodes[0]
-                otag = obsolete.tag
-                parent.remove(obsolete)
-                print( f"From parent='{parent}'',removed obsolete='{otag}'"
-                    ,file=log_file)
-                msg = (f"From par0 '{par0}' removed otag='{otag}'")
-                print(msg, file=log_file)
-
-    # prepare to add the child element as either new or a replacement
-    # It is OK to add a new child here.
-
-    if verbosity > 1:
-        msg = ('{}: in {}, found PARENT to receive a new  node'
-          .format(me, input_file_name))
-        print(msg, file=log_file)
-
-    # Create a new child node to append for this parent in the METS tree
-    child_element = etree.Element(cet_name)
-    child_element.text = child_model_element.text
-
-    # So far there is no reason to expect mure than 1 parent, so we
-    # only append the child to this METS file's 'first' and probably
-    # 'the only' eligible parent.
-    parent_nodes[0].append(child_element)
-    if verbosity > 1:
-        print("Using etname='{}'".format(cet_name),file=log_file)
-        msg = ("appended to parent {} the child {}"
-           .format(parent_nodes[0].tag, child_element.tag))
-        print(msg, file=log_file)
-
-
-    # Done modifying the in-memory document.
-    # Now output it in its file.
-    # TODO: CHANGE AFTER TESTING
-    # output_file_name = "{}.txt".format(input_file_name)
-    # Production
-
-    # Backup original mets file to a backup file under subfolder sobek_files
-    #
-    # First, construct the backup file name
-    vid_folder, relative_mets_file_name = os.path.split(input_file_name)
-    fparts = relative_mets_file_name.split('.')
-    # This extracts the bib_vid part of the mets.xml file name, assumed
-    # to comply with the ufdc *.mets.xml file naming convention
-    bib_vid = fparts[0]
-    backup_folder_name = f"{vid_folder}\\sobek_files\\"
-
-    # Just in case absent, make sure the backup dir is made
-    os.makedirs(backup_folder_name, exist_ok=True)
-
-    # Save the input file per UFDC conventions, in subfolder sobek_files
-    backup_file_basename = "{}_{}.mets.bak".format(bib_vid,utc_yyyy_mm_dd)
-    backup_file_name = ("{}{}"
-      .format(backup_folder_name, backup_file_basename))
-
-    # Make the file backup copy
-    if verbosity > 0:
-        msg="{} creating backup copy file='{}'".format(me,backup_file_name)
-        print(msg)
-        print(msg, file=log_file)
-        sys.stdout.flush()
-
-    # Use copy2 to preserve original creation date
-    # So the historical span of relevance for this record goes from
-    # the file metadata creation date to the file name's encoded
-    # archiving date
-    copy2(input_file_name, backup_file_name)
-
-    #Now overwrite the original input file
-
-    output_file_name = input_file_name
-    with open(output_file_name, 'wb') as output_file:
-        # NOTE: alt to next would be
-        # output_string = etree.tostring(node_root_input,
-         #   xml_declaration=True).decode('utf-8')
-        #output_string = (etree.tostring(
-        #    node_root_input, pretty_print=True).decode('utf-8'))
-
-        if verbosity > 0:
-            msg="Writing to output file={}".format(output_file_name)
-            print(msg, file=log_file)
-        #output_string = output_string.replace(xml_tag_replace_char, ':')
-        #REM: opened with mode='w' to output this type, a string
-        # output_file.write(output_string)
-        #doctree.write(output_file, xml_declaration=True)
-        #doctree.write(output_file, xml_declaration=True, encoding="utf-8")
-        doctree.write(output_file, xml_declaration=True, encoding="utf-8")
-    return 1
-# end def file_add_or_replace_xml
 
 '''
 mets_paths_backup_optional()
