@@ -116,7 +116,7 @@ def get_tree_and_root_from_file(input_file_name=None, log_file=None,
     verbosity=None):
     me = 'get_root_from_parsed_file_bytes'
 
-    parser = etree.XMLParser(remove_comments=False)
+    parser = etree.XMLParser(remove_comments=False, remove_blank_text=True)
 
     with open(input_file_name, mode='rb') as input_bytes_file:
 
@@ -356,22 +356,28 @@ def mets_xml_add_or_replace_subjects(
     #Now overwrite the original input file
 
     output_file_name = input_file_name
-    with open(output_file_name, 'wb') as output_file:
+    # Note: must open wb to use doctree.write(...), w
+    # Must open w to use tostring...? but no bytes get output...?
+    # with open(output_file_name, 'wb') as output_file:
+    with open(output_file_name, mode='w') as output_file:
         # NOTE: alt to next would be
         # output_string = etree.tostring(node_root_input,
          #   xml_declaration=True).decode('utf-8')
         #output_string = (etree.tostring(
         #    node_root_input, pretty_print=True).decode('utf-8'))
 
+
         if verbosity > 0:
             msg="Writing to output file={}".format(output_file_name)
             print(msg, file=log_file)
+
+        print(etree.tostring(node_root_input, pretty_print=True,
+            xml_declaration=True).decode('utf-8'), file=output_file)
+
         #output_string = output_string.replace(xml_tag_replace_char, ':')
         #REM: opened with mode='w' to output this type, a string
         # output_file.write(output_string)
-        #doctree.write(output_file, xml_declaration=True)
         #doctree.write(output_file, xml_declaration=True, encoding="utf-8")
-        doctree.write(output_file, xml_declaration=True, encoding="utf-8")
     return 1
 # end def mets_xml_add_or_replace_subjects
 
