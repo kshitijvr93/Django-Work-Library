@@ -62,7 +62,7 @@ def sequence_paths(log_file=None, input_folders=None, input_path_globs=None,
 
             #paths = list(Path(input_folder).glob(input_path_glob))
             # Use generator rather than create initial list
-            for path in Path(input_folder).glob(input_path_glob)
+            for path in Path(input_folder).glob(input_path_glob):
                 n_files += 1
                 yield path
 
@@ -141,7 +141,8 @@ def get_suggested_terms_by_category_bib_vid(category='TOPIC',
     # return_list = []
     return ['suggested_term1','suggested_term2','suggested_term3']
 
-def mets_xml_add_or_replace_subjects(input_file_name=None,
+def mets_xml_add_or_replace_subjects(
+    input_file_name=None,
     log_file=None, replace_children=False,
     input_encoding='latin-1', errors='ignore',
     verbosity=0,):
@@ -178,10 +179,16 @@ def mets_xml_add_or_replace_subjects(input_file_name=None,
     replace_children = True
 
     # Get bib and vid from filename
-    dot_parts = input_filename.split('.')
+    print(f"Got input_file_name={input_file_name}")
+    base_name =  os.path.basename(input_file_name)
+    print(f"Got base_name={base_name}")
+    dot_parts = base_name.split('.')
+    print(f"Got dot_parts={dot_parts}")
 
     # Assume the first dot_parts[0] is formatted like bib_vid
     bparts = dot_parts[0].split('_')
+    print(f"Got bparts={bparts}")
+
     bib = bparts[0]
     vid = bparts[1]
 
@@ -189,7 +196,6 @@ def mets_xml_add_or_replace_subjects(input_file_name=None,
         msg = ('{}: using input_file={}, parent_xpath={},child_tag_namespace={}'
           .format(me, input_file_name, parent_xpath,child_tag_namespace))
         msg += f'\nbib={bib}, vid={vid}'
-
         print(msg, file=log_file)
 
     # { see https://stackoverflow.com/questions/13590749/reading-unicode-file-data-with-bom-chars-in-python
@@ -305,9 +311,9 @@ def mets_xml_add_or_replace_subjects(input_file_name=None,
         subject.append(topic)
 
         if verbosity > 1:
-            print("Using etname='{}'".format(cet_name),file=log_file)
+            print(f"Using subject_name='{subject_name}'",file=log_file)
             msg = ("appended to parent {} the child {}"
-               .format(parent_nodes[0].tag, child_element.tag))
+               .format(parent_nodes[0].tag, subject.tag))
             print(msg, file=log_file)
 
     # Done modifying the in-memory document tree
@@ -508,12 +514,9 @@ def process_files(
                 log_file.flush()
                 sys.stdout.flush()
 
-            rv = file_add_or_replace_xml(
+            rv = mets_xml_add_or_replace_subjects(
                 log_file=log_file,
                 input_file_name=input_file_name,
-                parent_tag_name=parent_tag_name,
-                child_tag_namespace=child_tag_namespace,
-                child_model_element=child_model_element,
                 replace_children=replace_children,
                 verbosity=verbosity)
 
@@ -576,7 +579,7 @@ def run(backup_folder=None,
     if log_file_name is None:
         #datetime_string = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
         day_string = datetime.datetime.utcnow().strftime(strftime_format)
-        log_file_name = ("{}/mets_batch_edits_{}.txt"
+        log_file_name = ("{}/mets_subject_edits_{}.txt"
             .format(input_folder,day_string))
     else:
         log_file_name = ("{}/{}"
@@ -605,224 +608,49 @@ def run(backup_folder=None,
 
     print("{}:Using child namespace='{}'".format(me, child_tag_namespace)
         ,file=log_file)
-    print("{}:Using child local tag='{}'".format(me, child_model_element.tag)
-        ,file=log_file)
 
     input_file_folders = [input_folder]
 
-    n_files, n_changed, n_unchanged = process_files(
-      backup_folder=backup_folder,
-      input_folders=input_file_folders,
-      parent_tag_name=parent_tag_name,
-      child_tag_namespace=child_tag_namespace,
-      child_model_element=child_model_element,
-      file_globs=file_globs,
-      replace_children=replace_children,
-      log_file=log_file, verbosity=verbosity)
+    input_file_name = (
+      'F:\\ufdc\\resources\\LS\\00\\00\\00\\01\\test\\'
+      'LS00000001_test.mets.xml'
+      )
+    msg = f'{me}: using {input_file_name}'
+    print(msg)
+    print(msg, file=log_file)
+
+    rv = mets_xml_add_or_replace_subjects(
+                log_file=log_file,
+                input_file_name=input_file_name,
+                replace_children=replace_children,
+                verbosity=verbosity)
+
+    n_changed = 1
+    n_files = 1
 
     msg = ("{}: ENDING: Processed {} files, and added a child node to {}.\n"
        .format(me, n_files, n_changed))
     print(msg, file=log_file)
     print(msg)
     return
-
 #end def run()
-# end main code
 
+# end main code
 
 if __name__ == "__main__":
 
-    import argparse
-    parser = argparse.ArgumentParser()
-
-    #Hold of on making this a command line parameter for now.
-    #It could allow for critical outages
-
-    # Note: do default to get some settings from user
-    # config file, like passwords
-    # Add help to instruct about MY_SECRETS_FOLDER, etc.
-    # Arguments
-
-    '''
-    parser.add_argument("-v", "--verbosity",
-      type=int, default=1,
-      help="output verbosity integer (0 to 2)")
-
-    parser.add_argument("-i", "--input_folder",
-      #required=True,
-      # default="U:\\data\\elsevier\\output_exoldmets\\test_inbound\\",
-      help='All .DAT and .MON files anywhere under this folder will be read '
-          'for imports. The import program will here create the file or '
-          'overwrite a previous import log file.' )
-
-    parser.add_argument("-x", "--max_exception_logs_per_file",
-      type=int, default=5,
-      help='Maxiumum number of insert exceptions to report per input file.' )
-
-
-    parser.add_argument("-l", "--log_file_name",
-      #required=True,
-      # default="U:\\data\\elsevier\\output_exoldmets\\test_inbound\\",
-      help='This is the name of the output log file to be placed under your '
-      'input folder. If not given, the log_file_name defaults to'
-      'import_buoy_sensor_data_log.txt.'
-     )
-
-    args = parser.parse_args()
-    '''
-    # Settings for 20180620 la democracia bib
-    # PRODUCTION -
-    # backup_folder = ('C:\\rvp\\data\\backups\\mets_batch_editor')
     backup_folder = None
-    replace_children = False
-    #20180625b - use None as backup folder - now we assume we have sub folder
-    # sobek_files per item and write backup there
-    # bib_type =  1
-
-    # bib_type = 2
-    bib_type = 3
-
-    if bib_type == 1:
-        input_folder = ('F:\\ufdc\\resources\\AA'
-          '\\00\\05\\28\\74\\'
-          )
-        replace_children = False
-    # TESTING
-    # input_folder = ('c:\\rvp\\tmpdir\\' )
-    # input_folder = ('c:\\rvp\\data\\test_vids\\' )
-
-    ######## Set up args for xml node replacements
-    #
-
-    # { These variables will be runtime parameters
-
-        child_model_text = '''El periódico La Democracia, fundado y dirigido por
-Luis Muñoz Rivera en 1890 y publicado en principios desde Ponce, Puerto Rico.
-
-Abogó por los principios del Partido Autonomista, de corte liberal que
-buscaba mayores derechos con la Corona Española. Incluía temas políticos
-como situaciones internas de delegados y protestas del pueblo, mantenía
-diálogo con otros periódicos, publicaba las propuestas de los diputados a
-Cortes, los tratados de España con otros países y la insurrección de Cuba.
-En cuanto a lo económico, protestó la imposición de tarifas sobre azúcar y
-otros productos y la prohibición del café hacia Cuba, publicó protestas de
-comerciantes de San Juan y embargos de fincas. Apoyó la creación de
-Asociación de Agricultores, el Banco Agrícola y la Exposición Santurce, en
-busca de soluciones económicas, sin éxito.
-
-En 1895, al declararse la guerra de Cuba, y luego de la reorganización del
-Partido Autonomista, Muñoz Rivera viajó a Madrid en busca de la autonomía,
-desde donde escribía regularmente en el periódico. Entre 1896-98, el periódico
-concentró sus esfuerzos en el tema político hasta la elección de los
-Diputados, quienes nunca se reunieron por estallar la Guerra.
-'''
-    elif bib_type == 2:
-        input_folder = ('F:\\ufdc\\resources\\AA'
-          '\\00\\03\\16\\01\\'
-          )
-        # TESTING
-        # { These variables will be runtime parameters
-
-        replace_children = False
-        child_model_text = '''Como un eco de La Correspondencia de España, el
-diario La Correspondencia de Puerto Rico fue fundado por Ramón B. López en
-San Juan, el 18 de diciembre de 1890. Llegó a ser el periódico de mayor
-circulación y exposición popular, con precio de un centavo, y una tirada de
-5,000 ejemplares diarios. Por eso se le adjudicó el sobrenombre sarcástico
-de “El periódico de las cocineras”. Se inició en él el formato del
-periódico reporteril para llegar a las masas.
-En su tesis doctoral de Historia del 2007, Análisis histórico de la noción
-del “periodismo profesional” en Puerto Rico (del siglo XIX al XX),
-Luis Fernando Coss destacó los elementos de modernidad que la publicación
-de La Correspondencia de Puerto Rico supuso en los 1890. Una ruptura clara
-con el partidismo tradicional de la prensa, un interés en abordar asuntos de
-pertinencia general, más allá de los reclamos localistas de la prensa de la
-Capital, Ponce y Mayagüez, y un alarde de objetividad marcaron al nuevo periódico.
-La Correspondencia, en su cobertura de la discusión de los aranceles en
-1895, en su sobria discusión de los monopolios y las protestas urbanas
-contra ellos, y en su enfoque sobre la nueva guerra de independencia cubana
-alcanzó la atención de lectores de toda la isla. Para el investigador son
-importantes los textos de este periódico de los años 1897, 1898 y 1899.
-La instalación del gabinete autonómico, las elecciones de marzo de 1898,
-la Guerra Hispanoamericana, las dificultades del gobierno autonómico para
-conseguir financiamiento de las obras públicas,  la invasión de Puerto Rico,
-los primeros reportajes sobre la zona de ocupación estadounidense entre
-agosto y octubre de 1898, las transiciones de poder del gabinete autonómico
-al gobierno militar en 1899, así como las medidas de los gobernadores
-Guy V. Henry y George Davies en el difícil año de 1899, en torno a la
-jornada laboral de 8 horas, la suspensión de ejecuciones sobre hipotecas
-de propietarios agrícolas  y el canje de la moneda provincial por la
-norteamericana, especialmente después del huracán del día de San Ciriaco
-(8 de agosto) dan múltiples matices y detalles que no se encuentran
-fácilmente en otras publicaciones periódicas de la época.
-En sus inicios, la gerencia del periódico quiso proscribir la literatura;
-sin embargo, entrado el siglo XX y, sobre todo cuando Manuel Zeno Gandía
-compra el diario el 30 de abril de 1902, el médico y literato le dio otro
-giro, divulgando en sus columnas poemas de escritores valiosos y
-reconocidos posteriormente. Sirvió de ese modo como vehículo para la
-divulgación del modernismo literario en la isla. Durante la primera década
-del siglo XX tomó un giro político afiliado al partido Unión de Puerto Rico
-(1904) tras la consigna del gobierno propio o self-government y la
-definición del status, fungiendo como portavoz de las preocupaciones
-derivadas de la Ley Orgánica de 1900 (Ley Foraker) y la organización del
-gobierno civil, atento al progreso económico e intelectual de Puerto Rico.
-'''
-    # end if bib_type == 2
-    elif bib_type == 3:
-        #Request by Melissa Jerome via email 20180813 to rvp
-        input_folder = (
-          'F:\\ufdc\\resources\\AA\\00\\05\\28\\74\\'
-          )
-
-        replace_children = True
-        child_model_text = '''La Democracia
-
-El periódico La Democracia, fundado y dirigido por Luis Muñoz Rivera en 1890 y publicado en principios desde Ponce, Puerto Rico.
-
-Abogó por los principios del Partido Autonomista, de corte liberal que buscaba mayores derechos con la Corona Española. Incluía temas políticos como situaciones internas de delegados y protestas del pueblo, mantenía diálogo con otros periódicos, publicaba las propuestas de los diputados a Cortes, los tratados de España con otros países y la insurrección de Cuba. En cuanto a lo económico, protestó la imposición de tarifas sobre azúcar y otros productos y la prohibición del café hacia Cuba, publicó protestas de comerciantes de San Juan y embargos de fincas. Apoyó la creación de Asociación de Agricultores, el Banco Agrícola y la Exposición Santurce, en busca de soluciones económicas, sin éxito.
-
-En 1895, al declararse la guerra de Cuba, y luego de la reorganización del Partido Autonomista, Muñoz Rivera viajó a Madrid en busca de la autonomía, desde donde escribía regularmente en el periódico. Entre 1896-98, el periódico concentró sus esfuerzos en el tema político hasta la elección de los Diputados, quienes nunca se reunieron por estallar la Guerra Hispanoamericana. A principios de 1899, Muñoz Rivera viajó a Washington para exigir gobierno civil y fue respaldado por listas de liberales de todos los pueblos, publicadas en el periódico.
-
-Con la Ley Foraker, o el gobierno civil, continuaron las protestas en el periódico por quiebras, emigraciones a Cuba, mala calidad harinas importadas, Tarifa Dingley a importaciones, Bill Hollander, horrores de emigración a Hawaii, manifestaciones socialistas, exigencia a los maestros de pasar examen de inglés, celebración de días patrios de Estados Unidos, castigos corporales a los niños en las escuelas y la intromisión de los carpetbaggers. En 1904, Muñoz Rivera fundó un nuevo partido llamado Unión, para unir a federales y republicanos contra los atropellos de las leyes impuestas, e imposibilidad de acción de la Cámara de Delegados que el periódico llamó cámara de esclavos.
-
-El aspecto social y cultural de Puerto Rico a través de los anuncios y editoriales, es tema importante del periódico.  Antes del ’98, anuncios de compañías extranjeras como vapores de correos franceses, seguros contra incendios de Hamsburgo, compañía italiana de teatro, reseñas sobre vida en Haití y el circo americano, demuestran aperturas del mercado puertorriqueño.  Internamente, anuncios de actividades del Ateneo, certámenes literarios, de música y pintura, actividades del Círculo Sangermeño, de Escuela Laica Espiritista, problemas de la Iglesia Católica, Celebraciones del Cuarto Centenario, son huellas de vida cotidiana. Luego del ’99, se anuncia la New York Porto Rico Steamship Co. y la Colonial Leaf Tobacco Co., se diseña un nuevo escudo para Porto Rico, se legisla el Código Civil que permitía el divorcio, se comienza a discutir el feminismo, y se distribuyen pasaportes puertorriqueños.
-
-Para 1905, el periódico se anuncia como el de más circulación de Puerto Rico y con su sede en San Juan.  Para esa época, es uno comercial y más interesado en la noticia que se crea desde la esferas gubernamentales.
-
-        '''
-    else:
-        raise ValueError("Unknown bib_type={}}.format(bit_type)")
-
-    # These element names will be runtime params
-    parent_tag_name="mods:mods"
-    child_tag_name = 'mods:abstract'
-    # }
-
-    eparts = child_tag_name.split(':')
-    if len(eparts) == 2:
-        child_tag_namespace = eparts[0]
-        child_tag_localname = eparts[1]
-    else:
-        child_tag_namespace = ''
-        child_tag_localname = child_tag_name
-
-    # child_model_element is the node to insert under parent if it lacks a
-    # child node like child_model_element
-    # or there is no child check path defined
-    child_model_element = etree.Element(child_tag_localname)
-
-    #Preset the child_model_element with the desired new text, hence
-    #the '_model_' part of its name.
-    child_model_element.text = child_model_text
-    sys.stdout.flush()
+    input_folder = (
+      'F:\\ufdc\\resources\\LS\\00\\00\\00\\01\\test\\'
+      )
 
     run(backup_folder=backup_folder, input_folder=input_folder,
-        log_file_name='batchlog.txt',
+        log_file_name='mets_subject_edit_log.txt',
         file_globs = ['**/*.mets.xml'],
-        parent_tag_name=parent_tag_name,
-        child_tag_namespace=child_tag_namespace,
-        child_model_element=child_model_element,
-        replace_children=replace_children,
+        parent_tag_name=None,
+        child_tag_namespace=None,
+        child_model_element=None,
+        replace_children=True,
         verbosity=2)
 
 #end if __name__ == "__main__"
