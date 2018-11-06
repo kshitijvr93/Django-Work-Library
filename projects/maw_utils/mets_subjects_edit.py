@@ -13,7 +13,7 @@ import codecs
 from copy import deepcopy
 
 from tempfile import NamedTemporaryFile, mkstemp, TemporaryFile
-from shutil import move, copyfile, copy, copy2
+from shutil import move, copy, copy2
 from os import remove
 
 
@@ -115,8 +115,16 @@ def get_root_from_file_bytes(input_file_name=None, log_file=None,
 def get_tree_and_root_from_file(input_file_name=None, log_file=None,
     verbosity=None):
     me = 'get_root_from_parsed_file_bytes'
+    '''
+    Parse given input file as an xml document
+    For any exception, write it to give logfile and return None, None
 
-    parser = etree.XMLParser(remove_comments=False, remove_blank_text=True)
+    Parse the document and return tuple of doctree and doctree.get_root()
+    '''
+
+    #parser = etree.XMLParser(remove_comments=False, remove_blank_text=True)
+    parser = etree.XMLParser(encoding='utf-8',remove_comments=False)
+    etree.set_default_parser(parser)
 
     with open(input_file_name, mode='rb') as input_bytes_file:
 
@@ -356,28 +364,45 @@ def mets_xml_add_or_replace_subjects(
     #Now overwrite the original input file
 
     output_file_name = input_file_name
-    # Note: must open wb to use doctree.write(...), w
-    # Must open w to use tostring...? but no bytes get output...?
+
+    if verbosity > 0:
+        msg="Writing to output file={}".format(output_file_name)
+        print(msg, file=log_file)
+
+    # Note: must open with mode='wb' to use doctree.write(...), eg:
     # with open(output_file_name, 'wb') as output_file:
-    with open(output_file_name, mode='w') as output_file:
-        # NOTE: alt to next would be
-        # output_string = etree.tostring(node_root_input,
-         #   xml_declaration=True).decode('utf-8')
-        #output_string = (etree.tostring(
-        #    node_root_input, pretty_print=True).decode('utf-8'))
+    # but must open w to use tostring...to do pretty_print=True, eg:
+    # with open(output_file_name, mode='w') as output_file:
+    pretty = False
+    pretty = True
+    binary = True
+    if pretty:
+        binary = True
+        if binary:
+            with open(output_file_name, mode='wb') as output_file:
+                # NOTE: Experiments show that method tostring also
+                # honors param 'encoding'. But cannot find ref doc yet.
+                output = etree.tostring(node_root_input,
+                    pretty_print=True, xml_declaration=True, encoding="UTF-8",
+                    # remove_comments=False, # unexpected
+                    )
+                output_file.write(output)
+        else:
+            with open(output_file_name, mode='w') as output_file:
+                # NOTE: this xml declaration says encoding='ASCII'
+                print(etree.tostring(node_root_input, pretty_print=True,
+                    xml_declaration=True, encoding="UTF-8").decode('utf-8'),
+                    file=output_file)
+    else:
+        with open(output_file_name, mode='wb') as output_file:
+            # NOTE: this xml declaration says encoding='UTF-8'
+            doctree.write(output_file, xml_declaration=True, encoding="utf-8")
 
+    msg = f"{me}: pretty={pretty},binary={binary},output_file={output_file}"
+    if verbosity > 0:
+        print(msg,file=log_file)
+        print(msg)
 
-        if verbosity > 0:
-            msg="Writing to output file={}".format(output_file_name)
-            print(msg, file=log_file)
-
-        print(etree.tostring(node_root_input, pretty_print=True,
-            xml_declaration=True).decode('utf-8'), file=output_file)
-
-        #output_string = output_string.replace(xml_tag_replace_char, ':')
-        #REM: opened with mode='w' to output this type, a string
-        # output_file.write(output_string)
-        #doctree.write(output_file, xml_declaration=True, encoding="utf-8")
     return 1
 # end def mets_xml_add_or_replace_subjects
 
