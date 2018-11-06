@@ -65,7 +65,7 @@ def ocr_by_pdf(pdf_file_name=None,
        'bin', 'pdftk',)
 
     convert = os.path.join('C:',os.sep,'Program Files',
-       'ImageMagick-7.0.8','convert',)
+       'ImageMagick-7.0.8-Q16','convert',)
 
     if removable_output_folder is None:
         raise ValueError("No removable_output_folder")
@@ -97,13 +97,12 @@ def ocr_by_pdf(pdf_file_name=None,
         sys.stdout.flush()
     pdftk.wait()
 
-
     # Now for each pdf file, convert it to tif and run tesseract on the tif
     if verbosity > 0:
         print(f"Created temporary pdf page files.")
 
     n_pages = 0
-    paths = Path(cwd).glob('*.pdf')
+    paths = Path(cwd).glob('pg_*.pdf')
     for path in paths:
         n_pages += 1
         stem = path.name.split('.')[0]
@@ -113,20 +112,20 @@ def ocr_by_pdf(pdf_file_name=None,
             break
 
         # convert this page pdf to a tif
-        cmd = (f'{convert} -density {dpi} {path.name} --depth '
+        cmd = (f'{convert} -density {dpi} {path.name} -depth '
                f'{depth} {stem}.tif')
 
         if verbosity > 0:
             print(f"Converting pdf page file '{path.name}' to tif")
             print(f"Running subprocess cmd='{cmd}',\nand cwd='{cwd}'")
 
-        #convert = subprocess.Popen(cmd, cwd=cwd)
-        #convert.wait()
+        convert = subprocess.Popen(cmd, cwd=cwd)
+        convert.wait()
 
         #Use tesseract to produce output for this tif
         tif_name = f'{abs_stem}.tif'
 
-        if len(text_ext) > 0 and 1 == 2 :
+        if len(text_ext) > 0:
             if verbosity > 0:
                 print(f"Doing OCR on tif page file {tif_name}")
             text = pytesseract.image_to_string(
@@ -162,7 +161,7 @@ def ocr_by_pdf(pdf_file_name=None,
             output = pytesseract.image_to_pdf_or_hocr(
                 Image.open(f'{tif_name}'),lang=lang)
             output_file_name = f'{stem}.{pdf_or_hocr_ext}'
-            with open(output_file_name,'w') as output_file:
+            with open(output_file_name,'wb') as output_file:
                 output_file.write(output)
 
     #end for path in paths (pdf page files)
@@ -177,12 +176,12 @@ def ocr_by_pdf(pdf_file_name=None,
 # print(pytesseract.image_to_string( Image.open(r'c:\rvp\data\0017.jpg'),lang='fra'))
 
 input_dir = os.path.join('C:',os.sep,'rvp','data',
-   '20181106_alexis_chelsea_pdfs_for_tesseract', 'bohemia for robert',
-   'bohemia for robert',)
+   '20181106_alexis_chelsea_pdfs_for_tesseract', 'bohemia_for_robert',
+   'bohemia_for_robert',)
 
 removable_output_folder = os.path.join('C:',os.sep,'rvp','data',
-   '20181106_alexis_chelsea_pdfs_for_tesseract', 'bohemia for robert',
-   'bohemia for robert','output_dir',)
+   '20181106_alexis_chelsea_pdfs_for_tesseract', 'bohemia_for_robert',
+   'bohemia_for_robert','output_dir',)
 
 '''
 Note: had to use 'convert' to convert original pdf to tif first for tesseract:
@@ -196,6 +195,7 @@ print(f"Using pdf_file_name {pdf_file_name}, and calling ocr_by_pdf()")
 print(f"Using removable_output_folder {removable_output_folder}")
 
 ocr_by_pdf(pdf_file_name=pdf_file_name,
-  removable_output_folder=removable_output_folder)
+  removable_output_folder=removable_output_folder,
+  pdf_or_hocr_ext='hocr',)
 
 print("Done!")
