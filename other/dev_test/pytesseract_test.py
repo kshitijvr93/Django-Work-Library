@@ -153,14 +153,18 @@ def ocr_by_pdf(pdf_file_name=None,
         if len(orientation_ext) > 0:
             output = pytesseract.image_to_osd(
                 Image.open(f'{tif_name}'),lang=lang)
-            output_file_name = f'{stem}.{orientation_ext}'
+            output_file_name = f'{abs_stem}.{orientation_ext}'
             with open(output_file_name,'w') as output_file:
                 output_file.write(output)
 
         if len(pdf_or_hocr_ext) > 0:
             output = pytesseract.image_to_pdf_or_hocr(
                 Image.open(f'{tif_name}'),lang=lang)
-            output_file_name = f'{stem}.{pdf_or_hocr_ext}'
+            output_file_name = f'{abs_stem}.{pdf_or_hocr_ext}'
+            if verbosity > 0:
+                print(
+                f"Doing pdf or hocr calcs on tif page file {tif_name} "
+                f"\nto create output_file '{output_file}'")
             with open(output_file_name,'wb') as output_file:
                 output_file.write(output)
 
