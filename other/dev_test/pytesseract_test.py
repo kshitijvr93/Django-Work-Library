@@ -105,14 +105,14 @@ def ocr_by_pdf(pdf_file_name=None,
     cmd = f'{pdftk} {pdf_file_name} burst'
     cwd = removable_output_folder
     if verbosity > 0:
-        print(f"{now()}:{me}:Using removable_output_folder {cwd}",file=lf)
-        print(f"{now()}:{me}:Using searchable_pdf_folder {searchable_pdf_folder}",
+        print(f"{now()}:{me}:removable_output_folder {cwd}",file=lf)
+        print(f"{now()}:{me}:searchable_pdf_folder {searchable_pdf_folder}",
           file=lf)
         print(
-          f"{now()}:{me}:Bursting pdf file '{pdf_file_name}' "
+          f"{now()}:{me}:Bursting/splittng '{pdf_file_name}' "
           "to multiple pdf page files.", file=lf)
         print(f"{now()}:{me}:Running subprocess cmd='{cmd}',\nand cwd='{cwd}'",
-          flush=True, file=lf)
+          file=lf, flush=True)
     pdftk_proc = subprocess.Popen(cmd, cwd=cwd)
     pdftk_proc.wait()
 
@@ -282,11 +282,13 @@ pdf_file_names = [
 
 pdf_file_name = os.path.join(input_dir, pdf_file_names[0])
 max_pages = 4
+remove_tifs = False
+verbosity = 1
 
 with open(r'C:\\rvp\\data\\tesseract\\test_log.txt', mode='w') as lf:
    run(log_file=lf,
-       max_pages=7,
-       pdf_file_name = pdf_file_name,
+       max_pages=max_pages,
+       pdf_file_name=pdf_file_name,
        removable_output_folder=removable_output_folder,
-       remove_tifs=False,
-       verbosity=1)
+       remove_tifs=remove_tifs,
+       verbosity=verbosity)
