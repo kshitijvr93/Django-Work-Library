@@ -1,4 +1,5 @@
 import os,sys
+import datetime
 import subprocess
 import shutil
 from pathlib import Path
@@ -41,8 +42,10 @@ def ocr_by_pdf(pdf_file_name=None,
     orientation_ext='', # 'osd' is suggested
     # Next param: use 'pdf' for searchable_pdf,
     # or 'hocr' for HOCR output (per tesseract docs)
-    pdf_or_hocr_ext='', #'pdf' or 'hocr'. Others ok?
-    max_pages=10000,
+    pdf_or_hocr_ext='pdf', #'pdf' or 'hocr'. Others ok?
+    max_pages=2,
+    remove_tifs=True,
+    log_file=None,
     verbosity=1):
     '''
     IMPORTANT NOTE: The removable_output_folder will be completely removed of
@@ -59,6 +62,12 @@ def ocr_by_pdf(pdf_file_name=None,
 
     See tesseract docs for the *_ext use cases:
     https://pypi.org/project/pytesseract/
+
+    todo: accept list of extensions, each type mapped to a tesseract method,
+    and if an extension maps to a method, run that and produce file with
+    that extension. Easier than setting many vars and also provides
+    new support that allows both
+    production of searchable pdf and hocr file in one call to this method.
     '''
     me = 'ocr_by_multipdf'
     pdftk = os.path.join('C:',os.sep,'Program Files (x86)','PDFtk',
@@ -67,6 +76,10 @@ def ocr_by_pdf(pdf_file_name=None,
     convert = os.path.join('C:',os.sep,'Program Files',
        'ImageMagick-7.0.8-Q16','convert',)
 
+    if log_file is None:
+        log_file = sys.stdout
+    lf = log_file
+
     if removable_output_folder is None:
         raise ValueError("No removable_output_folder")
 
@@ -74,10 +87,16 @@ def ocr_by_pdf(pdf_file_name=None,
     try:
         shutil.rmtree(removable_output_folder)
     except Exception as exc:
-        print(f"shutil.rmtree(): Ignoring exc={exc}")
+        print(f"shutil.rmtree(): Ignoring exc={exc}", file=lf)
         pass
 
     os.makedirs(removable_output_folder, exist_ok=True)
+
+    searchable_pdf_folder = os.path.join(removable_output_folder,
+      'searchable_pdf')
+
+    os.makedirs(removable_output_folder, exist_ok=True)
+    os.makedirs(searchable_pdf_folder, exist_ok=True)
 
     # Copy the pdf_file_name to the removable_output_folder before working with it
     shutil.copy(pdf_file_name, removable_output_folder)
@@ -86,20 +105,25 @@ def ocr_by_pdf(pdf_file_name=None,
     cmd = f'{pdftk} {pdf_file_name} burst'
     cwd = removable_output_folder
     if verbosity > 0:
-        print(f"{me}:Using removable_output_folder {cwd}")
-    if verbosity > 0:
-        print(f"{me}:Bursting pdf file '{pdf_file_name}' to multiple pdf page files.")
-        print(f"{me}:Running subprocess cmd='{cmd}',\nand cwd='{cwd}'")
-        sys.stdout.flush()
+        print(f"{now()}:{me}:Using removable_output_folder {cwd}",file=lf)
+        print(f"{now()}:{me}:Using searchable_pdf_folder {searchable_pdf_folder}",
+          file=lf)
+        print(
+          f"{now()}:{me}:Bursting pdf file '{pdf_file_name}' "
+          "to multiple pdf page files.", file=lf)
+        print(f"{now()}:{me}:Running subprocess cmd='{cmd}',\nand cwd='{cwd}'",
+          file=lf)
+        lf.flush()
     pdftk_proc = subprocess.Popen(cmd, cwd=cwd)
-    if verbosity > 0:
-        print(f"{me}:waiting for pdftk_proc....")
-        sys.stdout.flush()
     pdftk_proc.wait()
+    if verbosity > 0:
+        print(f"{now()}:{me}:{now()}: pdftk_proc done splitting pdf pages....",
+          file=lf)
+        lf.flush()
 
     # Now for each pdf file, convert it to tif and run tesseract on the tif
     if verbosity > 0:
-        print(f"Created temporary pdf page files.")
+        print(f"{now()}:Created temporary pdf page files.",file=lf)
 
     n_pages = 0
     paths = Path(cwd).glob('pg_*.pdf')
@@ -107,6 +131,12 @@ def ocr_by_pdf(pdf_file_name=None,
         n_pages += 1
         stem = path.name.split('.')[0]
         abs_stem = f'{cwd}{os.sep}{stem}'
+        searchable_stem = (
+            f'{searchable_pdf_folder}{os.sep}{stem}_searchable')
+        if verbosity > 0:
+            print(
+              f"abs_stem={abs_stem},\nsearchable_stem={searchable_stem}",
+              file=lf)
 
         if n_pages > max_pages:
             break
@@ -116,90 +146,129 @@ def ocr_by_pdf(pdf_file_name=None,
                f'{depth} {stem}.tif')
 
         if verbosity > 0:
-            print(f"Converting pdf page file '{path.name}' to tif")
-            print(f"Running subprocess cmd='{cmd}',\nand cwd='{cwd}'")
+            print(f"{me}:Converting pdf page file '{path.name}' to tif",
+              file=lf)
+            print(f"{now()}:{me}:Running subprocess cmd='{cmd}',\nand cwd='{cwd}'",
+              file=lf)
 
         convert_proc = subprocess.Popen(cmd, cwd=cwd)
         convert_proc.wait()
+        print(f"{now()}:{me}:Done running subprocess'",
+          file=lf)
 
         #Use tesseract to produce output for this tif
-        tif_name = f'{abs_stem}.tif'
+        abs_tif_name = f'{abs_stem}.tif'
 
         if len(text_ext) > 0:
             if verbosity > 0:
-                print(f"Doing OCR on tif page file {tif_name}")
+                print(f"{now()}:Doing OCR on tif page file {abs_tif_name}", file=lf)
             text = pytesseract.image_to_string(
-                Image.open(f'{tif_name}'),lang=lang)
+                Image.open(f'{abs_tif_name}'),lang=lang)
+            if verbosity > 0:
+                print(f"{now()}:Done doing OCR on tif page file {abs_tif_name}", file=lf)
             output_file_name = f'{abs_stem}.{text_ext}'
-            with open(output_file_name,mode='w', encoding='utf-8') as output_file:
+            with open(\
+                output_file_name, mode='w', encoding='utf-8') as output_file:
                 output_file.write(text)
 
         if len(bounding_box_ext) > 0:
             if verbosity > 0:
-                print(f"Doing bounding box calcs on tif page file {tif_name}")
+              print(
+                f"{now()}:Doing bounding box calcs on tif page file {abs_tif_name}",
+                file=lf)
             output = pytesseract.image_to_boxes(
-                Image.open(f'{tif_name}'),lang=lang)
+                Image.open(f'{abs_tif_name}'),lang=lang)
             output_file_name = f'{abs_stem}.{bounding_box_ext}'
             with open(output_file_name,'w') as output_file:
                 output_file.write(output)
 
         if len(verbose_ext) > 0:
             output = pytesseract.image_to_data(
-                Image.open(f'{tif_name}'),lang=lang)
+                Image.open(f'{abs_tif_name}'),lang=lang)
             output_file_name = f'{abs_stem}.{verbose_ext}'
             with open(output_file_name,'w') as output_file:
                 output_file.write(output)
 
         if len(orientation_ext) > 0:
             output = pytesseract.image_to_osd(
-                Image.open(f'{tif_name}'),lang=lang)
+                Image.open(f'{abs_tif_name}'),lang=lang)
             output_file_name = f'{abs_stem}.{orientation_ext}'
             with open(output_file_name,'w') as output_file:
                 output_file.write(output)
 
-        if len(pdf_or_hocr_ext) > 0:
-            output = pytesseract.image_to_pdf_or_hocr(
-                Image.open(f'{tif_name}'),lang=lang)
-            output_file_name = f'{abs_stem}.{pdf_or_hocr_ext}'
+        if ( len(pdf_or_hocr_ext) > 0
+            and pdf_or_hocr_ext == 'pdf'
+            ):
+            output_file_name = f'{searchable_stem}.{pdf_or_hocr_ext}'
             if verbosity > 0:
                 print(
-                f"Doing pdf or hocr calcs on tif page file {tif_name} "
-                f"\nto create output_file '{output_file}'")
+                f"{now()}:Doing pdf or hocr calcs on tif page file {abs_tif_name} "
+                f"\nto create output_file '{output_file_name}'",file=lf)
+            output = pytesseract.image_to_pdf_or_hocr(
+                Image.open(f'{abs_tif_name}'),lang=lang)
+            if verbosity > 0:
+                print(
+                f"{now()}:Done doing pdf or hocr calcs", file=lf)
             with open(output_file_name,'wb') as output_file:
                 output_file.write(output)
-
+        if remove_tifs == True:
+            os.remove(abs_tif_name)
+        lf.flush()
     #end for path in paths (pdf page files)
     return n_pages
 #end  ocr_by_pdf(pdf_file_name=None,
 
+def now():
+    return datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
-# NOTE lang eng works OK, but lang spa causes similar error output,
-# except error differs:
-# pytesseract.pytesseract.TesseractError: (3221225477, '')
+def run(input_dir=None, removable_output_folder=None,
+    log_file=None, remove_tifs=True, verbosity=1):
+    # NOTE lang eng works OK, but lang spa causes similar error output,
+    # except error differs:
+    # pytesseract.pytesseract.TesseractError: (3221225477, '')
 
-# print(pytesseract.image_to_string( Image.open(r'c:\rvp\data\0017.jpg'),lang='fra'))
+    # print(pytesseract.image_to_string( Image.open(r'c:\rvp\data\0017.jpg'),lang='fra'))
+    me = 'run'
+    if log_file is None:
+        log_file = sys.stdout
+    lf = log_file
 
-input_dir = os.path.join('C:',os.sep,'rvp','data',
-   '20181106_alexis_chelsea_pdfs_for_tesseract', 'bohemia_for_robert',
-   'bohemia_for_robert',)
+    print(f"{me}: starting at {now()}",file=lf)
+    if input_dir is None or removable_output_folder is None:
+        input_dir = os.path.join('C:',os.sep,'rvp','data',
+         '20181106_alexis_chelsea_pdfs_for_tesseract', 'bohemia_for_robert',
+         'bohemia_for_robert',)
 
-removable_output_folder = os.path.join('C:',os.sep,'rvp','data',
-   '20181106_alexis_chelsea_pdfs_for_tesseract', 'bohemia_for_robert',
-   'bohemia_for_robert','output_dir',)
+        removable_output_folder = os.path.join('C:',os.sep,'rvp','data',
+         '20181106_alexis_chelsea_pdfs_for_tesseract', 'bohemia_for_robert',
+         'bohemia_for_robert','output_dir2',)
 
-'''
-Note: had to use 'convert' to convert original pdf to tif first for tesseract:
-$ convert -density 300 2_Enero_1921_1.pdf 2_Enero_1921_1.tif
-And that took about a minute on my pc for this 6mb pdf file.
-So may need high cap computing help for large jobs.
-'''
-pdf_file_name = os.path.join(input_dir, '2_Enero_1921_1.pdf')
+    '''
+    Note: had to use 'convert' to convert original pdf to tif first for
+    tesseract:
+    $ convert -density 300 2_Enero_1921_1.pdf 2_Enero_1921_1.tif
+    And that took about a minute on my pc for this 6mb pdf file.
+    So may need high cap computing help for large jobs.
+    '''
+    pdf_file_names = [
+        '2_Enero_1921_1.pdf', #6mb
+        '22_Septiembre_1935.pdf', #235mb
+        ]
 
-print(f"Using pdf_file_name {pdf_file_name}, and calling ocr_by_pdf()")
-print(f"Using removable_output_folder {removable_output_folder}")
+    pdf_file_name = os.path.join(input_dir, pdf_file_names[0])
 
-ocr_by_pdf(pdf_file_name=pdf_file_name,
-  removable_output_folder=removable_output_folder,
-  pdf_or_hocr_ext='hocr',)
+    print(f"{me}:Using pdf_file_name {pdf_file_name}, and calling "
+      "ocr_by_pdf()", file=lf)
 
-print("Done!")
+    ocr_by_pdf(pdf_file_name=pdf_file_name,
+      removable_output_folder=removable_output_folder,
+      log_file=lf,
+      remove_tifs=remove_tifs,
+      pdf_or_hocr_ext='pdf',)
+
+    print(f"{me}: Done at {now()}")
+#end def run()
+
+# RUN
+with open(r'C:\\rvp\\data\\tesseract\\test_tesseract.py', mode='w') as lf:
+   run(log_file=lf, remove_tifs=False)
