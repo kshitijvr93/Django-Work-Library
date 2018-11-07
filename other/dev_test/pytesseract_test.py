@@ -10,6 +10,16 @@ except ImportError:
     import Image
 import pytesseract
 
+r''' disable well-intentioned work blockage messages:
+Typical interfering message:
+C:\Users\podengo\AppData\Local\Programs\Python\Python36-32\lib\site-packages\
+  PIL\Image.py:2575: DecompressionBombWarning:
+  Image size (152546079 pixels) exceeds limit of 89478485 pixels,
+  could be decompression bomb DOS attack.
+  DecompressionBombWarning)1G
+'''
+Image.MAX_IMAGE_PIXELS = None
+
 
 r'''
 # This one errors out today 20181106
@@ -105,7 +115,7 @@ def ocr_by_pdf(pdf_file_name=None,
     cmd = f'{pdftk} {pdf_file_name} burst'
     cwd = removable_output_folder
     if verbosity > 0:
-        print(f"{now()}:{me}:removable_output_folder {cwd}",file=lf)
+        print(f"{now()}:{me}",file=lf,flush=True)
         print(f"{now()}:{me}:searchable_pdf_folder {searchable_pdf_folder}",
           file=lf)
         print(
@@ -168,7 +178,7 @@ def ocr_by_pdf(pdf_file_name=None,
             tlen = len(text)
             if verbosity > 0:
               print(f"{now()}:image_to_string() outputted {tlen} bytes.",
-              file=lf)
+              flush=True, file=lf)
             output_file_name = f'{abs_stem}.{text_ext}'
             with open(\
                 output_file_name, mode='w', encoding='utf-8') as output_file:
@@ -181,6 +191,7 @@ def ocr_by_pdf(pdf_file_name=None,
                 file=lf)
             output = pytesseract.image_to_boxes(
                 Image.open(f'{abs_tif_name}'),lang=lang)
+            print(f"{now()}:Done.", flush=True, file=lf)
             output_file_name = f'{abs_stem}.{bounding_box_ext}'
             with open(output_file_name,'w') as output_file:
                 output_file.write(output)
@@ -211,7 +222,7 @@ def ocr_by_pdf(pdf_file_name=None,
                 Image.open(f'{abs_tif_name}'),lang=lang)
             if verbosity > 0:
                 print(
-                f"{now()}:Done pdf or hocr calcs", file=lf)
+                f"{now()}:Done pdf or hocr calcs", flush=True,file=lf)
             with open(output_file_name,'wb') as output_file:
                 output_file.write(output)
         if remove_tifs == True:
@@ -280,8 +291,9 @@ pdf_file_names = [
         '22_Septiembre_1935.pdf', #235mb
         ]
 
-pdf_file_name = os.path.join(input_dir, pdf_file_names[0])
-max_pages = 4
+pdf_file_name = os.path.join(input_dir, pdf_file_names[1])
+
+max_pages = 1
 remove_tifs = False
 verbosity = 1
 
