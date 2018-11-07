@@ -281,9 +281,12 @@ pdf_file_names = [
         ]
 
 pdf_file_name = os.path.join(input_dir, pdf_file_names[0])
+max_pages = 4
 
 with open(r'C:\\rvp\\data\\tesseract\\test_log.txt', mode='w') as lf:
-   run(log_file=lf, max_pages=5, remove_tifs=True,
-       removable_output_folder=removable_output_folder,
+   run(log_file=lf,
+       max_pages=7,
        pdf_file_name = pdf_file_name,
+       removable_output_folder=removable_output_folder,
+       remove_tifs=False,
        verbosity=1)
