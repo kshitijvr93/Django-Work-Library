@@ -42,7 +42,7 @@ def ocr_by_pdf(pdf_file_name=None,
     # Next param: use 'pdf' for searchable_pdf,
     # or 'hocr' for HOCR output (per tesseract docs)
     pdf_or_hocr_ext='', #'pdf' or 'hocr'. Others ok?
-    max_pages=1,
+    max_pages=10000,
     verbosity=1):
     '''
     IMPORTANT NOTE: The removable_output_folder will be completely removed of
@@ -91,11 +91,11 @@ def ocr_by_pdf(pdf_file_name=None,
         print(f"{me}:Bursting pdf file '{pdf_file_name}' to multiple pdf page files.")
         print(f"{me}:Running subprocess cmd='{cmd}',\nand cwd='{cwd}'")
         sys.stdout.flush()
-    pdftk = subprocess.Popen(cmd, cwd=cwd)
+    pdftk_proc = subprocess.Popen(cmd, cwd=cwd)
     if verbosity > 0:
-        print(f"{me}:waiting for pdftk....")
+        print(f"{me}:waiting for pdftk_proc....")
         sys.stdout.flush()
-    pdftk.wait()
+    pdftk_proc.wait()
 
     # Now for each pdf file, convert it to tif and run tesseract on the tif
     if verbosity > 0:
@@ -119,8 +119,8 @@ def ocr_by_pdf(pdf_file_name=None,
             print(f"Converting pdf page file '{path.name}' to tif")
             print(f"Running subprocess cmd='{cmd}',\nand cwd='{cwd}'")
 
-        convert = subprocess.Popen(cmd, cwd=cwd)
-        convert.wait()
+        convert_proc = subprocess.Popen(cmd, cwd=cwd)
+        convert_proc.wait()
 
         #Use tesseract to produce output for this tif
         tif_name = f'{abs_stem}.tif'
@@ -131,7 +131,7 @@ def ocr_by_pdf(pdf_file_name=None,
             text = pytesseract.image_to_string(
                 Image.open(f'{tif_name}'),lang=lang)
             output_file_name = f'{abs_stem}.{text_ext}'
-            with open(output_file_name,'w') as output_file:
+            with open(output_file_name,mode='w', encoding='utf-8') as output_file:
                 output_file.write(text)
 
         if len(bounding_box_ext) > 0:
