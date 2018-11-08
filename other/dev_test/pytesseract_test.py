@@ -27,7 +27,6 @@ issue.
 # Uncomment below to not complain about pdfs with only a jpg image.
 #Image.MAX_IMAGE_PIXELS = None
 
-
 r'''
 # This one errors out today 20181106 on UF Office PC, maybe not in linux
 MAW_TESSERACT_CMD= r'c:\rvp\bin\tesseract4_tdhintz_win64_20181106.exe'
@@ -159,7 +158,7 @@ def ocr_by_pdf(pdf_file_name=None,
             f'{searchable_pdf_folder}{os.sep}{stem}_searchable')
         if verbosity > 0:
             print(
-              f"\nPage {n_pages}, abs_stem={abs_stem},\nsearchable_stem="
+              f"\nPage {n_pages}, {now}: abs_stem={abs_stem},\nsearchable_stem="
               f"{searchable_stem}",
               file=lf, flush=True)
 
