@@ -3,6 +3,8 @@ import datetime
 import subprocess
 import shutil
 from pathlib import Path
+import pdf2image
+import tempfile
 
 try:
     from PIL import Image
@@ -10,19 +12,24 @@ except ImportError:
     import Image
 import pytesseract
 
-r''' disable well-intentioned work blockage messages:
-Typical interfering message:
+r''' well-intentioned noisy blockage messages:
+Typical noisy message:
 C:\Users\podengo\AppData\Local\Programs\Python\Python36-32\lib\site-packages\
   PIL\Image.py:2575: DecompressionBombWarning:
   Image size (152546079 pixels) exceeds limit of 89478485 pixels,
   could be decompression bomb DOS attack.
-  DecompressionBombWarning)1G
+  DecompressionBombWarning)
+
+This issues when a pdf page is comprised of a large image, so not usually an
+issue.
 '''
-Image.MAX_IMAGE_PIXELS = None
+
+# Uncomment below to not complain about pdfs with only a jpg image.
+#Image.MAX_IMAGE_PIXELS = None
 
 
 r'''
-# This one errors out today 20181106
+# This one errors out today 20181106 on UF Office PC, maybe not in linux
 MAW_TESSERACT_CMD= r'c:\rvp\bin\tesseract4_tdhintz_win64_20181106.exe'
 
 Traceback (most recent call last):
@@ -35,6 +42,10 @@ Traceback (most recent call last):
   File "C:\Users\podengo\AppData\Local\Programs\Python\Python36-32\lib\site-packages\pytesseract\pytesseract.py", line 178, in run_tesseract
     raise TesseractError(status_code, get_errors(error_string))
 pytesseract.pytesseract.TesseractError: (3221225781, '')
+
+NOTE: I found a 'better' version of tesseract, and installed on my UF Office
+windows 10 PC, referenced below that works
+without such error messages.
 '''
 
 #see https://pypi.org/project/pytesseract/
@@ -48,6 +59,7 @@ def ocr_by_pdf(pdf_file_name=None,
     lang='eng',
     text_ext='txt', # 'txt' is a natural extension choice
     bounding_box_ext='', # todo: suggest a common extension
+    embedded_dpi=200,
     verbose_ext='', # todo: suggest a common extension
     orientation_ext='', # 'osd' is suggested
     # Next param: use 'pdf' for searchable_pdf,
@@ -138,6 +150,9 @@ def ocr_by_pdf(pdf_file_name=None,
     paths = Path(cwd).glob('pg_*.pdf')
     for path in paths:
         n_pages += 1
+        if n_pages > max_pages:
+            break
+
         stem = path.name.split('.')[0]
         abs_stem = f'{cwd}{os.sep}{stem}'
         searchable_stem = (
@@ -148,26 +163,56 @@ def ocr_by_pdf(pdf_file_name=None,
               f"{searchable_stem}",
               file=lf, flush=True)
 
-        if n_pages > max_pages:
-            break
+        # Try to get an image from this pdf
 
-        # convert this page pdf to a tif
-        cmd = (f'{convert} -density {dpi} {path.name} -depth '
-               f'{depth} {stem}.tif')
-
-        if verbosity > 0:
-            print(
-              f"{now()}:{me}:Running subprocess cmd='{cmd}',\nand cwd='{cwd}'",
-              file=lf)
-
-        convert_proc = subprocess.Popen(cmd, cwd=cwd)
-        convert_proc.wait()
-
-        print(f"{now()}:{me}:Done wait on cmd='{cmd}'",
-          file=lf)
-
-        #Use tesseract method(s) to produce output for this tif
+        n_images = 0
         abs_tif_name = f'{abs_stem}.tif'
+        abs_pdf = f'{abs_stem}.pdf'
+
+        pil_images = pdf2image.convert_from_path(abs_pdf, dpi=embedded_dpi)
+
+        n_images = 0 if pil_images is None else len(pil_images)
+
+        if n_images > 0:
+            image = pil_images[0]
+            # Translate embedded images to tif directly.
+            # To start - assume a single image if any.
+            # Later may encounter multi images per pdf page?
+            # imageMagick/convert program creates 200x larger tif images
+            # and tesseract never finds any text in those
+            if verbosity > 0:
+                print(
+                  f"\n{now()}:Making tiff 1 of {n_images} in {abs_pdf}.",
+                  file=lf, flush=True)
+            with open(f'{abs_tif_name}', 'wb') as tif_output:
+                image.save(tif_output, format='TIFF')
+            if verbosity > 0:
+                print(
+                  f"\n{now()}:Made tif 1 of {n_images} in {abs_pdf}.",
+                  file=lf, flush=True)
+
+        else:
+            # give imageMagick/convert a try
+
+            # This is a simple pdf for a page- convert this page pdf to a tif
+            cmd = (f'{convert} -density {dpi} {path.name} -depth '
+                   f'{depth} {stem}.tif')
+
+            if verbosity > 0:
+                print(
+                  f"{now()}:{me}:Running subprocess cmd='{cmd}',\nand cwd='{cwd}'",
+                  file=lf)
+
+            convert_proc = subprocess.Popen(cmd, cwd=cwd)
+            convert_proc.wait()
+
+            print(f"{now()}:{me}:Done wait on cmd='{cmd}'",
+              file=lf)
+        # else tried imagemagick convert
+        # Now we have the tif
+
+        # Use tesseract method(s) to produce output for this tif
+        # file named by abs_tif_name
 
         if len(text_ext) > 0:
             if verbosity > 0:
@@ -176,6 +221,10 @@ def ocr_by_pdf(pdf_file_name=None,
             text = pytesseract.image_to_string(
                 Image.open(f'{abs_tif_name}'),lang=lang)
             tlen = len(text)
+            if tlen <= 1:
+                msg = (f"\nWARNING: file {abs_tif_name} produces 0 bytes of "
+                  "text \n")
+                print(msg)
             if verbosity > 0:
               print(f"{now()}:image_to_string() outputted {tlen} bytes.",
               flush=True, file=lf)
@@ -277,28 +326,36 @@ def run(input_dir=None, removable_output_folder=None,
 
 # RUN
 
+max_pages = 5
+remove_tifs = False
+verbosity = 1
+
 input_dir = os.path.join('C:',os.sep,'rvp','data',
          '20181106_alexis_chelsea_pdfs_for_tesseract', 'bohemia_for_robert',
          'bohemia_for_robert',)
 
+pdf_stems = [
+        '2_Enero_1921_1', #6mb
+        '22_Septiembre_1935', #235mb
+        '5_Junio_1984', #xmb
+        ]
+
+pdf_stems_index = 1
+pdf_stem = pdf_stems[pdf_stems_index]
+
+pdf_file_name = os.path.join(input_dir, f'{pdf_stem}.pdf')
+
 removable_output_folder = os.path.join(
          'C:',os.sep,'rvp','data',
          '20181106_alexis_chelsea_pdfs_for_tesseract', 'bohemia_for_robert',
-         'bohemia_for_robert','output_dir2',)
+         'bohemia_for_robert','output',f'{pdf_stem}',)
 
-pdf_file_names = [
-        '2_Enero_1921_1.pdf', #6mb
-        '22_Septiembre_1935.pdf', #235mb
-        ]
+os.makedirs(removable_output_folder, exist_ok=True)
 
-pdf_file_name = os.path.join(input_dir, pdf_file_names[1])
+with open(f'{removable_output_folder}{os.sep}log_{pdf_stems_index}.txt',
+    mode='w') as lf:
 
-max_pages = 1
-remove_tifs = False
-verbosity = 1
-
-with open(r'C:\\rvp\\data\\tesseract\\test_log.txt', mode='w') as lf:
-   run(log_file=lf,
+    run(log_file=lf,
        max_pages=max_pages,
        pdf_file_name=pdf_file_name,
        removable_output_folder=removable_output_folder,
