@@ -112,9 +112,9 @@ def get_root_from_file_bytes(input_file_name=None, log_file=None,
     return node_root_input
 #end def get_root_from_file_bytes()
 
-def get_tree_and_root_from_file(input_file_name=None, log_file=None,
+def get_tree_and_root_from_file_name(input_file_name=None, log_file=None,
     verbosity=None):
-    me = 'get_root_from_parsed_file_bytes'
+    me = 'get_tree_and_root_from_file_name'
     '''
     Parse given input file as an xml document
     For any exception, write it to give logfile and return None, None
@@ -126,12 +126,11 @@ def get_tree_and_root_from_file(input_file_name=None, log_file=None,
     parser = etree.XMLParser(encoding='utf-8',remove_comments=False)
     etree.set_default_parser(parser)
 
-    with open(input_file_name, mode='rb') as input_bytes_file:
-
+    with open(input_file_name, mode='r', encoding='utf-8-sig') as input_bytes_file:
         try:
             tree = etree.parse(input_bytes_file, parser=parser)
-
         except Exception as e:
+
             log_msg = (
                 "{}:Skipping exception='{}' in input_file_name='{}'"
                 .format(me, repr(e), input_file_name))
@@ -147,7 +146,20 @@ def get_suggested_terms_by_category_bib_vid(category='TOPIC',
     # Todo - add db query code
     # Returnt test results now...
     # return_list = []
-    return ['suggested_term1','suggested_term2','suggested_term3']
+    # terms for aa00012984_00001
+
+    terms = [
+      'butterflies',
+      'damping',
+      'datasets',
+      'degrees of freedom',
+      'dynamic modeling',
+      'geometric shapes',
+      'matrices',
+    ]
+
+    terms0 = 'suggested_term1','suggested_term2','suggested_term3'
+    return terms
 
 def mets_xml_add_or_replace_subjects(
     input_file_name=None,
@@ -212,7 +224,7 @@ def mets_xml_add_or_replace_subjects(
     suggested_terms = get_suggested_terms_by_category_bib_vid(
         category='TOPIC', bib=bib, vid=vid)
 
-    doctree, node_root_input = get_tree_and_root_from_file(
+    doctree, node_root_input = get_tree_and_root_from_file_name(
         input_file_name=input_file_name,
         log_file=log_file,
         verbosity=verbosity)
@@ -596,6 +608,7 @@ def process_files(
 import datetime
 def run(backup_folder=None,
     input_folder=None, file_globs=None,
+    output_folder = None,
     log_file_name=None,
     parent_tag_name=None,
     child_tag_namespace=None,
@@ -604,19 +617,23 @@ def run(backup_folder=None,
     strftime_format="%Y%m%dT%H%MZ",
     verbosity=1,):
 
+    '''
+    '''
     me='run'
     n_files = 0
+
+    if output_folder is None:
+        output_folder = input_folder
 
     if log_file_name is None:
         #datetime_string = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
         day_string = datetime.datetime.utcnow().strftime(strftime_format)
-        log_file_name = ("{}/mets_subject_edits_{}.txt"
-            .format(input_folder,day_string))
+        log_file_name = (
+          f"{output_folder}/mets_subject_edits_{day_string}.txt")
     else:
-        log_file_name = ("{}/{}"
-            .format(input_folder, log_file_name))
+        log_file_name = ( f"{output_folder}/{log_file_name}")
 
-    # utf-8-sig strips BOM as we desire
+    # encoding utf-8-sig strips BOM as we desire
     log_file = open(log_file_name, mode="w", encoding='utf-8-sig')
     utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -675,7 +692,8 @@ if __name__ == "__main__":
       'F:\\ufdc\\resources\\LS\\00\\00\\00\\01\\test\\'
       )
 
-    run(backup_folder=backup_folder, input_folder=input_folder,
+    run(backup_folder=backup_folder,
+        input_folder=input_folder,
         log_file_name='mets_subject_edit_log.txt',
         file_globs = ['**/*.mets.xml'],
         parent_tag_name=None,
