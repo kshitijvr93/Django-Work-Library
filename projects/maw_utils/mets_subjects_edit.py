@@ -112,9 +112,9 @@ def get_root_from_file_bytes(input_file_name=None, log_file=None,
     return node_root_input
 #end def get_root_from_file_bytes()
 
-def get_tree_and_root_from_file_name(input_file_name=None, log_file=None,
+def get_tree_and_root_by_file_name(input_file_name=None, log_file=None,
     verbosity=None):
-    me = 'get_tree_and_root_from_file_name'
+    me = 'get_tree_and_root_by_file_name'
     '''
     Parse given input file as an xml document
     For any exception, write it to give logfile and return None, None
@@ -123,10 +123,13 @@ def get_tree_and_root_from_file_name(input_file_name=None, log_file=None,
     '''
 
     #parser = etree.XMLParser(remove_comments=False, remove_blank_text=True)
-    parser = etree.XMLParser(encoding='utf-8',remove_comments=False)
+    parser = etree.XMLParser(encoding='utf-8',remove_blank_text=True,
+      remove_comments=False)
     etree.set_default_parser(parser)
 
-    with open(input_file_name, mode='r', encoding='utf-8-sig') as input_bytes_file:
+    with open(input_file_name, mode='r', encoding='utf-8-sig') \
+        as input_bytes_file:
+
         try:
             tree = etree.parse(input_bytes_file, parser=parser)
         except Exception as e:
@@ -224,7 +227,7 @@ def mets_xml_add_or_replace_subjects(
     suggested_terms = get_suggested_terms_by_category_bib_vid(
         category='TOPIC', bib=bib, vid=vid)
 
-    doctree, node_root_input = get_tree_and_root_from_file_name(
+    doctree, node_root_input = get_tree_and_root_by_file_name(
         input_file_name=input_file_name,
         log_file=log_file,
         verbosity=verbosity)
@@ -395,12 +398,14 @@ def mets_xml_add_or_replace_subjects(
                 # NOTE: Experiments show that method tostring also
                 # honors param 'encoding'. But cannot find ref doc yet.
                 output = etree.tostring(node_root_input,
-                    pretty_print=True, xml_declaration=True, encoding="UTF-8",
+                    pretty_print=True, xml_declaration=True,
+                    #encoding="utf-8-sig",
                     # remove_comments=False, # unexpected
                     )
                 output_file.write(output)
         else:
-            with open(output_file_name, mode='w') as output_file:
+            with open(output_file_name, mode='w', encoding="utf-8-sig") \
+                as output_file:
                 # NOTE: this xml declaration says encoding='ASCII'
                 print(etree.tostring(node_root_input, pretty_print=True,
                     xml_declaration=True, encoding="UTF-8").decode('utf-8'),
