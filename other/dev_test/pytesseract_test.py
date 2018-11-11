@@ -218,13 +218,13 @@ def ocr_by_pdf(pdf_file_name=None,
                 msg = (f"\nWARNING: file {abs_tif_name} produces 0 bytes of "
                   "text \n")
                 print(msg)
-            if verbosity > 0:
-              print(f"{now()}:image_to_string() outputted {tlen} bytes.",
-              flush=True, file=lf)
             output_file_name = f'{cwd}{os.sep}{stem}.{text_ext}'
             with open(\
                 output_file_name, mode='w', encoding='utf-8') as output_file:
                 output_file.write(text)
+            if verbosity > 0:
+              print(f"{now()}:image_to_string() outputted {tlen} bytes to file"
+                  f"{output_file_name}", flush=True, file=lf)
 
         if len(bounding_box_ext) > 0:
             if verbosity > 0:
@@ -379,18 +379,20 @@ def ocr_by_jpg(
                 msg = (f"\nWARNING: file {abs_tif_name} produces 0 bytes of "
                   "text \n")
                 print(msg)
-            if verbosity > 0:
-              print(f"{now()}:image_to_string() outputted {tlen} bytes.",
-              flush=True, file=lf)
-            output_file_name = f'{abs_stem}.{text_ext}'
+            output_file_name = f'{cwd}{os.sep}{stem}.{text_ext}'
             with open(\
                 output_file_name, mode='w', encoding='utf-8') as output_file:
                 output_file.write(text)
 
+            if verbosity > 0:
+              print(f"{now()}:image_to_string() outputted {tlen} bytes to "
+                 f"file {output_file_name}", flush=True, file=lf)
+
         if len(bounding_box_ext) > 0:
             if verbosity > 0:
               print(
-                f"{now()}:Doing bounding box calcs on tif page file {abs_tif_name}",
+                f"{now()}:Doing bounding box calcs on tif page file "
+                f"{abs_tif_name}",
                 file=lf)
             output = pytesseract.image_to_boxes(
                 Image.open(f'{abs_tif_name}'),lang=lang)
