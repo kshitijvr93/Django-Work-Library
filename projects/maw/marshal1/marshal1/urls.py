@@ -32,6 +32,7 @@ urlpatterns = [
     path('am4ir/', include('hathitrust.urls')),
     path('aspace/', include('hathitrust.urls')),
     path('cattleman/', include('hathitrust.urls')),
+    path('cuba_libro/', include('cuba_libro.urls')),
     #20180817 - I told google oauth2 login to redirect to cuba_libro,
     #but just tweak next now , because prefer home now, but should change google
     #account project setting later to go to home
