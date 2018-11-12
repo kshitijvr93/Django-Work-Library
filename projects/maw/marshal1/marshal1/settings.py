@@ -41,6 +41,7 @@ APPEND_SLASH = True
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+print(f"Using BASE_DIR={BASE_DIR} for this project")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -127,6 +128,7 @@ IMPORT_EXPORT_USE_TRANSACTIONS = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = maw_settings.STATIC_ROOT
+print(f"STATIC_ROOT={STATIC_ROOT}")
 #Set up some static file management.
 #See https://docs.djangoproject.com/en/2.1/intro/tutorial06/
 #See https://docs.djangoproject.com/en/2.1/ref/settings/
@@ -541,7 +543,10 @@ CKEDITOR_CONFIGS = {
 print(f"BASE_DIR={BASE_DIR}")
 # Do NOT tack on the last 'marshal1' here, rather use it as the
 # first part of the 'url' in templates
-STATICFILES_DIRS = [ os.path.join(BASE_DIR, 'marshal1','static'), ]
-#print(f'STATICFILES_DIRS={STATICFILES_DIRS}')
+STATICFILES_DIRS = [ os.path.join(
+    BASE_DIR, 'static',
+    ), ]
+
+print(f'Using STATICFILES_DIRS={STATICFILES_DIRS}')
 
 ###################################

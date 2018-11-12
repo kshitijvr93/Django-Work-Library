@@ -399,7 +399,9 @@ def mets_xml_add_or_replace_subjects(
                 # honors param 'encoding'. But cannot find ref doc yet.
                 output = etree.tostring(node_root_input,
                     pretty_print=True, xml_declaration=True,
-                    #encoding="utf-8-sig",
+                    # XML declaration, not python, so utf-8-sig does not work)
+                    # is not needed.
+                    encoding="UTF-8",
                     # remove_comments=False, # unexpected
                     )
                 output_file.write(output)
