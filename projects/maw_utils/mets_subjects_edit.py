@@ -326,7 +326,7 @@ def mets_xml_add_or_replace_subjects(
         # Later, might want to include sub-fields for indicators, or for
         # other bits of info we want to pack into the subject attribute
         # ID value.
-        sa['ID'] = f'650_{term_count}'
+        sa['ID'] = f'650_#0_{term_count}'
         parent_nodes[0].append(subject)
 
         topic = etree.Element(topic_name)
