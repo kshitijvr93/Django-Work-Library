@@ -5,7 +5,6 @@ mets_subjects_edit.py
 App to optionally delete and to add subjects for bibs
 given input file.
 
-
 Python 3.6+ code
 '''
 
@@ -18,7 +17,6 @@ from tempfile import NamedTemporaryFile, mkstemp, TemporaryFile
 from shutil import move, copy, copy2
 from os import remove
 import operator
-
 
 def register_modules():
     platform_name = platform.system().lower()
@@ -147,8 +145,8 @@ def get_tree_and_root_by_file_name(input_file_name=None, log_file=None,
     return tree, tree.getroot()
 #end def get_root_from_parsed_file_bytes()
 
-def get_suggested_terms_by_thesauri_bib_vid(thesauri=None,
-    bib=None, vid=None):
+def get_sorted_subjects_by_thesauri_bib_vid(thesauri=None,
+    d_namespace=None, bib=None, vid=None, verbosity=1):
     # Todo - add db query code
     # or api code here
     # Return test results now...
@@ -163,21 +161,79 @@ def get_suggested_terms_by_thesauri_bib_vid(thesauri=None,
     d_thesaurus_xtag = { 'jstor': 'TOPIC',}
     category = d_thesaurus_xtag[thesauri[0]]
 
-    terms = [
-      'butterflies',
-      'damping',
-      'datasets',
-      'degrees of freedom',
-      'dynamic modeling',
-      'geometric shapes',
+    suggested_terms = [
       'matrices',
+      'geometric shapes',
+      'dynamic modeling',
+      'degrees of freedom',
+      'datasets',
+      'damping',
+      'butterflies',
     ]
 
-    terms0 = 'suggested_term1','suggested_term2','suggested_term3'
-    return terms
-# end def
+    suggested_terms0 = ['suggested_term1','suggested_term2','suggested_term3']
 
-def get_sorted_subject_nodes(subject_nodes=None, log_file=None, verbosity=0):
+    # consider:put terms in a list to remove late-comer dups
+    # for now, there 'should be' no dups from AI because we are
+    # querying only for a single xtag, TOPIC, but we can just
+    # discover that during testing and overcome it if it is an
+    # issue.
+    l = len(suggested_terms)
+    msg = f"Got {l} suggested terms"
+
+    print(msg, file=sys.stdout, flush=True)
+    sorted_terms = sorted(suggested_terms, key=str.lower)
+
+    l = len(sorted_terms)
+    msg = f"Got {l} sorted suggested terms"
+    print(msg, file=sys.stdout, flush=True)
+
+    sorted_subject_nodes = []
+    term_count = 0
+    mods_namespace = d_namespace['mods']
+
+    subject_name = f"{{{mods_namespace}}}subject"
+    subject_tag = "mods:subject"
+
+    topic_name = f"{{{mods_namespace}}}topic"
+    topic_tag = "mods:topic"
+
+    # We build 'sorted_subject_terms' by sequencing thru a
+    # sorted list of terms
+    for term_count, term in enumerate(sorted_terms, start=1):
+        # Create a new child node to append for this parent in the METS tree
+        # Review of LOC mets mods documentation about subject and topic
+        # elements indicates that # one topic per subject is the usual case.
+        # However, if one has separate values for a geographic country,
+        # region, city, it is normal to put
+        # all 3 geographic terms wihtin one subject element.
+        # CREATE a ELEMENT NODE LXML NODE with Element() call
+        subject = etree.Element(subject_name)
+        sa = subject.attrib
+        sa['authority'] = 'jstor'
+        # To follow a year 12018 perceived SobekCM convention used in mets
+        # files, now use marc field followed by subject term count as the ID.
+        # Later, might want to include sub-fields for indicators, or for
+        # other bits of info we want to pack into the subject attribute
+        # ID value.
+        sa['ID'] = f'650_#0_{term_count}'
+
+        sorted_subject_nodes.append(subject)
+
+        topic = etree.Element(topic_name)
+        topic.text = term
+        subject.append(topic)
+
+        if verbosity > 1:
+            print(f"Using subject_name='{subject_name}'",file=log_file)
+            msg = ("appended to parent {} the child {}"
+               .format(parent_nodes[0].tag, subject.tag))
+
+    return sorted_subject_nodes
+# end def get_suggested_terms_by_thesauri_bib_vid
+
+def get_sorted_subject_nodes(subject_nodes=None, d_namespace=None,
+    log_file=None, verbosity=0):
     '''
     Given a list of input 'subject' lxml nodes with data formatted for UF Digital
     Collections mets.xml files,
@@ -200,15 +256,32 @@ def get_sorted_subject_nodes(subject_nodes=None, log_file=None, verbosity=0):
             key_heading += tnode.text
             tsep = ' -- '
 
-        d_heading_subject=key_heading] = subject_node
+        d_heading_subject[key_heading] = subject_node
     # end for subject_node in xnodes
 
     # Now subject nodes are ready to be sorted by key heading into
     # returnable list of subject nodes
 
-    sorted_xnodes = sorted(d_heading_subject.items() key=lambda kv:kv[0])
+    sorted_xnodes = sorted(d_heading_subject.items(), key=lambda kv:kv[0])
     return sorted_xnodes
 # end def get_sorted_subject_nodes(0)
+
+def output_by_node__output_file_name(
+    node=None,
+    output_file_name=None,
+    ):
+
+    with open(output_file_name, mode='wb') as output_file:
+        # NOTE: Experiments show that method tostring also
+        # honors param 'encoding'. But cannot find ref doc yet.
+        output = etree.tostring(node,
+            pretty_print=True, xml_declaration=True,
+            # XML declaration, not python, so utf-8-sig does not work)
+            # is not needed.
+            encoding="UTF-8",
+            # remove_comments=False, # unexpected
+            )
+        output_file.write(output)
 
 def mets_xml_add_or_replace_subjects(
     input_file_name=None,
@@ -315,10 +388,10 @@ def mets_xml_add_or_replace_subjects(
     child_tag_name = f'{child_tag_namespace}:{child_tag_localname}'
 
     # Get bib and vid from filename
-    print(f"Got input_file_name={input_file_name}")
+    print(f"{me}:Starting with input_file_name={input_file_name}")
     base_name =  os.path.basename(input_file_name)
-    print(f"Got base_name={base_name}")
-    if bibid is None:
+    print(f"{me}:Got base_name={base_name}")
+    if bib is None:
         # Get both the bib and vid from the filename, regardless of presence
         # of a vid argument value
         dot_parts = base_name.split('.')
@@ -341,13 +414,6 @@ def mets_xml_add_or_replace_subjects(
     # Jonathan Eunice message of 20180429
     # Get list of tuples of suggested terms: (term name, )
     # consider - construct subject nodes
-    lt_suggested_terms = get_suggested_terms_by_thesauri_bib_vid(
-        thesauri=thesauri, bib=bib, vid=vid)
-
-    # New function to replace get_suggested_terms_by_thesauri_bib_vid
-    
-    sorted_suggested_subjects = get_sorted_subjects_by_thesauri_bib_vid(
-        thesauri=thesauri, bib=bib, vid=vid)
 
     doctree, node_root_input = get_tree_and_root_by_file_name(
         input_file_name=input_file_name,
@@ -355,6 +421,7 @@ def mets_xml_add_or_replace_subjects(
         verbosity=verbosity)
 
     if node_root_input is None:
+        print(f"Got -1 for node_root_input??")
         return -1
 
     # Create d_namespace - dictionary of namespace key or abbreviation
@@ -363,15 +430,20 @@ def mets_xml_add_or_replace_subjects(
       for key,value in dict(node_root_input.nsmap).items()
       if key is not None}
 
+    # New function to replace get_suggested_terms_by_thesauri_bib_vid
+    sorted_suggested_subjects = get_sorted_subjects_by_thesauri_bib_vid(
+        d_namespace=d_namespace,
+        thesauri=thesauri, bib=bib, vid=vid)
+
     if verbosity > 1:
-        msg='--- {} NAMESPACE KEY VALUES ARE:'.format(me)
+        msg=f'--- {me}: NAMESPACE KEY VALUES ARE:'
         print(msg, file=log_file)
         for key,value in d_namespace.items():
-            msg = ("{} : {}".format(key,value))
+            msg = (f"{key} : {value}")
             print(msg, file=log_file)
 
     # Find the parent node(s) if any - for a mets.xml file, they are designed
-    # for one parent node
+    # for one parent/root node
     parent_nodes = node_root_input.findall(
         parent_xpath, namespaces=d_namespace)
 
@@ -415,14 +487,23 @@ def mets_xml_add_or_replace_subjects(
     else:
         have_child = False
 
+    if verbosity > 1:
+        print(f"{me}: Current mets has/had {len(child_nodes)} subject elts")
+
     if replace_subjects == False:
         # Here, we want to preserve current subjects (not replace them)
         # Create a dictionary that allows for sorting by topic name
         # so we can issue them alphabetically in document tree order.
         #
+
         sorted_current_subject_nodes = get_sorted_subject_nodes(
+            d_namespace=d_namespace,
             subject_nodes = child_nodes,
             log_file=log_file, verbosity=verbosity)
+
+        if verbosity > 1:
+            l = len(sorted_current_subject_nodes)
+            print(f"{me}: Got count={l} current sorted subject elts.")
 
     # If needed, we got the current_subjects, so now we can remove those
     # obsolete subject element nodes.
@@ -444,34 +525,15 @@ def mets_xml_add_or_replace_subjects(
 
     # For each found suggested term, append a new mets 'subject' child node
     # stanza
+    for subject_count, subject_node in sorted_current_subject_nodes:
+        parent_nodes[0].append(subject_node)
 
-    for term_count, term in enumerate(suggested_terms, start=1):
-        # Create a new child node to append for this parent in the METS tree
-        # Review of LOC mets mods documentation about subject and topic
-        # elements indicates that # one topic per subject is the usual case.
-        # However, if one has separate values for a geographic country,
-        # region, city, it is normal to put
-        # all 3 geographic terms wihtin one subject element.
-        subject = etree.Element(subject_name)
-        sa = subject.attrib
-        sa['authority'] = 'jstor'
-        # To follow a year 12018 perceived SobekCM convention used in mets
-        # files, now use marc field followed by subject term count as the ID.
-        # Later, might want to include sub-fields for indicators, or for
-        # other bits of info we want to pack into the subject attribute
-        # ID value.
-        sa['ID'] = f'650_#0_{term_count}'
-        parent_nodes[0].append(subject)
+    # TEST OUTPUT
+    output_file_name = r'C:\rvp\tmp.mets.xml'
+    output_by_node__output_file_name(node=node_root_input,
+        output_file_name=output_file_name)
 
-        topic = etree.Element(topic_name)
-        topic.text = term
-        subject.append(topic)
-
-        if verbosity > 1:
-            print(f"Using subject_name='{subject_name}'",file=log_file)
-            msg = ("appended to parent {} the child {}"
-               .format(parent_nodes[0].tag, subject.tag))
-            print(msg, file=log_file)
+    return 1
 
     # Done modifying the in-memory document tree
     # Now output it in its file.
@@ -520,38 +582,21 @@ def mets_xml_add_or_replace_subjects(
 
     # Note: must open with mode='wb' to use doctree.write(...), eg:
     # with open(output_file_name, 'wb') as output_file:
-    # but must open w to use tostring...to do pretty_print=True, eg:
-    # with open(output_file_name, mode='w') as output_file:
-    pretty = False
-    pretty = True
-    binary = True
-    if pretty:
-        binary = True
-        if binary:
-            with open(output_file_name, mode='wb') as output_file:
-                # NOTE: Experiments show that method tostring also
-                # honors param 'encoding'. But cannot find ref doc yet.
-                output = etree.tostring(node_root_input,
-                    pretty_print=True, xml_declaration=True,
-                    # XML declaration, not python, so utf-8-sig does not work)
-                    # is not needed.
-                    encoding="UTF-8",
-                    # remove_comments=False, # unexpected
-                    )
-                output_file.write(output)
-        else:
-            with open(output_file_name, mode='w', encoding="utf-8-sig") \
-                as output_file:
-                # NOTE: this xml declaration says encoding='ASCII'
-                print(etree.tostring(node_root_input, pretty_print=True,
-                    xml_declaration=True, encoding="UTF-8").decode('utf-8'),
-                    file=output_file)
-    else:
-        with open(output_file_name, mode='wb') as output_file:
-            # NOTE: this xml declaration says encoding='UTF-8'
-            doctree.write(output_file, xml_declaration=True, encoding="utf-8")
+
+    with open(output_file_name, mode='wb') as output_file:
+        # NOTE: Experiments show that method tostring also
+        # honors param 'encoding'. But cannot find ref doc yet.
+        output = etree.tostring(node_root_input,
+            pretty_print=True, xml_declaration=True,
+            # XML declaration, not python, so utf-8-sig does not work)
+            # is not needed.
+            encoding="UTF-8",
+            # remove_comments=False, # unexpected
+            )
+        output_file.write(output)
 
     msg = f"{me}: pretty={pretty},binary={binary},output_file={output_file}"
+
     if verbosity > 0:
         print(msg,file=log_file)
         print(msg)
@@ -833,6 +878,7 @@ if __name__ == "__main__":
       'F:\\ufdc\\resources\\LS\\00\\00\\00\\01\\test\\'
       )
 
+
     run(backup_folder=backup_folder,
         input_folder=input_folder,
         log_file_name='mets_subject_edit_log.txt',
@@ -840,7 +886,7 @@ if __name__ == "__main__":
         parent_tag_name=None,
         child_tag_namespace=None,
         child_model_element=None,
-        replace_children=True,
+        replace_children=False,
         verbosity=2)
 
 #end if __name__ == "__main__"
