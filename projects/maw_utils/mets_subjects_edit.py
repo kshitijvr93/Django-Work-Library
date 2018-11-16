@@ -230,7 +230,7 @@ def get_sorted_subjects_by_thesauri_bib_vid(thesauri=None,
                .format(parent_nodes[0].tag, subject.tag))
 
     return sorted_subject_nodes
-# end def get_suggested_terms_by_thesauri_bib_vid
+# end def get_suggested_nodes_by_thesauri_bib_vid
 
 def get_sorted_subject_nodes(subject_nodes=None, d_namespace=None,
     log_file=None, verbosity=0):
@@ -262,7 +262,7 @@ def get_sorted_subject_nodes(subject_nodes=None, d_namespace=None,
     # Now subject nodes are ready to be sorted by key heading into
     # returnable list of subject nodes
 
-    sorted_xnodes = sorted(d_heading_subject.items(), key=lambda kv:kv[0])
+    sorted_xnodes = sorted(d_heading_subject.values(), key=lambda kv:kv[0])
     return sorted_xnodes
 # end def get_sorted_subject_nodes(0)
 
@@ -431,7 +431,7 @@ def mets_xml_add_or_replace_subjects(
       if key is not None}
 
     # New function to replace get_suggested_terms_by_thesauri_bib_vid
-    sorted_suggested_subjects = get_sorted_subjects_by_thesauri_bib_vid(
+    sorted_suggested_subject_nodes = get_sorted_subjects_by_thesauri_bib_vid(
         d_namespace=d_namespace,
         thesauri=thesauri, bib=bib, vid=vid)
 
@@ -501,6 +501,7 @@ def mets_xml_add_or_replace_subjects(
             subject_nodes = child_nodes,
             log_file=log_file, verbosity=verbosity)
 
+
         if verbosity > 1:
             l = len(sorted_current_subject_nodes)
             print(f"{me}: Got count={l} current sorted subject elts.")
@@ -525,7 +526,11 @@ def mets_xml_add_or_replace_subjects(
 
     # For each found suggested term, append a new mets 'subject' child node
     # stanza
-    for subject_count, subject_node in sorted_current_subject_nodes:
+
+    for subject_node in sorted_current_subject_nodes:
+        parent_nodes[0].append(subject_node)
+
+    for subject_node in sorted_suggested_subject_nodes:
         parent_nodes[0].append(subject_node)
 
     # TEST OUTPUT
