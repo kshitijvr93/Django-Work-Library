@@ -1,3 +1,5 @@
+# file pytesseract_test.py
+# tesseract ocr
 import os,sys
 import datetime
 import subprocess
@@ -539,6 +541,7 @@ base_file_names = [
         '26_marzo_1993.pdf', # 5 -
         'aa00021018_00001_00004.jpg', # 6 -
         'aa00021018_00001_00004.jp2', # 7 -
+        'aa00012984_00001.pdf'
         ]
 
 base_index= 7
