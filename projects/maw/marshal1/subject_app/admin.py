@@ -9,7 +9,7 @@ import os, sys
 
 
 from django.db import models
-from django.forms import TextInput, Textarea
+from django.forms import ModelForm, TextInput, Textarea, BaseInlineFormSet
 from django import forms
 
 class SubjectAppAdmin(admin.ModelAdmin):
@@ -65,6 +65,11 @@ class SubjectAppAdmin(admin.ModelAdmin):
 #end class SubjectAppAdmin
 
 
+class SubjectJobThesaurusInline(admin.TabularInline):
+    model = Thesaurus
+    fields = ('subject_job_id','name')
+
+
 class SubjectJobAdmin(SubjectAppAdmin):
     # Consider -- add user field in the future
     list_display = ('id','batch_set','thesaurus','status','create_datetime', 'end_datetime')
@@ -72,6 +77,7 @@ class SubjectJobAdmin(SubjectAppAdmin):
     readonly_fields = ('id','status','packages_created',
       'jp2_images_processed', 'create_datetime','end_datetime',)
 
+    inlines = [SubjectJobThesaurusInline]
 
     def get_readonly_fields(self, request, obj=None):
         '''
@@ -81,6 +87,15 @@ class SubjectJobAdmin(SubjectAppAdmin):
         if obj: # editing an existing object
             return self.readonly_fields + ('batch_set', )
         return self.readonly_fields
+
+
+
+
+
+
+
+
+
 
 class SubjectJobThesaurusAdmin(SubjectAppAdmin):
     # Consider -- add user field in the future

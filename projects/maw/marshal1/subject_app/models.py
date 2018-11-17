@@ -468,6 +468,9 @@ class SubjectJob(models.Model):
         # super().save(*args, **kwargs)
     # end def save()
 
+    def __str__(self):
+        return (
+          f"{self.id}")
 
 
 class Thesaurus(models.Model):
