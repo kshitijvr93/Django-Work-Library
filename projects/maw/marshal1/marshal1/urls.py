@@ -43,6 +43,7 @@ urlpatterns = [
     path('dps/', include('dps.urls')),
     path('elsevier/', include('hathitrust.urls')),
     path('hathitrust/', include('hathitrust.urls')),
+    #path('subject_app/', include('subject_app.urls')),
     path('ifas_citations/', include('hathitrust.urls')),
     path('lcroyster/', include('lcroyster.urls')),
 

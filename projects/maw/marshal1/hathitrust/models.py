@@ -847,6 +847,107 @@ class Jp2Job(models.Model):
     # end def save()
 
 
+class Jp2Job2(models.Model):
+    '''
+    Each row represents a run of the Hathitrust jp2_job package generator,
+    make_jp2_packages()
+
+    Very simple relation that represents the running of a batch job to create
+    HathiTrust packages for a set of bib_vids.
+
+    The web user:
+    (1) uses admin to add a row to table hathitrust_jp2_job ,
+    (2) sets a batch_set id for the row, and
+    (3) when the user save this row, the batch job to create Hathitrust packages
+    for the bib_vid in the package is launched.
+    To see that the batch job is completed, the user can either:
+    (1) check the log file in the output folder for proof that
+        the batch job is running or completed, assuming the user has permission
+        to check the output folder
+    (2) refresh the view of the jp2batch row to see if the status
+        field is completed. It may be convenient for the user to save a
+        memorable value in the notes field upon initial saving so it can be sought
+        later to re-check the row.
+
+    '''
+
+    id = models.AutoField(primary_key=True)
+
+    batch_set = models.ForeignKey(BatchSet, blank=False, null=False,
+      db_index=True,
+      help_text="BatchSet for which to generate Hathitrust JP2 Packages",
+      on_delete=models.CASCADE,)
+
+
+    create_datetime = models.DateTimeField('Run Start DateTime (UTC)',
+        null=True, editable=False)
+
+    #consider to populate user value later.. middleware seems best approach
+    # https://stackoverflow.com/questions/862522/django-populate-user-id-when-saving-a-model
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+      db_index=True, blank=True, null=True)
+
+    packages_created = models.IntegerField(default=0, null=True,
+      help_text='Number of bib_vid packages created by this job.')
+
+    jp2_images_processed = models.IntegerField(default=0, null=True,
+      help_text='Number of jp2 images packaged by this job.')
+
+    '''
+    jp2_images_per_minute = models.IntegerField(default=0, null=True,
+      help_text='Approximate number of jp2 images packaged per minute so far '
+          f'for this batch.')
+
+    run_seconds = models.IntegerField(default=0, null=True,
+      help_text='Approximate number of jp2 images packaged per minute so far '
+          f'for this batch.')
+    '''
+
+    notes = SpaceTextField(max_length=2550, null=True, default='note',
+      blank=True, help_text= ("General notes about this batch job run"),
+      editable=True,
+      )
+    # Todo: batch job updates the end_datetime and status fields
+    end_datetime = models.DateTimeField('End DateTime (UTC)',
+        null=True,  editable=False)
+    status = SpaceTextField('Run Status',max_length=2550, null=True, default='',
+      blank=True, help_text= (
+        "Status of ongoing or completed run. Check for status updates "
+        "as packages are being built."),
+      editable=True,
+      )
+
+    def save(self,*args,**kwargs):
+        me = "jp2_job.save()"
+
+        super().save(*args, **kwargs)
+        #if self.status is None or len(self.status) == 0:
+        if self.status is None or len(self.status) == 0:
+            # Only start this thread if status is not set
+            # Note: we super-saved before this clause becaue
+            # the thread uses/needs the autoassigne jp2batch.id value
+            # Note: may prevent row deletions later to preserve history,
+            # to support graphs of work history, etc.
+            thread = threading.Thread(target=make_jp2_packages, args=(self,))
+            thread.daemon = False
+            #process.start()
+            thread.start()
+            print(f"{me}: started thread.")
+            sys.stdout.flush()
+            #utc_now = datetime.datetime.utcnow()
+            utc_now = timezone.now()
+            self.create_datetime = utc_now
+            str_now = secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
+            self.status = f"Started processing at {str_now}"
+            # Save again so starting status appears immediately
+            super().save(*args, **kwargs)
+
+        # super().save(*args, **kwargs)
+    # end def save()
+
+
+
+
     class Meta:
         verbose_name_plural='Jp2Jobs'
 
