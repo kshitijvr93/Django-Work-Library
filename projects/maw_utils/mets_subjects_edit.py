@@ -242,10 +242,14 @@ def get_sorted_subject_nodes(subject_nodes=None, d_namespace=None,
     '''
     me = 'get_sorted_subject_nodes'
     xnodes = subject_nodes
+    if verbosity > 0:
+        msg = f'{me}: Starting with {len(subject_nodes)} subject nodes'
+        print(msg, file=log_file)
 
     d_heading_subject = {}
 
-    for subject_node in xnodes:
+    for node_count, subject_node in enumerate(xnodes, start=1):
+
         tnodes= subject_node.findall(
             "./TOPIC", namespaces=d_namespace)
         t_count = 0
@@ -253,10 +257,13 @@ def get_sorted_subject_nodes(subject_nodes=None, d_namespace=None,
         key_heading = ''
         for tnode in tnodes:
             t_count += 1
-            key_heading += tnode.text
+            key_heading += (tsep + tnode.text)
             tsep = ' -- '
 
         d_heading_subject[key_heading] = subject_node
+        if verbosity > 0:
+            msg = f'{me}: subject_node {node_count} has key {key_heading}'
+            print(msg, file=log_file)
     # end for subject_node in xnodes
 
     # Now subject nodes are ready to be sorted by key heading into
@@ -506,21 +513,24 @@ def mets_xml_add_or_replace_subjects(
         have_child = False
 
     if verbosity > 1:
-        print(f"{me}: Current mets has/had {len(subject_nodes)} subject nodes")
+        msg = (f"{me}: METs has {len(subject_nodes)} current subject nodes")
+        print(msg, file=log_file)
 
     if retain_subjects == True:
         # Here, we want to preserve current subjects (not replace them)
         # Create a dictionary that allows for sorting by topic name
         # so we can issue them alphabetically in document tree order.
-        #
 
+
+        # Sort the current nodes to retain a sorted order
         sorted_current_subject_nodes = get_sorted_subject_nodes(
             d_namespace=d_namespace, subject_nodes=subject_nodes,
             log_file=log_file, verbosity=verbosity)
 
         if verbosity > 1:
             l = len(sorted_current_subject_nodes)
-            print(f"{me}: Got count={l} current sorted subject nodes.")
+            msg = (f"{me}: Got count={l} current sorted subject nodes.")
+            print(msg, file=log_file)
         # If needed, we got the current_subject_nodes to sort and retain
 
     # Delete the current subject nodes.
@@ -531,7 +541,7 @@ def mets_xml_add_or_replace_subjects(
 
     for subject_node in sorted_suggested_subject_nodes:
         if verbosity > 1:
-            msg = (f'{me}Adding suggested subject_node {subject_node.tag}')
+            msg = (f'{me}:Add suggested node {subject_node.tag}')
             print(msg, file=log_file, flush=True)
         parent_nodes[0].append(subject_node)
 
@@ -539,7 +549,8 @@ def mets_xml_add_or_replace_subjects(
     if retain_subjects == True:
         for subject_node in sorted_current_subject_nodes:
             if verbosity > 1:
-                msg = (f'{me}Adding retained subject_node {subject_node.tag}')
+                msg = (
+                  f'{me}:Add retained node {subject_node.tag}')
                 print(msg, file=log_file, flush=True)
             parent_nodes[0].append(subject_node)
 
