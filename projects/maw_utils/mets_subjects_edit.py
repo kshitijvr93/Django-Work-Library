@@ -283,6 +283,19 @@ def output_by_node__output_file_name(
             )
         output_file.write(output)
 
+def delete_nodes(nodes=None, log_file=None, verbosity=1):
+    me = 'delete_nodes'
+    for obsolete in nodes:
+        otag = obsolete.tag
+        parent = obsolete.getparent()
+        if verbosity > 0:
+            msg = f"{me}:From parent='{parent.tag}', removed obsolete='{otag}'"
+            print(msg, file=log_file)
+        # remove obsolete node from its own parent
+        parent.remove(obsolete)
+    return
+# def delete_nodes()
+
 def mets_xml_add_or_replace_subjects(
     input_file_name=None,
     input_encoding='latin-1', errors='ignore',
@@ -294,6 +307,7 @@ def mets_xml_add_or_replace_subjects(
     # and False means to preserve current mets subjects
     # We always add subjects for the given list of thesauri for an item.
     replace_subjects=False,
+    retain_subjects=True,
     verbosity=0,):
 
     '''
@@ -320,10 +334,8 @@ def mets_xml_add_or_replace_subjects(
 
     - Find the UFDC resources mets.xml file for the bib_vid and
     - Use lxml to parse/represent the METS file into a local core mets tree,
-    - If arg replace_subjects is True, go directly a few steps below to
-      remove all current subject elments from the mets tree.
-    - Read all the current subject elements into an ordered dictionary 'd_current_term'
-      (or maybe unordered dict at this stage): using
+    - If retain_subjects == True: Put all the current subject elements/nodes
+      in a subject_nodes list.
        -- item parsing: each 'item' in a dictionary is defined by a mets xml
           SUBJECT element.
        -- key: the ordered concatentated string of all child 'topic/ text values
@@ -333,25 +345,30 @@ def mets_xml_add_or_replace_subjects(
           subject. (eg authority:'lcsh', others).
           Note that the TOPIC values in a mets should have no attributes to
           be accepted nor preserved.
-    - Sort the 'd_current' dictionary by key.
+       -- Sort the 'subject_nodes' list.
 
     - Remove all current subject elements from the mets tree
 
     - Arrange a sorted list ai_terms[] of the sorted TOPIC terms from AI.
-    - For each ai_terms[] item, create and append to the mets_tree a <subject>
-      element with the child element <topic> with the term name value.
-      NOTE: now AI does not give a 'path' value for a term as does lcsh,
-      so each AI term we receive now is always a single topic term name/string.
+    - For each SuggestedTerm in ai_terms[], create and append to the mets_tree
+      a <subject> element with the child element <topic> with the term name
+      value, in lexicographic order of sorted topic/term name.
+
+      NOTE: now AI does provide any multi-part  'path' value for a term as
+      does lcsh for some subjects.
+      So each AI suggested subject term we receive now is always a single
+      topic value.
 
     - Future: add option to indicate other XTAGs than TOPIC for
       values to use as an sql filter or to set as a request parameter
       to the API
-    - If arg replace_subjects is False, output the ordered list of terms
-      in d_current
-      -- For each d_current key/term,
+    - If arg retain_subjects is True, append the ordered list
+      subject_nodes into the mets tree
+      ---- xxx
+      -- For each extant subject term,
          -- create a subject element with the attribute ID in the format of
             marc_12_n, and with attribute authority with value jstor
-         -- from the d_current value, split via the tab character into 1 or
+         -- from the term value, split via the tab character into 1 or
              more subvalues and for each (in order) append to the subject a child
              element <topic> with the splitted-out subvalue.
       Note: maybe have a method to do this or a stub that later will
@@ -383,9 +400,9 @@ def mets_xml_add_or_replace_subjects(
 
     parent_xpath = f".//mods:mods"
 
-    child_tag_namespace = 'mods'
-    child_tag_localname = 'subject'
-    child_tag_name = f'{child_tag_namespace}:{child_tag_localname}'
+    #child_tag_namespace = 'mods'
+    #child_tag_localname = 'subject'
+    #child_tag_name = f'{child_tag_namespace}:{child_tag_localname}'
 
     # Get bib and vid from filename
     print(f"{me}:Starting with input_file_name={input_file_name}")
@@ -405,8 +422,9 @@ def mets_xml_add_or_replace_subjects(
         vid = bparts[1]
 
     if verbosity > 0:
-        msg = ('{}: using input_file={}, parent_xpath={},child_tag_namespace={}'
-          .format(me, input_file_name, parent_xpath,child_tag_namespace))
+        msg = (
+          '{}: using input_file={}, parent_xpath={}'
+          .format(me, input_file_name, parent_xpath,))
         msg += f'\nbib={bib}, vid={vid}'
         print(msg, file=log_file)
 
@@ -479,59 +497,51 @@ def mets_xml_add_or_replace_subjects(
     if verbosity > 0:
         print(f"Using subject_xpath={subject_xpath}", file=log_file)
 
-    child_nodes = parent_nodes[0].findall(
+    subject_nodes = parent_nodes[0].findall(
         subject_xpath, namespaces=d_namespace)
 
-    if child_nodes is not None and len(child_nodes) > 0:
+    if subject_nodes is not None and len(subject_nodes) > 0:
         have_child = True
     else:
         have_child = False
 
     if verbosity > 1:
-        print(f"{me}: Current mets has/had {len(child_nodes)} subject elts")
+        print(f"{me}: Current mets has/had {len(subject_nodes)} subject nodes")
 
-    if replace_subjects == False:
+    if retain_subjects == True:
         # Here, we want to preserve current subjects (not replace them)
         # Create a dictionary that allows for sorting by topic name
         # so we can issue them alphabetically in document tree order.
         #
 
         sorted_current_subject_nodes = get_sorted_subject_nodes(
-            d_namespace=d_namespace,
-            subject_nodes = child_nodes,
+            d_namespace=d_namespace, subject_nodes=subject_nodes,
             log_file=log_file, verbosity=verbosity)
-
 
         if verbosity > 1:
             l = len(sorted_current_subject_nodes)
-            print(f"{me}: Got count={l} current sorted subject elts.")
+            print(f"{me}: Got count={l} current sorted subject nodes.")
+        # If needed, we got the current_subject_nodes to sort and retain
 
-    # If needed, we got the current_subjects, so now we can remove those
-    # obsolete subject element nodes.
-    if replace_subjects == True:
-        # Delete the current but to-be removed obsolete child nodes
-        for obsolete in child_nodes:
-            otag = obsolete.tag
-
-            parent = obsolete.getparent()
-            parent.remove(obsolete)
-
-            msg= f"From parent='{parent}'',removed obsolete='{otag}'"
-            print(msg, file=log_file)
-
-    if verbosity > 1:
-        msg = ('{}: in {}, found PARENT to receive a new  node'
-          .format(me, input_file_name))
-        print(msg, file=log_file)
+    # Delete the current subject nodes.
+    delete_nodes(nodes=subject_nodes, log_file=log_file, verbosity=verbosity)
 
     # For each found suggested term, append a new mets 'subject' child node
-    # stanza
-
-    for subject_node in sorted_current_subject_nodes:
-        parent_nodes[0].append(subject_node)
+    # stanza first
 
     for subject_node in sorted_suggested_subject_nodes:
+        if verbosity > 1:
+            msg = (f'{me}Adding suggested subject_node {subject_node.tag}')
+            print(msg, file=log_file, flush=True)
         parent_nodes[0].append(subject_node)
+
+    # Per UFDC requirments, now restore the old nodes
+    if retain_subjects == True:
+        for subject_node in sorted_current_subject_nodes:
+            if verbosity > 1:
+                msg = (f'{me}Adding retained subject_node {subject_node.tag}')
+                print(msg, file=log_file, flush=True)
+            parent_nodes[0].append(subject_node)
 
     # TEST OUTPUT
     output_file_name = r'C:\rvp\tmp.mets.xml'
