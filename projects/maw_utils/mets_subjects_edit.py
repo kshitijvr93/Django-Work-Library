@@ -248,10 +248,11 @@ def get_sorted_subject_nodes(subject_nodes=None, d_namespace=None,
 
     d_heading_subject = {}
 
+    topic_tag = "mods:topic"
     for node_count, subject_node in enumerate(xnodes, start=1):
-
-        tnodes= subject_node.findall(
-            "./TOPIC", namespaces=d_namespace)
+        tnodes = subject_node.findall(
+            topic_tag, namespaces=d_namespace)
+        #RESUME todo: find topic_tag that yields the topics
         t_count = 0
         tsep = ''
         key_heading = ''
@@ -269,7 +270,7 @@ def get_sorted_subject_nodes(subject_nodes=None, d_namespace=None,
     # Now subject nodes are ready to be sorted by key heading into
     # returnable list of subject nodes
 
-    sorted_xnodes = sorted(d_heading_subject.values(), key=lambda kv:kv[0])
+    sorted_xnodes = sorted(d_heading_subject.values(), key=lambda kv:kv[0].text)
     return sorted_xnodes
 # end def get_sorted_subject_nodes(0)
 
