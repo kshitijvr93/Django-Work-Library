@@ -473,17 +473,18 @@ def mets_xml_add_or_replace_subjects(
     parent_nodes = node_root_input.findall(
         parent_xpath, namespaces=d_namespace)
 
-    if parent_nodes is None:
+    if parent_nodes is None or len(parent_nodes) == 0:
         if verbosity > 0:
-            msg = ('{}: in {}, found NO parent node occurences. Skipping file.'
-              .format(me, input_file_name))
+            msg = (
+              f'{me}: in {input_file_name}, found NO parent node '
+              f' occurences. Skipping file {input_file_name}.')
             print(msg, file=log_file)
         return -2
 
     plen = len(parent_nodes)
     if verbosity > 0:
-        msg = ('{}: in {}, found {} parent nodes'
-          .format(me, input_file_name, plen))
+        msg = (
+          f'{me}: in {input_file_name}, found {plen} parent nodes')
         print(msg, file=log_file)
 
     # Check for extant child - default behavior is to NOT insert child if
