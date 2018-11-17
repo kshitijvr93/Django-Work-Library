@@ -89,8 +89,9 @@ INSTALLED_APPS = [
     'cuba_libro.apps.CubaLibroConfig',
     # Hathtitrust has fkey to dps, so dps precedes above..
     'hathitrust.apps.HathitrustConfig',
+    'subject_app.apps.SubjectAppConfig',
     'lcroyster.apps.LcroysterConfig',
-    'profile.apps.ProfileConfig',
+    'profile.apps.ProfileConfig',    
     'snow.apps.SnowConfig',
     'submit.apps.SubmitConfig',
 ]
@@ -414,6 +415,40 @@ else:
     raise ValueError(msg)
 # END Checks for hathitrust_env
 
+
+# Start checks for hathitrust_env settings
+subject_app_env = maw_settings.SUBJECT_APP_ENV
+if subject_app_env == 'test':
+    DATABASES.update({
+        # This db will hold users and groups info
+        'subject_app_connection': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'dps',
+            'USER': maw_settings.TEST_PSQL_USER,
+            'PASSWORD': maw_settings.TEST_PSQL_PASSWORD,
+            'HOST': '10.241.33.139',
+            'PORT': '5432',
+            'TIME_ZONE': None,
+        },
+    }) # hathitrust_env = 'test'
+elif subject_app_env == 'local':
+    DATABASES.update({
+        'subject_app_connection': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'dps',
+            'USER': maw_settings.LOCAL_PSQL_USER,
+            'PASSWORD': maw_settings.LOCAL_PSQL_PASSWORD,
+            'HOST': '127.0.0.1',
+            'PORT': '5432',
+            'TIME_ZONE': None,
+        },
+    }) # END ENV LOCAL DATABASES
+else:
+    msg = ( f"Bad maw_settings.SUBJECT_APP_ENV name='{subject_app_env}'. "
+      "Not found in ['xlocal','test']" )
+    raise ValueError(msg)
+# END Checks for hathitrust_env
+
 if maw_settings.ENV == 'test':
     DATABASES.update({
         # This db will hold users and groups info
@@ -467,7 +502,8 @@ else:
 DATABASE_ROUTERS = [
     'cuba_libro.models.Cuba_LibroRouter',
     'dps.models.DpsRouter',
-    'hathitrust.models.HathiRouter',
+    'hathitrust.models.HathiRouter', 
+    'subject_app.models.SubjectAppRouter',   
     'lcroyster.models.LcroysterRouter',
     'snow.models.SnowRouter',
     'submit.models.SubmitRouter',
