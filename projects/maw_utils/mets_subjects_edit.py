@@ -146,7 +146,7 @@ def get_tree_and_root_by_file_name(input_file_name=None, log_file=None,
 #end def get_root_from_parsed_file_bytes()
 
 def get_sorted_subjects_by_thesauri_bib_vid(thesauri=None,
-    d_namespace=None, bib=None, vid=None, verbosity=1):
+    d_namespace=None, content=None, bib=None, vid=None, verbosity=1):
     # Todo - add db query code
     # or api code here
     # Return test results now...
@@ -158,9 +158,26 @@ def get_sorted_subjects_by_thesauri_bib_vid(thesauri=None,
 
     #Prepare to process multiple thesauri or categories(xtags) later.
     #
-    d_thesaurus_xtag = { 'jstor': 'TOPIC',}
-    category = d_thesaurus_xtag[thesauri[0]]
+    me = 'get_sorted_subjects_by_thesauri'
+    if (    d_namespace is None or thesauri is None or d_namespace is None):
+        msg = f'{me}: Missing argument(s).''
+        raise ValueError(msg)
 
+    if content is None:
+        if bib is None and vid is None:
+        msg = f'{me}: Missing content or bib and vid.''
+        raise ValueError(msg)
+    else:
+        # content only is provided. To be implemented.
+        msg = f'{me}: Handling of content not yet implemented.'
+        raise ValueError(msg)
+
+    d_thesaurus_xtag = {
+      'jstor': 'TOPIC', # might add more one day per new UF-AI mou?
+    }
+    categories = [ v for v in d_thesauris_xtag.values()]
+
+    '''
     suggested_terms = [
       'matrices',
       'geometric shapes',
@@ -170,8 +187,13 @@ def get_sorted_subjects_by_thesauri_bib_vid(thesauri=None,
       'damping',
       'butterflies',
     ]
+    '''
 
-    suggested_terms0 = ['suggested_term1','suggested_term2','suggested_term3']
+    # Get all suggested subject terms from the local database.
+    # https://stackoverflow.com/questions/26411411/django-orm-values-list-with-in-filter-performance
+
+    suggested_terms = ( Subject.objects.values_list('term', flat=True).
+        filter(bibid=bib, vid=vid, xtag__in=categories) )
 
     # consider:put terms in a list to remove late-comer dups
     # for now, there 'should be' no dups from AI because we are
@@ -179,7 +201,7 @@ def get_sorted_subjects_by_thesauri_bib_vid(thesauri=None,
     # discover that during testing and overcome it if it is an
     # issue.
     l = len(suggested_terms)
-    msg = f"Got {l} suggested terms"
+    msg = f"ORM Got {l} suggested terms"
 
     print(msg, file=sys.stdout, flush=True)
     sorted_terms = sorted(suggested_terms, key=str.lower)
@@ -193,7 +215,7 @@ def get_sorted_subjects_by_thesauri_bib_vid(thesauri=None,
     mods_namespace = d_namespace['mods']
 
     subject_name = f"{{{mods_namespace}}}subject"
-    subject_tag = "mods:subject"
+    # subject_tag = "mods:subject"
 
     topic_name = f"{{{mods_namespace}}}topic"
     topic_tag = "mods:topic"
@@ -456,10 +478,12 @@ def mets_xml_add_or_replace_subjects(
       for key,value in dict(node_root_input.nsmap).items()
       if key is not None}
 
-    # New function to replace get_suggested_terms_by_thesauri_bib_vid
+
+    # Get list of subject_nodes from the AccessInnovations
+    # provided 'suggested terms' for the given bib, vid and thesauri.
+
     sorted_suggested_subject_nodes = get_sorted_subjects_by_thesauri_bib_vid(
-        d_namespace=d_namespace,
-        thesauri=thesauri, bib=bib, vid=vid)
+        d_namespace=d_namespace, thesauri=thesauri, bib=bib, vid=vid)
 
     if verbosity > 1:
         msg=f'--- {me}: NAMESPACE KEY VALUES ARE:'
@@ -468,24 +492,24 @@ def mets_xml_add_or_replace_subjects(
             msg = (f"{key} : {value}")
             print(msg, file=log_file)
 
-    # Find the parent node(s) if any - for a mets.xml file, they are designed
-    # for one parent/root node
+    # Find the parent node(s) for a mets.xml file, they are designed
+    # for one such parent/root node per input file, so we assume that.
     parent_nodes = node_root_input.findall(
         parent_xpath, namespaces=d_namespace)
-
-    if parent_nodes is None or len(parent_nodes) == 0:
-        if verbosity > 0:
-            msg = (
-              f'{me}: in {input_file_name}, found NO parent node '
-              f' occurences. Skipping file {input_file_name}.')
-            print(msg, file=log_file)
-        return -2
-
     plen = len(parent_nodes)
+
     if verbosity > 0:
         msg = (
           f'{me}: in {input_file_name}, found {plen} parent nodes')
         print(msg, file=log_file)
+
+    if parent_nodes is None or plen != 1:
+        if verbosity > 0:
+            msg = (
+              f'{me}: in {input_file_name}, did not find exactly 1 parent_node'
+              f' occurence. Skipping processing the file.')
+            print(msg, file=log_file)
+        return -2
 
     # Check for extant child - default behavior is to NOT insert child if
     # same type of node already exists
@@ -495,6 +519,9 @@ def mets_xml_add_or_replace_subjects(
     subject_name = f"{{{mods_namespace}}}subject"
     subject_tag = "mods:subject"
 
+    if verbosity > 0:
+        print(f"Using subject_xpath={subject_xpath}", file=log_file)
+
     topic_name = f"{{{mods_namespace}}}topic"
     topic_tag = "mods:topic"
 
@@ -503,8 +530,6 @@ def mets_xml_add_or_replace_subjects(
 
     subject_xpath = subject_tag
 
-    if verbosity > 0:
-        print(f"Using subject_xpath={subject_xpath}", file=log_file)
 
     subject_nodes = parent_nodes[0].findall(
         subject_xpath, namespaces=d_namespace)
@@ -520,9 +545,8 @@ def mets_xml_add_or_replace_subjects(
 
     if retain_subjects == True:
         # Here, we want to preserve current subjects (not replace them)
-        # Create a dictionary that allows for sorting by topic name
-        # so we can issue them alphabetically in document tree order.
-
+        # Create a sorted list of the subject nodes which
+        # we will append alphabetically into the mets document tree.
 
         # Sort the current nodes to retain a sorted order
         sorted_current_subject_nodes = get_sorted_subject_nodes(
@@ -538,8 +562,10 @@ def mets_xml_add_or_replace_subjects(
     # Delete the current subject nodes.
     delete_nodes(nodes=subject_nodes, log_file=log_file, verbosity=verbosity)
 
-    # For each found suggested term, append a new mets 'subject' child node
-    # stanza first
+    # For each found suggested term, UFDC standard citation display UI
+    # requirements are implemented by first appending to thd mets.xml file the
+    # the suggested subject nodes, and later we will append any retained
+    # subjet nods.
 
     for subject_node in sorted_suggested_subject_nodes:
         if verbosity > 1:
@@ -547,8 +573,8 @@ def mets_xml_add_or_replace_subjects(
             print(msg, file=log_file, flush=True)
         parent_nodes[0].append(subject_node)
 
-    # Per UFDC requirments, now restore the old nodes
     if retain_subjects == True:
+        # Per UFDC requirments, now restore the sorted current nodes
         for subject_node in sorted_current_subject_nodes:
             if verbosity > 1:
                 msg = (
@@ -560,6 +586,10 @@ def mets_xml_add_or_replace_subjects(
     output_file_name = r'C:\rvp\tmp.mets.xml'
     output_by_node__output_file_name(node=node_root_input,
         output_file_name=output_file_name)
+    msg = (f'{me}: outputting new mets file to {output_file_name}'
+        f'Done!')
+    print(msg, file=log_file)
+    print(msg)
 
     return 1
 
