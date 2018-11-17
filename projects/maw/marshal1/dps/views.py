@@ -27,19 +27,20 @@ from sqlalchemy import (
 '''
 Method out_mets(request):
 
-Read the contents of X2018Thesis and input the rows, each representing a uf
-bibvid item, with some basic uf_bibivid info
+(1) Read the contents of X2018Thesis and input the rows,
+(2) each representing a uf bibvid item, with some basic uf_bibivid info
 and AI-supplied info exported from a XIS export of UF Electronic Theses and
-Dissertatino (ETD) items that were
-exported by Xiaoli Ma circa August 2018).
+Dissertation (ETD) items that were exported by Xiaoli Ma circa August 2018).
 
-For each,
+For each row, which represents and item (a UF bibvid identifies each item),
+
 (1) retrieve and store in core the subjects data from table X2018Subject
     where 'keep' == 'y'.
 (2) read the associated METS file in ufdc resources, parse with lxml and store
     the doc tree in local core.
     (a) If option reset_subjects = True, delete all current lxml nodes for subjects
     (b) insert all 'keep' subjects
+
 (3) Generate a new output mets file for the item in an  output folder
     given by a django setting.py (which in turn is defined in the local
     maw_settings.py file on the instance of the Django MAW webserver):
@@ -53,8 +54,17 @@ import os, sys
 
 # def bibvid_resources_folder(bibvid=None, verbosity=0):
 def mets_filename_by_bibvid(bibvid=None, verbosity=0):
-    me = 'bib_resources_folder'
+    '''
+    Initial version creatd in year 2018.
+
+    Given a bibvid (bib_vid) that identifies a UFDC item,
+    Derive the *.mets.xml production filename under the UFDC 'resources'
+    directory for the UFDC item.
+    '''
+
+    me = 'mets_filename_by_bibvid'
     bparts = bibvid.split('_')
+
     if len(bibvid) != 16 or len(bparts[0]) != 10 or len(bparts[1]) != 5:
         msg = f"{me}: bibvid='{bibvid}' has invalid format"
         raise ValueError(msg)
@@ -69,6 +79,7 @@ def mets_filename_by_bibvid(bibvid=None, verbosity=0):
         sys.stdout.flush()
 
     return mets_file
+#end def mets_filename_by_bibvid
 
 '''
 Method mets_root_by_bibvid(bibvid=None, verbosity=0)
@@ -121,10 +132,16 @@ def new_node_by_subject(subject=None):
     node_subject.append(node_topic)
     return node_subject
 
-'''
-Method out_mets()
-'''
 def out_mets(request):
+    '''
+    This is designed initially to be called by a user browsing to a
+    certain url see urls.py.
+
+    Given a django request object this method does:
+    (1) Loop through each row in model X2018_Thesis, and for each row:
+    (2) retrieve the uf_bibvid
+    '''
+
 
     out_html = '<ol>'
     out_file = 'c:\\rvp\\outmets.xml'
@@ -135,6 +152,7 @@ def out_mets(request):
     # Report and Skip any duplicate items.
     n_thesis = 0
     n_bad = 0
+
     with open(out_file,'w') as ofile:
         for thesis in X2018Thesis.objects.all():
         #for thesis in Bibvid.objects.all():
