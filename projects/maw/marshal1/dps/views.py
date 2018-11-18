@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Bibvid, X2018Thesis, X2018Subject
 from lxml import etree
 import etl
+from maw_utils/mets_subject_edit import xxx
 ########################### IMPORT
 # NB; WARNING - canNOT use parens to make an import multiline in python
 # yet. Must use bakslash.
@@ -85,7 +86,7 @@ def mets_filename_by_bibvid(bibvid=None, verbosity=0):
 Method mets_root_by_bibvid(bibvid=None, verbosity=0)
 
 For given bibvid, use DPS_UFDC_FOLDER as a base and construct the
-keypair subfolder path, and read and parse the mets.xml file into
+keypair subfolder path for a bibvid, and read and parse the mets.xml file into
 an lxml tree.
 
 Return the root node
