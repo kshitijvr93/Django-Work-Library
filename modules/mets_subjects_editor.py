@@ -305,47 +305,6 @@ def ai_sorted_subject_nodes_by_thesauri_bib_vid(thesauri=None,
     return sorted_subject_nodes
 # end def get_suggested_nodes_by_thesauri_bib_vid
 
-def sort_mets_subject_nodes(subject_nodes=None, d_namespace=None,
-    log_file=None, verbosity=0):
-    '''
-    Given a list of input 'subject' lxml nodes with data formatted
-    for UF Digital Collections mets.xml files,
-
-    Return a sorted list of subject xml nodes ...
-    '''
-    me = 'sort_mets_subject_nodes'
-    xnodes = subject_nodes
-    if verbosity > 0:
-        msg = f'{me}: Starting with {len(subject_nodes)} subject nodes'
-        print(msg, file=log_file)
-
-    d_heading_subject = {}
-
-    topic_tag = self.topic_qualified_tag
-    for node_count, subject_node in enumerate(xnodes, start=1):
-        tnodes = subject_node.findall(
-            topic_tag, namespaces=self.mets.d_mets_namespace)
-        #RESUME todo: find topic_tag that yields the topics
-        t_count = 0
-        tsep = ''
-        key_heading = ''
-        for tnode in tnodes:
-            t_count += 1
-            key_heading += (tsep + tnode.text)
-            tsep = ' -- '
-
-        d_heading_subject[key_heading] = subject_node
-        if verbosity > 0:
-            msg = f'{me}: subject_node {node_count} has key {key_heading}'
-            print(msg, file=log_file)
-    # end for subject_node in xnodes
-
-    # Now subject nodes are ready to be sorted by key heading into
-    # returnable list of subject nodes
-
-    sorted_xnodes = sorted(d_heading_subject.values(), key=lambda kv:kv[0].text)
-    return sorted_xnodes
-# end def sort_mets_subject_nodes(0)
 
 def output_by_node__output_file_name(
     node=None,
@@ -377,7 +336,7 @@ def delete_nodes(nodes=None, log_file=None, verbosity=1):
     return
 # def delete_nodes()
 
-class UFMetsSubjectsEditor():
+class MetsSubjectsEditor():
     '''
     '''
 
@@ -410,7 +369,7 @@ class UFMetsSubjectsEditor():
         That list is edited by some methods of this object.
         '''
 
-        me='UFMetsSubjectEditor:__init__()'
+        me='MetsSubjectEditor:__init__()'
 
         if bib is None or vid is None:
             raise ValueError(f'{me}:Missing bib or vid')
@@ -465,9 +424,17 @@ class UFMetsSubjectsEditor():
         self.item_text = item_text
 
         #some constants
-        self.parent_qualified_tag='mods:mods',
-        self.subject_qualified_tag = "mods:subject"
-        self.topic_qualified_tag = "mods:topic"
+        qtag = 'mods:mods'
+        self.parent_qualified_tag = qtag
+        self.parent_xpath = f'.//{qtag}'
+
+        qtag = 'mods:subject'
+        self.subject_qualified_tag = qtag
+        self.subject_xpath = f'.//{qtag}'
+
+        qtag = 'mods:topic'
+        self.topic_qualified_tag = qtag
+        self.topic_xpath = f'.//{qtag}'
 
         self.backup_subfolder_name = backup_subfolder_name
         self.strftime_forma = strftime_format
@@ -540,6 +507,47 @@ class UFMetsSubjectsEditor():
 
     #end def __init__()
 
+    def sorted_subject_nodes(self, subject_nodes=None, d_namespace=None,
+        log_file=None, verbosity=0):
+        '''
+        Given a list of input 'subject' lxml nodes with data formatted
+        for UF Digital Collections mets.xml files,
+
+        Return a sorted list of subject xml nodes ...
+        '''
+        me = 'sorted_subject_nodes'
+        xnodes = subject_nodes
+        if verbosity > 0:
+            msg = f'{me}: Starting with {len(subject_nodes)} subject nodes'
+            print(msg, file=log_file)
+
+        d_heading_subject = {}
+
+        topic_tag = self.topic_qualified_tag
+        for node_count, subject_node in enumerate(xnodes, start=1):
+            tnodes = subject_node.findall(
+                self.topic_xpath, namespaces=self.d_mets_namespace)
+            #RESUME todo: find topic_tag that yields the topics
+            t_count = 0
+            tsep = ''
+            key_heading = ''
+            for tnode in tnodes:
+                t_count += 1
+                key_heading += (tsep + tnode.text)
+                tsep = ' -- '
+
+            d_heading_subject[key_heading] = subject_node
+            if verbosity > 0:
+                msg = f'{me}: subject_node {node_count} has key {key_heading}'
+                print(msg, file=log_file)
+        # end for subject_node in xnodes
+
+        # Now subject nodes are ready to be sorted by key heading into
+        # returnable list of subject nodes
+
+        sorted_xnodes = sorted(d_heading_subject.values(), key=lambda kv:kv[0].text)
+        return sorted_xnodes
+    # end def sorted_subject_nodes(0)
     #def mets_xml_add_or_replace_subjects(self,
     '''
         input_file_name=None,
@@ -717,15 +725,15 @@ class UFMetsSubjectsEditor():
 
         # Find the parent node(s) for a mets.xml file, the files are designed
         # for one such parent/root node per input file, so we assume that.
-        d_namespace = self.d_mets_namespace
-        xp = str(self.parent_qualified_tag)
+        pxp = self.parent_xpath
         if verbosity > 0:
             msg = (
-              f'{me}: finding parent nodes for xpath {xp}')
+              f"{me}: finding parent nodes for xpath '{pxp}'")
             print(msg, file=log_file, flush=True)
             print(msg, flush=True)
+
         parent_nodes = node_root_input.findall(
-            xp, namespaces=self.d_mets_namespace)
+            pxp, namespaces=self.d_mets_namespace)
         plen = len(parent_nodes)
 
         if verbosity > 0:
@@ -742,13 +750,14 @@ class UFMetsSubjectsEditor():
                 print(msg, file=log_file)
             return -2
 
+        parent_node = parent_nodes[0]
+
         # Check for extant child - default behavior is to NOT insert child if
         # same type of node already exists
         mods_namespace = d_namespace['mods']
-        subject_xpath = self.subject_qualified_tag
 
         if verbosity > 0:
-            print(f"Using subject_xpath={subject_xpath}", file=log_file)
+            print(f"Using subject_xpath={self.subject_xpath}", file=log_file)
 
         topic_name = f"{{{mods_namespace}}}topic"
         topic_tag = self.topic_qualified_tag
@@ -756,8 +765,8 @@ class UFMetsSubjectsEditor():
         # subject_xpath is the xpath to identify and find all child nodes
         # for this bib_vid ufdc item to be edited/replaced
 
-        subject_nodes = parent_nodes[0].findall(
-            subject_xpath, namespaces=d_namespace)
+        subject_nodes = parent_node.findall(
+            self.subject_xpath, namespaces=d_namespace)
 
         if subject_nodes is not None and len(subject_nodes) > 0:
             have_child = True
@@ -774,7 +783,7 @@ class UFMetsSubjectsEditor():
             # we will append alphabetically into the mets document tree.
 
             # Sort the current nodes to retain a sorted order
-            sorted_current_subject_nodes = sort_mets_subject_nodes(
+            sorted_current_subject_nodes = self.sorted_subject_nodes(
                 d_namespace=d_namespace, subject_nodes=subject_nodes,
                 log_file=log_file, verbosity=verbosity)
 
@@ -811,7 +820,7 @@ class UFMetsSubjectsEditor():
         output_file_name = r'C:\rvp\tmp.mets.xml'
         output_by_node__output_file_name(node=node_root_input,
             output_file_name=output_file_name)
-        msg = (f'{me}: outputting new mets file to {output_file_name}'
+        msg = (f'{me}: outputting new mets file to {output_file_name}\n'
             f'Done!')
         print(msg, file=log_file)
         print(msg)
@@ -1087,7 +1096,7 @@ if __name__ == "__main__":
 
     item = bib='aa00012984'
     #item = UFDCItem(bib=bib, log_file_name='log_mets_subject_edit.txt', )
-    subject_editor = UFMetsSubjectsEditor(bib=bib)
+    subject_editor = MetsSubjectsEditor(bib=bib)
 
     '''
     run(backup_folder=backup_folder,
