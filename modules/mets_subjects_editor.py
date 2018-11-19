@@ -153,43 +153,31 @@ def get_tree_and_root_by_file_name(input_file_name=None, log_file=None,
 #end def get_root_from_parsed_file_bytes()
 
 
-#def ai_sorted_subject_nodes_bythesauri_bib_vid(thesauri=None,
-def ai_sorted_subject_nodes_by_thesauri_bib_vid(thesauri=None,
-    d_namespace=None, item_text=None, bib=None, vid=None, verbosity=1):
+def new_sorted_subject_nodes( authority='jstor',
+    marc='650', i1='#', i2='0',
+    topic_terms=None,
+    d_namespace=None, verbosity=1):
     '''
     Given:
-      (1) a UF-AI list of agreed theaurus names and
-      (2) either
-        (A) bib and vid or
-        (B) item_text bytes
-      for a UFDC item, and
-      (3) a d_namespace with key 'mets' that provides the namespace
+      (1) a simple list of strings, each a subject topic term
+      (2) a d_namespace with key 'mets' that provides the namespace
           value to be expanded
 
     Return:
       A list of sorted subject nodes, meant to be inserted into the main
-      document node of a mets.xml tree representing the item.
-
-      consider: to separate AI object from METS object, do not return subject nodes,
-      but rather an AI object that reflects their single terms and thesauri
-      or maintain a seprate 'liason or translator' object to convert AI subjec/term
-      data to mets?  (but since METS is a standard, ... can keep subject_nodes
-      as output here maybe?)
+      document node of a mets.xml tree representing a UFDC item.
 
     Details:
       The returned list of sorted subject_nodes is created per requirements:
-      - each ai term is a single string representing a topic term to
+      - each term is a single string representing a topic term to
         be represented as a child xml <mets:topic> node of the subject node
-      - the supported parameter list of thesauri names is no
-        restricted to hold the single string 'jstor' representing the
-        only supported thesaurus name.
-        When/if multiple thesauri are required, this code might be revised.
+      - future:? allow tab character separators to indicate mulitple <topic>
+        strings within a node, ala lcsh 'subject headings'
       - each returned subject node will have the attributes:
         <subject authority='jstor' ID='650_#0_N'
         where N is the sequence number within the set of returned nodes
       - the returned nodes will be sorted in order of the lexicographic term
         value
-      - The terms are retrieved from database model X2018_Subject
 
     Notes:
       no checks for (nor omission) of duplicate term strings is done.
@@ -206,90 +194,44 @@ def ai_sorted_subject_nodes_by_thesauri_bib_vid(thesauri=None,
 
     #Prepare to process multiple thesauri or categories(xtags) later.
     #
-    me = 'ai_sorted_subject_nodes_by_thesauri_bib_vid'
+    me = 'new_sorted_subject_nodes'
 
-
-    ''' promote rest of logic up the caller tree
-    if ( d_namespace is None or thesauri is None or d_namespace is None):
-        msg = f'{me}: Missing argument(s).'
+    if d_namespace is None:
+        msg = f'{me}: Missing d_namespace'
         raise ValueError(msg)
 
-    if item_text is None:
-        if bib is None and vid is None:
-            msg = f'{me}: Missing item_text or bib and vid.'
-            raise ValueError(msg)
-    else:
-        # item_text only is provided. To be implemented.
-        msg = f'{me}: Handling of item_text not yet implemented.'
+    if topic_terms is None:
+        msg = f'{me}: Missing topic terms'
         raise ValueError(msg)
-    '''
 
-    d_thesaurus_xtag = {
-      'jstor': 'TOPIC', # might add more one day per new UF-AI mou?
-    }
-    categories = [ v for v in d_thesaurus_xtag.values()]
+    l = len(topic_terms)
 
-    suggested_terms = [
-      'matrices',
-      'geometric shapes',
-      'dynamic modeling',
-      'degrees of freedom',
-      'datasets',
-      'damping',
-      'butterflies',
-    ]
+    if l < 1:
+        msg = f'{me}: Missing topic terms'
+        raise ValueError(msg)
 
-    # Get all suggested subject terms from the local database.
-    # https://stackoverflow.com/questions/26411411
-    # /django-orm-values-list-with-in-filter-performance
-
-    #suggested_terms = ( Subject.objects.values_list('term', flat=True).
-    #    filter(bibid=bib, vid=vid, xtag__in=categories) )
-
-    # consider:put terms in a list to remove late-comer dups
-    # for now, there 'should be' no dups from AI because we are
-    # querying only for a single xtag, TOPIC, but we can just
-    # discover that during testing and overcome it if it is an
-    # issue.
-    l = len(suggested_terms)
-    msg = f"ORM Got {l} suggested terms"
-
-    print(msg, file=sys.stdout, flush=True)
-    sorted_terms = sorted(suggested_terms, key=str.lower)
+    sorted_terms = sorted(topic_terms, key=str.lower)
 
     l = len(sorted_terms)
-    msg = f"Got {l} sorted suggested terms"
+    msg = f"Got {l} sorted topic terms"
     print(msg, file=sys.stdout, flush=True)
 
     sorted_subject_nodes = []
     term_count = 0
+
     mods_namespace = d_namespace['mods']
-
     subject_name = f"{{{mods_namespace}}}subject"
-    # subject_tag = "mods:subject"
-
     topic_name = f"{{{mods_namespace}}}topic"
-    topic_tag = "mods:topic"
 
     # We build 'sorted_subject_terms' by sequencing thru a
     # sorted list of terms
     for term_count, term in enumerate(sorted_terms, start=1):
-        # Create a new child node to append for this parent in the METS tree
-        # Review of LOC mets mods documentation about subject and topic
-        # elements indicates that # one topic per subject is the usual case.
-        # However, if one has separate values for a geographic country,
-        # region, city, it is normal to put
-        # all 3 geographic terms wihtin one subject element.
-        # CREATE a ELEMENT NODE LXML NODE with Element() call
         subject = etree.Element(subject_name)
         sa = subject.attrib
-        sa['authority'] = 'jstor'
-        # To follow a year 12018 perceived SobekCM convention used in mets
-        # files, now use marc field followed by subject term count as the ID.
-        # Later, might want to include sub-fields for indicators, or for
-        # other bits of info we want to pack into the subject attribute
-        # ID value.
-        sa['ID'] = f'650_#0_{term_count}'
+        sa['authority'] = authority
+
+        #sa['ID'] = f'650_#0_{term_count}'
+        sa['ID'] = f'{marc}_{i1}{i2}_{term_count}'
 
         sorted_subject_nodes.append(subject)
 
@@ -303,7 +245,7 @@ def ai_sorted_subject_nodes_by_thesauri_bib_vid(thesauri=None,
                .format(parent_nodes[0].tag, subject.tag))
 
     return sorted_subject_nodes
-# end def get_suggested_nodes_by_thesauri_bib_vid
+# end new_sorted_subject_nodes()
 
 
 def output_by_node__output_file_name(
@@ -341,6 +283,7 @@ class MetsSubjectsEditor():
     '''
 
     def __init__(self,
+        topic_terms = None,
         backup_subfolder_name='sobek_files',
         bib=None,
         file_globs=['**/*.mets.xml'],
@@ -375,6 +318,11 @@ class MetsSubjectsEditor():
             raise ValueError(f'{me}:Missing bib or vid')
         self.bib = bib
         self.vid = vid
+
+        if topic_terms is None:
+            raise ValueError(f'{me}:Missing topic_terms')
+        self.topic_terms = topic_terms
+        self.verbosity = verbosity
 
         # Get UFDCItem
         self.item = UFDCItem(bib=bib, vid=vid, log_file_name=log_file_name,)
@@ -437,7 +385,7 @@ class MetsSubjectsEditor():
         self.topic_xpath = f'.//{qtag}'
 
         self.backup_subfolder_name = backup_subfolder_name
-        self.strftime_forma = strftime_format
+        self.strftime_format = strftime_format
 
         #Todo - implement function to populate this from the METS file
         # in method mets_tree()
@@ -561,33 +509,10 @@ class MetsSubjectsEditor():
         verbosity=0,):
 
         '''
-        Given a mets input_file_name formatted like:
-          f'{bibid}_{vid}.mets.xml'
-
-        If bib and vid are not given in named arguments, then
-        from the input file name, parse the bibid and vid, and use that to
-        garner the Access Innovations 'SuggestedTerms'.
-
         Note: Parameter replace_subjects: True means delete current mets subjects
-         and False means to preserve current mets subjects
-         We always add subjects for the given list of thesauri for an item.
+        and False means to preserve current mets subjects
+        We always add subjects for the given list of thesauri for an item.
 
-        For phase 1 - just select the
-        'TOPIC' terms for that bibvid from the MAW django model
-        named hathitrust_X2018Subject.
-
-        Future: accept an option to indicate to use the
-        GetSuggestedTerms API instead of the queries to garner the suggester new
-        subject terms for each bib_vid item.
-        Then we can also use a new value from a thesauri parameter, which
-        holds thesauri names of interest (a simple list
-        of strings) Each thesaurus name is a known string shared between UF and AI
-        to identify a thesaurus that AI will use to generate suggested terms)
-        This parameter is used to formulate requests on the API for suggested
-        terms.
-
-        - Find the UFDC resources mets.xml file for the bib_vid and
-        - Use lxml to parse/represent the METS file into a local core mets tree,
         - If retain_subjects == True: Put all the current subject elements/nodes
           in a subject_nodes list.
            -- item parsing: each 'item' in a dictionary is defined by a mets xml
@@ -603,7 +528,7 @@ class MetsSubjectsEditor():
 
         - Remove all current subject elements from the mets tree
 
-        - Arrange a sorted list ai_terms[] of the sorted TOPIC terms from AI.
+        - Arrange a sorted list self.topic_terms of the sorted TOPIC terms from AI.
         - For each SuggestedTerm in ai_terms[], create and append to the mets_tree
           a <subject> element with the child element <topic> with the term name
           value, in lexicographic order of sorted topic/term name.
@@ -679,7 +604,7 @@ class MetsSubjectsEditor():
         # { see https://stackoverflow.com/questions
         # /13590749/reading-unicode-file-data-with-bom-chars-in-python
         # Jonathan Eunice message of 20180429
-        # Get list of tuples of suggested terms: (term name, )
+        # Get list of tuples of topic terms: (term name, )
         # consider - construct subject nodes
 
         doctree, node_root_input = get_tree_and_root_by_file_name(
@@ -707,12 +632,11 @@ class MetsSubjectsEditor():
         self.d_mets_namespace = d_namespace
 
         # Get list of subject_nodes from the AccessInnovations
-        # provided 'suggested terms' for the given bib, vid and thesauri.
+        # provided 'topic terms' for the given bib, vid and thesauri.
 
-        sorted_suggested_subject_nodes = (
-          ai_sorted_subject_nodes_by_thesauri_bib_vid(
-            d_namespace=d_namespace, thesauri=self.thesauri,
-            bib=self.bib, vid=self.vid))
+        sorted_suggested_subject_nodes = ( new_sorted_subject_nodes(
+            topic_terms=self.topic_terms,
+            d_namespace=d_namespace, verbosity=self.verbosity))
 
         if verbosity > 0:
             msg=f'--- {me}: NAMESPACE KEY VALUES ARE:'
@@ -1093,20 +1017,20 @@ import datetime
 
 if __name__ == "__main__":
 
-
-    item = bib='aa00012984'
-    #item = UFDCItem(bib=bib, log_file_name='log_mets_subject_edit.txt', )
-    subject_editor = MetsSubjectsEditor(bib=bib)
-
-    '''
-    run(backup_folder=backup_folder,
-        input_folder=input_folder,
-        log_file_name='mets_subject_edit_log.txt',
-        file_globs = ['**/*.mets.xml'],
-        parent_qualified_tag=None,
-        replace_children=False,
-        verbosity=2)
-    '''
+    bib='aa00012984'
+    topic_terms = [
+      'matrices',
+      'geometric shapes',
+      'dynamic modeling',
+      'degrees of freedom',
+      'datasets',
+      'apples','bananas'
+      'damping',
+      'butterflies',
+    ]
+    subject_editor = MetsSubjectsEditor(bib=bib,
+        topic_terms=topic_terms, verbosity=1)
 
 #end if __name__ == "__main__"
+
 #END FILE
