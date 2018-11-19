@@ -417,7 +417,7 @@ class MetsSubjectsEditor():
     #end def __init__()
 
     def sorted_authority_subject_nodes(self,
-        keep_authority=None,
+        discount_authority=None,
         subject_nodes=None, d_namespace=None,
         log_file=None, verbosity=0):
 
@@ -429,28 +429,38 @@ class MetsSubjectsEditor():
         '''
         me = 'sorted_authority_subject_nodes'
 
-        if keep_authority is not None:
+        if discount_authority is not None:
+            # We need to discount prior specific authority if found.
+            # But keep all other current subject nodes
             keep_nodes = []
             for node in subject_nodes:
+                # Do not keep any nodes specified 'discount' authority
                 try:
-                    if node.attrib['authority'] == keep_authority:
-                        keep_nodes.append(node)
+                    if node.attrib['authority'] == discount_authority:
+                        continue
                 except:
-                    continue
-            # Keep only nodes of specified authority
+                    pass
+                keep_nodes.append(node)
             subject_nodes = keep_nodes
 
         if verbosity > 0:
             msg = f'{me}: Sorting {len(subject_nodes)} subject nodes'
-            print(msg, file=log_file)
+            print(msg, file=log_file,flush=True)
 
+        # topic_tag = self.topic_qualified_tag
         d_heading_subject = {}
 
-        topic_tag = self.topic_qualified_tag
         for node_count, subject_node in enumerate(subject_nodes, start=1):
+            if subject_node is None:
+                msg=f'node {node_count} is None'
+                raise ValueError(msg)
             tnodes = subject_node.findall(
                 self.topic_xpath, namespaces=self.d_mets_namespace)
-            #RESUME todo: find topic_tag that yields the topics
+            if len(tnodes) < 1:
+                # If subject node has no topic, give it zzzz heading
+                # so it sorts at the end
+                d_heading_subject['zzzzz'] = subject_node
+                continue
             t_count = 0
             tsep = ''
             key_heading = ''
@@ -463,19 +473,20 @@ class MetsSubjectsEditor():
             if verbosity > 0:
                 msg = f'{me}: subject_node {node_count} has key {key_heading}'
                 print(msg, file=log_file)
-        # end for subject_node in xnodes
+        # end for subject_node in subject_nodes
 
         # Now subject nodes are ready to be sorted by key heading into
         # returnable list of subject nodes
-
-        sorted_nodes = sorted(
-            d_heading_subject.values(), key=lambda kv:kv[0].text)
+        #sorted_nodes = sorted(
+        #    d_heading_subject.values(), key=lambda kv:kv[0].text)
+        sorted_nodes = [
+          d_heading_subject[k] for k in sorted(d_heading_subject.keys())]
         return sorted_nodes
     # end def sorted_authority_subject_nodes(0)
 
     #start add_topic_terms()
     def add_topic_terms(self,
-        keep_authority='lcsh',
+        discount_authority = 'jstor',
         topic_terms=None, retain_subjects=True, verbosity=0,):
 
         '''
@@ -611,7 +622,8 @@ class MetsSubjectsEditor():
             d_namespace=d_namespace, verbosity=self.verbosity))
 
         if verbosity > 0:
-            msg=f'--- {me}: NAMESPACE KEY VALUES ARE:'
+            msg = f'{me}: bib={self.bib}, vid={self.vid}\n'
+            msg += f'--- {me}: NAMESPACE KEY VALUES ARE:'
             print(msg, file=log_file)
             print(msg, flush=True)
             for key,value in d_namespace.items():
@@ -679,7 +691,7 @@ class MetsSubjectsEditor():
             # Sort the current nodes to create a list of copies in sorted order
             sorted_authority_subject_nodes = (
                 self.sorted_authority_subject_nodes(
-                  keep_authority=keep_authority,
+                  discount_authority=discount_authority,
                   d_namespace=d_namespace, subject_nodes=subject_nodes,
                   log_file=log_file, verbosity=verbosity)
                 )
@@ -995,7 +1007,7 @@ if __name__ == "__main__":
         print(msg)
         print(msg, file=log_file)
 
-    rv = mets_editor.add_topic_terms(keep_authority='lcsh',
+    rv = mets_editor.add_topic_terms(discount_authority='jstor',
              retain_subjects=True,
              topic_terms=topic_terms, verbosity=verbosity)
 

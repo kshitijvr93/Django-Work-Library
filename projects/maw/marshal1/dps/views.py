@@ -162,7 +162,8 @@ def topic_terms(request):
 
     nl = '\n' #work around f expresion constraint
     #theses = X2018Thesis.objects.all()[0:5]
-    theses = X2018Thesis.objects.all()[5:6]
+    #theses = X2018Thesis.objects.all()[5:6]
+    theses = X2018Thesis.objects.all()[10:11]
     #testing
     #theses = X2018Thesis.objects.filter(uf_bibvid=uf_bibvid)
 
@@ -190,7 +191,9 @@ def topic_terms(request):
         for subject in subjects:
             topic_terms.append(subject.term)
 
-        mets_subjects_editor.add_topic_terms(keep_authority='lcsh',
+        # We do not keep older mets subject nodes with jstor authority,
+        # but we retain other older subject nodes
+        mets_subjects_editor.add_topic_terms(discount_authority='jstor',
             retain_subjects=True,
             topic_terms=topic_terms, verbosity=verbosity)
 
