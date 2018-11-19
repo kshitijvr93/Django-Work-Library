@@ -163,9 +163,17 @@ def topic_terms(request):
     nl = '\n' #work around f expresion constraint
     #theses = X2018Thesis.objects.all()[0:5]
     #theses = X2018Thesis.objects.all()[5:6]
-    theses = X2018Thesis.objects.all()[10:12]
-    theses = X2018Thesis.objects.all()[12:100]
-    theses = X2018Thesis.objects.all()[100:110]
+    #theses = X2018Thesis.objects.all()[10:12]
+    #theses = X2018Thesis.objects.all()[12:100]
+    #theses = X2018Thesis.objects.all()[100:110]
+    #theses = X2018Thesis.objects.all()[110:200]
+    #theses = X2018Thesis.objects.all()[200:1000]
+    # theses = X2018Thesis.objects.all()[1000:11520]
+    #theses = X2018Thesis.objects.all()[11520:11530]
+    #theses = X2018Thesis.objects.all()[11530:]
+    #theses = X2018Thesis.objects.all()[20008:]
+    theses = X2018Thesis.objects.all()[20070:]
+
     #testing
     #theses = X2018Thesis.objects.filter(uf_bibvid=uf_bibvid)
 
@@ -189,7 +197,7 @@ def topic_terms(request):
         subjects = (X2018Subject.objects.filter(thesis=thesis)
             .filter(xtag='TOPIC'))
         if verbosity >= 0:
-          msg = f'{nl}{me}: thesis={uf_bibvid} has {len(subjects)} subjects{nl}'
+          msg = f'\n{me}: thesis={uf_bibvid} has {len(subjects)} subjects'
           print(msg, file=sys.stdout,flush=True)
           out_html += f'<li>{msg}</li>'
         topic_terms = []

@@ -135,22 +135,29 @@ def get_tree_and_root_by_file_name(input_file_name=None, log_file=None,
       remove_comments=False)
     etree.set_default_parser(parser)
 
-    with open(input_file_name, mode='r', encoding='utf-8-sig') \
-        as input_bytes_file:
+    try:
+        with open(input_file_name, mode='r', encoding='utf-8-sig') \
+            as input_bytes_file:
 
-        try:
-            tree = etree.parse(input_bytes_file, parser=parser)
-        except Exception as e:
+            try:
+                tree = etree.parse(input_bytes_file, parser=parser)
+            except Exception as e:
 
-            log_msg = (
-                "{}:Skipping exception='{}' in input_file_name='{}'"
-                .format(me, repr(e), input_file_name))
-            print(log_msg, file=log_file)
-            return None, None
+                log_msg = (
+                    "{}:Skipping exception='{}' in input_file_name='{}'"
+                    .format(me, repr(e), input_file_name))
+                print(log_msg, file=log_file)
+                return None, None
+    except Exception as ex:
+        msg=f"{me}: skipping exception to read {input_file_name}"
+        print(msg, file=log_file, flush=True)
+        print(msg,  flush=True)
+        return None, None
+
     # end with open
 
     return tree, tree.getroot()
-#end def get_root_from_parsed_file_bytes()
+#end def get_tree_and_root_by_filename()
 
 def new_sorted_subject_nodes( authority='jstor',
     marc='650', i1='#', i2='0',
@@ -322,6 +329,8 @@ class MetsSubjectsEditor():
           f"{self.backup_subfolder_name}\\")
         self.backup_folder_name = backup_folder_name
 
+        os.makedirs(backup_folder_name, exist_ok=True)
+
         if log_file_name is None:
             #datetime_string = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
             day_string = datetime.datetime.utcnow().strftime(strftime_format)
@@ -329,7 +338,7 @@ class MetsSubjectsEditor():
               f"{backup_folde_name}/mets_subject_edits_{day_string}.txt")
         else:
             log_file_name = (
-              f"{backup_folder_name}/{log_file_name}")
+              f"{backup_folder_name}{log_file_name}")
 
         self.log_file_name = log_file_name
 
@@ -417,6 +426,10 @@ class MetsSubjectsEditor():
         return
 
     #end def __init__()
+
+    def __del__(self):
+        if self.log_file is not None:
+            self.log_file.close()
 
     def sorted_authority_subject_nodes(self,
         discount_authority=None,
@@ -597,7 +610,9 @@ class MetsSubjectsEditor():
             verbosity=verbosity)
 
         if node_root_input is None:
-            print(f"Got -1 for node_root_input??")
+            msg = (f"Returning -1 for bad METS file")
+            print(msg, file=log_file, flush=True)
+            print(msg, flush=True)
             return -1
 
         if verbosity > 0:
@@ -743,6 +758,7 @@ class MetsSubjectsEditor():
         # First, construct the backup file name
         #vid_folder, relative_mets_file_name = os.path.split(mets_file_name)
         backup_folder_name = self.backup_folder_name
+
         # Just in case absent, make sure the backup dir is made
         os.makedirs(backup_folder_name, exist_ok=True)
 
