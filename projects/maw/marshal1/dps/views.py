@@ -172,7 +172,8 @@ def topic_terms(request):
     #theses = X2018Thesis.objects.all()[11520:11530]
     #theses = X2018Thesis.objects.all()[11530:]
     #theses = X2018Thesis.objects.all()[20008:]
-    theses = X2018Thesis.objects.all()[20070:]
+    #theses = X2018Thesis.objects.all()[20070:]
+    theses = X2018Thesis.objects.all()[25737:]
 
     #testing
     #theses = X2018Thesis.objects.filter(uf_bibvid=uf_bibvid)

@@ -162,7 +162,9 @@ def get_tree_and_root_by_file_name(input_file_name=None, log_file=None,
 def new_sorted_subject_nodes( authority='jstor',
     marc='650', i1='#', i2='0',
     topic_terms=None,
-    d_namespace=None, verbosity=1):
+    d_namespace=None,
+    log_file=None,
+    verbosity=1):
     '''
     TODO: put this as a method in MetsSubjectEditor()..
 
@@ -192,6 +194,7 @@ def new_sorted_subject_nodes( authority='jstor',
 
     '''
     me = 'new_sorted_subject_nodes'
+    sorted_subject_nodes = []
 
     if d_namespace is None:
         msg = f'{me}: Missing d_namespace'
@@ -205,7 +208,9 @@ def new_sorted_subject_nodes( authority='jstor',
 
     if l < 1:
         msg = f'{me}: Missing topic terms'
-        raise ValueError(msg)
+        print(msg,file=log_file,flush=True)
+        print(msg,flush=True)
+        return sorted_subject_nodes
 
     sorted_terms = sorted(topic_terms, key=str.lower)
 
@@ -213,7 +218,6 @@ def new_sorted_subject_nodes( authority='jstor',
     msg = f"Got {l} sorted topic terms"
     print(msg, file=sys.stdout, flush=True)
 
-    sorted_subject_nodes = []
     term_count = 0
 
     mods_namespace = d_namespace['mods']
@@ -636,6 +640,7 @@ class MetsSubjectsEditor():
 
         sorted_suggested_subject_nodes = ( new_sorted_subject_nodes(
             topic_terms=topic_terms,
+            log_file=self.log_file,
             d_namespace=d_namespace, verbosity=self.verbosity))
 
         if verbosity > 0:
