@@ -306,8 +306,6 @@ class MetsSubjectsEditor():
         self.bib = bib
         self.vid = vid
 
-        if topic_terms is None:
-            raise ValueError(f'{me}:Missing topic_terms')
         self.verbosity = verbosity
 
         # Get UFDCItem
@@ -321,6 +319,7 @@ class MetsSubjectsEditor():
 
         backup_folder_name = ( f"{item.mets_folder}\\"
           f"{self.backup_subfolder_name}\\")
+        self.backup_folder_name = backup_folder_name
 
         if log_file_name is None:
             #datetime_string = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
@@ -461,47 +460,42 @@ class MetsSubjectsEditor():
 
     #def add_topic_terms()
     def add_topic_terms(self,
-        # replace_subjects=False,
-        topic_terms=None,
-        retain_subjects=True,
-        verbosity=0,):
+        topic_terms=None, retain_subjects=True, verbosity=0,):
 
         '''
-        Note: Parameter replace_subjects: True means delete current mets subjects
-        and False means to preserve current mets subjects
-        We always add subjects for the given list of thesauri for an item.
+        Note: Parameter retain_subjects: True means keep current mets subjects
+        in the METS file and False means to delete current mets subjects
+
+        We always add subjects for the given list in self.topic_terms.
 
         - If retain_subjects == True: Put all the current subject elements/nodes
           in a subject_nodes list.
            -- item parsing: each 'item' in a dictionary is defined by a mets xml
               SUBJECT element.
-           -- key: the ordered concatentated string of all child 'topic/ text values
-              of the subject, probably trimmed of leading and trailing whitespace,
-              with multiple occurrences prefixed by a tab.
+           -- key: the ordered concatentated string of all child 'topic/ text
+              values of the subject, probably trimmed of leading and trailing
+              whitespace, with multiple occurrences prefixed by a tab.
            -- value: an ordered dictionary of all the attributes of the parent
               subject. (eg authority:'lcsh', others).
               Note that the TOPIC values in a mets should have no attributes to
               be accepted nor preserved.
            -- Sort the 'subject_nodes' list.
 
-        - Remove all current subject elements from the mets tree
+        - Delete/Remove all current subject elements from the mets tree
 
-        - Arrange a sorted list self.topic_terms of the sorted TOPIC terms from AI.
-        - For each SuggestedTerm in ai_terms[], create and append to the mets_tree
+        - From the given topic_terms, arrange a sorted list self.topic_terms.
+
+        - For each term in topic_terms[], create and append to the mets_tree
           a <subject> element with the child element <topic> with the term name
           value, in lexicographic order of sorted topic/term name.
 
-          NOTE: now AI does provide any multi-part  'path' value for a term as
-          does lcsh for some subjects.
-          So each AI suggested subject term we receive now is always a single
-          topic value.
+          NOTE: No topic_terms source now provide any multi-part  'path'
+          value for a term as lcsh uses for some subjects.
 
-        - Future: add option to indicate other XTAGs than TOPIC for
-          values to use as an sql filter or to set as a request parameter
-          to the API
+          So each term we receive now is always a single topic value.
+
         - If arg retain_subjects is True, append the ordered list
           subject_nodes into the mets tree
-          ---- xxx
           -- For each extant subject term,
              -- create a subject element with the attribute ID in the format of
                 marc_12_n, and with attribute authority with value jstor
@@ -522,11 +516,14 @@ class MetsSubjectsEditor():
         mets_batch_edit.py in this github project.
 
         '''
-        me = 'edit'
+        me = 'add_topic_terms'
 
         if retain_subjects is None:
             msg = f'{me}:missing argument retain_subjects'
             raise ValueError(msg)
+
+        if topic_terms is None:
+            raise ValueError(f'{me}:Missing topic_terms')
 
         log_file = self.log_file
 
@@ -534,15 +531,16 @@ class MetsSubjectsEditor():
         utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
         utc_yyyy_mm_dd = utc_now.strftime("%Y_%m_%d")
 
-        ptag = self.parent_qualified_tag
-        parent_xpath = f".//{ptag}"
+        #ptag = self.parent_qualified_tag
+        #parent_xpath = f".//{ptag}"
 
         # Get bib and vid from filename
-        input_file_name = self.item.mets_file_name
-        base_name =  os.path.basename(input_file_name)
+        mets_file_name = self.item.mets_file_name
+
+        base_name =  os.path.basename(mets_file_name)
         if verbosity > 0:
             msg = (
-              f"{me}: input_file_name={input_file_name}, base_name={base_name}"
+              f"{me}: input_file_name={mets_file_name}, base_name={base_name}"
               )
             print(msg, file=log_file, flush=True)
             print(msg, flush=True)
@@ -551,8 +549,9 @@ class MetsSubjectsEditor():
 
         if verbosity > 0:
             msg = (
-              '{}: using input_file={}, parent_xpath={}'
-              .format(me, input_file_name, parent_xpath,))
+              '{}: using input_file={},'
+              .format(me, mets_file_name,))
+
             msg += f'\nbib={self.item.bib}, vid={self.item.vid}'
             print(msg, file=log_file,flush=True)
             print(msg, flush=True)
@@ -564,7 +563,7 @@ class MetsSubjectsEditor():
         # consider - construct subject nodes
 
         doctree, node_root_input = get_tree_and_root_by_file_name(
-            input_file_name=input_file_name,
+            input_file_name=mets_file_name,
             log_file=log_file,
             verbosity=verbosity)
 
@@ -619,14 +618,14 @@ class MetsSubjectsEditor():
 
         if verbosity > 0:
             msg = (
-              f'{me}: in {input_file_name}, found {plen} parent nodes')
+              f'{me}: in {mets_file_name}, found {plen} parent nodes')
             print(msg, file=log_file, flush=True)
 
         if parent_nodes is None or plen != 1:
             # But not a fatal exception if not exactly 1, so catching that
             if verbosity > 0:
                 msg = (
-                  f'{me}: in {input_file_name}, did not find exactly 1 '
+                  f'{me}: in {mets_file_name}, did not find exactly 1 '
                   f'parent_node occurrence. Skipping processing the file.')
                 print(msg, file=log_file)
             return -2
@@ -702,59 +701,52 @@ class MetsSubjectsEditor():
             output_file_name=output_file_name)
         msg = (f'{me}: outputting new mets file to {output_file_name}\n'
             f'Done!')
-        print(msg, file=log_file)
-        print(msg)
+        print(msg, file=log_file,flush=True)
+        print(msg,flush=True)
 
-        return 1
-
-        # Done modifying the in-memory document tree
-        # Now output it in its file.
-        # TODO: CHANGE AFTER TESTING
-        # output_file_name = "{}.txt".format(input_file_name)
-        # Production
-
+        # Done modifying the in-memory document tree # Now output it in its file.
         # Backup original mets file to a backup file under subfolder sobek_files
-        #
         # First, construct the backup file name
-        vid_folder, relative_mets_file_name = os.path.split(input_file_name)
-        fparts = relative_mets_file_name.split('.')
-        # This extracts the bib_vid part of the mets.xml file name, assumed
-        # to comply with the ufdc *.mets.xml file naming convention
-        bib_vid = fparts[0]
-        backup_folder_name = f"{vid_folder}\\{self.backup_subfolder_name}\\"
-
+        #vid_folder, relative_mets_file_name = os.path.split(mets_file_name)
+        backup_folder_name = self.backup_folder_name
         # Just in case absent, make sure the backup dir is made
         os.makedirs(backup_folder_name, exist_ok=True)
 
         # Save the input file per UFDC conventions, in subfolder sobek_files
+        bib_vid = f'{self.bib}_{self.vid}'
         backup_file_basename = "{}_{}.mets.bak".format(bib_vid,utc_yyyy_mm_dd)
         backup_file_name = ("{}{}"
           .format(backup_folder_name, backup_file_basename))
 
+        if verbosity > 0:
+            #
+            pass
+
         # Make the file backup copy
         if verbosity > 0:
-            msg="{} creating backup copy file='{}'".format(me,backup_file_name)
-            print(msg)
-            print(msg, file=log_file)
-            sys.stdout.flush()
+            msg = f"{me}:creating METS backup copy in {backup_file_name}"
+            print(msg, flush=True)
+            print(msg, file=log_file, flush=True)
+
 
         # Use copy2 to preserve original creation date
         # So the historical span of relevance for this record goes from
         # the file metadata creation date to the file name's encoded
         # archiving date
-        copy2(input_file_name, backup_file_name)
+        copy2(mets_file_name, backup_file_name)
+
 
         #Now overwrite the original input file
 
-        output_file_name = input_file_name
+        output_file_name = mets_file_name
 
         if verbosity > 0:
             msg="Writing to output file={}".format(output_file_name)
             print(msg, file=log_file)
 
-        # Note: must open with mode='wb' to use doctree.write(...), eg:
-        # with open(output_file_name, 'wb') as output_file:
+        return 1
 
+        # Note: must open with mode='wb' to use output_file.write(...)
         with open(output_file_name, mode='wb') as output_file:
             # NOTE: Experiments show that method tostring() also
             # honors "a" param 'encoding'. But cannot find ref doc yet.

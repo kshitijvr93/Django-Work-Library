@@ -10,4 +10,5 @@ urlpatterns = [
     # re_path(route=r'^$', view=views.home, name='home'),
     path(route=r'out_mets', view=views.out_mets, name='out_mets'),
     path(route=r'out_mets', view=views.out_mets, name='input_xis'),
+    path(route=r'add_topic_terms', view=views.topic_terms, name='input_xis'),
 ]

@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Bibvid, X2018Thesis, X2018Subject
 from lxml import etree
 import etl
-from mets_subject_editor import MetsSubjectEditor
+from mets_subjects_editor import MetsSubjectsEditor
 ########################### IMPORT
 # NB; WARNING - canNOT use parens to make an import multiline in python
 # yet. Must use bakslash.
@@ -133,6 +133,76 @@ def new_node_by_subject(subject=None):
     node_subject.append(node_topic)
     return node_subject
 
+def topic_terms(request):
+    '''
+    This is initially designed to be triggered by visitation to a particular url.
+
+    This code selects all the X2018_Thesis items.
+    For each item, it
+    (1) parses the uf bib and vid.
+    (2) Then it creates a MetsSubjectEditor for the bibvid.
+    (3) Then it selects all the X2018_Subject rows for this bib and vid where XTAG
+        is 'TOPIC'. For each topic it:
+        (a) appends the string name to a list, topic_terms,  of topic terms
+    (4) It calls the MetsSubjectEditor(retain_subjects=True,
+        topic_terms=topic_terms), where
+
+        This causes the mets.xml file for the bib vid to be edited by
+        (a) copying its current subject xml nodes to a list sorted by
+            topic/heading name
+        (b) added a subject-topic node stanza for each topic term
+    '''
+    me = 'topic_terms'
+
+    # Test a single test bib
+    uf_bibvid='AA00020479_00001'
+
+    out_html = '<html><body><ol><li>'
+    verbosity = 1
+    done_uf_bibvids = [
+        'AA00012984_00001',
+    ]
+
+    nl = '\n' #work around f expresion constraint
+    #theses = X2018Thesis.objects.all()
+    #testing
+    theses = X2018Thesis.objects.filter(uf_bibvid=uf_bibvid)
+
+    msg = f"{nl}{me}: found {len(theses)} thesis objects.{nl}"
+    print(msg, file=sys.stdout,flush=True)
+    out_html += f'<li>{msg}</li>'
+    thesis = theses.get(uf_bibvid=uf_bibvid)
+
+    for thesis in theses:
+        #Parse the uf bib and vid
+        bparts = uf_bibvid.split('_')
+
+        bib = bparts[0]
+        vid = bparts[1]
+        mets_subjects_editor = MetsSubjectsEditor(bib=bib, vid=vid, verbosity=1)
+
+        # now find the topic terms to add
+        subjects = (X2018Subject.objects.filter(thesis=thesis)
+            .filter(xtag='TOPIC'))
+        msg = f'{nl}{me}: thesis={uf_bibvid} has {len(subjects)} subjects{nl}'
+        print(msg, file=sys.stdout,flush=True)
+        out_html += f'<li>{msg}</li>'
+        topic_terms = []
+        for subject in subjects:
+            topic_terms.append(subject.term)
+
+        mets_subjects_editor.add_topic_terms(retain_subjects=True,
+            topic_terms=topic_terms, verbosity=verbosity)
+
+        msg = f'{me}: {uf_bibvid} has suggested topic_terms={topic_terms}'
+        out_html += f'<li>{msg}</li><ol>'
+        for term in topic_terms:
+            out_html += f'<li>{term}</li>'
+        out_html += f'</ol>'
+
+    out_html += '</ol></html></body>'
+    return HttpResponse(out_html)
+
 def out_mets(request):
     '''
     This is designed initially to be called by a user browsing to a
@@ -142,7 +212,6 @@ def out_mets(request):
     (1) Loop through each row in model X2018_Thesis, and for each row:
     (2) retrieve the uf_bibvid
     '''
-
 
     out_html = '<ol>'
     out_file = 'c:\\rvp\\outmets.xml'
