@@ -45,7 +45,7 @@ class UFDCItem():
         self.vid = vid
         self.resources_folder = resources_folder
         self.log_file_name = log_file_name
-        self.folder_path = (self.get_file_system_path())
+        self.folder_path = (self.get_file_system_path(verbosity=verbosity))
         self.mets_folder = self.folder_path
 
         self.d_mets_namespace = None

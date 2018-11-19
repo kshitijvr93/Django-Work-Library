@@ -309,7 +309,8 @@ class MetsSubjectsEditor():
         self.verbosity = verbosity
 
         # Get UFDCItem
-        self.item = UFDCItem(bib=bib, vid=vid, log_file_name=log_file_name,)
+        self.item = UFDCItem(bib=bib, vid=vid, log_file_name=log_file_name,
+            verbosity=verbosity,)
         item = self.item
 
         output_folder = item.mets_folder
@@ -332,8 +333,9 @@ class MetsSubjectsEditor():
 
         self.log_file_name = log_file_name
 
-        msg = f'{me}: log_file_name={log_file_name}'
-        print(msg, sys.stdout, flush=True)
+        if verbosity > 0:
+            msg = f'{me}: log_file_name={log_file_name}'
+            print(msg, sys.stdout, flush=True)
 
         if verbosity > 0:
             print(msg, flush=True)
@@ -730,10 +732,11 @@ class MetsSubjectsEditor():
         output_file_name = r'C:\rvp\tmp.mets.xml'
         output_by_node__output_file_name(node=node_root_input,
             output_file_name=output_file_name)
-        msg = (f'{me}: outputting new mets file to {output_file_name}\n'
-            f'Done!')
-        print(msg, file=log_file,flush=True)
-        print(msg,flush=True)
+        if verbosity > 0:
+            msg = (f'{me}: outputting new mets file to {output_file_name}\n'
+                f'Done!')
+            print(msg, file=log_file,flush=True)
+            print(msg,flush=True)
 
         # Done modifying the in-memory document tree # Now output it in its file.
         # Backup original mets file to a backup file under subfolder sobek_files

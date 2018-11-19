@@ -158,18 +158,21 @@ def topic_terms(request):
     #uf_bibvid='AA00020479_00001'
 
     out_html = '<html><body><ol>'
-    verbosity = 1
+    verbosity = 0
 
     nl = '\n' #work around f expresion constraint
     #theses = X2018Thesis.objects.all()[0:5]
     #theses = X2018Thesis.objects.all()[5:6]
-    theses = X2018Thesis.objects.all()[10:11]
+    theses = X2018Thesis.objects.all()[10:12]
+    theses = X2018Thesis.objects.all()[12:100]
+    theses = X2018Thesis.objects.all()[100:110]
     #testing
     #theses = X2018Thesis.objects.filter(uf_bibvid=uf_bibvid)
 
-    msg = f"{nl}{me}: found {len(theses)} thesis objects.{nl}"
-    print(msg, file=sys.stdout,flush=True)
-    out_html += f'<li>{msg}</li>'
+    if verbosity >= 0:
+       msg = f"{nl}{me}: found {len(theses)} thesis objects.{nl}"
+       print(msg, file=sys.stdout,flush=True)
+       out_html += f'<li>{msg}</li>'
 
     for thesis in theses:
         #Parse the uf bib and vid
@@ -179,14 +182,16 @@ def topic_terms(request):
 
         bib = bparts[0].upper()
         vid = bparts[1]
-        mets_subjects_editor = MetsSubjectsEditor(bib=bib, vid=vid, verbosity=1)
+        mets_subjects_editor = MetsSubjectsEditor(bib=bib, vid=vid,
+            verbosity=verbosity)
 
         # now find the topic terms to add
         subjects = (X2018Subject.objects.filter(thesis=thesis)
             .filter(xtag='TOPIC'))
-        msg = f'{nl}{me}: thesis={uf_bibvid} has {len(subjects)} subjects{nl}'
-        print(msg, file=sys.stdout,flush=True)
-        out_html += f'<li>{msg}</li>'
+        if verbosity >= 0:
+          msg = f'{nl}{me}: thesis={uf_bibvid} has {len(subjects)} subjects{nl}'
+          print(msg, file=sys.stdout,flush=True)
+          out_html += f'<li>{msg}</li>'
         topic_terms = []
         for subject in subjects:
             topic_terms.append(subject.term)
@@ -197,11 +202,12 @@ def topic_terms(request):
             retain_subjects=True,
             topic_terms=topic_terms, verbosity=verbosity)
 
-        msg = f'{me}: {uf_bibvid} has suggested topic_terms={topic_terms}'
-        out_html += f'<li>{msg}</li><ol>'
-        for term in topic_terms:
-            out_html += f'<li>{term}</li>'
-        out_html += f'</ol>'
+        if verbosity > 0:
+          msg = f'{me}: {uf_bibvid} has suggested topic_terms={topic_terms}'
+          out_html += f'<li>{msg}</li><ol>'
+          for term in topic_terms:
+              out_html += f'<li>{term}</li>'
+          out_html += f'</ol>'
 
     out_html += '</ol></html></body>'
     return HttpResponse(out_html)
