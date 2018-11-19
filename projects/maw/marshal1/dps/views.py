@@ -191,7 +191,8 @@ def topic_terms(request):
         for subject in subjects:
             topic_terms.append(subject.term)
 
-        mets_subjects_editor.add_topic_terms(retain_subjects=True,
+        mets_subjects_editor.add_topic_terms(keep_authority='lcsh',
+            retain_subjects=True,
             topic_terms=topic_terms, verbosity=verbosity)
 
         msg = f'{me}: {uf_bibvid} has suggested topic_terms={topic_terms}'

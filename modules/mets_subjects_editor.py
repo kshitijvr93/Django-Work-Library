@@ -416,24 +416,35 @@ class MetsSubjectsEditor():
 
     #end def __init__()
 
-    def sorted_subject_nodes(self, subject_nodes=None, d_namespace=None,
+    def sorted_authority_subject_nodes(self,
+        keep_authority=None,
+        subject_nodes=None, d_namespace=None,
         log_file=None, verbosity=0):
+
         '''
         Given a list of input 'subject' lxml nodes with data formatted
         for UF Digital Collections mets.xml files,
 
         Return a sorted list of subject xml nodes ...
         '''
-        me = 'sorted_subject_nodes'
-        xnodes = subject_nodes
+        me = 'sorted_authority_subject_nodes'
+
+        if keep_authority is not None:
+            keep_nodes = []
+            for node in subject_nodes:
+                if node.attrib['authority'] == keep_authority:
+                    keep_nodes.append(node)
+            # Keep only nodes of specified authority
+            subject_nodes = keep_nodes
+
         if verbosity > 0:
-            msg = f'{me}: Starting with {len(subject_nodes)} subject nodes'
+            msg = f'{me}: Sorting {len(subject_nodes)} subject nodes'
             print(msg, file=log_file)
 
         d_heading_subject = {}
 
         topic_tag = self.topic_qualified_tag
-        for node_count, subject_node in enumerate(xnodes, start=1):
+        for node_count, subject_node in enumerate(subject_nodes, start=1):
             tnodes = subject_node.findall(
                 self.topic_xpath, namespaces=self.d_mets_namespace)
             #RESUME todo: find topic_tag that yields the topics
@@ -454,12 +465,14 @@ class MetsSubjectsEditor():
         # Now subject nodes are ready to be sorted by key heading into
         # returnable list of subject nodes
 
-        sorted_xnodes = sorted(d_heading_subject.values(), key=lambda kv:kv[0].text)
-        return sorted_xnodes
-    # end def sorted_subject_nodes(0)
+        sorted_nodes = sorted(
+            d_heading_subject.values(), key=lambda kv:kv[0].text)
+        return sorted_nodes
+    # end def sorted_authority_subject_nodes(0)
 
-    #def add_topic_terms()
+    #start add_topic_terms()
     def add_topic_terms(self,
+        keep_authority='lcsh',
         topic_terms=None, retain_subjects=True, verbosity=0,):
 
         '''
@@ -661,12 +674,15 @@ class MetsSubjectsEditor():
             # we will append alphabetically into the mets document tree.
 
             # Sort the current nodes to create a list of copies in sorted order
-            sorted_current_subject_nodes = self.sorted_subject_nodes(
-                d_namespace=d_namespace, subject_nodes=subject_nodes,
-                log_file=log_file, verbosity=verbosity)
+            sorted_authority_subject_nodes = (
+                self.sorted_authority_subject_nodes(
+                  keep_authority=keep_authority,
+                  d_namespace=d_namespace, subject_nodes=subject_nodes,
+                  log_file=log_file, verbosity=verbosity)
+                )
 
             if verbosity > 1:
-                l = len(sorted_current_subject_nodes)
+                l = len(sorted_authority_subject_nodes)
                 msg = (f"{me}: Got count={l} current sorted subject nodes.")
                 print(msg, file=log_file)
             # If needed, we got the current_subject_nodes to sort and retain
@@ -687,7 +703,7 @@ class MetsSubjectsEditor():
 
         if retain_subjects == True:
             # Per UFDC requirments, now restore the sorted current nodes
-            for subject_node in sorted_current_subject_nodes:
+            for subject_node in sorted_authority_subject_nodes:
                 if verbosity > 1:
                     msg = (
                       f'{me}:Add retained node {subject_node.tag}')
@@ -979,7 +995,8 @@ if __name__ == "__main__":
         print(msg)
         print(msg, file=log_file)
 
-    rv = mets_editor.add_topic_terms(retain_subjects=True,
+    rv = mets_editor.add_topic_terms(keep_authority='lcsh',
+             retain_subjects=True,
              topic_terms=topic_terms, verbosity=verbosity)
 
 #end if __name__ == "__main__"
