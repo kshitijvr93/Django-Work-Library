@@ -432,8 +432,11 @@ class MetsSubjectsEditor():
         if keep_authority is not None:
             keep_nodes = []
             for node in subject_nodes:
-                if node.attrib['authority'] == keep_authority:
-                    keep_nodes.append(node)
+                try:
+                    if node.attrib['authority'] == keep_authority:
+                        keep_nodes.append(node)
+                except:
+                    continue
             # Keep only nodes of specified authority
             subject_nodes = keep_nodes
 
@@ -730,13 +733,11 @@ class MetsSubjectsEditor():
 
         # Save the input file per UFDC conventions, in subfolder sobek_files
         bib_vid = f'{self.bib}_{self.vid}'
-        backup_file_basename = "{}_{}.mets.bak".format(bib_vid,utc_yyyy_mm_dd)
+        backup_file_basename = "{}_{}.mets.bak".format(bib_vid.upper(),
+            utc_yyyy_mm_dd)
+
         backup_file_name = ("{}{}"
           .format(backup_folder_name, backup_file_basename))
-
-        if verbosity > 0:
-            #
-            pass
 
         # Make the file backup copy
         if verbosity > 0:
@@ -744,23 +745,22 @@ class MetsSubjectsEditor():
             print(msg, flush=True)
             print(msg, file=log_file, flush=True)
 
-
         # Use copy2 to preserve original creation date
         # So the historical span of relevance for this record goes from
         # the file metadata creation date to the file name's encoded
         # archiving date
+        # 20181119 rvp bug? copy2() creates lowercase bib first 2 letters
+        # in target # filename despite previous upper() on bib_vid
+        # NB: windows 10 quirk. If filename had existed in lowercase and new file
+        # of same name, except upper, is written, windows OS does copy the file but it
+        # retains the 'case' of the original.
         copy2(mets_file_name, backup_file_name)
 
-
         #Now overwrite the original input file
-
         output_file_name = mets_file_name
-
         if verbosity > 0:
             msg="Writing to output file={}".format(output_file_name)
             print(msg, file=log_file)
-
-        return 1
 
         # Note: must open with mode='wb' to use output_file.write(...)
         with open(output_file_name, mode='wb') as output_file:
@@ -981,9 +981,9 @@ if __name__ == "__main__":
       'dynamic modeling',
       'degrees of freedom',
       'datasets',
-      'apples','bananas'
       'damping',
       'butterflies',
+      'vertices',
     ]
 
     verbosity = 1

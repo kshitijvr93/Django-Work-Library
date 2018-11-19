@@ -154,30 +154,29 @@ def topic_terms(request):
     '''
     me = 'topic_terms'
 
-    # Test a single test bib
-    uf_bibvid='AA00020479_00001'
+    #uf_bibvid='AA00012984_00001'
+    #uf_bibvid='AA00020479_00001'
 
-    out_html = '<html><body><ol><li>'
+    out_html = '<html><body><ol>'
     verbosity = 1
-    done_uf_bibvids = [
-        'AA00012984_00001',
-    ]
 
     nl = '\n' #work around f expresion constraint
-    #theses = X2018Thesis.objects.all()
+    #theses = X2018Thesis.objects.all()[0:5]
+    theses = X2018Thesis.objects.all()[5:6]
     #testing
-    theses = X2018Thesis.objects.filter(uf_bibvid=uf_bibvid)
+    #theses = X2018Thesis.objects.filter(uf_bibvid=uf_bibvid)
 
     msg = f"{nl}{me}: found {len(theses)} thesis objects.{nl}"
     print(msg, file=sys.stdout,flush=True)
     out_html += f'<li>{msg}</li>'
-    thesis = theses.get(uf_bibvid=uf_bibvid)
 
     for thesis in theses:
         #Parse the uf bib and vid
+        uf_bibvid=thesis.uf_bibvid
+
         bparts = uf_bibvid.split('_')
 
-        bib = bparts[0]
+        bib = bparts[0].upper()
         vid = bparts[1]
         mets_subjects_editor = MetsSubjectsEditor(bib=bib, vid=vid, verbosity=1)
 
