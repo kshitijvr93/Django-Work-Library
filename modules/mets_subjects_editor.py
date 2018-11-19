@@ -152,12 +152,13 @@ def get_tree_and_root_by_file_name(input_file_name=None, log_file=None,
     return tree, tree.getroot()
 #end def get_root_from_parsed_file_bytes()
 
-
 def new_sorted_subject_nodes( authority='jstor',
     marc='650', i1='#', i2='0',
     topic_terms=None,
     d_namespace=None, verbosity=1):
     '''
+    TODO: put this as a method in MetsSubjectEditor()..
+
     Given:
       (1) a simple list of strings, each a subject topic term
       (2) a d_namespace with key 'mets' that provides the namespace
@@ -183,17 +184,6 @@ def new_sorted_subject_nodes( authority='jstor',
       no checks for (nor omission) of duplicate term strings is done.
 
     '''
-    # Todo - add db query code
-    # or api code here
-    # Return test results now...
-    # later add return list of tuples including thes name, term name, match
-    # count
-    #
-    # return_list = []
-    # terms for aa00012984_00001
-
-    #Prepare to process multiple thesauri or categories(xtags) later.
-    #
     me = 'new_sorted_subject_nodes'
 
     if d_namespace is None:
@@ -223,15 +213,14 @@ def new_sorted_subject_nodes( authority='jstor',
     subject_name = f"{{{mods_namespace}}}subject"
     topic_name = f"{{{mods_namespace}}}topic"
 
-    # We build 'sorted_subject_terms' by sequencing thru a
+    # We build 'sorted_subject_terms' by sequencing thru the
     # sorted list of terms
     for term_count, term in enumerate(sorted_terms, start=1):
         subject = etree.Element(subject_name)
         sa = subject.attrib
         sa['authority'] = authority
-
-        #sa['ID'] = f'650_#0_{term_count}'
         sa['ID'] = f'{marc}_{i1}{i2}_{term_count}'
+        #sa['ID'] = f'650_#0_{term_count}'
 
         sorted_subject_nodes.append(subject)
 
@@ -239,14 +228,14 @@ def new_sorted_subject_nodes( authority='jstor',
         topic.text = term
         subject.append(topic)
 
-        if verbosity > 1:
-            print(f"Using subject_name='{subject_name}'",file=log_file)
-            msg = ("appended to parent {} the child {}"
-               .format(parent_nodes[0].tag, subject.tag))
+        if verbosity > 0:
+            msg = ("appended to subject {} the topic term {}"
+               .format(subject.tag, topic.text))
+            print(f"{me}:Using subject_name='{subject_name}'"
+                ,file=sys.stdout)
 
     return sorted_subject_nodes
 # end new_sorted_subject_nodes()
-
 
 def output_by_node__output_file_name(
     node=None,
@@ -283,20 +272,18 @@ class MetsSubjectsEditor():
     '''
 
     def __init__(self,
-        topic_terms = None,
         backup_subfolder_name='sobek_files',
         bib=None,
         file_globs=['**/*.mets.xml'],
         input_folder=None,
         item_text=None,
         terms=None,
-        log_file_name='mets_subject_edit_log.txt',
+        log_file_name='mets_subject_editor_log.txt',
         log_file=None,
         output_folder=None,
         verbosity=1,
         vid='00001',
-
-        replace_children=False,
+        #replace_children=False,
         strftime_format="%Y%m%dT%H%MZ",
         thesauri=None,
         d_namespace=None,
@@ -312,7 +299,7 @@ class MetsSubjectsEditor():
         That list is edited by some methods of this object.
         '''
 
-        me='MetsSubjectEditor:__init__()'
+        me = 'MetsSubjectEditor:__init__()'
 
         if bib is None or vid is None:
             raise ValueError(f'{me}:Missing bib or vid')
@@ -321,7 +308,6 @@ class MetsSubjectsEditor():
 
         if topic_terms is None:
             raise ValueError(f'{me}:Missing topic_terms')
-        self.topic_terms = topic_terms
         self.verbosity = verbosity
 
         # Get UFDCItem
@@ -340,9 +326,10 @@ class MetsSubjectsEditor():
             #datetime_string = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
             day_string = datetime.datetime.utcnow().strftime(strftime_format)
             log_file_name = (
-              f"{output_folder}/mets_subject_edits_{day_string}.txt")
+              f"{backup_folde_name}/mets_subject_edits_{day_string}.txt")
         else:
-            log_file_name = ( f"{output_folder}/{log_file_name}")
+            log_file_name = (
+              f"{backup_folder_name}/{log_file_name}")
 
         self.log_file_name = log_file_name
 
@@ -426,31 +413,6 @@ class MetsSubjectsEditor():
 
         n_files = 0
 
-        if verbosity > 0:
-            msg = f'{me}: callimg edit()'
-        print(msg)
-        print(msg, file=log_file)
-
-        #RVP20181117 - change this method to accept a sequence of objects/rows of:
-        # bib, vid, eg the 29K bibvids  for the UFDC ETD 2016 items
-
-        #rv = mets_xml_add_or_replace_subjects(
-        '''
-            log_file=log_file,
-            bib=bib, vid=vid, item_text=item_text,
-            input_file_name=input_file_name,
-        '''
-        rv = self.edit(
-            replace_subjects=replace_children,
-            verbosity=verbosity)
-
-        n_changed = 1
-        n_files = 1
-
-        msg = ("{}: ENDING: Processed {} files, and added a child node to {}.\n"
-           .format(me, n_files, n_changed))
-        print(msg, file=log_file)
-        print(msg)
         return
 
     #end def __init__()
@@ -496,15 +458,11 @@ class MetsSubjectsEditor():
         sorted_xnodes = sorted(d_heading_subject.values(), key=lambda kv:kv[0].text)
         return sorted_xnodes
     # end def sorted_subject_nodes(0)
-    #def mets_xml_add_or_replace_subjects(self,
-    '''
-        input_file_name=None,
-        bib=None, vid=None, item_text=None,
-        log_file=None,
-    '''
-    def edit(self,
-        thesauri=None,
-        replace_subjects=False,
+
+    #def add_topic_terms()
+    def add_topic_terms(self,
+        # replace_subjects=False,
+        topic_terms=None,
         retain_subjects=True,
         verbosity=0,):
 
@@ -552,8 +510,8 @@ class MetsSubjectsEditor():
                  child element <topic> with the splitted-out subvalue.
           Note: maybe have a method to do this or a stub that later will
           consult a reference resource or parameter to issue values
-          for the ID that comply with set MARC number and indicator values for the
-          given authority value of the term.
+          for the ID that comply with set MARC number and indicator values for
+          the given authority value of the term.
         - Make a backup of the current production METS file under its
           sobek_files directory.
         - Overwrite the production METS file name with the info in
@@ -565,14 +523,12 @@ class MetsSubjectsEditor():
 
         '''
         me = 'edit'
-        log_file = self.log_file
 
-        if thesauri is None:
-            # jstor is default thesaurus used by UF and access innovations (AI)
-            # future: review -- is this the now-agreed-upon jstor name?
-            # will synchronize thesauri names to it/those when extend this
-            # to use the API GetSuggestedTerms
-            thesauri = ['jstor']
+        if retain_subjects is None:
+            msg = f'{me}:missing argument retain_subjects'
+            raise ValueError(msg)
+
+        log_file = self.log_file
 
         utc_now = datetime.datetime.utcnow()
         utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -630,12 +586,13 @@ class MetsSubjectsEditor():
           if key is not None}
 
         self.d_mets_namespace = d_namespace
+        mods_namespace = d_namespace['mods']
 
-        # Get list of subject_nodes from the AccessInnovations
-        # provided 'topic terms' for the given bib, vid and thesauri.
+        # Create list of subject_nodes from the
+        # provided 'topic terms'  for this item
 
         sorted_suggested_subject_nodes = ( new_sorted_subject_nodes(
-            topic_terms=self.topic_terms,
+            topic_terms=topic_terms,
             d_namespace=d_namespace, verbosity=self.verbosity))
 
         if verbosity > 0:
@@ -669,8 +626,8 @@ class MetsSubjectsEditor():
             # But not a fatal exception if not exactly 1, so catching that
             if verbosity > 0:
                 msg = (
-                  f'{me}: in {input_file_name}, did not find exactly 1 parent_node'
-                  f' occurence. Skipping processing the file.')
+                  f'{me}: in {input_file_name}, did not find exactly 1 '
+                  f'parent_node occurrence. Skipping processing the file.')
                 print(msg, file=log_file)
             return -2
 
@@ -678,13 +635,11 @@ class MetsSubjectsEditor():
 
         # Check for extant child - default behavior is to NOT insert child if
         # same type of node already exists
-        mods_namespace = d_namespace['mods']
-
         if verbosity > 0:
             print(f"Using subject_xpath={self.subject_xpath}", file=log_file)
 
-        topic_name = f"{{{mods_namespace}}}topic"
-        topic_tag = self.topic_qualified_tag
+        # topic_name = f"{{{mods_namespace}}}topic"
+        # topic_tag = self.topic_qualified_tag
 
         # subject_xpath is the xpath to identify and find all child nodes
         # for this bib_vid ufdc item to be edited/replaced
@@ -702,11 +657,11 @@ class MetsSubjectsEditor():
             print(msg, file=log_file)
 
         if retain_subjects == True:
-            # Here, we want to preserve current subjects (not replace them)
-            # Create a sorted list of the subject nodes which
+            # Here, we want to retain current subjects (not replace them)
+            # Create a sorted list of current subject nodes which
             # we will append alphabetically into the mets document tree.
 
-            # Sort the current nodes to retain a sorted order
+            # Sort the current nodes to create a list of copies in sorted order
             sorted_current_subject_nodes = self.sorted_subject_nodes(
                 d_namespace=d_namespace, subject_nodes=subject_nodes,
                 log_file=log_file, verbosity=verbosity)
@@ -721,9 +676,9 @@ class MetsSubjectsEditor():
         delete_nodes(nodes=subject_nodes, log_file=log_file, verbosity=verbosity)
 
         # For each found suggested term, UFDC standard citation display UI
-        # requirements are implemented by first appending to thd mets.xml file the
-        # the suggested subject nodes, and later we will append any retained
-        # subjet nods.
+        # requirements are implemented by first appending to thd mets.xml
+        # file the the suggested subject nodes, and later we will
+        # append any retained subjet nods.
 
         for subject_node in sorted_suggested_subject_nodes:
             if verbosity > 1:
@@ -741,6 +696,7 @@ class MetsSubjectsEditor():
                 parent_nodes[0].append(subject_node)
 
         # TEST OUTPUT
+
         output_file_name = r'C:\rvp\tmp.mets.xml'
         output_by_node__output_file_name(node=node_root_input,
             output_file_name=output_file_name)
@@ -800,25 +756,17 @@ class MetsSubjectsEditor():
         # with open(output_file_name, 'wb') as output_file:
 
         with open(output_file_name, mode='wb') as output_file:
-            # NOTE: Experiments show that method tostring also
-            # honors param 'encoding'. But cannot find ref doc yet.
+            # NOTE: Experiments show that method tostring() also
+            # honors "a" param 'encoding'. But cannot find ref doc yet.
             output = etree.tostring(node_root_input,
                 pretty_print=True, xml_declaration=True,
                 # XML declaration, not python, so utf-8-sig does not work)
                 # is not needed.
-                encoding="UTF-8",
-                # remove_comments=False, # unexpected
-                )
+                encoding="UTF-8", )
             output_file.write(output)
 
-        msg = f"{me}: pretty={pretty},binary={binary},output_file={output_file}"
-
-        if verbosity > 0:
-            print(msg,file=log_file)
-            print(msg)
-
         return 1
-    # end def edit()
+    # end def add_topic_terms()
 
     def mets_paths_backup_optional(backup_folder=None, input_folders=None,
         file_globs=None, log_file=None, verbosity=None):
@@ -1017,6 +965,7 @@ import datetime
 
 if __name__ == "__main__":
 
+    me = __name__
     bib='aa00012984'
     topic_terms = [
       'matrices',
@@ -1028,8 +977,18 @@ if __name__ == "__main__":
       'damping',
       'butterflies',
     ]
-    subject_editor = MetsSubjectsEditor(bib=bib,
-        topic_terms=topic_terms, verbosity=1)
+
+    verbosity = 1
+    mets_editor = MetsSubjectsEditor(bib=bib, verbosity=verbosity)
+    log_file = mets_editor.log_file
+
+    if verbosity > 0:
+        msg = f'{me}: calling mets_editor.add_topic_terms()'
+        print(msg)
+        print(msg, file=log_file)
+
+    rv = mets_editor.add_topic_terms(retain_subjects=True,
+             topic_terms=topic_terms, verbosity=verbosity)
 
 #end if __name__ == "__main__"
 

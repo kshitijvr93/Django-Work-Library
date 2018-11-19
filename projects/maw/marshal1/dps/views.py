@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Bibvid, X2018Thesis, X2018Subject
 from lxml import etree
 import etl
-from maw_utils/mets_subject_edit import xxx
+from mets_subject_editor import MetsSubjectEditor
 ########################### IMPORT
 # NB; WARNING - canNOT use parens to make an import multiline in python
 # yet. Must use bakslash.
