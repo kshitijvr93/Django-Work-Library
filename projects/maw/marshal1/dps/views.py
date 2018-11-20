@@ -161,6 +161,7 @@ def topic_terms(request):
     verbosity = 0
 
     nl = '\n' #work around f expresion constraint
+    '''
     #theses = X2018Thesis.objects.all()[0:5]
     #theses = X2018Thesis.objects.all()[5:6]
     #theses = X2018Thesis.objects.all()[10:12]
@@ -168,20 +169,23 @@ def topic_terms(request):
     #theses = X2018Thesis.objects.all()[100:110]
     #theses = X2018Thesis.objects.all()[110:200]
     #theses = X2018Thesis.objects.all()[200:1000]
-    # theses = X2018Thesis.objects.all()[1000:11520]
+    #theses = X2018Thesis.objects.all()[1000:11520]
     #theses = X2018Thesis.objects.all()[11520:11530]
     #theses = X2018Thesis.objects.all()[11530:]
     #theses = X2018Thesis.objects.all()[20008:]
     #theses = X2018Thesis.objects.all()[20070:]
-    theses = X2018Thesis.objects.all()[25737:]
-
+    #theses = X2018Thesis.objects.all()[25737:]
+    #theses = X2018Thesis.objects.all() # ALL - takes around 2 hours
     #testing
-    #theses = X2018Thesis.objects.filter(uf_bibvid=uf_bibvid)
+    '''
+
+    #theses = X2018Thesis.objects.filter(uf_bibvid='AA00020479_00001')
+    theses = X2018Thesis.objects.all()[0:30]
 
     if verbosity >= 0:
-       msg = f"{nl}{me}: found {len(theses)} thesis objects.{nl}"
+       msg = f"{me}: found {len(theses)} thesis objects"
        print(msg, file=sys.stdout,flush=True)
-       out_html += f'<li>{msg}</li>'
+       out_html += f'<h3>{msg}</h3>'
 
     for thesis in theses:
         #Parse the uf bib and vid
@@ -224,7 +228,7 @@ def topic_terms(request):
 def out_mets(request):
     '''
     This is designed initially to be called by a user browsing to a
-    certain url see urls.py.
+    certain url. Please see ./urls.py.
 
     Given a django request object this method does:
     (1) Loop through each row in model X2018_Thesis, and for each row:
@@ -247,7 +251,7 @@ def out_mets(request):
             n_thesis += 1
             if n_thesis > max_bibvids:
                 break;
-            bibvid = thesis.uf_bibvid
+                bibvid = thesis.uf_bibvid
             out_html += f"<li>{bibvid}</li><ol>"
 
             # Get the subjects
