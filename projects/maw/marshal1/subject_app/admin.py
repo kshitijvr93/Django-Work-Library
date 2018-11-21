@@ -68,6 +68,14 @@ class SubjectAppAdmin(admin.ModelAdmin):
 class SubjectJobThesaurusInline(admin.TabularInline):
     model = Thesaurus
     fields = ('subject_job_id','name')
+    show_change_link = True
+    extra = 0
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'20'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'40'})},
+    }
 
 
 class SubjectJobAdmin(SubjectAppAdmin):

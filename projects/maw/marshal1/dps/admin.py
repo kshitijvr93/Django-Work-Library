@@ -455,7 +455,7 @@ class TermSuggestionAdmin(admin.ModelAdmin):
 #end class TermSuggestionAdmin
 
 # Thesis and Subject Admin
-class X2018ThesisForm(ModelForm):
+class X2018ThesisForm(ModelForm): 
     model = X2018Thesis
 
     class Meta:
