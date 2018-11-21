@@ -2,6 +2,7 @@
 {% extends 'main_base.html' %}
 {# MUST ADD load static HERE though body is defined in parent? #}
 {% load static %}
+{% load staticfiles %}
 <link rel="stylesheet" type="text/css"
     href="{% static 'marshal1/css/style.css' %}"} >
 {% block title %}Home{% endblock %}
@@ -16,11 +17,24 @@
   <a href="{% url 'login' %}">login</a>
 {% endif %}
 
-
 <h3>MAW Applications (v1)</h3>
 
-
 <p><a href='cuba_libro/home'>Cuba Libro Home</a></p>
-<h4>MAW Administration</h3>
+<h4>MAW Administration</h4>
 <p><a href='admin'>MAW Administration</a></p>
+
+<h4>Miscellaneous demo links</h4>
+<ol>
+  <li>
+  <a type="application/pdf"
+    href="{% static 'aa00021018_00001_00004_searchable.pdf' %}" >
+    X2Blue Eagle page 4 searchable pdf</a>
+  </li><li>
+    {% comment %}
+  <img src="{% static xmarshal1/images/maw_overview.png %}">maw</img>
+    {% endcomment %}
+  </li><li>
+  </li><li>
+  </li><li>
+</li></ol>
 {% endblock %}

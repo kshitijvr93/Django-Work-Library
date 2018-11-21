@@ -1,0 +1,464 @@
+<!-- start xhtml 1 strict -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" >
+<!-- end xhtml 1 strict -->
+
+<!-- {{{ comment start: xhtml 1 transitional
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+}}} -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!-- {{{ head -->
+<head>
+<!-- {{{ head initial link rel, title, metas, src'ed scripts
+<!-- {{{ maybe use external style.css later
+    <link rel="stylesheet" href="style.css" />
+}}} -->
+    <link rel="shortcut icon" href="/media/img/favicon.png" type="image/png" />
+    <title>{% block title %}RobertVernonPhillips{% endblock %}</title>
+    <meta name="google-site-verification" content="cC8BUd5nayfzk-xEMrYrH-gk4u8QKpp9yJbmk78lRs4" />
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+<script type="text/javascript" src="/media/jquery/jquery.js"></script>
+
+<!-- }}} head initial link rel, title, metas, src'ed scripts
+<!-- {{{ head script: inline javascript functions -->
+
+<script type="text/javascript">
+
+{% block head_javascript_prolog %}
+{% endblock head_javascript_prolog %}
+
+<!-- {{{ start "head" jquery functions -->
+<!-- {{{ sample click function -->
+$(document).ready(function(){
+  $("button#js_ex1").click(function(){
+    $("div#myDiv2").html("<h6>$ contents of div#myDiv2.</h6>")
+  });
+});
+
+<!-- }}} sample click function-->
+
+<!-- }}} "head" jquery functions -->
+<!-- {{{ start "head" javascript_main functions -->
+
+{% block head_javascript_main %}
+function show_alert()
+{
+alert("I am an alert box!");
+}
+
+var txt="";
+function message()
+{
+try
+  {
+  //addlert("Welcome guest!");
+  //alert("Welcome guest!");
+  }
+catch(err)
+  {
+  txt="There was an error on this page.\n\n";
+  txt+="Error description: " + err.description + "\n\n";
+  txt+="Click OK to continue.\n\n";
+  alert(txt);
+  }
+}
+
+function fun_onUnload()
+{
+/*alert("Hit X to dismiss this window and to remain or hit OK to leave");
+*/
+}
+
+function startTime()
+{
+var today=new Date();
+var h=today.getHours();
+var m=today.getMinutes();
+var s=today.getSeconds();
+// add a zero in front of numbers<10
+m=checkTime(m);
+s=checkTime(s);
+
+//document.getElementById('clock').innerHTML=h+":"+m+":"+s;
+document.getElementById('clock').innerHTML=today;
+t=setTimeout('startTime()',500);
+}
+
+function checkTime(i)
+{
+if (i<10)
+  {
+  i="0" + i;
+  }
+return i;
+}
+
+function loadXMLDoc()
+{
+if (window.XMLHttpRequest)
+  {// code for IE7+, Firefox, Chrome, Opera, Safari
+  xmlhttp=new XMLHttpRequest();
+  }
+else
+  {// code for IE6, IE5
+  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+  }
+xmlhttp.onreadystatechange=function()
+  {
+  if (xmlhttp.readyState==4) // response is ready
+    {
+    if (xmlhttp.status==200) // OK
+      {
+      document.getElementById("myDiv").innerHTML=xmlhttp.responseText;
+      //document.getElementById("myDiv").innerHTML=xmlhttp.responseXML;
+      //document.getElementById("myDiv").innerHTML="The End.";
+      }
+    else { document.getElementById("myDiv").innerHTML="Document unavailable." }
+    }
+  }
+xmlhttp.open("GET","/rvphillips",true);
+//xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+//xmlhttp.send("fname=Henry&lname=Ford");
+xmlhttp.send();
+}
+
+{% endblock head_javascript_main %}
+
+<!-- }}} end "head" javascript_main functions -->
+<!-- {{{ start "head" javascript_extra functions -->
+
+{% block head_javascript_extra %}
+{% endblock head_javascript_extra %}
+
+<!-- }}} end "head" javascript_extra functions -->
+</script>
+
+<!-- }}} head script javascript functions -->
+<!-- {{{ head_css -->
+
+{% block head_css %}
+<style type="text/css">
+/* NOTE: Since this code is within the STYLE tag, a comment is enclosed
+   with CSS comment characters, NOT HTML comment characters.
+   However, the Django Template block defining chars still apply.
+*/
+/* {{{ head_css_aural */
+h1,h2,h3,h4
+{
+voice-family:male;
+richness:80;
+/* cue-before:url("beep.au")
+*/
+}
+/* }}} head_css_aural */
+/* {{{ head_css_web_safe_font_combinations */
+
+p.safe_times {font-family:"Times New Roman", Times, serif}
+/* {{{ Serif Fonts */
+p.palatino {font-family:"Palatino Linotype", "Book Antiqua", Palatino, serif }
+
+/* }}} Serif Fonts */
+/* {{{ Sans-Serif Fonts */
+
+p.arial {font-family:Arial, Helvetica, sans-serif}
+
+/* }}} Sans-Serif Fonts */
+/* {{{  Monospace Fonts */
+
+p.monospace {font-family:"Courier New",Courier, monospace}
+p.monospace_lucida {font-family:"Lucida Console",Monaco, monospace}
+/* }}}  Monospace Fonts */
+
+/* }}} head_css_web_safe_font_combinations */
+/* {{{ head_css_body  */
+
+{% block head_css_body %}
+body {
+margin: 0px;
+background-color:white;
+font-family: helvetica;
+font-family: Arial,Helvetica,sans-serif;
+font-size: 12pt;
+/*line-height: 1.2em; */
+}
+{% endblock head_css_body %}
+/*  }}} head_css_body */
+/* {{{ head_css_banner*/
+
+#banner { /* header banner class for the web page with contact info, etc */
+  {% block style_banner %}
+  background-color: rgb(110,100,37);
+  background-color: rgb(12,40,75); /* Dark blue */
+  color: white;
+  /*
+  position:fixed;
+  top:0;
+  */
+  height:146px; /* height controls banner abutment to #links_head */
+  /*width: 990px; */
+
+  width: 100%;
+  min-width: 550px;
+  text-align: left;
+  padding:10px;
+  {% endblock style_banner %}
+}
+/*  }}} head_css_banner */
+/*  {{{ head_css_banner_left */
+
+#banner_left {
+  {% block style_banner_left %}
+  /* float: left; */
+  float: left;
+  line-height: 0.8em;*/
+  width:100%;
+  font family: helvetica;
+  font-size: 18px;
+  font-weight: bold;
+  {% endblock style_banner_left %}
+  }
+
+/*  }}} head_css_banner_left */
+/* {{{ head_css_banner_status*/
+
+#status
+{
+font-size: 12x;
+margin-left:10px;
+color: black;
+background: white;
+}
+
+/* }}} head_css_banner_status*/
+/* {{{ head_css_main */
+
+#main {
+  {% block style_main %}
+  width: 800px;
+  width: 100%;
+  min-width:500px;
+  text-align: left;
+  margin: 0px;
+  padding-left:8px ;
+  padding-bottom:10px;
+  {% endblock style_main %}
+}
+
+/* }}} head_css_main  */
+/*  {{{ head_css_main_left */
+
+#main_left {
+  {% block style_main_left %}
+  background-repeat : no-repeat;
+  float: left;
+  width:65%;
+  width:660px;
+  line-height: 1.1em;
+  color: black;
+  background-color: white;
+  font family: helvetica;
+  font-size: 16px;
+  font-weight: normal;
+  background-position: top left;
+  padding-left: 10px;
+  /*padding-right: 10px;
+*/
+  {% endblock style_main_left %}
+  {% block style_main_left_height %}
+  height:480px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  {% endblock style_main_left_height %}
+}
+
+/*  }}} head_css_main_left */
+/*  {{{ head_css_footer */
+
+#footer {
+{% block style_footer %}
+position:fixed;
+bottom:0px;
+font-size: 9pt;
+/*width: 1000px;
+*/
+width: 100%;
+height: 20px;
+border-color: red;
+color: yellow;
+/*padding: 5px;
+*/
+background-color: rgb(25,80,145); /* Medium-Dark blue */
+background-color: rgb(12,40,75); /* Dark blue */
+text-align: center;
+{% endblock style_footer %}
+}
+
+/*  }}} head_css_footer */
+/* {{{ head_css a.abc  properties */
+
+/*   the following #links_head silently fails */
+/*  unvisited abc link */
+a.abc:link {color:white; text-decoration:none; }
+
+/* visited abc link */
+a.abc:visited {color:#FFFFFE; text-decoration:none; }
+
+/* selected abc link */
+a.abc:active {text-decoration:underline; color:red;}
+/* mouse over abc link */
+a.abc:hover {background-color:#FF704D;text-decoration:underline;}
+
+/* }}} head_css a.abc  properties */
+/* {{{ head_css_links_head */
+
+#links_head {
+{% block head_css_links_head %}
+/*position:fixed;*/
+/*top: 138px; */ /* top is set precisely to meld with prior banner here. */
+text-align: left;
+padding-left:8px ;
+width=100%;
+/* background-color : Medium-Dark blue*/
+background-color: rgb(25,80,145);
+background-color: rgb(12,40,75); /* Dark blue */
+
+{% endblock head_css_links_head %}
+}
+
+/*  }}} head_css_links_head */
+/*  {{{ head_css_disclaim */
+
+#disclaim
+{
+display : inline;
+width : 95%;
+font-size: 9pt;
+line-height: inherit;
+color: yellow;
+}
+
+/* }}} head_css_links_disclaim  */
+/* {{{ head_css_extra  */
+
+{%block head_css_extra %}
+{%endblock head_css_extra %}
+
+/* }}} head_css_extra  */
+
+{% endblock head_css %}
+</style>
+
+<!-- }}} head_css -->
+{%block head_extra %}
+{%endblock head_extra %}
+</head>
+
+<!-- }}} end head -->
+<!-- {{{ body -->
+
+<body onload="startTime()">
+
+<!-- {{{ body_contents -->
+
+{% block body_contents %}
+
+<!-- {{{ div id="banner" -->
+
+<div id="banner">
+{% block banner %}
+
+<!-- {{{ div id="banner_left" -->
+
+<div id="banner_left">
+{% block banner_left %}
+University of Florida George A. Smathers Libraries
+<p style="color:yellow">
+HathiTrust Marshaling Application Website
+</p>
+<div id="clock" style="display:inline;line-height:inherit%;font-size:9pt;" >-</div>
+{% endblock banner_left %}
+</div>
+
+<!-- }}} div id="banner_left" -->
+
+{% endblock banner %}
+</div>
+
+<!-- }}} div id="banner" -->
+<!-- {{{ div id="links_head" -->
+
+{% block links_head %}
+<div id="links_head">
+| <a class="abc" href="/admin">Admin</a>
+| <a class="abc" href="mailto:podengo@ufl.edu">Email</a>
+| <a class="abc" href="/accounts/login">Login</a>
+| <a class="abc" href="/accounts/logout">Logout</a>
+| <a class="abc" href="/hathitrust/upload">Upload</a>
+<!-- video exercycle
+| <a class="abc" href="/media/file_1098.ogv" >Video Exercycle - ABC News Excerpt</a>
+ -->
+</div>
+{% endblock links_head %}
+
+<!-- }}} div id="links_head" -->
+<!-- {{{ div id="status" -->
+
+<div id="status">
+ {% if user.is_authenticated %}
+    <p>Welcome, {{ user.username }}. Thanks for logging in.</p>
+ {% else %}
+    <p>Welcome, guest. You are not logged in. If you need a login, please
+<a href="mailto:robertvphillips@gmail.com">request a login via email.</a>
+</p>
+ {% endif %}
+</div>
+
+<!-- }}} div id="status" -->
+<!-- {{{ div main -->
+
+<div id="main">
+{% block main %}
+<!-- {{{ div main_left -->
+<div id="main_left">
+{% block main_left %}
+block main_left content goes here.
+{% endblock main_left %}
+</div>
+<!-- }}} div main_left -->
+
+{% endblock main %}
+</div>
+
+<!-- }}} div main -->
+<!-- {{{ div footer -->
+
+<div id="footer">
+<!--
+<video src="/media/file_1098.ogv" width="320" height="240" controls="controls"> </video>
+-->
+(Copyright 2010, Robert Vernon Phillips, all rights reserved)
+</div>
+
+<!-- }}} div footer -->
+<!-- {{{ prologue for google analytics-->
+
+<script type="text/javascript">
+
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-11250593-1");
+pageTracker._trackPageview();
+} catch(err) {}</script>
+<!-- }}} prologue -->
+
+{% endblock body_contents %}
+</body>
+
+<!-- }}} body_contents -->
+
+<!-- }}} body -->
+</html>

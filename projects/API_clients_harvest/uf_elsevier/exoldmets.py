@@ -1,6 +1,6 @@
 # EXOLDMETS- Elsevier Xml Orig-Load-Date to Mets
-# tranform Elsevier Xml files created by ealdxml (Elsevier API (Orig) Load Date to XML),
-# to METS files
+# tranform Elsevier Xml files created by ealdxml (Elsevier API (Orig) Load
+# Date to XML), to METS files
 #Get local pythonpath of modules from 'citrus' main project directory
 import sys, os, os.path, platform
 import datetime
@@ -19,7 +19,10 @@ def register_modules():
 register_modules()
 print("Using sys.path={}".format(repr(sys.path)))
 import etl
-from uf_elsevier.utilities import uf_elsevier_item_authors, uf_affiliation_value
+from uf_elsevier.utilities import (
+    uf_elsevier_item_authors,
+    uf_affiliation_value
+    )
 
 from sqlalchemy import (
   Boolean, create_engine,
@@ -964,7 +967,8 @@ def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None
     if node_desc is None:
         description = ''
     else:
-        description = etree.tostring(node_desc, encoding='unicode', method='text')
+        description = etree.tostring(node_desc, encoding='unicode',
+            method='text')
 
     if description.startswith('Abstract'):
         #print("Removing startswith 'abstract'")
@@ -1000,8 +1004,8 @@ def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None
         # Create tree_xslt from the xslt_str2
         tree_xslt = etree.fromstring(xslt_str2)
     except Exception as e:
-        msg = ("Parse error='{}' etree.fromstring(xslt_str2), description='{}',xslt_str2='{}'. Skipping"
-              .format(repr(e), description, xslt_str2))
+        msg = (f"Parse error='{e}' etree.fromstring(xslt_str2), "
+            f"description='{description}',xslt_str2='{xslt_str2}'. Skipping")
         print(msg)
         d_return['failure_message'] = msg
         return d_return
@@ -1035,7 +1039,8 @@ def xslt_transform_format(core_pii='',node_root_input=None, d_ns=None
     # not values in the text)
     # so we will not get a 'false alarm' on a change for timestamps and other
     # sobek values.
-    # NOTE: lxml etee.tostring is a MISNOMER, it returns bytes, not a string,
+    # NOTE: lxml etee.tostring is a MISNOMER in the context of python 3 because
+    # it returns bytes, not a string,
     # unless encoding_method is set to 'UNICODE'.
     # But only a string has the format() method, which we need a few code
     # lines below.

@@ -40,7 +40,8 @@ This program is based on ealdxml.py (Elsevier Api Load Date to Xml)
 '''
 from lxml import etree
 # Note: Official Python 3.5 docs use different library, ElementTree ET
-# Maybe try ET if lxml shows flaws -- update: lxml shows no flaws so far after months
+# Maybe try ET if lxml shows flaws
+# -- update: lxml shows no flaws so far after months
 # of use, so sticking with lxml for last part of 2016 and beyond.
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -52,6 +53,7 @@ import urllib.request
 utc_now = datetime.datetime.utcnow()
 utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
+# Template used to generate an API request
 get_suggested_xml_fmt = '''
 <TMMAI project="{project}" location = ".">
 <Method name="getSuggestedTerms" returnType="{return_type}"/>
@@ -62,9 +64,10 @@ get_suggested_xml_fmt = '''
 '''
 
 '''
-def get_suggested)terms_data_harmony_api_result()
-This does a 'POST' api request and return a 'response' object.
-
+See http://ufdc.ufl.edu/AA00062223/00001/3j?search=aa00062223
+and go to page 2 in the viewer to see the image for the jpeg file
+(See file ...ufdc/resources/AA/00/06/22/23/00001/00003.jpg) used
+as input to various alternate OCR programs to produce the outputs below.
 '''
 
 # used https://ocr.space/ on 20180813 from the jpg to get the text
@@ -115,6 +118,7 @@ March 9 And 10. Two Big Days
 e7/oric)a urea/
 '''
 
+#Used tesseract 3? to get following text on 20180801 or so
 tesseract_text = '''
 ORIDA_CATTLEMAN
 Guzerat Hictaee

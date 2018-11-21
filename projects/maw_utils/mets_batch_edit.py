@@ -55,29 +55,33 @@ def sequence_paths(log_file=None, input_folders=None, input_path_globs=None,
         print(msg, file=log_file)
 
     # compose input_path_list over multiple input_folders
+    n_files = 0
     for input_folder in input_folders:
         for input_path_glob in input_path_globs:
 
-            paths = list(Path(input_folder).glob(input_path_glob))
-
-            if (verbosity > 0):
-                msg = ("{}: Found {} files in input_folder='{}'"
-                   " that match glob ={}\n"
-                  .format(me, len(paths), input_folder, input_path_glob))
-                print(msg)
-                print(msg,file=log_file)
+            #paths = list(Path(input_folder).glob(input_path_glob))
+            # Use generator rather than create initial list
+            for path in Path(input_folder).glob(input_path_glob)
+                n_files += 1
+                yield path
 
             #input_path_list.extend(list(Path(input_folder).glob(input_path_glob)))
-            for path in paths:
-                yield path
+            #for path in paths:
+            #    yield path
             # end for path
         #end for input_path_glob
     # end for input folder
+    if (verbosity > 0):
+        msg = ("{}: Found {} and yielded files in input_folder='{}'"
+           " that match glob ={}\n"
+          .format(me, len(paths), input_folder, input_path_glob))
+        print(msg)
+        print(msg,file=log_file)
 # end def sequence_paths
 
 def get_root_from_file_bytes(input_file_name=None, log_file=None,
     verbosity=None):
-    me = 'get_xml_file_root'
+    me = 'get_root_from_file_bytes'
 
     # get_root_element
     with open(input_file_name, mode='rb') as f:
@@ -145,7 +149,7 @@ def file_add_or_replace_xml(input_file_name=None,
     utc_secs_z = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
     utc_yyyy_mm_dd = utc_now.strftime("%Y_%m_%d")
 
-    parent_xpath = ".//{}".format(parent_tag_name)
+    parent_xpath = f".//{parent_tag_name}"
 
     if verbosity > 0:
         msg = ('{}: using input_file={}, parent_xpath={},child_tag_namespace={}'
@@ -189,7 +193,7 @@ def file_add_or_replace_xml(input_file_name=None,
     plen =len(parent_nodes)
     if verbosity > 0:
         msg = ('{}: in {}, found {} parent nodes'
-          .format(me, input_file_name,plen))
+          .format(me, input_file_name, plen))
         print(msg, file=log_file)
 
     # Check for extant child - default behavior is to NOT insert child if
@@ -208,15 +212,15 @@ def file_add_or_replace_xml(input_file_name=None,
             print(msg, file=log_file)
             return -2
 
-        cet_name = "{{{}}}{}".format(namespace_ref, child_model_element.tag)
-        child_tag = '{}:{}'.format(
-          child_tag_namespace, child_model_element.tag)
+        cet_name = f"{{{namespace_ref}}}{child_model_element.tag}"
+        # .format(namespace_ref, child_model_element.tag)
+        child_tag = f'{child_tag_namespace}:{child_model_element.tag}'
     else:
         cet_name = child_model_element.tag
         child_tag = cet_name
 
-    child_check_path = './/{}'.format(child_tag)
-    child_check_path = '{}'.format(child_tag)
+    #child_check_path = './/{}'.format(child_tag)
+    child_check_path = f'{child_tag}'
 
     if verbosity > 0:
         print("Using child_check_path={}"
@@ -262,7 +266,7 @@ def file_add_or_replace_xml(input_file_name=None,
           .format(me, input_file_name))
         print(msg, file=log_file)
 
-    # Create child node to append for this parent
+    # Create a new child node to append for this parent in the METS tree
     child_element = etree.Element(cet_name)
     child_element.text = child_model_element.text
 
@@ -274,7 +278,7 @@ def file_add_or_replace_xml(input_file_name=None,
         print(msg, file=log_file)
 
 
-    # Done modifying the in-memory documet.
+    # Done modifying the in-memory document.
     # Now output it in its file.
     # TODO: CHANGE AFTER TESTING
     # output_file_name = "{}.txt".format(input_file_name)
@@ -288,7 +292,7 @@ def file_add_or_replace_xml(input_file_name=None,
     # This extracts the bib_vid part of the mets.xml file name, assumed
     # to comply with the ufdc *.mets.xml file naming convention
     bib_vid = fparts[0]
-    backup_folder_name = "{}\\sobek_files\\".format(vid_folder)
+    backup_folder_name = f"{vid_folder}\\sobek_files\\"
 
     # Just in case, make sure the backup dir is made
     os.makedirs(backup_folder_name, exist_ok=True)
@@ -773,6 +777,9 @@ Para 1905, el periódico se anuncia como el de más circulación de Puerto Rico 
     # child node like child_model_element
     # or there is no child check path defined
     child_model_element = etree.Element(child_tag_localname)
+
+    #Preset the child_model_element with the desired new text, hence
+    #the '_model_' part of its name.
     child_model_element.text = child_model_text
     sys.stdout.flush()
 

@@ -3,39 +3,34 @@ import os, sys
 from django.db import models
 from django.utils import timezone
 import datetime
-#from django_enumfield import enum
-
-#other useful model imports at times (see django docs, tutorials):
-import datetime
 from django.utils import timezone
 from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
-
 from dps.models import BatchSet, BatchItem
 #from django.apps import apps
 #BatchSet = apps.get_model('dps','BatchSet')
 #BatchItem = apps.get_model('dps','BatchSet')
-
 import threading
 import maw_settings
 from time import sleep
 from django.contrib.auth import get_user_model
 User = get_user_model()
+import zlib
+import gzip
+import tarfile
+#from os import listdir
+from pathlib import Path
+from natsort import natsorted
+from shutil import copy2, make_archive, move
+import hashlib
 
-#BatchSet = apps.get_model('dps','BatchSet')
-#BatchItem = apps.get_model('dps','BatchSet')
-
-'''
-NOTE: rather than have a separate file router.py to host HathiRouter, I just
-put it here. Also see settings.py should include this dot-path
-as one of the listed strings in the list
-setting for DATABASE_ROUTERS.
-
-'''
-# Maybe move the HathiRouter later, but for now keep here
-#
 class HathiRouter:
     '''
     A router to control all db ops on models in the hathitrust Application.
+
+    NOTE: rather than have a separate file router.py to host HathiRouter, I just
+    put it here. Also see settings.py should include this dot-path
+    as one of the listed strings in the list
+    setting for DATABASE_ROUTERS.
     '''
 
     # app_label is really an app name. Here it is hathitrust.
@@ -71,21 +66,6 @@ class HathiRouter:
         if app_label == self.app_label:
             return db == self.app_db
         return None
-
-#end class
-
-# Create your models here.
-#
-# NB: we accept the django default of prefixing each real
-# db table name with the app_name, hence the model names
-# below do not start with hathi or hathitrust.
-# class HathiItemState(enum.Enum):
-#       HAS_FOLDER = 0
-#       FOLDER_LOADED = 1
-#       FILES_EXAMINED = 2
-#       FILES_NEED_CHANGES = 3
-#       YAML_CREATED = 4
-
 class Yaml(models.Model):
     # Relation to edit the 'meta.yaml' settings required by the
     # HathiTrust Cloud Packaging Service
@@ -156,9 +136,6 @@ class Yaml(models.Model):
 
     def __str__(self):
         return self.item.bib_vid
-
-
-
 class PrintScanYaml(models.Model):
     id = models.AutoField(primary_key=True)
     yaml = models.ForeignKey('Yaml', on_delete=models.CASCADE,
@@ -194,8 +171,6 @@ class PrintScanYaml(models.Model):
 
     def __str__(self):
         return self.yaml.item.bib_vid
-
-
 class DigitalBornYaml(models.Model):
 
     id = models.AutoField(primary_key=True)
@@ -237,12 +212,6 @@ class DigitalBornYaml(models.Model):
 
     def __str__(self):
         return self.yaml.item.bib_vid
-
-
-# end class DigitalBornYaml
-
-
-# end class Meta
 class Item(models.Model):
 
     # Field 'id' is 'special', and if not defined, Django defines
@@ -312,11 +281,6 @@ class Item(models.Model):
         class Meta:
           db_table = 'item'
     '''
-
-#end class Item(models.Model)
-
-#end class Item
-
 class File(models.Model):
   """
   Each row in the model File describes a file and metadata for it to be
@@ -407,19 +371,15 @@ class File(models.Model):
   def __str__(self):
         #2018
         return "File"
-
-# end class File
-
-'''
-Legacy UploadFile object designed for more uses than is the leaner File model
-used by the Hathitrust app.
-
-If later will register with admin ... remember it has its own uploadform,
-so do not enable the Add permissions via admin, but admin views are OK.
-Can use the upload() method in views.py to invoke this if wanted.
-'''
-
 class UploadFile(models.Model):
+  '''
+  Legacy UploadFile object designed for more uses than is the leaner File
+  model used by the Hathitrust app.
+
+  If later will register with admin ... remember it has its own uploadform,
+  so do not enable the Add permissions via admin, but admin views are OK.
+  Can use the upload() method in views.py to invoke this if wanted.
+  '''
 
   # department owner of the uploaded file
   department = models.CharField('Dept', max_length=64, default='RVP',
@@ -470,15 +430,16 @@ class UploadFile(models.Model):
   def __str__(self):
         #2018
         return "UploadFile"
+def resource_sub_path_by_bib_vid(bib_vid=None):
+    '''
+    return sub_path without leading / for a bib_vid folder under the
+    resources directory:
 
-# end class UploadFile
-from pathlib import Path
-from natsort import natsorted
-from shutil import copy2, make_archive, move
-
-def line(s=''):
-    return '\n>' + s
-def resource_path_by_bib_vid(bib_vid=None):
+    Note: recent finding is that some 'old' bibs have no vid, so may need to
+    tweak this if users want to use thos old bibs at some point.
+    Also: other new or non-UF bibs in the future may have a variable number of
+    leading characters or total length.
+    '''
     if not bib_vid:
         raise ValueError(f'Bad bib_vid={bib_vid}')
     parts = bib_vid.split('_')
@@ -497,18 +458,19 @@ def resource_path_by_bib_vid(bib_vid=None):
     path += sep
     path += parts[1]
     return path
-
-import hashlib
 def md5(fname):
     hash_md5 = hashlib.md5()
     with open(fname, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
-
-import os
-import datetime
-def modification_utc_str_by_filename(filename):
+#def modification_utc_str_by_filename(filename):
+def ltime_tzone_utime_by_filename(filename):
+    # given a named file, return tuple of:
+    # [0] str of local time of modification
+    # [1] timezone in full hour count, of that local time
+    # note: some non-full-hour timezones will be not accurate to the minute.
+    # [2] utc string of the modification time
     t = os.path.getmtime(filename)
     d = datetime.datetime.fromtimestamp(t)
     du = datetime.datetime.utcfromtimestamp(t)
@@ -516,7 +478,7 @@ def modification_utc_str_by_filename(filename):
     utc_str = du.strftime("%Y-%m-%dT%H:%M:%SZ")
     d_str = d.strftime("%Y-%m-%dT%H:%M:%S")
     return d_str, tz, utc_str
-
+    
 def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
     vid=None,log_file=None, verbosity=0):
     me = 'make_jp2_package'
@@ -552,7 +514,7 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
             ext = tuple[1]
             paths = list(Path(in_dir).glob(glob))
             n_paths = len(paths)
-            msg += line(f'Processing {n_paths} files with extension {ext}.')
+            msg += '\n' + (f'Processing {n_paths} files with extension {ext}.')
 
             # Sort the paths for this glob
             sorted_paths = natsorted(paths)
@@ -562,14 +524,15 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
                 jp2_count += 1
 
                 if verbosity > 1:
-                  msg += line(
+                  msg += '\n' + (
                       f'{me}: processing file {i} PACKAGE FOR '
                       f'bib_vid {bib_vid}.')
                 print(msg, file=log_file)
                 log_file.flush()
 
                 if i == 1:
-                    dstr, tz, utcstr = modification_utc_str_by_filename(in_path)
+                    #dstr, tz, utcstr = modification_utc_str_by_filename(in_path)
+                    dstr, tz, utcstr = ltime_zone_utime_by_filename(in_path)
                     # str_tz : Lop of the 'seconds' part of the tz
                     str_tz = str(tz)
                     index_last_colon = str_tz.rfind(':')
@@ -578,26 +541,23 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
 
                     capture_date = f'{dstr}-{str_tz}'
                     if verbosity > 1:
-                      msg += line(f'\nGot dstr={dstr}\n')
-                      msg += line(f'\nGot tz={tz}\n')
-                      msg += line(f'\nGot utcstr={utcstr}\n')
-                      msg += line(f'\nGot capture_date={capture_date}\n')
+                      msg += (f'\nGot dstr={dstr}\n')
+                      msg += (f'\nGot tz={tz}\n')
+                      msg += (f'\nGot utcstr={utcstr}\n')
+                      msg += (f'\nGot capture_date={capture_date}\n')
 
                 out_base = str(i).zfill(8)
                 out_base_ext = out_base + ext
                 out_name = out_dir_files + os.sep + out_base_ext
 
                 in_base = in_name.split('.')[0]
-                #msg += line()
-                #msg += line( f'{i}: Copying in_name ={in_name} '
-                #    f'to output_name={out_name}')
 
                 copy2(in_name, out_name)
 
                 # Write checksum.md5 file line for this file in  package
                 md5sum = md5(in_name)
-                msg += line( f"{i}: {in_name} md5sum='{md5sum}'")
-                out_file_md5.write(f'{md5sum} {out_base_ext}\n')
+                msg += ( f"\n{i}: {in_name} md5sum='{md5sum}'")
+                out_file_md5.write(f'\n{md5sum} {out_base_ext}\n')
 
                 #for ext_t in ['.pro','.txt']:
                 # Copy txt files only now
@@ -608,14 +568,12 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
                         in_name = in_base + ext_t
                         out_base_ext = out_base + ext_t
                         out_name = out_dir_files + os.sep + out_base_ext
-                        #msg += line( f'{i}: Copying in_name ={in_name}, '
-                        #    f'to output_name={out_name}')
                         copy2(in_name, out_name)
 
                         # Write checksum.md5 file line for this package file.
                         md5sum = md5(in_name)
                         if verbosity > 1:
-                          msg += line( f"{i}: {in_name} md5sum='{md5sum}'")
+                          msg += (f"\n{i}: {in_name} md5sum='{md5sum}'")
                         out_file_md5.write(f'{md5sum} {out_base_ext}\n')
 
                     except FileNotFoundError:
@@ -635,7 +593,7 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
           yaml_file.write(f"capture_date:{capture_date}")
 
         md5sum = md5(yaml_file_name)
-        msg += line( f"YAML FILE: {yaml_file_name} md5sum='{md5sum}'")
+        msg +=  f"\nYAML FILE: {yaml_file_name} md5sum='{md5sum}'"
         out_file_md5.write(f'{md5sum} {yaml_base_name}\n')
     #with open --- checksum.md5 as out_file_md5
 
@@ -646,16 +604,13 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
     # Create zip archive
     out_base_archive_file = out_dir_bib + os.sep +  bib_vid
     make_archive(out_base_archive_file, 'zip', out_dir_files)
-    msg += line( f'Made archive file {out_base_archive_file}.zip for '
+    msg += (f'\nMade archive file {out_base_archive_file}.zip for '
                  f'directory {out_dir_files}')
-    msg += line('')
-    msg += line(f'{me}: Finished package FOR bib_vid {bib_vid}.\n')
+    msg += (f'\n{me}: Finished package FOR bib_vid {bib_vid}.\n')
 
     print(msg, file=log_file)
     log_file.flush()
     return jp2_count
-
-#end def make_jp2_package
 
 def make_jp2_packages(obj):
     '''
@@ -688,7 +643,6 @@ def make_jp2_packages(obj):
     ufdc = maw_settings.HATHITRUST_UFDC
     # input dir
     resources = os.path.join(ufdc,'resources')
-    # msg += line(f'INPUT dir={in_dir}')
 
     # make output dirs
     # out_dir_bib = os.path.join(resources,'maw_work','hathitrust',bib_vid)
@@ -723,7 +677,7 @@ def make_jp2_packages(obj):
             obj.packages_created = item_count
             obj.status = msg
             obj.save()
-            in_dir = resources + os.sep + resource_path_by_bib_vid(bib_vid)
+            in_dir = resources + os.sep + resource_sub_path_by_bib_vid(bib_vid)
 
             out_dir_bib = os.path.join(out_dir_batch, bib_vid)
             os.makedirs(out_dir_bib, exist_ok=True)
@@ -741,13 +695,10 @@ def make_jp2_packages(obj):
     obj.jp2_images_processed = jp2_total
     obj.packages_created = item_count
     obj.status = (
-      f"Finished:  {jp2_total} jp2 images in {item_count} packages in this batch {obj.id} "
-      f"are complete at {str_now}. See bib_vid output folders under "
-      f"{out_dir_batch}.")
+      f"Finished:  {jp2_total} jp2 images in {item_count} packages in this"
+      f" batch {obj.id} are complete at {str_now}. "
+      f"See bib_vid output folders under {out_dir_batch}." )
     obj.save()
-
-# end def make_jp2_packages()
-
 class Jp2Job(models.Model):
     '''
     Each row represents a run of the Hathitrust jp2_job package generator,
@@ -767,8 +718,8 @@ class Jp2Job(models.Model):
         to check the output folder
     (2) refresh the view of the jp2batch row to see if the status
         field is completed. It may be convenient for the user to save a
-        memorable value in the notes field upon initial saving so it can be sought
-        later to re-check the row.
+        memorable value in the notes field upon initial saving so it can be
+        sought later to re-check the row.
 
     '''
 
@@ -776,7 +727,7 @@ class Jp2Job(models.Model):
 
     batch_set = models.ForeignKey(BatchSet, blank=False, null=False,
       db_index=True,
-      help_text="BatchSet for which to generate Hathitrust JP2 Packages",
+      help_text="BatchSet to input to generate Hathitrust JP2 Packages",
       on_delete=models.CASCADE,)
 
 
@@ -845,29 +796,152 @@ class Jp2Job(models.Model):
 
         # super().save(*args, **kwargs)
     # end def save()
-
-
-class Jp2Job2(models.Model):
+    class Meta:
+        verbose_name_plural='Jp2Jobs'
+def make_items_zip(obj, verbosity=1):
     '''
-    Each row represents a run of the Hathitrust jp2_job package generator,
-    make_jp2_packages()
+    Given a batch_set_id fkey into db table dps_batch_set,
+    for each the batchset of items,  generate a tar file of of those complete
+    items.
+
+    This is usually called via thread in the background.
+
+    It is developed to support a call from
+    a save() or add method for new row to be added to model
+    hathitrust_items_zip.
+
+    '''
+    me = 'make_items_zip'
+    if verbosity > 0:
+      print(f"{me}: Making items zip file for batch_set {obj.batch_set}")
+      sys.stdout.flush()
+
+    ufdc = maw_settings.HATHITRUST_UFDC
+    # input dir
+    resources = os.path.join(ufdc,'resources')
+
+    # make output dirs
+    # out_dir_bib = os.path.join(resources,'maw_work','hathitrust',bib_vid)
+    out_dir_zip = os.path.join(resources,
+        'maw_work','itemszip', f'job_{str(obj.id)}',)
+
+    os.makedirs(out_dir_zip, exist_ok=True)
+    log_filename = os.path.join(out_dir_zip,'log.txt')
+
+    # Recommendation: This tar file is to be untarred within a parent folder
+    # with last directory named 'resources', to help minimize confusion and
+    # maintain a conceptual relation to the required source input folder
+    tar_filename = os.path.join(out_dir_zip,'resource_items.tar')
+
+    print(f"{me}: Making zip file for batch_set {obj.batch_set}"
+        f" in {out_dir_zip}.")
+    sys.stdout.flush()
+
+    batch_items = BatchItem.objects.filter(batch_set=obj.batch_set_id)
+    item_count = len(batch_items)
+    files_total = 0
+    # create and write to tarfile...
+    #import tarfile
+    with (
+        open(log_filename,'w')) as log_file, (
+        tarfile.open(name=tar_filename, mode='w')) as tarfile_out:
+
+        # tar.add(name)
+        if verbosity > 0:
+          print(f"{me}: Starting with ItemsZip id={obj.id}, "
+            f"batch_set_id={obj.batch_set} "
+            f"Items(bibvid) count={item_count} ",
+            file=log_file)
+          log_file.flush()
+
+        items_count = len(batch_items)
+        for item_count, batch_item in enumerate(batch_items, start=1):
+            bib_vid = f"{batch_item.bibid}_{batch_item.vid}"
+            #utc_now = datetime.datetime.utcnow()
+            utc_now = timezone.now()
+            str_now = secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
+            msg = (
+              f"Archived {files_total} files. Archiving bibvid {bib_vid},"
+              f" item {item_count} of {items_count} bibvids at {str_now}"
+            )
+
+            # UPDATE batchset values at the time of processing
+            # this bib_vid
+            obj.file_count = files_total
+            obj.items_count = item_count
+            obj.status = msg
+            obj.save()
+
+            resource_sub_path = resource_sub_path_by_bib_vid(bib_vid)
+            input_dir = resources + os.sep + resource_sub_path
+
+            msg = f'{me}: Tarring files for bib_bid {bib_vid}...'
+            if verbosity > 0:
+                print(msg, file=log_file)
+                log_file.flush()
+
+            file_count = 0
+            try:
+                for path in list(Path(input_dir).glob(obj.glob)):
+                    file_count += 1
+                    input_file_name = input_dir + os.sep + path.name
+                    archive_name = ( resource_sub_path + os.sep
+                      + path.name )
+                    msg = (f'Tarring input file name={input_file_name} '
+                      f'to {archive_name}')
+                    print(msg, file=sys.stdout)
+                    print(msg, file=log_file)
+                    log_file.flush()
+                    tarfile_out.add(input_file_name, archive_name)
+                # end for file in in_dir
+            except Exception as ex:
+                # Possible glob syntax error, maybe others?
+                # todo: Create Django user message later..
+                print(f'***** exception={repr(ex)}',file=sys.stdout)
+
+                raise ValueError(f'Exception={repr(ex)}')
+
+            files_total += file_count
+        # end for bach_item in batch_items
+    # end with open log_file, tarfile_out
+
+    # Here, now all bibvid items have been visited and files added to tar_file
+    # TODO: simply make a zip file from the tar file and delete the tar_file
+
+    # By design, we MUST set status to non-Null, else will get into recursive
+    # loop. #utc_now = datetime.datetime.utcnow()
+    utc_now = timezone.now()
+    str_now =  utc_now.strftime("%Y-%m-%d %H:%M:%SZ")
+    obj.end_datetime = utc_now
+    obj.item_count = item_count
+    obj.status = (
+      f"Finished:  {files_total} files in {item_count} bib_vids in "
+      f"this batch {obj.id} "
+      f"are complete at {str_now}. See output folder "
+      f"{out_dir_zip}.")
+    obj.save()
+class ItemsZip(models.Model):
+    '''
+    Each row represents a run of the Items file zip generator,
+    make_items_zip().
 
     Very simple relation that represents the running of a batch job to create
-    HathiTrust packages for a set of bib_vids.
+    A zipped package of items (from UFDC resources) suitable for unzipping into
+    a destination resources key-pair folder hierarchy.
 
     The web user:
-    (1) uses admin to add a row to table hathitrust_jp2_job ,
+    (1) uses admin to add a row to table hathitrust_job_zip,
     (2) sets a batch_set id for the row, and
-    (3) when the user save this row, the batch job to create Hathitrust packages
-    for the bib_vid in the package is launched.
+    (3) when the user saves this row, the batch job to create zip file
+    for the resource items in the batch is launched.
     To see that the batch job is completed, the user can either:
     (1) check the log file in the output folder for proof that
         the batch job is running or completed, assuming the user has permission
         to check the output folder
-    (2) refresh the view of the jp2batch row to see if the status
-        field is completed. It may be convenient for the user to save a
-        memorable value in the notes field upon initial saving so it can be sought
-        later to re-check the row.
+    (2) refresh the view of the hathitrust_job_zip row to see if the status
+        field reports it is finished. It may be convenient for users to save a
+        memorable value in the notes field upon initial saving so it can be
+        sought later to re-check the row.
 
     '''
 
@@ -875,8 +949,12 @@ class Jp2Job2(models.Model):
 
     batch_set = models.ForeignKey(BatchSet, blank=False, null=False,
       db_index=True,
-      help_text="BatchSet for which to generate Hathitrust JP2 Packages",
+      help_text="BatchSet for which to generate a zip file of resource items",
       on_delete=models.CASCADE,)
+
+    glob = SpaceCharField(max_length=255,
+      help_text= "Glob file selector (Eg, *.* or *.jp2 or *.mets.xml, etc)",
+      default='*.mets.xml' )
 
 
     create_datetime = models.DateTimeField('Run Start DateTime (UTC)',
@@ -887,21 +965,17 @@ class Jp2Job2(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
       db_index=True, blank=True, null=True)
 
-    packages_created = models.IntegerField(default=0, null=True,
-      help_text='Number of bib_vid packages created by this job.')
+    item_count = models.IntegerField(default=0, null=True,
+      help_text='Number of bib_vid items zipped by this job.')
 
-    jp2_images_processed = models.IntegerField(default=0, null=True,
-      help_text='Number of jp2 images packaged by this job.')
+    file_count = models.IntegerField(default=0, null=True,
+      help_text='Total number of files zipped by this job.')
 
-    '''
-    jp2_images_per_minute = models.IntegerField(default=0, null=True,
-      help_text='Approximate number of jp2 images packaged per minute so far '
-          f'for this batch.')
+    uncompressed_bytes = models.IntegerField(default=0, null=True, help_text=
+      'Total number of uncompressed bytes encodded in this zip file.')
 
-    run_seconds = models.IntegerField(default=0, null=True,
-      help_text='Approximate number of jp2 images packaged per minute so far '
-          f'for this batch.')
-    '''
+    compressed_bytes = models.IntegerField(default=0, null=True, help_text=
+      'Total number of compressed bytes encodded in this zip file.')
 
     notes = SpaceTextField(max_length=2550, null=True, default='note',
       blank=True, help_text= ("General notes about this batch job run"),
@@ -918,17 +992,17 @@ class Jp2Job2(models.Model):
       )
 
     def save(self,*args,**kwargs):
-        me = "jp2_job.save()"
+        me = "ItemsZip.save()"
 
         super().save(*args, **kwargs)
-        #if self.status is None or len(self.status) == 0:
+        # if self.status is None or len(self.status) == 0:
         if self.status is None or len(self.status) == 0:
             # Only start this thread if status is not set
             # Note: we super-saved before this clause becaue
             # the thread uses/needs the autoassigne jp2batch.id value
             # Note: may prevent row deletions later to preserve history,
             # to support graphs of work history, etc.
-            thread = threading.Thread(target=make_jp2_packages, args=(self,))
+            thread = threading.Thread(target=make_items_zip, args=(self,))
             thread.daemon = False
             #process.start()
             thread.start()
@@ -941,14 +1015,3 @@ class Jp2Job2(models.Model):
             self.status = f"Started processing at {str_now}"
             # Save again so starting status appears immediately
             super().save(*args, **kwargs)
-
-        # super().save(*args, **kwargs)
-    # end def save()
-
-
-
-
-    class Meta:
-        verbose_name_plural='Jp2Jobs'
-
-#end class jp2batch

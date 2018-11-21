@@ -240,8 +240,9 @@ def sql_mining_params():
         },
     } # end d_node_params1
 
-    # Interpose a new 'messagextag' tag to support multiple crossref xml response formats:
-    # see programs crafatxml and crawdxml for example, that produce these formats
+    # Interpose a new 'messagextag' tag to support multiple crossref xml
+    # response formats: see programs crafatxml and crawdxml for example, that
+    # produce these formats
     d_node_params2 = {
         'child_xpaths':{'.//message' : d_node_params1}
     }
