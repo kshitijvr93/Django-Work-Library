@@ -478,6 +478,7 @@ def ltime_tzone_utime_by_filename(filename):
     utc_str = du.strftime("%Y-%m-%dT%H:%M:%SZ")
     d_str = d.strftime("%Y-%m-%dT%H:%M:%S")
     return d_str, tz, utc_str
+    
 def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
     vid=None,log_file=None, verbosity=0):
     me = 'make_jp2_package'
@@ -610,6 +611,7 @@ def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
     print(msg, file=log_file)
     log_file.flush()
     return jp2_count
+
 def make_jp2_packages(obj):
     '''
     Given a batch_set_id fkey into db table dps_batch_set,

@@ -72,7 +72,8 @@ def ocr_by_pdf(pdf_file_name=None,
     verbosity=1):
     '''
     IMPORTANT NOTE: The removable_output_folder will be completely removed of
-    all its contents! This method will write its output files will there.
+    all its contents at the start!
+    This method will write its output files will there.
 
     Given input pdf_file_name, use 'pdftk my.pdf burst' to split/burst it into
     individual page-based pdf files (0001.pdf, ... NNNN.pdf) in the
@@ -88,9 +89,10 @@ def ocr_by_pdf(pdf_file_name=None,
 
     todo: accept list of extensions, each type mapped to a tesseract method,
     and if an extension maps to a method, run that and produce file with
-    that extension. Easier than setting many vars and also provides
-    new support that allows both
-    production of searchable pdf and hocr file in one call to this method.
+    that extension.
+    Easier than setting many vars and also provides
+    new support that allows both production of searchable pdf and
+    hocr file in one call to this method.
     '''
     me = 'ocr_by_pdf'
     pdftk = os.path.join('C:',os.sep,'Program Files (x86)','PDFtk',
@@ -115,12 +117,15 @@ def ocr_by_pdf(pdf_file_name=None,
       'searchable_pdf')
     os.makedirs(searchable_pdf_folder, exist_ok=True)
 
-    # Copy the pdf_file_name to the removable_output_folder before working with it
+    # Copy the pdf_file_name to the removable_output_folder before
+    # working with it
     shutil.copy(pdf_file_name, removable_output_folder)
 
-    # Create the bursted or split pages in separate pdfs for the input pdf
+    # Create the bursted or split pages in separate pdfs for the
+    # input pdf
     cmd = f'{pdftk} {pdf_file_name} burst'
     cwd = removable_output_folder
+
     if verbosity > 0:
         print(f"{now()}:{me}",file=lf,flush=True)
         print(f"{now()}:{me}:searchable_pdf_folder {searchable_pdf_folder}",
@@ -154,8 +159,8 @@ def ocr_by_pdf(pdf_file_name=None,
             f'{searchable_pdf_folder}{os.sep}{stem}_searchable')
         if verbosity > 0:
             print(
-              f"\nPage {n_pages}, {now()}: abs_stem={abs_stem},\nsearchable_stem="
-              f"{searchable_stem}",
+              f"\nPage {n_pages}, {now()}: abs_stem={abs_stem},\n"
+              f"searchable_stem={searchable_stem}",
               file=lf, flush=True)
 
         # Try to get an image from this pdf
@@ -279,7 +284,8 @@ def ocr_by_pdf(pdf_file_name=None,
 def ocr_by_jpg(
     jpg_file_name=None,
     removable_output_folder=None,
-    dpi_pdf=300, depth=8,
+    # dpi_pdf=300,
+    depth=8,
     lang='eng',
     text_ext='txt', # 'txt' is a natural extension choice
     bounding_box_ext='', # todo: suggest a common extension
@@ -313,7 +319,8 @@ def ocr_by_jpg(
 
     if verbosity > 0:
         print(
-          f"{now()}:{me}: STARTING: cwd={cwd}, dpi_pdf={dpi_pdf}, dpi_jpg={dpi_jpg}",
+          f"{now()}:{me}: STARTING: cwd={cwd}, dpi_pdf={dpi_pdf}, "
+          f"dpi_jpg={dpi_jpg}",
           file=lf, flush=True)
 
     searchable_pdf_folder = os.path.join(removable_output_folder,
@@ -322,17 +329,27 @@ def ocr_by_jpg(
     os.makedirs(removable_output_folder, exist_ok=True)
     os.makedirs(searchable_pdf_folder, exist_ok=True)
 
-    # Copy the pdf_file_name to the removable_output_folder before working with it
+    # Copy the input_file_name to the removable_output_folder before
+    # working with it
     shutil.copy(input_file_name, removable_output_folder)
 
     n_pages = 0
     # Just one file here for jpg
-    #paths = Path(cwd).glob('pg_*.pdf')
-    #for path in paths:
+    # paths = Path(cwd).glob('pg_*.pdf')
+    # for path in paths:
     if 1 == 1:
         n_pages += 1
 
-        abs_stem = jpg_file_name.split('.')[0]
+        # assume: the only '.' in the absolute jpg_file_name is just before
+        # the final extension
+        dparts = jpg_file_name.split('.')
+        if len(dparts) != 2:
+            msg = f"{me} file {jpg_file_name} had too many '.' characters"
+            # If this is not a workable exception, can revise code to
+            # cat back together all dparts except the last (extension).
+            raise ValueError(msg)
+
+        abs_stem = dparts[0]
         stem = os.path.basename(jpg_file_name).split('.')[0]
         searchable_stem = (
             f'{searchable_pdf_folder}{os.sep}{stem}_searchable')
@@ -350,7 +367,7 @@ def ocr_by_jpg(
             # give imageMagick/convert a try
 
             # This is a simple pdf for a page- convert this page pdf to a tif
-            cmd = (f'{convert_exe} -density {dpi_pdf} {jpg_file_name} -depth '
+            cmd = (f'{convert_exe} -density {dpi_jpg} {jpg_file_name} -depth '
                    f'{depth} {stem}.tif')
 
             if verbosity > 0:
@@ -437,7 +454,7 @@ def ocr_by_jpg(
         lf.flush()
     #end for path in paths (pdf page files)
     return n_pages
-#end  ocr_by_pdf(pdf_file_name=None,
+#end  ocr_by_jpg
 
 def now():
     return datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -478,7 +495,6 @@ def run(input_dir=None, removable_output_folder=None,
 
     extension = input_file_name.split('.')[1]
     if extension == 'pdf':
-
         n_pages = ocr_by_pdf(
             depth=depth,
             dpi_pdf=dpi_pdf,

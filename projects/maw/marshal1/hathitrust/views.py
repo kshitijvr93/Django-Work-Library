@@ -406,7 +406,16 @@ def file_upload(request, file_id='tmp'):
 def file_download(request, file_id):
     row_list = ''
 
-    #NOTE: the user data appears to be hosted in a client cookie, and the side effect is that it is dependent on domain NAME, not domain IP address, so if one is using a browser tab visiting lawcloud.com and another tab is visiting robertvernonphillips.com, and a link on the latter page is for the former page then by visiting the 'other' domain name, though the IP is the same, the same physical user appears to be a different user  due to different user cookies, set per domain name.
+    '''
+    #NOTE: the user data appears to be hosted in a client cookie, and
+    the side effect is that it is dependent on domain NAME, not
+    domain IP address, so if one is using a browser tab visiting
+    lawcloud.com and another tab is visiting robertvernonphillips.com,
+    and a link on the latter page is for the former page then by
+    visiting the 'other' domain name, though the IP is the same,
+    the same physical user appears to be a different user  due to
+    different user cookies, set per domain name.
+    '''
     if not request.user.is_staff:
       # if user is not staff, must filter for only public files
       row_list = list(ModelFile.objects.filter(id=file_id).filter(public=True))
