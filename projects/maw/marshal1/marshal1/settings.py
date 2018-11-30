@@ -242,6 +242,33 @@ DB_ENGINE_BACKENDS_STANDARD=['sqlite3','postgresql','mysql','oracle']
 # app.py config in the apps that use them
 
 DATABASES = {}
+#test ufdc sobek # DEBUG:
+
+# This var is used by ALL engines of type sql_server.pyodbc
+# rvp: Seems like it should be a per-connection setting instead.
+DATABASE_CONNECTION_POOLING=maw_settings.SS_CONNECTION_POOLING
+
+if 1 == 1:
+    DATABASES.update({
+        'ufdc_test_connection': {
+            'ENGINE': 'sql_server.pyodbc',
+            'NAME':  'SobekTest', #MS key: 'initial catalog'
+            'HOST': r'lib-ufdc-cache\ufdcprod,49352', #MS key: 'data source'
+            'PORT': '49352', #MS key: None (csv at end of data source)
+            'USER': maw_settings.UFDC_TEST_USER, #SQL Server db user name
+            'PASSWORD': maw_settings.UFDC_TEST_PASSWORD, #SQLServer password
+            'AUTOCOMMIT': True, #Use Django transaction mgmt
+            'TEST': { 'NAME': None, 'COLLATION':None, 'DEPENDENCIES':None,
+                'MIRROR': None},
+            'OPTIONS': {'driver':'ODBC Driver 13 for SQL Server',
+                # or 'SQL Server Native Client 11.0', or 'FreeTDS', etc.
+                #See docs for django-pyodbc-azure for more
+                'connection_timeout': maw_settings
+                    .UFDC_TEST_SECS_CONNECTION_TIMEOUT,
+                'query_timeout': maw_settings.UFDC_TEST_SECS_QUERY_TIMEOUT,
+                },
+            }
+        })
 
 # cuba_libra env
 cuba_libro_env = maw_settings.CUBA_LIBRO_ENV
