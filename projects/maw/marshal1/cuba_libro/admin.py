@@ -87,8 +87,11 @@ import sys
 Get and return this request's user's profile.agent field
 '''
 from django.contrib import messages
-def get_agent(username=None, verbosity=0):
+def get_agent(request=None, verbosity=0):
     me = 'get_agent'
+    username = request.user
+    if verbosity > -1:
+      print(f"{me}: username is {username}", file=sys.stdout)
     #user = User.objects.get(username=username)
     #print(f'get_agent "{user}"...', file=sys.stdout)
     try:
@@ -125,10 +128,8 @@ def get_agent(username=None, verbosity=0):
     #sys.stdout.flush()
     return agent
 
-def claim_by_agent(modeladmin, request, queryset):
+def claim_by_agent(modeladmin, request, queryset, verbosity=1):
     me = 'claim_by_agent'
-    username = request.user
-    print(f"{me}: username is {username}", file=sys.stdout)
     '''
     try:
         profile = Profile.objects.get(username=username)
@@ -138,7 +139,7 @@ def claim_by_agent(modeladmin, request, queryset):
       return None
     '''
 
-    agent = get_agent(username, verbosity=1)
+    agent = get_agent(request=request, verbosity=1)
     n_checked = len(queryset)
     items = queryset.filter(agent__exact=None)
     n_claimed = len(items)
@@ -173,7 +174,7 @@ def unclaim_by_agent(modeladmin, request, queryset):
         file=sys.stdout)
       return None
     '''
-    agent = get_agent(username, verbosity=1)
+    agent = get_agent(request=request, verbosity=1)
     n_checked = len(queryset)
     items = queryset.filter(agent=agent)
     n_unclaimed = len(items)
