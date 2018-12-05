@@ -248,7 +248,7 @@ DATABASES = {}
 
 # This var is used by ALL engines of type sql_server.pyodbc
 # rvp: Seems like it should be a per-connection setting instead.
-DATABASE_CONNECTION_POOLING=maw_settings.SS_CONNECTION_POOLING
+#DATABASE_CONNECTION_POOLING=maw_settings.SS_CONNECTION_POOLING
 
 if 1 == 2:
     DATABASES.update({

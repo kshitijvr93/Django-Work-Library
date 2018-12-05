@@ -796,8 +796,6 @@ class Jp2Job(models.Model):
 
         # super().save(*args, **kwargs)
     # end def save()
-<<<<<<< HEAD
-=======
 
 
 class Jp2Job2(models.Model):
@@ -901,7 +899,6 @@ class Jp2Job2(models.Model):
 
 
 
->>>>>>> Subject app added
     class Meta:
         verbose_name_plural='Jp2Jobs'
 def make_items_zip(obj, verbosity=1):
