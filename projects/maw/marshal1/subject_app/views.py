@@ -42,7 +42,7 @@ def get_file_path(bib, vid ):
                 flag = 1
                 f = open(path+sep+filename, "r")
                 for line in f:
-                    str1+=str(line)
+                    str1+=" "+str(line)
             
         
         if flag != 1:

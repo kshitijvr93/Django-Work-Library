@@ -17,12 +17,44 @@ from dps.models import BatchSet, BatchItem
 #from django.apps import apps
 #BatchSet = apps.get_model('dps','BatchSet')
 #BatchItem = apps.get_model('dps','BatchSet')
+import html
+import sys, os, os.path, platform
+import re
+import sys
+import requests
+import urllib, urllib.parse
+import json
+import pprint
+from collections import OrderedDict
+from io import StringIO, BytesIO
+from datetime import datetime
+import etl
+from lxml import etree
+import xml.etree.ElementTree as ET
+from pathlib import Path
+import datetime
+import pytz
+import os
+import urllib.request
+import requests, lxml
+
+
+
 
 import threading
 import maw_settings
 from time import sleep
 from django.contrib.auth import get_user_model
 User = get_user_model()
+
+get_suggested_xml_fmt = '''
+<TMMAI project="{project}" location = ".">
+<Method name="getSuggestedTerms" returnType="{return_type}"/>
+<VectorParam>
+<VectorElement>{doc}</VectorElement>
+</VectorParam>
+</TMMAI>
+'''
 
 #BatchSet = apps.get_model('dps','BatchSet')
 #BatchItem = apps.get_model('dps','BatchSet')
@@ -366,6 +398,149 @@ def make_jp2_packages(obj):
 
 # end def make_jp2_packages()
 
+
+
+
+def get_subject_from_thesis(obj):
+    me = 'get_subject_from_thesis'
+    print(f"{me}: Getting subjects for batch_set {obj.batch_set}")
+    sys.stdout.flush()
+    subject_list = []
+    bib_vid_pair_in_batchset = []
+    text_string_for_api = ""
+    subject_string=""
+    batch_items = BatchItem.objects.filter(batch_set=obj.batch_set_id)
+    for batch_item in batch_items:
+        bib = batch_item.bibid
+        vid = batch_item.vid
+        text_from_each_file = get_text_from_file_path(bib, vid )[0]
+        text_string_for_api += " " + text_from_each_file
+
+    
+        
+
+    
+    doc = text_string_for_api[0:10000]
+    doc = re.sub(r'\s+', ' ',doc)
+    
+    project = obj.thesaurus
+    r = get_suggested_terms_data_harmony_api_result(project=project, doc=doc)
+    print(r.text)
+    root = etree.fromstring(r.content)
+    
+    for child in root.findall('.//{*}VectorElement'):
+        if re.search(r"<TERM>.*",child.text):            
+            subject_list.append(child.text[6:-7])
+            subject_string+=" "+child.text[6:-7]
+            sub1 = Parsed_Subject() 
+            sub1.subject_batchset_id = obj           
+            sub1.subject_term_scraped = child.text[6:-7].split('|')[0]
+            sub1.subject_term_hinted = child.text[6:-7].split('|')[1][5:-4]
+            sub1.save()
+
+    print(subject_string)
+    utc_now = timezone.now()
+    obj.end_datetime = utc_now
+    obj.status = "Completed"
+    obj.subject_terms = subject_string
+    
+
+    obj.save()
+
+
+    
+def get_suggested_terms_data_harmony_api_result(
+    doc='farming and ranching in Peru', #example from DH Guide v3.13
+    #url from email of xxx
+    url='http://dh.accessinn.com:9084/servlet/dh',
+    project='floridathes', # in 2018 or geothesFlorida'
+
+    #return_type='java.util.String', # error
+    return_type='java.util.Vector',
+
+    log_file=sys.stdout,
+    verbosity=1):
+
+    me='get_suggested_terms_data_harmony_api_result'
+    if doc is None:
+        raise Exception("doc document string is required")
+
+    d = ({'doc': doc, 'project':project, 'return_type':return_type, })
+    query_xml = get_suggested_xml_fmt.format(**d)
+
+    if url is None or url=="":
+        raise Exception("Cannot send a request to an empty url.")
+    try:
+        # msg="*** BULDING GET REQUEST FOR SCIDIR RESULTS FOR URL='{url}' ***"
+        # print(f'msg(url)')
+        response = requests.post(url, data=query_xml.encode('utf-8'))
+    except:
+        raise Exception("Cannot post a request to url={}".format(url))
+
+    #result = json.loads(response.read().decode('utf-8'))
+
+    print( f"{me} got response encoding={response.encoding}".encode('latin-1',errors='replace'),file=log_file)
+
+    print(log_file, f'{me} got response text="{response.text}"'.encode('latin-1',errors='replace'))
+
+    return response
+# end def get_suggested_terms_data_harmony_api_result
+
+
+
+
+
+def get_text_from_file_path(bib, vid ):    
+    path = 'D:\\resource_items_mets'
+    
+    sep = os.sep
+    for i in range(0,10,2):
+        path += (sep + bib[i:i+2])
+    path += (sep + vid) 
+    flag = 0
+    str1=""
+    str2=""
+    
+    char_count_total = 0
+    try:
+        list1 = os.listdir(path)
+        list1.sort()
+        for filename in list1:
+            char_count = 0
+            if re.search(".txt$",filename) and filename != "consolidated.txt":  
+                str2=str2+"\n"+"----------------------------------file:  "+str(filename)+"---------------------------------------------------------------------------------------------------------------\n \n \n"
+                         
+                flag = 1
+                f = open(path+sep+filename, "r")
+                
+                for line in f:
+                    
+                    if line.strip():                   
+                        alpha_num_string = ''.join(e for e in line if e.isalnum() or e==" ")
+                        alpha_num_string = re.sub(r'\s+',' ',alpha_num_string)                        
+                        char_count += len(alpha_num_string.strip()) + 1                        
+                        str1+=" "+alpha_num_string.strip()
+                        str2+=" "+alpha_num_string.strip()
+                f.close()
+                char_count_total+= char_count
+                str2=str2+"\n-----------------character count:  "+str(char_count)+"  running count:  "+str(char_count_total)+"-------------------------------------------------------------------------------------------------------- \n \n \n"
+               
+
+            
+            
+        if flag != 1:
+            print("There is no .txt file in the folder")
+            
+    except:
+        print("enter a valid BIB:VID value")    
+
+    
+    return [str1,str2]
+
+
+
+
+
 class SubjectJob(models.Model):
     '''
     Each row represents a run of the Hathitrust jp2_job package generator,
@@ -401,6 +576,10 @@ class SubjectJob(models.Model):
       blank=True, help_text= (
         "Enter Value for Thesaurus"),
       editable=True,
+      )
+
+    subject_terms = SpaceTextField('subject_terms',max_length=2550, null=True, default='',
+      blank=True, editable=False,
       )
     create_datetime = models.DateTimeField('Run Start DateTime (UTC)',
         null=True, editable=False)
@@ -451,7 +630,7 @@ class SubjectJob(models.Model):
             # the thread uses/needs the autoassigne jp2batch.id value
             # Note: may prevent row deletions later to preserve history,
             # to support graphs of work history, etc.
-            thread = threading.Thread(target=make_jp2_packages, args=(self,))
+            thread = threading.Thread(target=get_subject_from_thesis, args=(self,))
             thread.daemon = False
             #process.start()
             thread.start()
@@ -493,4 +672,23 @@ class Thesaurus(models.Model):
       )
 
 
+class Parsed_Subject(models.Model):
+    '''
+    Creating a subject_description table which references subjects tables
+
+    '''
+
+    id = models.AutoField(primary_key=True)
+
+    subject_batchset_id = models.ForeignKey(SubjectJob,related_name="subject_batchset_id", blank=False, null=False,
+      db_index=True,
+      help_text="Subject ID refrenced from SubjectJob Table",
+      on_delete=models.CASCADE,)
+    
+    subject_term_scraped = SpaceTextField('subject_term_scraped',max_length=2550, null=True, default='',
+      blank=True, editable=False,
+      )
+    subject_term_hinted = SpaceTextField('subject_term_hinted',max_length=2550, null=True, default='',
+      blank=True, editable=False,
+      )
 

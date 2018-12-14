@@ -900,11 +900,14 @@ def get_text_from_file_path(bib, vid ):
                          
                 flag = 1
                 f = open(path+sep+filename, "r")
+                
                 for line in f:
-                    if line is not None:
+                    
+                    if line.strip():                   
                         alpha_num_string = ''.join(e for e in line if e.isalnum() or e==" ")
-                        alpha_num_string = re.sub(r'\s+', ' ',alpha_num_string)
-                        char_count += len(alpha_num_string.strip()) + 1
+                        alpha_num_string = re.sub(r'\s+',' ',alpha_num_string)
+                        print(alpha_num_string)
+                        char_count += len(alpha_num_string.strip()) + 1                        
                         str1+=" "+alpha_num_string.strip()
                         str2+=" "+alpha_num_string.strip()
                 f.close()
@@ -929,10 +932,11 @@ def run():
     doc_list = get_text_from_file_path("AA00000074","00001")
     doc = doc_list[0]
     str2 = doc_list[1]
+    doc = re.sub(r'\s+', ' ',doc)
     print(doc)
    
-    #doc = ocrspace_text
-    #doc = tesseract_text
+    # doc = ocrspace_text
+    # doc = tesseract_text
 
     # Get the 'floridathes' terms
     project = 'floridathes'
@@ -942,6 +946,8 @@ def run():
     str2 = str2 + "\n \n \n"+"------------------------------------TERMS--------------------------------\n \n \n"
     for child in root.findall('.//{*}VectorElement'):
         if re.search(r"<TERM>.*",child.text):
+            print(str(child.text[6:-7]).split('|')[0])
+            print(str(child.text[6:-7]).split('|')[1][5:-4])
             str2 =str2+ " "+str(child.text[6:-7])+"\n"
        
     

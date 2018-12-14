@@ -3,7 +3,7 @@ from django.contrib import admin
 # Register your models here.
 from django.contrib import admin
 from .models import (
-    SubjectJob, Thesaurus
+    SubjectJob, Thesaurus, Parsed_Subject
     )
 import os, sys
 
@@ -78,14 +78,28 @@ class SubjectJobThesaurusInline(admin.TabularInline):
     }
 
 
+class SubjectDescriptionInline(admin.TabularInline):
+    model = Parsed_Subject
+    readonly_fields = ('subject_term_scraped','subject_term_hinted')
+    can_delete = False
+    formfield_overrides = {
+        models.CharField: { 'widget': TextInput(
+          attrs={'size':'20'})},
+        models.TextField: { 'widget': Textarea(
+          attrs={'rows':1, 'cols':'40'})},
+    }
+
+
+
 class SubjectJobAdmin(SubjectAppAdmin):
     # Consider -- add user field in the future
-    list_display = ('id','batch_set','thesaurus','status','create_datetime', 'end_datetime')
-    fields = ('id','batch_set','thesaurus','notes','status','packages_created','jp2_images_processed', 'create_datetime', 'end_datetime',)
+    list_display = ('id','batch_set','thesaurus','status','create_datetime', 'end_datetime','subject_terms')
+    fields = ('id','batch_set','thesaurus','notes','status','packages_created','jp2_images_processed', 'create_datetime', 'end_datetime','subject_terms',)
     readonly_fields = ('id','status','packages_created',
-      'jp2_images_processed', 'create_datetime','end_datetime',)
+      'jp2_images_processed', 'create_datetime','end_datetime','subject_terms')
 
-    inlines = [SubjectJobThesaurusInline]
+    #inlines = [SubjectJobThesaurusInline]
+    inlines = [SubjectDescriptionInline]
 
     def get_readonly_fields(self, request, obj=None):
         '''
@@ -95,12 +109,6 @@ class SubjectJobAdmin(SubjectAppAdmin):
         if obj: # editing an existing object
             return self.readonly_fields + ('batch_set', )
         return self.readonly_fields
-
-
-
-
-
-
 
 
 
@@ -122,5 +130,23 @@ class SubjectJobThesaurusAdmin(SubjectAppAdmin):
         return self.readonly_fields
 
 
+class SubjectDescriptionAdmin(SubjectAppAdmin):
+    # Consider -- add user field in the future
+    list_display = ('id','subject_batchset_id','subject_term_scraped','subject_term_hinted',)
+    fields = ('id','subject_batchset_id','subject_term_scraped','subject_term_hinted',)
+    readonly_fields = ('id','subject_batchset_id','subject_term_scraped','subject_term_hinted',)
+
+
+    def get_readonly_fields(self, request, obj=None):
+        '''
+        Allow some field value changes on inital add, but
+        after initial insert, add them to readonly_fields.
+        '''
+        if obj: # editing an existing object
+            return self.readonly_fields + ('batch_set', )
+        return self.readonly_fields
+
+
 admin.site.register(SubjectJob, SubjectJobAdmin)
 admin.site.register(Thesaurus, SubjectJobThesaurusAdmin)
+admin.site.register(Parsed_Subject, SubjectDescriptionAdmin)
