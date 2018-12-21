@@ -80,6 +80,7 @@ class SubjectJobThesaurusInline(admin.TabularInline):
 
 class SubjectDescriptionInline(admin.TabularInline):
     model = Parsed_Subject
+    fields = ('subject_term_scraped','subject_term_hinted')
     readonly_fields = ('subject_term_scraped','subject_term_hinted')
     can_delete = False
     formfield_overrides = {
@@ -89,14 +90,17 @@ class SubjectDescriptionInline(admin.TabularInline):
           attrs={'rows':1, 'cols':'40'})},
     }
 
+    def has_add_permission(self,request, obj=None):
+        # With False, no 'add' button/link should appear for this inline table.
+        return False
+
 
 
 class SubjectJobAdmin(SubjectAppAdmin):
     # Consider -- add user field in the future
     list_display = ('id','batch_set','thesaurus','status','create_datetime', 'end_datetime','subject_terms')
-    fields = ('id','batch_set','thesaurus','notes','status','packages_created','jp2_images_processed', 'create_datetime', 'end_datetime','subject_terms',)
-    readonly_fields = ('id','status','packages_created',
-      'jp2_images_processed', 'create_datetime','end_datetime','subject_terms')
+    fields = ('id','batch_set','thesaurus','notes','status','create_datetime', 'end_datetime','subject_terms',)
+    readonly_fields = ('id','status','create_datetime','end_datetime','subject_terms')
 
     #inlines = [SubjectJobThesaurusInline]
     inlines = [SubjectDescriptionInline]
@@ -107,7 +111,7 @@ class SubjectJobAdmin(SubjectAppAdmin):
         after initial insert, add them to readonly_fields.
         '''
         if obj: # editing an existing object
-            return self.readonly_fields + ('batch_set', )
+            return self.readonly_fields + ('batch_set', 'thesaurus' ,'notes' )
         return self.readonly_fields
 
 

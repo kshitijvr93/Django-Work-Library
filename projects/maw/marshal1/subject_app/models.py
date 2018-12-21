@@ -408,30 +408,35 @@ def get_subject_from_thesis(obj):
     subject_list = []
     bib_vid_pair_in_batchset = []
     text_string_for_api = ""
+    consolidated_string_to_be_written = ""
     subject_string=""
     batch_items = BatchItem.objects.filter(batch_set=obj.batch_set_id)
     for batch_item in batch_items:
         bib = batch_item.bibid
         vid = batch_item.vid
         text_from_each_file = get_text_from_file_path(bib, vid )[0]
+        text_to_write_from_each_file = get_text_from_file_path(bib, vid )[1]
         text_string_for_api += " " + text_from_each_file
+        consolidated_string_to_be_written += " " + text_to_write_from_each_file
 
     
         
-
     
-    doc = text_string_for_api[0:10000]
+    
+    doc = text_string_for_api[0:50000]
+    print(len(doc))
     doc = re.sub(r'\s+', ' ',doc)
-    
+    print(len(doc))
     project = obj.thesaurus
     r = get_suggested_terms_data_harmony_api_result(project=project, doc=doc)
     print(r.text)
     root = etree.fromstring(r.content)
-    
+    consolidated_string_to_be_written += "\n \n \n"+"------------------------------------TERMS--------------------------------\n \n \n"
     for child in root.findall('.//{*}VectorElement'):
         if re.search(r"<TERM>.*",child.text):            
             subject_list.append(child.text[6:-7])
             subject_string+=" "+child.text[6:-7]
+            consolidated_string_to_be_written += " "+str(child.text[6:-7])+"\n"
             sub1 = Parsed_Subject() 
             sub1.subject_batchset_id = obj           
             sub1.subject_term_scraped = child.text[6:-7].split('|')[0]
@@ -439,6 +444,18 @@ def get_subject_from_thesis(obj):
             sub1.save()
 
     print(subject_string)
+
+    path = 'D:\\resource_items_mets'
+    sep = os.sep
+    path += sep
+    path += "maw_work"+sep
+    path += "Subject_Jobs"+sep
+    path += "id_"+ str(obj.id)
+    os.mkdir(path)
+
+    f= open(path+sep+"consolidated.txt","w+")
+    f.write(consolidated_string_to_be_written)
+    
     utc_now = timezone.now()
     obj.end_datetime = utc_now
     obj.status = "Completed"
@@ -508,7 +525,7 @@ def get_text_from_file_path(bib, vid ):
         for filename in list1:
             char_count = 0
             if re.search(".txt$",filename) and filename != "consolidated.txt":  
-                str2=str2+"\n"+"----------------------------------file:  "+str(filename)+"---------------------------------------------------------------------------------------------------------------\n \n \n"
+                str2=str2+"\n"+"----------------------------------file:  "+str(filename)+"--------------------------------------------------------------------------------------------------------------------------------------------\n"
                          
                 flag = 1
                 f = open(path+sep+filename, "r")
@@ -523,7 +540,7 @@ def get_text_from_file_path(bib, vid ):
                         str2+=" "+alpha_num_string.strip()
                 f.close()
                 char_count_total+= char_count
-                str2=str2+"\n-----------------character count:  "+str(char_count)+"  running count:  "+str(char_count_total)+"-------------------------------------------------------------------------------------------------------- \n \n \n"
+                str2=str2+"\n-----------------character count:  "+str(char_count)+"  running count:  "+str(char_count_total)+"-------------------------------------------------------------------------------------------------------- \n"
                
 
             
@@ -569,7 +586,7 @@ class SubjectJob(models.Model):
 
     batch_set = models.ForeignKey(BatchSet,related_name="subject_app_batch_set", blank=False, null=False,
       db_index=True,
-      help_text="BatchSet for which to generate SubjectApp JP2 Packages",
+      help_text="BatchSet for which we generate Subject Terms",
       on_delete=models.CASCADE,)
 
     thesaurus = SpaceTextField('Thesaurus',max_length=2550, null=True, default='',
@@ -588,22 +605,6 @@ class SubjectJob(models.Model):
     # https://stackoverflow.com/questions/862522/django-populate-user-id-when-saving-a-model
     user = models.ForeignKey(User,related_name="subject_app_user", on_delete=models.CASCADE,
       db_index=True, blank=True, null=True)
-
-    packages_created = models.IntegerField(default=0, null=True,
-      help_text='Number of bib_vid packages created by this job.')
-
-    jp2_images_processed = models.IntegerField(default=0, null=True,
-      help_text='Number of jp2 images packaged by this job.')
-
-    '''
-    jp2_images_per_minute = models.IntegerField(default=0, null=True,
-      help_text='Approximate number of jp2 images packaged per minute so far '
-          f'for this batch.')
-
-    run_seconds = models.IntegerField(default=0, null=True,
-      help_text='Approximate number of jp2 images packaged per minute so far '
-          f'for this batch.')
-    '''
 
     notes = SpaceTextField(max_length=2550, null=True, default='note',
       blank=True, help_text= ("General notes about this batch job run"),
@@ -691,4 +692,7 @@ class Parsed_Subject(models.Model):
     subject_term_hinted = SpaceTextField('subject_term_hinted',max_length=2550, null=True, default='',
       blank=True, editable=False,
       )
+
+    def __str__(self):
+        return ""
 
