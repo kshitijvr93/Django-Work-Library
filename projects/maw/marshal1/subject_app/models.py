@@ -12,7 +12,7 @@ import datetime
 import datetime
 from django.utils import timezone
 from maw_utils import SpaceTextField, SpaceCharField, PositiveIntegerField
-
+import time
 from dps.models import BatchSet, BatchItem
 #from django.apps import apps
 #BatchSet = apps.get_model('dps','BatchSet')
@@ -56,8 +56,7 @@ get_suggested_xml_fmt = '''
 </TMMAI>
 '''
 
-#BatchSet = apps.get_model('dps','BatchSet')
-#BatchItem = apps.get_model('dps','BatchSet')
+
 
 '''
 NOTE: rather than have a separate file router.py to host HathiRouter, I just
@@ -70,7 +69,7 @@ setting for DATABASE_ROUTERS.
 #
 class SubjectAppRouter:
     '''
-    A router to control all db ops on models in the hathitrust Application.
+    A router to control all db ops on models in the Subject_App Application.
     '''
 
     # app_label is really an app name. Here it is hathitrust.
@@ -167,237 +166,6 @@ def modification_utc_str_by_filename(filename):
     d_str = d.strftime("%Y-%m-%dT%H:%M:%S")
     return d_str, tz, utc_str
 
-def make_jp2_package(in_dir=None, out_dir_bib=None, resources=None, bib=None,
-    vid=None,log_file=None, verbosity=0):
-    me = 'make_jp2_package'
-    jp2_count = 0
-    bib_vid = f"{bib}_{vid}"
-
-    msg = ( f'{me}: PROCESSING {bib_vid}:')
-    print(msg, file=log_file)
-    log_file.flush()
-
-    # output dir for files
-    out_dir_files = os.path.join(out_dir_bib,'files')
-
-    # make the files output directory if not exists
-    os.makedirs(out_dir_files, exist_ok=True)
-
-    # We will output md5 info to this file in the bib dir.
-    # After it is completed we will move it to the files dir.
-    out_name_md5 = out_dir_bib + os.sep + 'checksum.md5'
-    capture_date = ''
-
-    with open(out_name_md5, mode='w') as out_file_md5:
-        #Find all jp2 files in the input dir, in sorted order
-        # NOTE: each file will be copied to a renamed output file, per
-        # Hathitrust file naming requirements
-        # First get the paths for all files in input directory;
-        # hathi_image_tuples = [('*.tif*','.tif'), ('*.jp2','.jp2') ]
-        # 20180806 - Now we only do jp2 images.
-        hathi_image_tuples = [('*.jp2','.jp2') ]
-        for tuple in hathi_image_tuples:
-            # Copy image files of this glob
-            glob = tuple[0]
-            ext = tuple[1]
-            paths = list(Path(in_dir).glob(glob))
-            n_paths = len(paths)
-            msg += line(f'Processing {n_paths} files with extension {ext}.')
-
-            # Sort the paths for this glob
-            sorted_paths = natsorted(paths)
-            #Copy each file to one with the HathiTrust-preferred name
-            for i, in_path in enumerate(sorted_paths, 1):
-                in_name = str(in_path)
-                jp2_count += 1
-
-                if verbosity > 1:
-                  msg += line(
-                      f'{me}: processing file {i} PACKAGE FOR '
-                      f'bib_vid {bib_vid}.')
-                print(msg, file=log_file)
-                log_file.flush()
-
-                if i == 1:
-                    dstr, tz, utcstr = modification_utc_str_by_filename(in_path)
-                    # str_tz : Lop of the 'seconds' part of the tz
-                    str_tz = str(tz)
-                    index_last_colon = str_tz.rfind(':')
-                    if index_last_colon > 0:
-                        str_tz = str_tz[0:index_last_colon]
-
-                    capture_date = f'{dstr}-{str_tz}'
-                    if verbosity > 1:
-                      msg += line(f'\nGot dstr={dstr}\n')
-                      msg += line(f'\nGot tz={tz}\n')
-                      msg += line(f'\nGot utcstr={utcstr}\n')
-                      msg += line(f'\nGot capture_date={capture_date}\n')
-
-                out_base = str(i).zfill(8)
-                out_base_ext = out_base + ext
-                out_name = out_dir_files + os.sep + out_base_ext
-
-                in_base = in_name.split('.')[0]
-                #msg += line()
-                #msg += line( f'{i}: Copying in_name ={in_name} '
-                #    f'to output_name={out_name}')
-
-                copy2(in_name, out_name)
-
-                # Write checksum.md5 file line for this file in  package
-                md5sum = md5(in_name)
-                msg += line( f"{i}: {in_name} md5sum='{md5sum}'")
-                out_file_md5.write(f'{md5sum} {out_base_ext}\n')
-
-                #for ext_t in ['.pro','.txt']:
-                # Copy txt files only now
-                text_files_found = True
-                for ext_t in ['.txt',]:
-                    # seek similar file name ending .txt
-                    try:
-                        in_name = in_base + ext_t
-                        out_base_ext = out_base + ext_t
-                        out_name = out_dir_files + os.sep + out_base_ext
-                        #msg += line( f'{i}: Copying in_name ={in_name}, '
-                        #    f'to output_name={out_name}')
-                        copy2(in_name, out_name)
-
-                        # Write checksum.md5 file line for this package file.
-                        md5sum = md5(in_name)
-                        if verbosity > 1:
-                          msg += line( f"{i}: {in_name} md5sum='{md5sum}'")
-                        out_file_md5.write(f'{md5sum} {out_base_ext}\n')
-
-                    except FileNotFoundError:
-                        msg = (f'File {in_name} not found. '
-                          f'SKIPPING this bib_vid {bib_vid}')
-                        print(f"ERROR:{msg}",file=log_file)
-                        log_file.flush()
-                        return jp2_count
-                # end for ext- in .txt
-            #end for i, path in glob type (jp2)
-        #end for hathi_image_tuples
-
-        # output required HathiTrust meta.yml file
-        yaml_base_name = 'meta.yml'
-        yaml_file_name = out_dir_files + os.sep + yaml_base_name
-        with open(yaml_file_name, mode='w') as yaml_file:
-          yaml_file.write(f"capture_date:{capture_date}")
-
-        md5sum = md5(yaml_file_name)
-        msg += line( f"YAML FILE: {yaml_file_name} md5sum='{md5sum}'")
-        out_file_md5.write(f'{md5sum} {yaml_base_name}\n')
-    #with open --- checksum.md5 as out_file_md5
-
-    # TODO:move the checksum.md5 file from the bib dir to the files dir
-    out_renamed_md5 = out_dir_files + os.sep + 'checksum.md5'
-    move(out_name_md5, out_renamed_md5)
-
-    # Create zip archive
-    out_base_archive_file = out_dir_bib + os.sep +  bib_vid
-    make_archive(out_base_archive_file, 'zip', out_dir_files)
-    msg += line( f'Made archive file {out_base_archive_file}.zip for '
-                 f'directory {out_dir_files}')
-    msg += line('')
-    msg += line(f'{me}: Finished package FOR bib_vid {bib_vid}.\n')
-
-    print(msg, file=log_file)
-    log_file.flush()
-    return jp2_count
-
-#end def make_jp2_package
-
-def make_jp2_packages(obj):
-    '''
-    Given a batch_set_id fkey into db table dps_batch_set,
-    for each bibvid item in the batch, generate a jp2-style Hathitrust
-    package under the UFDC maw_work directory.
-
-    This is usually called via multiprocess in the background to
-    generate Hathitrust jp2 packages. It is developed to support a call from
-    a save() or add method for new row to be added to model
-    hathitrust_jp2_job.
-
-    This process may require up to a second per bibvid jp2 page image to
-    execute.
-    So if a single bibvid has 500 pages, it can take 10 minutes.
-    So small batches of 10 or fewer bib_vids are highly reommended until a
-    regulator/feeder process/feature is implemented.
-
-    Later: Also provide caller jp2_job_id as an argument, so
-    this method can update the row for it along with misc status info.
-
-    Consider: add sub_batch_size argument .. ?
-
-    '''
-    me = 'make_jp2_packages'
-    jp2_total = 0
-    print(f"{me}: Making jp2 packages for batch_set {obj.batch_set}")
-    sys.stdout.flush()
-
-    ufdc = maw_settings.HATHITRUST_UFDC
-    # input dir
-    resources = os.path.join(ufdc,'resources')
-    # msg += line(f'INPUT dir={in_dir}')
-
-    # make output dirs
-    # out_dir_bib = os.path.join(resources,'maw_work','hathitrust',bib_vid)
-    out_dir_batch = os.path.join(resources,'maw_work','hathitrust','batch',
-        str(obj.id))
-    os.makedirs(out_dir_batch, exist_ok=True)
-    log_filename = os.path.join(out_dir_batch,'log.txt')
-
-    print(f"{me}: Making jp2 packages for batch_set {obj.batch_set}"
-        f" in {out_dir_batch}.")
-    sys.stdout.flush()
-
-    batch_items = BatchItem.objects.filter(batch_set=obj.batch_set_id)
-    item_count = len(batch_items)
-    with open(log_filename,'w') as log_file:
-        print(f"{me}: Starting with jp2_job_set={obj.id}, "
-          f"batch_set_id={obj.batch_set} "
-          f"bibvid count={item_count} ",
-          file=log_file)
-        log_file.flush()
-        item_count = len(batch_items)
-        for count, batch_item in enumerate(batch_items, start=1):
-            bib_vid = f"{batch_item.bibid}_{batch_item.vid}"
-            #utc_now = datetime.datetime.utcnow()
-            utc_now = timezone.now()
-            str_now = secsz_start = utc_now.strftime("%Y-%m-%dT%H-%M-%SZ")
-            msg = (
-              f"Processed {jp2_total} images. Processing bibvid {bib_vid},"
-              f" item {count} of {item_count} bibvids at {str_now}"
-            )
-            obj.jp2_images_processed = jp2_total
-            obj.packages_created = item_count
-            obj.status = msg
-            obj.save()
-            in_dir = resources + os.sep + resource_path_by_bib_vid(bib_vid)
-
-            out_dir_bib = os.path.join(out_dir_batch, bib_vid)
-            os.makedirs(out_dir_bib, exist_ok=True)
-
-            jp2_count = make_jp2_package(in_dir=in_dir, out_dir_bib=out_dir_bib,
-                bib=batch_item.bibid, vid=batch_item.vid, log_file=log_file)
-            jp2_total += jp2_count
-        # end for bach_item in batch_items
-    # end with... log_file
-    # By design, we MUST set status to non-Null, else will get into recursive
-    # loop. #utc_now = datetime.datetime.utcnow()
-    utc_now = timezone.now()
-    str_now =  utc_now.strftime("%Y-%m-%d %H:%M:%SZ")
-    obj.end_datetime = utc_now
-    obj.jp2_images_processed = jp2_total
-    obj.packages_created = item_count
-    obj.status = (
-      f"Finished:  {jp2_total} jp2 images in {item_count} packages in this batch {obj.id} "
-      f"are complete at {str_now}. See bib_vid output folders under "
-      f"{out_dir_batch}.")
-    obj.save()
-
-# end def make_jp2_packages()
-
 
 
 
@@ -405,10 +173,12 @@ def get_subject_from_thesis(obj):
     me = 'get_subject_from_thesis'
     print(f"{me}: Getting subjects for batch_set {obj.batch_set}")
     sys.stdout.flush()
-    subject_list = []
+    
     bib_vid_pair_in_batchset = []
+    titles_string_for_api = ""
+    abstract_string_for_api = ""
     text_string_for_api = ""
-    consolidated_string_to_be_written = ""
+    consolidated_string_to_be_written = "\n FULL TEXT FROM FILES \n\n"
     subject_string=""
     batch_items = BatchItem.objects.filter(batch_set=obj.batch_set_id)
     for batch_item in batch_items:
@@ -416,34 +186,107 @@ def get_subject_from_thesis(obj):
         vid = batch_item.vid
         text_from_each_file = get_text_from_file_path(bib, vid )[0]
         text_to_write_from_each_file = get_text_from_file_path(bib, vid )[1]
+       
         text_string_for_api += " " + text_from_each_file
         consolidated_string_to_be_written += " " + text_to_write_from_each_file
 
-    
-        
-    
-    
-    doc = text_string_for_api[0:50000]
-    print(len(doc))
-    doc = re.sub(r'\s+', ' ',doc)
-    print(len(doc))
+        title_from_each_file = get_title_from_xml_path(bib, vid)        
+        titles_string_for_api += " " + title_from_each_file 
+
+        abstract_from_each_file = get_abstract_from_xml_path(bib , vid)
+        abstract_string_for_api += " " + abstract_from_each_file
+     
     project = obj.thesaurus
-    r = get_suggested_terms_data_harmony_api_result(project=project, doc=doc)
-    print(r.text)
-    root = etree.fromstring(r.content)
-    consolidated_string_to_be_written += "\n \n \n"+"------------------------------------TERMS--------------------------------\n \n \n"
+
+    if len(text_string_for_api)>50000:
+        doc = text_string_for_api[0:50000]   
+    else:
+        doc = text_string_for_api
+
+    doc = re.sub(r'\s+', ' ',doc)    
+    
+    result1 = get_suggested_terms_data_harmony_api_result(project=project, doc=doc)
+    print(result1.text)
+    root = etree.fromstring(result1.content)
+    consolidated_string_to_be_written += "\n \n \n"+"------------------------------------SUBJECT TERMS : FULL TEXT--------------------------------\n \n \n"
     for child in root.findall('.//{*}VectorElement'):
         if re.search(r"<TERM>.*",child.text):            
-            subject_list.append(child.text[6:-7])
+            
             subject_string+=" "+child.text[6:-7]
             consolidated_string_to_be_written += " "+str(child.text[6:-7])+"\n"
             sub1 = Parsed_Subject() 
             sub1.subject_batchset_id = obj           
             sub1.subject_term_scraped = child.text[6:-7].split('|')[0]
-            sub1.subject_term_hinted = child.text[6:-7].split('|')[1][5:-4]
+            sub1.subject_term_count = int(str(child.text[6:-7]).split('|')[1].split(" ",1)[0][1:-1])
+            sub1.subject_term_hinted = str(child.text[6:-7]).split('|')[1].split(" ",1)[1]
+            sub1.subject_type = "Full Text"
+            sub1.save()
+
+    
+    consolidated_string_to_be_written += "\n TEXT FROM TITLES \n\n"
+    consolidated_string_to_be_written += titles_string_for_api+"\n"
+    
+    if len(titles_string_for_api)>50000:
+        doc = titles_string_for_api[0:50000]   
+    else:
+        doc = titles_string_for_api
+
+    doc = re.sub(r'\s+', ' ',doc)
+    doc = ''.join(e for e in doc if e.isalnum() or e==" ")
+    result2 = get_suggested_terms_data_harmony_api_result(project=project, doc=doc)
+    print("Result Title")
+    print(result2.text)
+    root = etree.fromstring(result2.content)
+    consolidated_string_to_be_written += "\n \n \n"+"------------------------------------SUBJECT TERMS : TITLE--------------------------------\n \n \n"
+    for child in root.findall('.//{*}VectorElement'):
+        if re.search(r"<TERM>.*",child.text):           
+            
+            subject_string+=" "+child.text[6:-7]
+            consolidated_string_to_be_written += " "+str(child.text[6:-7])+"\n"
+            sub1 = Parsed_Subject() 
+            sub1.subject_batchset_id = obj           
+            sub1.subject_term_scraped = child.text[6:-7].split('|')[0]
+            sub1.subject_term_count = int(str(child.text[6:-7]).split('|')[1].split(" ",1)[0][1:-1])
+            sub1.subject_term_hinted = str(child.text[6:-7]).split('|')[1].split(" ",1)[1]
+            sub1.subject_type = "Title"
+            sub1.save()
+
+    
+
+
+    consolidated_string_to_be_written += "\n TEXT FROM ABSTRACTS \n\n"
+    consolidated_string_to_be_written += abstract_string_for_api+"\n"
+    
+    if len(abstract_string_for_api)>50000:
+        doc = abstract_string_for_api[0:50000]   
+    else:
+        doc = abstract_string_for_api
+
+    doc = re.sub(r'\s+', ' ',doc)
+    doc = ''.join(e for e in doc if e.isalnum() or e==" ")
+    result3 = get_suggested_terms_data_harmony_api_result(project=project, doc=doc)
+    print(result3.text)
+    root = etree.fromstring(result3.content)
+    consolidated_string_to_be_written += "\n \n \n"+"------------------------------------SUBJECT TERMS : ABSTRACT--------------------------------\n \n \n"
+    for child in root.findall('.//{*}VectorElement'):
+        if re.search(r"<TERM>.*",child.text):           
+            
+            subject_string+=" "+child.text[6:-7]
+            consolidated_string_to_be_written += " "+str(child.text[6:-7])+"\n"
+            sub1 = Parsed_Subject() 
+            sub1.subject_batchset_id = obj           
+            sub1.subject_term_scraped = child.text[6:-7].split('|')[0]
+            sub1.subject_term_count = int(str(child.text[6:-7]).split('|')[1].split(" ",1)[0][1:-1])
+            sub1.subject_term_hinted = str(child.text[6:-7]).split('|')[1].split(" ",1)[1]
+            sub1.subject_type = "Abstract"
             sub1.save()
 
     print(subject_string)
+
+
+
+
+
 
     path = 'D:\\resource_items_mets'
     sep = os.sep
@@ -455,7 +298,7 @@ def get_subject_from_thesis(obj):
 
     f= open(path+sep+"consolidated.txt","w+")
     f.write(consolidated_string_to_be_written)
-    
+
     utc_now = timezone.now()
     obj.end_datetime = utc_now
     obj.status = "Completed"
@@ -524,7 +367,7 @@ def get_text_from_file_path(bib, vid ):
         list1.sort()
         for filename in list1:
             char_count = 0
-            if re.search(".txt$",filename) and filename != "consolidated.txt":  
+            if re.search(".txt$",filename):  
                 str2=str2+"\n"+"----------------------------------file:  "+str(filename)+"--------------------------------------------------------------------------------------------------------------------------------------------\n"
                          
                 flag = 1
@@ -554,31 +397,99 @@ def get_text_from_file_path(bib, vid ):
     
     return [str1,str2]
 
+def get_title_from_xml_path(bib, vid ):    
+    path = 'D:\\resource_items_mets'
+    
+    sep = os.sep
+    for i in range(0,10,2):
+        path += (sep + bib[i:i+2])
+    path += (sep + vid) 
+    flag = 0
+    str1=""
+    str_out = ""
+    
+    
+    try:
+        list1 = os.listdir(path)
+        list1.sort()
+        for filename in list1:
+            
+            char_count = 0
+            if re.search(".mets.xml$",filename):    
+                flag = 1
+                f = open(path+sep+filename, "r",encoding='utf8')            
+                
+                for line in f:
+                                    
+                    if line.strip():                                                            
+                        str1+= line + " "                    
+                f.close()  
+        if flag != 1:
+            print("There is no .mets file in the folder")
+
+
+        root = etree.fromstring(str1)
+        for child in root.findall('.//{*}title'):
+            str_out += child.text+" "
+        
+        # for child in root.findall('.//{*}abstract'):
+        #     print(child.text)
+
+    except:
+        print("enter a valid BIB:VID value")    
+
+    print(str_out)
+    return str_out
+
+def get_abstract_from_xml_path(bib, vid ):    
+    path = 'D:\\resource_items_mets'
+    
+    sep = os.sep
+    for i in range(0,10,2):
+        path += (sep + bib[i:i+2])
+    path += (sep + vid) 
+    flag = 0
+    str1=""
+    str_out = ""
+    
+    
+    try:
+        list1 = os.listdir(path)
+        list1.sort()
+        for filename in list1:
+            
+            char_count = 0
+            if re.search(".mets.xml$",filename):    
+                flag = 1
+                f = open(path+sep+filename, "r",encoding='utf8')            
+                
+                for line in f:                
+                    if line.strip():                                                           
+                        str1+= line + " "                    
+                f.close()  
+        if flag != 1:
+            print("There is no .mets file in the folder")
+
+
+        root = etree.fromstring(str1)
+        for child in root.findall('.//{*}abstract'):
+            str_out += child.text+" "
+        
+        # for child in root.findall('.//{*}abstract'):
+        #     print(child.text)
+
+    except:
+        print("enter a valid BIB:VID value")    
+
+    print(str_out)
+    return str_out
 
 
 
 
 class SubjectJob(models.Model):
     '''
-    Each row represents a run of the Hathitrust jp2_job package generator,
-    make_jp2_packages()
-
-    Very simple relation that represents the running of a batch job to create
-    HathiTrust packages for a set of bib_vids.
-
-    The web user:
-    (1) uses admin to add a row to table hathitrust_jp2_job ,
-    (2) sets a batch_set id for the row, and
-    (3) when the user save this row, the batch job to create Hathitrust packages
-    for the bib_vid in the package is launched.
-    To see that the batch job is completed, the user can either:
-    (1) check the log file in the output folder for proof that
-        the batch job is running or completed, assuming the user has permission
-        to check the output folder
-    (2) refresh the view of the jp2batch row to see if the status
-        field is completed. It may be convenient for the user to save a
-        memorable value in the notes field upon initial saving so it can be sought
-        later to re-check the row.
+    
 
     '''
 
@@ -689,7 +600,15 @@ class Parsed_Subject(models.Model):
     subject_term_scraped = SpaceTextField('subject_term_scraped',max_length=2550, null=True, default='',
       blank=True, editable=False,
       )
+
+    subject_term_count = models.IntegerField(default=0, null=True,help_text='Total number of hits for the subject term')
+
+
     subject_term_hinted = SpaceTextField('subject_term_hinted',max_length=2550, null=True, default='',
+      blank=True, editable=False,
+      )
+
+    subject_type = SpaceTextField('subject_type',max_length=2550, null=True, default='',
       blank=True, editable=False,
       )
 

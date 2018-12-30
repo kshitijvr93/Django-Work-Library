@@ -947,7 +947,8 @@ def run():
     for child in root.findall('.//{*}VectorElement'):
         if re.search(r"<TERM>.*",child.text):
             print(str(child.text[6:-7]).split('|')[0])
-            print(str(child.text[6:-7]).split('|')[1][5:-4])
+            print(str(child.text[6:-7]).split('|')[1].split(" ",1)[0][1:-1])
+            print(str(child.text[6:-7]).split('|')[1].split(" ",1)[1])
             str2 =str2+ " "+str(child.text[6:-7])+"\n"
        
     

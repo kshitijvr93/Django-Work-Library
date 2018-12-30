@@ -80,8 +80,8 @@ class SubjectJobThesaurusInline(admin.TabularInline):
 
 class SubjectDescriptionInline(admin.TabularInline):
     model = Parsed_Subject
-    fields = ('subject_term_scraped','subject_term_hinted')
-    readonly_fields = ('subject_term_scraped','subject_term_hinted')
+    fields = ('subject_term_scraped','subject_term_count','subject_term_hinted')
+    readonly_fields = ('subject_term_scraped','subject_term_count','subject_term_hinted')
     can_delete = False
     formfield_overrides = {
         models.CharField: { 'widget': TextInput(
@@ -136,9 +136,9 @@ class SubjectJobThesaurusAdmin(SubjectAppAdmin):
 
 class SubjectDescriptionAdmin(SubjectAppAdmin):
     # Consider -- add user field in the future
-    list_display = ('id','subject_batchset_id','subject_term_scraped','subject_term_hinted',)
-    fields = ('id','subject_batchset_id','subject_term_scraped','subject_term_hinted',)
-    readonly_fields = ('id','subject_batchset_id','subject_term_scraped','subject_term_hinted',)
+    list_display = ('id','subject_batchset_id','subject_term_scraped','subject_term_count','subject_term_hinted','subject_type',)
+    fields = ('id','subject_batchset_id','subject_term_scraped','subject_term_count','subject_term_hinted','subject_type',)
+    readonly_fields = ('id','subject_batchset_id','subject_term_scraped','subject_term_count','subject_term_hinted','subject_type',)
 
 
     def get_readonly_fields(self, request, obj=None):
