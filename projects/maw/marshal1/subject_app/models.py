@@ -167,6 +167,8 @@ def modification_utc_str_by_filename(filename):
     return d_str, tz, utc_str
 
 
+# This function gets subject terms based on the input for thesis( for eg. floridathes) from all the text inside every .txt files , titles 
+# from .mets files and abstract from .mets files for every BIB , VID combinations in a batch Job.
 
 
 def get_subject_from_thesis(obj):
@@ -174,16 +176,31 @@ def get_subject_from_thesis(obj):
     print(f"{me}: Getting subjects for batch_set {obj.batch_set}")
     sys.stdout.flush()
     
-    bib_vid_pair_in_batchset = []
+# string sent to the api for titles
     titles_string_for_api = ""
+
+# string sent to the api for abstract
     abstract_string_for_api = ""
+
+# string sent to the api for text
     text_string_for_api = ""
-    consolidated_string_to_be_written = "\n FULL TEXT FROM FILES \n\n"
+
+# string to write to .txt file that has word count and subject outputs for every input i.e. title, text and abstract
+    consolidated_string_to_be_written = "\n-----------------------------------------------FULL TEXT FROM FILES----------------------------------------------------- \n\n"
+
+# string containing all the subjects( text, title and abstract)
     subject_string=""
+    
+
+# generate strings by concatenating strings from every file inside BIB VID and from every BIB VID inside a Batch Job for API calls to 
+# access innovation
+
     batch_items = BatchItem.objects.filter(batch_set=obj.batch_set_id)
+
     for batch_item in batch_items:
         bib = batch_item.bibid
         vid = batch_item.vid
+
         text_from_each_file = get_text_from_file_path(bib, vid )[0]
         text_to_write_from_each_file = get_text_from_file_path(bib, vid )[1]
        
@@ -195,20 +212,28 @@ def get_subject_from_thesis(obj):
 
         abstract_from_each_file = get_abstract_from_xml_path(bib , vid)
         abstract_string_for_api += " " + abstract_from_each_file
-     
+
+# taken from input such as floridathes     
     project = obj.thesaurus
 
+# truncate if the total number of characters exceeds 500000 characters for the string
     if len(text_string_for_api)>50000:
         doc = text_string_for_api[0:50000]   
     else:
         doc = text_string_for_api
 
     doc = re.sub(r'\s+', ' ',doc)    
-    
+
+# make the API call with string = FULL TEXT    
     result1 = get_suggested_terms_data_harmony_api_result(project=project, doc=doc)
     print(result1.text)
+# parsing for lxml
     root = etree.fromstring(result1.content)
     consolidated_string_to_be_written += "\n \n \n"+"------------------------------------SUBJECT TERMS : FULL TEXT--------------------------------\n \n \n"
+
+# store the each of the subject terms for FULL TEXT in Parsed_Subjects Table and also add it to consolidated string which will be
+# written to a file
+
     for child in root.findall('.//{*}VectorElement'):
         if re.search(r"<TERM>.*",child.text):            
             
@@ -222,22 +247,36 @@ def get_subject_from_thesis(obj):
             sub1.subject_type = "Full Text"
             sub1.save()
 
-    
-    consolidated_string_to_be_written += "\n TEXT FROM TITLES \n\n"
+
+# add all the Titles for every BIB VID inside a Batch Job to the string that will be written to a file
+    consolidated_string_to_be_written += "\n-------------------------------------------------------- TEXT FROM TITLES ---------------------------------------------------------------- \n\n"
     consolidated_string_to_be_written += titles_string_for_api+"\n"
-    
+
+
+# truncate if the total number of characters exceeds 500000 characters for the string
     if len(titles_string_for_api)>50000:
         doc = titles_string_for_api[0:50000]   
     else:
         doc = titles_string_for_api
 
+# substitute any excess spaces and remove any non aplha numeric characters from the string that is to be passed to the API
     doc = re.sub(r'\s+', ' ',doc)
     doc = ''.join(e for e in doc if e.isalnum() or e==" ")
+
+# make the API call with string = TITLE
+
     result2 = get_suggested_terms_data_harmony_api_result(project=project, doc=doc)
     print("Result Title")
     print(result2.text)
+
+# parsing for lxml
+
     root = etree.fromstring(result2.content)
     consolidated_string_to_be_written += "\n \n \n"+"------------------------------------SUBJECT TERMS : TITLE--------------------------------\n \n \n"
+
+# store the each of the subject terms for TITLE in Parsed_Subjects Table and also add it to consolidated string which will be
+# written to a file 
+
     for child in root.findall('.//{*}VectorElement'):
         if re.search(r"<TERM>.*",child.text):           
             
@@ -253,21 +292,30 @@ def get_subject_from_thesis(obj):
 
     
 
-
-    consolidated_string_to_be_written += "\n TEXT FROM ABSTRACTS \n\n"
+# add all the Abstracts for every BIB VID inside a Batch Job to the string that will be written to a file
+    consolidated_string_to_be_written += "\n--------------------------------------------------------------- TEXT FROM ABSTRACTS------------------------------------------------- \n\n"
     consolidated_string_to_be_written += abstract_string_for_api+"\n"
-    
+
+# truncate if the total number of characters exceeds 500000 characters for the string  
     if len(abstract_string_for_api)>50000:
         doc = abstract_string_for_api[0:50000]   
     else:
         doc = abstract_string_for_api
 
+# substitute any excess spaces and remove any non aplha numeric characters from the string that is to be passed to the API
     doc = re.sub(r'\s+', ' ',doc)
     doc = ''.join(e for e in doc if e.isalnum() or e==" ")
+
+# make the API call with string = ABSTRACT
     result3 = get_suggested_terms_data_harmony_api_result(project=project, doc=doc)
     print(result3.text)
+
+# parsing for lxml
     root = etree.fromstring(result3.content)
     consolidated_string_to_be_written += "\n \n \n"+"------------------------------------SUBJECT TERMS : ABSTRACT--------------------------------\n \n \n"
+    
+# store the each of the subject terms for ABSTRACT in Parsed_Subjects Table and also add it to consolidated string which will be
+# written to a file 
     for child in root.findall('.//{*}VectorElement'):
         if re.search(r"<TERM>.*",child.text):           
             
@@ -281,24 +329,40 @@ def get_subject_from_thesis(obj):
             sub1.subject_type = "Abstract"
             sub1.save()
 
+# Print Subject String i.e. the string that contains all the subject terms
     print(subject_string)
 
 
 
 
 
-
+################################################################################
+# CHANGE PATH ACCORDING TO MAW_SETTINGS
+################################################################################
+################################################################################
     path = 'D:\\resource_items_mets'
     sep = os.sep
     path += sep
+
+# check if maw_work exists inside directory else create a new directory
+    if not(os.path.isdir(path+"maw_work")):
+        os.mkdir(path)
+    
     path += "maw_work"+sep
+
+# check if Subject_Jobs exists inside directory else create a new directory
+    if not(os.path.isdir(path+"Subject_Jobs")):
+        os.mkdir(path)
+
     path += "Subject_Jobs"+sep
     path += "id_"+ str(obj.id)
     os.mkdir(path)
 
+# write all the text and their outputs to consolidated text file inside maw_work/Subject_Jobs/job_id/
     f= open(path+sep+"consolidated.txt","w+")
     f.write(consolidated_string_to_be_written)
 
+# Update the Subject_Jobs Table once all the API calls are done
     utc_now = timezone.now()
     obj.end_datetime = utc_now
     obj.status = "Completed"
@@ -308,6 +372,7 @@ def get_subject_from_thesis(obj):
     obj.save()
 
 
+# functions that takes a String of Text without any special characters and a Thesis as an Input and returns Subject Terms as Output
     
 def get_suggested_terms_data_harmony_api_result(
     doc='farming and ranching in Peru', #example from DH Guide v3.13
@@ -348,9 +413,15 @@ def get_suggested_terms_data_harmony_api_result(
 
 
 
+# reads all text from .txt files inside a particular BIB VID pair and returns all the text content inside them as a String
+# Also calculates the character count inside each file and uses it for the consolidated text file
+def get_text_from_file_path(bib, vid ): 
 
 
-def get_text_from_file_path(bib, vid ):    
+################################################################################
+# CHANGE PATH ACCORDING TO MAW_SETTINGS
+################################################################################
+################################################################################
     path = 'D:\\resource_items_mets'
     
     sep = os.sep
@@ -363,18 +434,29 @@ def get_text_from_file_path(bib, vid ):
     
     char_count_total = 0
     try:
+
+# Every filename inside a directory defined by path is stored in a list and sorted
         list1 = os.listdir(path)
         list1.sort()
+
+# Iterate over every file in a directory
         for filename in list1:
             char_count = 0
+
+# Search for only .txt files and only work on them
+
             if re.search(".txt$",filename):  
                 str2=str2+"\n"+"----------------------------------file:  "+str(filename)+"--------------------------------------------------------------------------------------------------------------------------------------------\n"
                          
                 flag = 1
+
+# Open the .txt file
                 f = open(path+sep+filename, "r")
                 
+# Iterate over every line of the file
                 for line in f:
                     
+# Only operate on non empty lines of a file
                     if line.strip():                   
                         alpha_num_string = ''.join(e for e in line if e.isalnum() or e==" ")
                         alpha_num_string = re.sub(r'\s+',' ',alpha_num_string)                        
@@ -397,7 +479,15 @@ def get_text_from_file_path(bib, vid ):
     
     return [str1,str2]
 
-def get_title_from_xml_path(bib, vid ):    
+
+# reads all text inside title tag from .mets files inside a particular BIB VID pair and returns them as a String
+def get_title_from_xml_path(bib, vid ):   
+
+
+################################################################################
+# CHANGE PATH ACCORDING TO MAW_SETTINGS
+################################################################################
+################################################################################ 
     path = 'D:\\resource_items_mets'
     
     sep = os.sep
@@ -410,17 +500,27 @@ def get_title_from_xml_path(bib, vid ):
     
     
     try:
+
+# Every filename inside a directory defined by path is stored in a list and sorted
         list1 = os.listdir(path)
         list1.sort()
+
+# Iterate over every file in a directory
         for filename in list1:
             
             char_count = 0
+
+# Search for only .mets.xml files and only work on them
             if re.search(".mets.xml$",filename):    
                 flag = 1
+
+# Open the .mets.xml file
                 f = open(path+sep+filename, "r",encoding='utf8')            
-                
+
+# Iterate over every line of the file                
                 for line in f:
-                                    
+
+# Only operate on non empty lines of a file                                   
                     if line.strip():                                                            
                         str1+= line + " "                    
                 f.close()  
@@ -430,10 +530,8 @@ def get_title_from_xml_path(bib, vid ):
 
         root = etree.fromstring(str1)
         for child in root.findall('.//{*}title'):
-            str_out += child.text+" "
+            str_out += child.text+" "    
         
-        # for child in root.findall('.//{*}abstract'):
-        #     print(child.text)
 
     except:
         print("enter a valid BIB:VID value")    
@@ -441,7 +539,15 @@ def get_title_from_xml_path(bib, vid ):
     print(str_out)
     return str_out
 
+
+# reads all text inside abstract tag from .mets files inside a particular BIB VID pair and returns them as a String
 def get_abstract_from_xml_path(bib, vid ):    
+
+
+################################################################################
+# CHANGE PATH ACCORDING TO MAW_SETTINGS
+################################################################################
+################################################################################
     path = 'D:\\resource_items_mets'
     
     sep = os.sep
@@ -454,16 +560,26 @@ def get_abstract_from_xml_path(bib, vid ):
     
     
     try:
+
+# Every filename inside a directory defined by path is stored in a list and sorted
         list1 = os.listdir(path)
         list1.sort()
+
+# Iterate over every file in a directory
         for filename in list1:
             
             char_count = 0
+
+# Search for only .mets.xml files and only work on them
+
             if re.search(".mets.xml$",filename):    
                 flag = 1
                 f = open(path+sep+filename, "r",encoding='utf8')            
-                
-                for line in f:                
+
+# Iterate over every line of the file                  
+                for line in f:   
+
+# Only operate on non empty lines of a file              
                     if line.strip():                                                           
                         str1+= line + " "                    
                 f.close()  
@@ -473,10 +589,8 @@ def get_abstract_from_xml_path(bib, vid ):
 
         root = etree.fromstring(str1)
         for child in root.findall('.//{*}abstract'):
-            str_out += child.text+" "
-        
-        # for child in root.findall('.//{*}abstract'):
-        #     print(child.text)
+            str_out += child.text+" "  
+       
 
     except:
         print("enter a valid BIB:VID value")    
