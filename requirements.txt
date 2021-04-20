@@ -2,7 +2,7 @@ asgi-redis==1.4.3
 asgiref==1.1.2
 async-timeout==3.0.1
 attrs==18.2.0
-autobahn==18.9.2
+autobahn==20.12.3
 Automat==0.7.0
 certifi==2017.11.5
 cffi==1.11.5
