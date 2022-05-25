@@ -55,7 +55,7 @@ pycparser==2.19
 pycryptodomex==3.6.1
 PyHamcrest==1.9.0
 pyjwkest==1.4.0
-PyJWT==1.6.1
+PyJWT==2.4.0
 pymarc==3.1.10
 pyodbc==4.0.21
 pyparsing==2.2.0
